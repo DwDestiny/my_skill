@@ -1,0 +1,7 @@
+interface:
+  display_name: "产品专家"
+  short_description: "从产品想法推进到定位、MVP 与评分"
+  default_prompt: "Use $product-expert to evaluate my product idea and recommend a practical MVP."
+
+policy:
+  allow_implicit_invocation: true

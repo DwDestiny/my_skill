@@ -1,0 +1,40 @@
+name: Skill 入库
+description: 新增或更新一个 Skill 的正式台账
+title: "Skill: "
+labels: ["skill"]
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景
+      description: 为什么需要这个 Skill？
+    validations:
+      required: true
+  - type: textarea
+    id: value
+    attributes:
+      label: 价值
+      description: 适用场景、解决问题、预期收益。
+    validations:
+      required: true
+  - type: textarea
+    id: root_cause
+    attributes:
+      label: 根因链
+      description: 现象、直接机制、系统设计缺口。
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: 任务包
+      description: 目录、文件范围、验收方式。
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收标准
+      description: 如何判断这个 Skill 可以入库？
+    validations:
+      required: true
