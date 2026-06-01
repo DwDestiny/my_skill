@@ -7,6 +7,7 @@
 | Skill | 路径 | 状态 | 适用场景 |
 |---|---|---|---|
 | product-expert | `skills/product-expert/` | 已入库 | 从一个产品想法出发，完成需求探知、产品定位、MVP 规划、评分和推荐 |
+| visual-ppt-deck-builder | `skills/visual-ppt-deck-builder/` | 已入库 | 从主题、大纲和风格样张出发，生成高视觉质量且可编辑的 PPTX |
 
 新增 Skill 时，必须同步更新这张表。README 是仓库的入口，也是 Skill 总目录。
 
@@ -18,6 +19,11 @@ skills/
     SKILL.md
     agents/openai.yaml
     references/
+  visual-ppt-deck-builder/
+    SKILL.md
+    agents/openai.yaml
+    references/
+    scripts/
 docs/
   repository-architecture.md
   skill-intake-checklist.md
@@ -46,6 +52,13 @@ templates/
 - README 的 Skill 目录已更新。
 - 没有提交密钥、账号、令牌、私有日志。
 - 如新增脚本，脚本有最小可运行验证。
+
+常用本地验收命令：
+
+```bash
+scripts/check_skill_structure.sh skills/visual-ppt-deck-builder
+tests/smoke_visual_ppt_deck_builder.sh
+```
 
 ## 当前远程
 
