@@ -37,19 +37,31 @@
 
 ## 3. 效果图母稿
 
-效果图母稿可以包含示例标题、正文、指标和图表。它只用于判断：
+效果图母稿是正式视觉系统的起点，不是可选装饰。对强视觉页面，不要先找一张 clean background 再往上贴文字；必须先生成整页 PPT 效果图，让背景、内容、图表和装饰元素在同一张图里自然配套。
+
+效果图母稿可以包含示例标题、正文、指标和图表。它用于判断：
 
 - 视觉质感是否成立。
 - 页面节奏是否成立。
 - 信息密度是否舒服。
 - 图表语言是否贴合主题。
 - 是否有明确阅读安全区。
+- 文案层、图表层和背景层是否像同一个设计系统。
 
-母稿不能直接作为最终 PPT 背景。
+母稿不能直接作为最终 PPT 背景。它必须保存为 `visual_draft_image`，并在 `deck_spec.json` 中留下路径，作为后续拆解和验收依据。
+
+母稿失败的典型表现：
+
+- 背景像科技海报，图表像普通办公模板。
+- 正文和指标只是浮在背景上，不像从画面结构里长出来。
+- 一页看着能用，但换到下一页时完全没有延展语法。
+- 只能靠加大白框、大色块框才能读清内容。
+
+出现这些情况时，不进入 clean background，直接重做母稿。
 
 ## 4. Clean Background
 
-clean background 必须和母稿保持同一风格，但移除：
+clean background 必须从已认可的母稿派生，保持同一光影、材质、构图、留白和视觉元素关系，但移除：
 
 - 标题。
 - 正文。
@@ -68,6 +80,12 @@ prompt 必须明确：
 - `protected_empty_zone`：避免主体和装饰占用。
 
 如果 clean background 破坏安全区，重做背景，不要靠加框补救。
+
+禁止事项：
+
+- 禁止跳过整页母稿，直接从随机背景图开始。
+- 禁止一张背景铺完整套 PPT，除非每一页都有对应母稿证明这套视觉系统能延展。
+- 禁止把带文字、数字或图表的母稿当作 `background_image`。
 
 ## 5. 坐标蓝图
 
@@ -106,6 +124,7 @@ prompt 必须明确：
 - theme。
 - slides。
 - 每页 layout。
+- 每个强视觉页的 `visual_draft_image`。
 - 非标题页的 claim。
 - 图表数据和 source。
 - 图片和背景路径。
@@ -121,7 +140,10 @@ prompt 必须明确：
 ```bash
 node scripts/validate_deck_quality.js --spec /absolute/path/deck_spec.json --report /absolute/path/qa_report.json
 node scripts/build_deck_preview.js --spec /absolute/path/deck_spec.json --output-dir /absolute/path/preview
+python3 scripts/inspect_pptx_editability.py --pptx /absolute/path/final_deck.pptx --spec /absolute/path/deck_spec.json --report /absolute/path/editability_report.json
 ```
+
+`build_deck_preview.js` 生成的是结构快检 SVG，不足以判断真实 PPT 渲染质感。强视觉 deck 必须再用 Keynote、PowerPoint 或 LibreOffice 从 `.pptx` 导出 PNG/PDF 预览，确认最终渲染没有文字挤压、元素割裂或背景不搭。
 
 风格候选还要跑：
 
@@ -134,6 +156,7 @@ node scripts/design_director_qa.js --sample-dir /absolute/path/style-candidates 
 ## 9. 常见失败
 
 - 把整页母稿直接当背景，导致 PPT 看着好但不可编辑。
+- 跳过整页母稿，导致背景、正文、图表和装饰元素各说各话。
 - clean background 仍残留伪文字、数字或图表。
 - 背景太花，正文和标签只能靠白框才能看清。
 - 多套候选只是同一版式换颜色。

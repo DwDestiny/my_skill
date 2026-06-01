@@ -9,11 +9,12 @@ description: Build polished, editable PowerPoint/PPTX decks from a topic, confir
 
 这个 skill 不是“Markdown 转 PPT”，也不是“整页截图塞进 PPT”。它的目标是把主题变成可交付、可修改、视觉质量高的 `.pptx`。
 
-最稳的路线是：
+唯一合格的正式路线是：
 
-1. 用整页效果图母稿确定审美、构图和风格。
-2. 再生成无文字、无图表、无数字的 clean background。
-3. 最后用 PPT 原生文本、形状、图表和透明素材重建可编辑层。
+1. 先用生图能力生成整页 PPT 效果图母稿，让色彩、构图、字体层级、图表语言和视觉元素在一张图里同时成立。
+2. 从被认可的母稿反拆坐标、安全区、视觉元素和图表语法。
+3. 再生成无文字、无图表、无数字的 clean background，并拆出需要的透明素材。
+4. 最后用 PPT 原生文本、形状、图表和透明素材重建可编辑层。
 
 这样既避免纯图片 PPT 不能改，也避免网页模板式 PPT 过于死板。
 
@@ -25,10 +26,11 @@ description: Build polished, editable PowerPoint/PPTX decks from a topic, confir
 2. **确认大纲**：先给章节和叙事顺序，不直接做页面。
 3. **确认风格**：有用户模板时优先仿模板；无模板时做多套风格样章。
 4. **确认 slide plan**：逐页写清标题、核心观点、证明对象、图表/素材需求。
-5. **生成视觉母稿**：允许母稿里出现示例文字和图表，用来判断审美。
-6. **生成 clean background**：背景必须去掉文字、数字、图表、标签和 UI 文本。
-7. **重建可编辑层**：标题、正文、指标、图表、标签必须是 PPT 可编辑对象。
-8. **运行验收**：质量检查、预览检查、可编辑层检查通过后再交付。
+5. **生成视觉母稿**：每个强视觉页面先生成完整 PPT 效果图母稿，允许里面出现示例文字和图表，用来判断整体是否搭。
+6. **母稿反拆**：从母稿提取色彩系统、字体层级、图表语言、素材关系和坐标蓝图。
+7. **生成 clean background**：背景必须继承母稿风格，但去掉文字、数字、图表、标签和 UI 文本。
+8. **重建可编辑层**：标题、正文、指标、图表、标签必须是 PPT 可编辑对象。
+9. **运行验收**：质量检查、真实导出预览、可编辑层检查通过后再交付。
 
 ## 输入契约
 
@@ -49,17 +51,21 @@ description: Build polished, editable PowerPoint/PPTX decks from a topic, confir
 
 对每个需要强视觉的页面：
 
-1. 生成或取得一张完整效果图母稿。
-2. 从母稿反拆页面坐标蓝图，至少包含 `title_zone`、`text_zone`、`chart_zone`、`metrics_zone`、`visual_focus_zone`、`protected_empty_zone`。
-3. 生成 clean background，prompt 必须明确这些区域是低纹理、低噪声、可读安全区。
-4. 用 `deck_spec.json` 描述页面内容、坐标、图表数据和 overlay 样式。
-5. 用脚本生成 `.pptx`，再导出预览检查。
+1. 生成或取得一张完整效果图母稿，并保存为 `visual_draft_image`。
+2. 人工或审查智能体先看母稿：内容、背景、图表、装饰元素必须像同一套设计系统。
+3. 从母稿反拆页面坐标蓝图，至少包含 `title_zone`、`text_zone` 或 `bullet_zone`、`chart_zone`、`metrics_zone`、`visual_focus_zone`、`protected_empty_zone`。
+4. 生成 clean background，prompt 必须明确继承母稿的光影、材质、留白和构图，同时移除文字、数字、图表和标签。
+5. 用 `deck_spec.json` 同时记录 `visual_draft_image`、`background_image`、坐标、图表数据和 overlay 样式。
+6. 用脚本生成 `.pptx`，再从 PPTX 导出 PNG/PDF 预览检查。
 
 硬规则：
 
+- 不要从 clean background 或随机背景开始做页面。
+- 不要用同一张背景套完整套 PPT，除非每一页都有对应母稿证明这套视觉系统能延展。
 - 不要把带正文、数字、图表标签的整页图当背景。
 - 不要用大白框、大色块框遮住背景来救可读性。
 - 如果看不清，重做背景安全区或调整坐标。
+- 如果内容层、图表层和背景层不搭，判为流程失败，回到整页母稿重做，不做局部修补。
 - 没有来源的数据要标为示例或假设，不能伪装成事实。
 
 详细生产规程见 `references/production-workflow.md`。
@@ -98,7 +104,18 @@ node scripts/build_deck_preview.js \
   --output-dir /absolute/path/preview
 ```
 
-完成证据：`preview/contact-sheet.svg` 和逐页 `slide-*.svg` 存在，并能看出页面没有空白、重叠、模板词或明显不可读区域。
+完成证据：`preview/contact-sheet.svg` 和逐页 `slide-*.svg` 存在，并能看出页面没有空白、重叠、模板词或明显不可读区域。这个 SVG 预览只做结构快检，不能替代 Keynote、PowerPoint 或 LibreOffice 从真实 PPTX 导出的 PNG/PDF 预览。
+
+### 检查可编辑性
+
+```bash
+python3 scripts/inspect_pptx_editability.py \
+  --pptx /absolute/path/final_deck.pptx \
+  --spec /absolute/path/deck_spec.json \
+  --report /absolute/path/editability_report.json
+```
+
+完成证据：`editability_report.json.ok` 为 `true`，且逐页关键文本都能在 PPTX slide XML 中反查到。失败时不要声称“可编辑交付”。
 
 ### 生成风格候选
 
@@ -119,11 +136,13 @@ node scripts/build_style_candidates.js \
 
 - 用户已确认主题、大纲、风格和 slide plan。
 - 最终输出是 `.pptx`，不是一组图片。
+- 每个强视觉页都有 `visual_draft_image` 和 `background_image`，二者不是同一个文件。
+- 母稿、clean background、最终导出预览必须是同一套视觉系统；如果明显割裂，不能验收。
 - 标题、正文、指标、图表标签可编辑。
 - 图表优先由 PPT 原生形状或图表承载。
 - 背景是 clean background，不含烤进去的文字和图表。
 - 透明素材边缘干净，叠在深浅背景上都能读清。
-- 质量检查、预览检查和无模板词检查通过。
+- 质量检查、可编辑性检查、真实导出预览检查和无模板词检查通过。
 
 ## 报告口径
 

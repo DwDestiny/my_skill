@@ -63,6 +63,71 @@ function has_source(slide) {
   return false;
 }
 
+function resolve_asset_path(asset_path, spec_dir) {
+  if (!asset_path || typeof asset_path !== "string") return "";
+  if (path.isAbsolute(asset_path)) return asset_path;
+  return path.resolve(spec_dir || process.cwd(), asset_path);
+}
+
+function validate_asset_file(slide, field_name, spec_dir, errors, slide_number) {
+  const value = slide[field_name];
+  if (!value || typeof value !== "string" || value.trim() === "") {
+    errors.push(`slide ${slide_number} reference_visual_trend must include ${field_name}`);
+    return "";
+  }
+  const asset_path = resolve_asset_path(value, spec_dir);
+  if (!fs.existsSync(asset_path)) {
+    errors.push(`slide ${slide_number} ${field_name} asset does not exist: ${value}`);
+  }
+  return asset_path;
+}
+
+function has_zone(blueprint, zone_name) {
+  const zone = blueprint && blueprint[zone_name];
+  return Boolean(
+    zone &&
+      typeof zone === "object" &&
+      Number.isFinite(Number(zone.x)) &&
+      Number.isFinite(Number(zone.y)) &&
+      Number.isFinite(Number(zone.w)) &&
+      Number.isFinite(Number(zone.h)),
+  );
+}
+
+function validate_design_brief(slide, errors, slide_number) {
+  const brief = slide.design_director_brief || {};
+  [
+    "expression_system",
+    "style_intent",
+    "typography_system",
+    "color_strategy",
+    "chart_language",
+    "layout_rhythm",
+  ].forEach((field_name) => {
+    if (!brief[field_name]) {
+      errors.push(`slide ${slide_number} design_director_brief must include ${field_name}`);
+    }
+  });
+}
+
+function validate_reference_visual_trend(slide, errors, slide_number, spec_dir) {
+  const visual_draft_path = validate_asset_file(slide, "visual_draft_image", spec_dir, errors, slide_number);
+  const background_path = validate_asset_file(slide, "background_image", spec_dir, errors, slide_number);
+  if (visual_draft_path && background_path && path.resolve(visual_draft_path) === path.resolve(background_path)) {
+    errors.push(`slide ${slide_number} visual_draft_image and background_image must be different files`);
+  }
+  validate_design_brief(slide, errors, slide_number);
+  const blueprint = slide.coordinate_blueprint || {};
+  ["title_zone", "chart_zone", "metrics_zone", "protected_empty_zone"].forEach((zone_name) => {
+    if (!has_zone(blueprint, zone_name)) {
+      errors.push(`slide ${slide_number} coordinate_blueprint must include ${zone_name}`);
+    }
+  });
+  if (!has_zone(blueprint, "text_zone") && !has_zone(blueprint, "bullet_zone")) {
+    errors.push(`slide ${slide_number} coordinate_blueprint must include text_zone or bullet_zone`);
+  }
+}
+
 function validate_chart(slide, errors, slide_number) {
   const chart = slide.chart || {};
   const labels = Array.isArray(chart.labels) ? chart.labels : [];
@@ -75,8 +140,9 @@ function validate_chart(slide, errors, slide_number) {
   }
 }
 
-function validate_slide_shape(slide, errors, slide_number) {
+function validate_slide_shape(slide, errors, slide_number, spec_dir) {
   const layout = String(slide.layout || "content");
+  const semantic_layout = String(slide.semantic_layout || layout);
   if (!slide.title) {
     errors.push(`slide ${slide_number} must include title`);
   }
@@ -92,6 +158,9 @@ function validate_slide_shape(slide, errors, slide_number) {
   if (layout === "bar_chart") {
     validate_chart(slide, errors, slide_number);
   }
+  if (layout === "reference_visual_trend" || layout === "reference_anime_trend") {
+    validate_reference_visual_trend(slide, errors, slide_number, spec_dir);
+  }
   if (layout === "metrics") {
     const metrics = Array.isArray(slide.metrics) ? slide.metrics : [];
     if (metrics.length === 0) {
@@ -104,19 +173,19 @@ function validate_slide_shape(slide, errors, slide_number) {
     });
     if (slide.chart) validate_chart(slide, errors, slide_number);
   }
-  if (layout === "executive_summary" && (!Array.isArray(slide.points) || slide.points.length < 3)) {
+  if (semantic_layout === "executive_summary" && (!Array.isArray(slide.points) || slide.points.length < 3)) {
     errors.push(`slide ${slide_number} executive_summary must include at least 3 points`);
   }
-  if (layout === "architecture" && (!Array.isArray(slide.layers) || slide.layers.length < 3)) {
+  if (semantic_layout === "architecture" && (!Array.isArray(slide.layers) || slide.layers.length < 3)) {
     errors.push(`slide ${slide_number} architecture must include at least 3 layers`);
   }
-  if (layout === "comparison" && (!Array.isArray(slide.items) || slide.items.length < 2)) {
+  if (semantic_layout === "comparison" && (!Array.isArray(slide.items) || slide.items.length < 2)) {
     errors.push(`slide ${slide_number} comparison must include at least 2 items`);
   }
-  if (layout === "roadmap" && (!Array.isArray(slide.phases) || slide.phases.length < 3)) {
+  if (semantic_layout === "roadmap" && (!Array.isArray(slide.phases) || slide.phases.length < 3)) {
     errors.push(`slide ${slide_number} roadmap must include at least 3 phases`);
   }
-  if (layout === "risk_next_steps") {
+  if (semantic_layout === "risk_next_steps") {
     if (!Array.isArray(slide.risks) || slide.risks.length === 0) {
       errors.push(`slide ${slide_number} risk_next_steps must include risks`);
     }
@@ -137,7 +206,7 @@ function validate_placeholders(spec, errors) {
   });
 }
 
-function validate_spec(spec) {
+function validate_spec(spec, spec_dir) {
   const errors = [];
   const warnings = [];
   if (!spec || typeof spec !== "object") {
@@ -150,7 +219,7 @@ function validate_spec(spec) {
   if (slides.length < 6) {
     errors.push("commercial deck should include at least 6 slides");
   }
-  const layouts = new Set(slides.map((slide) => String(slide.layout || "content")));
+  const layouts = new Set(slides.map((slide) => String(slide.semantic_layout || slide.layout || "content")));
   if (layouts.size < 5) {
     errors.push("commercial deck should use at least 5 distinct layouts");
   }
@@ -165,7 +234,7 @@ function validate_spec(spec) {
   ].forEach(([name, ok]) => {
     if (!ok) errors.push(`commercial deck should include ${name} layout`);
   });
-  slides.forEach((slide, index) => validate_slide_shape(slide, errors, index + 1));
+  slides.forEach((slide, index) => validate_slide_shape(slide, errors, index + 1, spec_dir));
   validate_placeholders(spec, errors);
   return {
     ok: errors.length === 0,
@@ -185,7 +254,7 @@ function main() {
       console.log(usage());
       return;
     }
-    const report = validate_spec(read_json(args.spec));
+    const report = validate_spec(read_json(args.spec), path.dirname(path.resolve(args.spec)));
     write_report(args.report, report);
     if (!report.ok) process.exit(1);
   } catch (error) {

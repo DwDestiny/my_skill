@@ -95,7 +95,7 @@
 
 ### reference_visual_trend
 
-用于“效果图母稿通过后，按 clean background + 坐标蓝图重建”的视觉趋势页。这个 layout 的目标不是通用模板，而是验证参考图反拆路径：背景是无文字、无图表的 raster 底板；标题、正文、指标、柱状图、趋势线、坐标标签全部是 PPT 可编辑对象。
+用于“完整效果图母稿通过后，按 clean background + 坐标蓝图重建”的视觉趋势页。这个 layout 的目标不是通用模板，而是验证参考图反拆路径：先有整页 PPT 效果图母稿，再派生无文字、无图表的 raster 底板；标题、正文、指标、柱状图、趋势线、坐标标签全部是 PPT 可编辑对象。
 
 `reference_anime_trend` 是旧别名，仍然兼容；新 spec 优先使用 `reference_visual_trend`。
 
@@ -115,14 +115,18 @@
     "chart_language": "中央发光柱图、顶部数值、弱化坐标",
     "layout_rhythm": "上方定题，中部证明，右侧指标，底部进度流"
   },
+  "visual_draft_image": "assets/anime-full-page-draft.png",
   "background_image": "assets/anime-clean-background.png",
   "coordinate_blueprint": {
     "title_zone": {"x": 1.0, "y": 1.08, "w": 5.1, "h": 0.62},
+    "text_zone": {"x": 1.02, "y": 2.46, "w": 4.95, "h": 2.02},
     "subtitle_zone": {"x": 1.02, "y": 1.78, "w": 4.6, "h": 0.42},
     "bullet_zone": {"x": 1.02, "y": 2.46, "w": 4.95, "h": 2.02},
     "metrics_zone": {"x": 2.05, "y": 5.12, "w": 3.95, "h": 1.08},
     "chart_title_zone": {"x": 6.82, "y": 1.7, "w": 3.2, "h": 0.38},
-    "chart_zone": {"x": 6.7, "y": 2.38, "w": 5.08, "h": 3.7}
+    "chart_zone": {"x": 6.7, "y": 2.38, "w": 5.08, "h": 3.7},
+    "visual_focus_zone": {"x": 6.2, "y": 0.8, "w": 5.8, "h": 5.7},
+    "protected_empty_zone": {"x": 0.7, "y": 0.4, "w": 11.9, "h": 6.5}
   },
   "overlay_style": {
     "subtitle_color": "CFE5FF",
@@ -173,7 +177,10 @@
 
 硬约束：
 
+- `visual_draft_image` 必须是先生成并通过审美确认的整页 PPT 效果图母稿，允许带示例标题、正文、指标和图表。
 - `background_image` 必须是 clean background，不能使用带文字和图表的效果图母稿。
+- `visual_draft_image` 和 `background_image` 必须是两个不同文件，不能互相顶替。
+- `coordinate_blueprint` 必须来自母稿反拆，至少包含 `title_zone`、`text_zone` 或 `bullet_zone`、`chart_zone`、`metrics_zone`、`visual_focus_zone`、`protected_empty_zone`。
 - `layout_variant` 控制页面骨架，不是装饰名。当前支持：
   - `minimal_left_report`：左侧报告式正文 + 右侧图表。
   - `future_dashboard_focus`：深色科技仪表盘式。

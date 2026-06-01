@@ -321,6 +321,37 @@ function add_reference_anime_title(slide, theme, slide_data, zones) {
   });
 }
 
+function add_reference_claim_and_source(slide, theme, slide_data, zones) {
+  if (slide_data.claim) {
+    const claim_y = zones.subtitle_zone.y + zones.subtitle_zone.h + 0.08;
+    slide.addText(String(slide_data.claim), {
+      x: zones.subtitle_zone.x,
+      y: claim_y,
+      w: Math.max(zones.subtitle_zone.w, zones.title_zone.w),
+      h: 0.42,
+      fontFace: theme.font_face,
+      fontSize: overlay_number(slide_data, "claim_font_size", 8.2, { min: 5, max: 16 }),
+      bold: true,
+      color: overlay_color(slide_data, "claim_color", theme.accent),
+      margin: 0,
+      fit: "shrink",
+    });
+  }
+  if (slide_data.source) {
+    slide.addText(String(slide_data.source), {
+      x: 0.76,
+      y: 6.95,
+      w: 8.6,
+      h: 0.14,
+      fontFace: theme.font_face,
+      fontSize: overlay_number(slide_data, "source_font_size", 5.2, { min: 4, max: 9 }),
+      color: overlay_color(slide_data, "chart_source_color", theme.muted),
+      margin: 0,
+      fit: "shrink",
+    });
+  }
+}
+
 function add_reference_anime_bullets(slide, theme, slide_data, zones) {
   const bullet_zone = zones.bullet_zone;
   const bullets = Array.isArray(slide_data.bullets) ? slide_data.bullets.slice(0, 3) : [];
@@ -702,7 +733,7 @@ function add_reference_signal_bullets(slide, theme, slide_data, zones) {
     line: { color: divider_color, pt: 1.1, transparency: 38 },
   });
   bullets.forEach((bullet, index) => {
-    const y_position = bullet_zone.y + index * 0.72;
+    const y_position = bullet_zone.y + index * 0.8;
     const color = colors[index % colors.length];
     slide.addShape("line", {
       x: bullet_zone.x,
@@ -726,9 +757,9 @@ function add_reference_signal_bullets(slide, theme, slide_data, zones) {
       x: bullet_zone.x + 1.02,
       y: y_position - 0.02,
       w: bullet_zone.w - 1.12,
-      h: 0.26,
+      h: 0.31,
       fontFace: theme.font_face,
-      fontSize: overlay_number(slide_data, "bullet_title_font_size", 11.4, { min: 6, max: 22 }),
+      fontSize: overlay_number(slide_data, "bullet_title_font_size", 12.4, { min: 6, max: 22 }),
       bold: true,
       color: bullet_title_color,
       margin: 0,
@@ -738,9 +769,9 @@ function add_reference_signal_bullets(slide, theme, slide_data, zones) {
       x: bullet_zone.x + 0.55,
       y: y_position + 0.33,
       w: bullet_zone.w - 0.62,
-      h: 0.24,
+      h: 0.32,
       fontFace: theme.font_face,
-      fontSize: overlay_number(slide_data, "bullet_body_font_size", 8.2, { min: 5, max: 15 }),
+      fontSize: overlay_number(slide_data, "bullet_body_font_size", 9.4, { min: 5, max: 15 }),
       color: bullet_body_color,
       margin: 0,
       fit: "shrink",
@@ -1684,6 +1715,7 @@ function add_reference_anime_trend_slide(pptx, theme, slide_data, spec_dir, slid
     chart_zone: zone_value(blueprint, "chart_zone", defaults.chart_zone),
   };
   add_reference_anime_title(slide, theme, slide_data, zones);
+  add_reference_claim_and_source(slide, theme, slide_data, zones);
   if (variant === "future_dashboard_focus") {
     add_reference_anime_chart(slide, theme, slide_data, zones);
     add_reference_signal_bullets(slide, theme, slide_data, zones);
@@ -2206,6 +2238,19 @@ function add_metrics_slide(pptx, theme, slide_data, slide_index, total_slides) {
         h: bar_h,
         fill: { color: index % 2 === 0 ? theme.accent : theme.accent_2 },
         line: { color: theme.background, transparency: 100 },
+      });
+      slide.addText(String(values[index]), {
+        x: x_position - 0.08,
+        y: 5.5 - bar_h,
+        w: 1.31,
+        h: 0.18,
+        fontFace: theme.font_face,
+        fontSize: 8.2,
+        bold: true,
+        color: theme.foreground,
+        align: "center",
+        margin: 0,
+        fit: "shrink",
       });
       slide.addText(String(label), {
         x: x_position - 0.18,
