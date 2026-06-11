@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by skills/visual-ppt-deck-builder/scripts/render_style_background.py
+# Pos: skills/visual-ppt-deck-builder/scripts/render_style_background.py
 """Test-only placeholder background renderer.
 
 正式风格候选不得使用本脚本输出作为商业设计素材。本脚本只服务

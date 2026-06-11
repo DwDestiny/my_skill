@@ -1,0 +1,48 @@
+<svg width="1080" height="560" viewBox="0 0 1080 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GEB Project Doc System Architecture</title>
+  <desc id="desc">L1 root guide, L2 folder guide, L3 file headers, skill workflow, audit scripts, and agent integrations.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#102a43"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#020617" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <rect width="1080" height="560" rx="28" fill="url(#bg)"/>
+  <text x="54" y="70" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="700">GEB Project Doc System</text>
+  <text x="54" y="105" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="17">Progressive project maps for AI coding agents</text>
+
+  <g filter="url(#shadow)">
+    <rect x="70" y="155" width="250" height="128" rx="14" fill="#f8fafc"/>
+    <text x="96" y="195" fill="#0f172a" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">L1 Root Guide</text>
+    <text x="96" y="230" fill="#334155" font-family="Inter, Arial, sans-serif" font-size="16">AGENTS.md / CLAUDE.md</text>
+    <text x="96" y="258" fill="#475569" font-family="Inter, Arial, sans-serif" font-size="14">Project purpose, commands, rules</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="415" y="155" width="250" height="128" rx="14" fill="#ecfeff"/>
+    <text x="441" y="195" fill="#164e63" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">L2 Folder Guide</text>
+    <text x="441" y="230" fill="#155e75" font-family="Inter, Arial, sans-serif" font-size="16">Module AGENTS / CLAUDE</text>
+    <text x="441" y="258" fill="#0e7490" font-family="Inter, Arial, sans-serif" font-size="14">Boundaries, files, dependencies</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="760" y="155" width="250" height="128" rx="14" fill="#fef9c3"/>
+    <text x="786" y="195" fill="#713f12" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">L3 File Header</text>
+    <text x="786" y="230" fill="#854d0e" font-family="Inter, Arial, sans-serif" font-size="16">Input / Output / Pos</text>
+    <text x="786" y="258" fill="#a16207" font-family="Inter, Arial, sans-serif" font-size="14">3-5 lines at the top of source files</text>
+  </g>
+
+  <path d="M320 219 H415" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
+  <path d="M665 219 H760" stroke="#facc15" stroke-width="4" stroke-linecap="round"/>
+  <path d="M535 284 V340" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+
+  <g filter="url(#shadow)">
+    <rect x="144" y="350" width="792" height="118" rx="18" fill="#111827" stroke="#334155"/>
+    <text x="184" y="392" fill="#e2e8f0" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700">Skill + Scripts + Global Trigger</text>
+    <text x="184" y="428" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="16">SKILL.md loads judgment only when needed. Scripts audit and update docs deterministically.</text>
+    <text x="184" y="454" fill="#93c5fd" font-family="Inter, Arial, sans-serif" font-size="15">Codex · Claude Code · Grok Build · Gemini · OpenCode · Cursor · Kiro · Hermes</text>
+  </g>
+</svg>

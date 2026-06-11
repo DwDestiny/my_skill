@@ -1,6 +1,16 @@
 # my_skill
 
-这是老党的 Skill 仓库，用来沉淀、维护和开源高价值 Codex Skills。仓库先追求两件事：结构清楚、后续新增不乱。
+老党的开源 Skill 仓库：把反复验证过的 Agent 工作方法，沉淀成可复用、可安装、可测试的 Skills。
+
+[English](#english) · [GitHub](https://github.com/DwDestiny/my_skill) · [Issue #5](https://github.com/DwDestiny/my_skill/issues/5)
+
+![GEB Project Doc System Architecture](docs/assets/geb-project-doc-system-architecture.svg)
+
+## 为什么这个仓库存在
+
+很多 Agent 配置最后都会变成一堆长提示词：看起来很完整，真正工作时却触发不稳、不可测试、不可复用。
+
+这个仓库的目标更直接：把高价值工作流做成 Skill。Skill 本体保持轻，细节放 references，重复动作放 scripts，最后用测试和真实项目狗粮验证。
 
 ## Skill 目录
 
@@ -8,59 +18,207 @@
 |---|---|---|---|
 | product-expert | `skills/product-expert/` | 已入库 | 从一个产品想法出发，完成需求探知、产品定位、MVP 规划、评分和推荐 |
 | visual-ppt-deck-builder | `skills/visual-ppt-deck-builder/` | 已入库 | 从主题、大纲和风格样张出发，生成高视觉质量且可编辑的 PPTX |
+| geb-project-doc-system | `skills/geb-project-doc-system/` | v0.1 | 为大中型代码仓库建立 L1/L2/L3 AI 项目文档体系，减少 Agent 盲读和上下文浪费 |
 
-新增 Skill 时，必须同步更新这张表。README 是仓库的入口，也是 Skill 总目录。
+## 重点：GEB Project Doc System
+
+`geb-project-doc-system` 是给大项目用的 AI 项目地图 Skill。
+
+它不试图让 Agent 一次读完整个仓库，而是让 Agent 按层读取：
+
+```mermaid
+flowchart LR
+  L1["L1 根文档<br/>AGENTS.md / CLAUDE.md"] --> L2["L2 目录文档<br/>模块边界 / 文件清单"]
+  L2 --> L3["L3 文件头<br/>Input / Output / Pos"]
+  L3 --> Code["精确读取目标代码"]
+  Code --> Sync["结构变更后<br/>L3 -> L2 -> L1 同步"]
+```
+
+适合这些场景：
+
+- 中大型代码仓库，新会话经常重新摸项目。
+- 多 Agent 协作，经常有人改结构但不更新项目说明。
+- Claude Code、Codex、Grok Build、Gemini、OpenCode 等工具混用。
+- 你希望减少盲读文件、重复解释和 token 浪费。
+
+## 快速开始
+
+审计一个项目：
+
+```bash
+python3 skills/geb-project-doc-system/scripts/audit_geb_docs.py /path/to/repo
+```
+
+先 dry-run 看会补哪些文件头：
+
+```bash
+python3 skills/geb-project-doc-system/scripts/update_file_headers.py /path/to/repo --json
+```
+
+确认后再写入：
+
+```bash
+python3 skills/geb-project-doc-system/scripts/update_file_headers.py /path/to/repo --apply
+```
+
+安装 Git hook：
+
+```bash
+skills/geb-project-doc-system/scripts/install_git_hook.sh /path/to/repo
+```
+
+## 推荐安装方式
+
+一键安装到本机常见 Agent 目录，并给已有全局规则文件追加短触发声明：
+
+```bash
+scripts/install_geb_project_doc_system.sh --dry-run
+scripts/install_geb_project_doc_system.sh
+```
+
+也可以手动链接：
+
+```bash
+ln -sfn "$(pwd)/skills/geb-project-doc-system" ~/.codex/skills/geb-project-doc-system
+ln -sfn "$(pwd)/skills/geb-project-doc-system" ~/.claude/skills/geb-project-doc-system
+ln -sfn "$(pwd)/skills/geb-project-doc-system" ~/.grok/skills/geb-project-doc-system
+```
+
+再在全局 `AGENTS.md` / `CLAUDE.md` 放一段短声明：
+
+```md
+仓库工作默认遵守 GEB 项目文档规范。结构变更前读取 L1/L2/L3；
+结构变更后同步更新 L3 -> L2 -> L1；初始化、审计或迁移时使用
+`geb-project-doc-system` Skill。
+```
+
+全局文档只放短声明，不要把完整规范塞进去。完整规则按需从 Skill 加载。
+
+## 验证
+
+```bash
+scripts/check_skill_structure.sh skills/geb-project-doc-system
+python3 tests/test_geb_project_doc_system.py
+tests/smoke_visual_ppt_deck_builder.sh
+```
 
 ## 仓库结构
 
 ```text
 skills/
   product-expert/
-    SKILL.md
-    agents/openai.yaml
-    references/
   visual-ppt-deck-builder/
-    SKILL.md
-    agents/openai.yaml
-    references/
-    scripts/
+  geb-project-doc-system/
 docs/
   repository-architecture.md
   skill-intake-checklist.md
+  assets/
+scripts/
+tests/
 templates/
-  skill-catalog-entry.md
-.github/
-  ISSUE_TEMPLATE/
 ```
 
-## 新增 Skill 的标准流程
+## 新增 Skill 的标准
 
-1. 先做 Skill 候选确认：适用场景、解决问题、预期收益、计划动作、目标路径。
-2. 开工前查重或创建 GitHub issue，写清现象、直接机制、系统设计缺口。
-3. 在 `skills/<skill_slug>/` 新建 Skill，目录名使用小写短横线。
-4. `SKILL.md` 只放核心触发规则和工作流；长资料放 `references/`。
-5. 有稳定脚本、模板或素材时，分别放入 `scripts/`、`assets/`。
-6. 更新 README 的 Skill 目录。
-7. 运行结构验收，提交并关联 issue。
+- `SKILL.md` 必须有 `name` 和 `description`。
+- description 只写触发条件，不总结完整流程。
+- 长资料放 `references/`，可重复动作放 `scripts/`。
+- 先写压力场景或测试，再写 Skill。
+- README 的 Skill 目录必须同步更新。
+- 不提交密钥、账号、令牌或私有日志。
 
-## 基础验收
+## License
 
-每次新增或修改 Skill，至少确认：
+MIT. See [LICENSE](LICENSE).
 
-- `skills/<skill_slug>/SKILL.md` 存在。
-- `SKILL.md` frontmatter 包含 `name` 和 `description`。
-- README 的 Skill 目录已更新。
-- 没有提交密钥、账号、令牌、私有日志。
-- 如新增脚本，脚本有最小可运行验证。
+---
 
-常用本地验收命令：
+## English
+
+`my_skill` is an open-source skill repository for reusable, tested agent workflows.
+
+Instead of growing one giant global prompt, each workflow becomes a focused Skill: light `SKILL.md`, deeper `references/`, deterministic `scripts/`, and real validation.
+
+## Skills
+
+| Skill | Path | Status | Use case |
+|---|---|---|---|
+| product-expert | `skills/product-expert/` | Available | Product discovery, positioning, MVP planning, scoring, and recommendation |
+| visual-ppt-deck-builder | `skills/visual-ppt-deck-builder/` | Available | Build high-quality editable PPTX decks from a topic, outline, and visual direction |
+| geb-project-doc-system | `skills/geb-project-doc-system/` | v0.1 | Maintain L1/L2/L3 AI-facing project documentation for medium and large code repositories |
+
+## GEB Project Doc System
+
+`geb-project-doc-system` helps AI coding agents understand a repository progressively:
+
+- **L1 root guide**: `AGENTS.md` / `CLAUDE.md`
+- **L2 folder guide**: module boundaries, files, dependencies, local rules
+- **L3 file header**: short `Input / Output / Pos` coordinates for source files
+
+The goal is simple: read the map before reading the whole world.
+
+## Quick Start
+
+Audit a repository:
 
 ```bash
-scripts/check_skill_structure.sh skills/visual-ppt-deck-builder
+python3 skills/geb-project-doc-system/scripts/audit_geb_docs.py /path/to/repo
+```
+
+Preview missing file headers:
+
+```bash
+python3 skills/geb-project-doc-system/scripts/update_file_headers.py /path/to/repo --json
+```
+
+Apply headers after reviewing the dry run:
+
+```bash
+python3 skills/geb-project-doc-system/scripts/update_file_headers.py /path/to/repo --apply
+```
+
+Install the pre-commit hook:
+
+```bash
+skills/geb-project-doc-system/scripts/install_git_hook.sh /path/to/repo
+```
+
+## Installation
+
+Install into common local agent skill directories and append a short trigger rule to existing global rule files:
+
+```bash
+scripts/install_geb_project_doc_system.sh --dry-run
+scripts/install_geb_project_doc_system.sh
+```
+
+Or link the Skill manually:
+
+```bash
+ln -sfn "$(pwd)/skills/geb-project-doc-system" ~/.codex/skills/geb-project-doc-system
+ln -sfn "$(pwd)/skills/geb-project-doc-system" ~/.claude/skills/geb-project-doc-system
+ln -sfn "$(pwd)/skills/geb-project-doc-system" ~/.grok/skills/geb-project-doc-system
+```
+
+Then add a short global rule to `AGENTS.md` / `CLAUDE.md`:
+
+```md
+Repository work follows the GEB project documentation standard by default.
+Before structural changes, read L1/L2/L3. After structural changes, update
+L3 -> L2 -> L1. Use the `geb-project-doc-system` Skill for initialization,
+audit, or migration.
+```
+
+Keep global prompts short. Load the Skill when detail is needed.
+
+## Validation
+
+```bash
+scripts/check_skill_structure.sh skills/geb-project-doc-system
+python3 tests/test_geb_project_doc_system.py
 tests/smoke_visual_ppt_deck_builder.sh
 ```
 
-## 当前远程
+## License
 
-- GitHub: https://github.com/DwDestiny/my_skill
-- 默认分支：`main`
+MIT. See [LICENSE](LICENSE).

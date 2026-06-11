@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by tests/smoke_visual_ppt_deck_builder.sh
+# Pos: tests/smoke_visual_ppt_deck_builder.sh
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

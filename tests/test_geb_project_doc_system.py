@@ -1,0 +1,139 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by tests/test_geb_project_doc_system.py
+# Pos: tests/test_geb_project_doc_system.py
+import json
+import subprocess
+import tempfile
+import textwrap
+import unittest
+from pathlib import Path
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SKILL_DIR = REPO_ROOT / "skills" / "geb-project-doc-system"
+AUDIT_SCRIPT = SKILL_DIR / "scripts" / "audit_geb_docs.py"
+UPDATE_SCRIPT = SKILL_DIR / "scripts" / "update_file_headers.py"
+
+
+class GebProjectDocSystemTests(unittest.TestCase):
+    def run_script(self, script_path, *args, check=True):
+        result = subprocess.run(
+            ["python3", str(script_path), *map(str, args)],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if check and result.returncode != 0:
+            self.fail(
+                f"{script_path.name} failed with {result.returncode}\n"
+                f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+            )
+        return result
+
+    def test_audit_detects_missing_l1_and_l3(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            project_dir = Path(tmp_dir)
+            src_dir = project_dir / "src"
+            src_dir.mkdir()
+            (src_dir / "app.py").write_text("def run():\n    return 1\n", encoding="utf-8")
+
+            result = self.run_script(AUDIT_SCRIPT, project_dir, "--json", check=False)
+
+            self.assertNotEqual(result.returncode, 0)
+            report = json.loads(result.stdout)
+            self.assertFalse(report["ok"])
+            self.assertIn("missing_l1_doc", {item["code"] for item in report["findings"]})
+            self.assertIn("missing_l3_header", {item["code"] for item in report["findings"]})
+
+    def test_update_headers_is_dry_run_by_default_and_apply_is_idempotent(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            project_dir = Path(tmp_dir)
+            src_dir = project_dir / "src"
+            src_dir.mkdir()
+            file_path = src_dir / "app.py"
+            original = "def run():\n    return 1\n"
+            file_path.write_text(original, encoding="utf-8")
+
+            dry_run = self.run_script(UPDATE_SCRIPT, project_dir, "--json")
+
+            self.assertEqual(file_path.read_text(encoding="utf-8"), original)
+            dry_report = json.loads(dry_run.stdout)
+            self.assertEqual(dry_report["planned_updates"], 1)
+            self.assertEqual(dry_report["applied_updates"], 0)
+
+            apply_once = self.run_script(UPDATE_SCRIPT, project_dir, "--apply", "--json")
+            apply_report = json.loads(apply_once.stdout)
+            updated = file_path.read_text(encoding="utf-8")
+            self.assertEqual(apply_report["applied_updates"], 1)
+            self.assertIn("Input:", updated)
+            self.assertIn("Output:", updated)
+            self.assertIn("Pos:", updated)
+
+            apply_twice = self.run_script(UPDATE_SCRIPT, project_dir, "--apply", "--json")
+            second_report = json.loads(apply_twice.stdout)
+            self.assertEqual(second_report["planned_updates"], 0)
+            self.assertEqual(file_path.read_text(encoding="utf-8"), updated)
+
+    def test_audit_detects_duplicate_l3_headers(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            project_dir = Path(tmp_dir)
+            (project_dir / "AGENTS.md").write_text("# Project Rules\n", encoding="utf-8")
+            src_dir = project_dir / "src"
+            src_dir.mkdir()
+            duplicate_header = textwrap.dedent(
+                """\
+                # GEB-L3
+                # Input: request
+                # Output: response
+                # Pos: service
+
+                # GEB-L3
+                # Input: request
+                # Output: response
+                # Pos: service
+
+                def run():
+                    return 1
+                """
+            )
+            (src_dir / "app.py").write_text(duplicate_header, encoding="utf-8")
+
+            result = self.run_script(AUDIT_SCRIPT, project_dir, "--json", check=False)
+
+            self.assertNotEqual(result.returncode, 0)
+            report = json.loads(result.stdout)
+            self.assertIn("duplicate_l3_header", {item["code"] for item in report["findings"]})
+
+    def test_audit_requires_l2_for_large_source_directory(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            project_dir = Path(tmp_dir)
+            (project_dir / "AGENTS.md").write_text("# Project Rules\n", encoding="utf-8")
+            src_dir = project_dir / "src"
+            src_dir.mkdir()
+            for index in range(4):
+                (src_dir / f"module_{index}.py").write_text(
+                    textwrap.dedent(
+                        f"""\
+                        # GEB-L3
+                        # Input: module {index} input
+                        # Output: module {index} output
+                        # Pos: src/module_{index}.py
+
+                        def run():
+                            return {index}
+                        """
+                    ),
+                    encoding="utf-8",
+                )
+
+            result = self.run_script(AUDIT_SCRIPT, project_dir, "--json", check=False)
+
+            self.assertNotEqual(result.returncode, 0)
+            report = json.loads(result.stdout)
+            self.assertIn("missing_l2_doc", {item["code"] for item in report["findings"]})
+
+
+if __name__ == "__main__":
+    unittest.main()
