@@ -1,6 +1,6 @@
 ---
 name: geb-project-doc-system
-description: Use when working in medium or large code repositories that need AI-facing project documentation, first-run inventory, repository onboarding, CLAUDE.md, AGENTS.md, folder guides, file headers, Input/Output/Pos notes, module boundaries, structure-change documentation sync, or context/token reduction.
+description: Use when working in medium or large code repositories that need AI-facing project documentation, first-run inventory, repository onboarding, mixed workspace triage, runtime-safe migration, CLAUDE.md, AGENTS.md, folder guides, file headers, Input/Output/Pos notes, module boundaries, structure-change documentation sync, or context/token reduction.
 ---
 
 # GEB Project Doc System
@@ -37,11 +37,15 @@ Use a first-run inventory before applying GEB to a project family:
 
 1. Classify each target as a project repository, Agent runtime, active session store, or archive/capability index.
 2. For project repositories, inspect root guides, top folders, tech stack, dirty state, and generated/vendor/cache folders.
-3. For Agent runtime targets, document the governance map only; do not add L3 headers to sessions, logs, secrets, caches, SQLite databases, or browser profiles.
-4. Pick one small sample project or module first, then run `audit_geb_docs.py`.
-5. Add or trim L1, add L2 for one module, dry-run L3 headers, review the plan, then apply only that module.
+3. For a mixed workspace, split content workflow, product subproject, reference code, generated assets, runtime state, and active source code before writing anything.
+4. For Agent runtime targets, document the governance map only; do not add L3 headers to sessions, logs, secrets, caches, SQLite databases, or browser profiles.
+5. For a trading or runtime-critical repository, create or reference an issue first, freeze live/runtime paths, then start with low-risk research or tool modules.
+6. Pick one small sample project or module first, then run `audit_geb_docs.py`.
+7. Add or trim L1, add L2 for one module, dry-run L3 headers, review the plan, then apply only that module.
 
 The first-run inventory should produce a short priority list and exclusion list before any bulk write.
+
+Do not treat audit findings as a to-do list. First explain which findings are source code, generated output, vendored/reference code, product subprojects, runtime state, or intentionally deferred high-risk paths.
 
 ## Resource Guide
 
@@ -56,8 +60,8 @@ The first-run inventory should produce a short priority list and exclusion list 
 
 ```bash
 python3 skills/geb-project-doc-system/scripts/audit_geb_docs.py <repo>
-python3 skills/geb-project-doc-system/scripts/update_file_headers.py <repo> --json
-python3 skills/geb-project-doc-system/scripts/update_file_headers.py <repo> --apply
+python3 skills/geb-project-doc-system/scripts/update_file_headers.py <repo>/safe-module --json
+python3 skills/geb-project-doc-system/scripts/update_file_headers.py <repo>/safe-module --apply
 ```
 
 ## Red Flags
@@ -67,6 +71,8 @@ python3 skills/geb-project-doc-system/scripts/update_file_headers.py <repo> --ap
 - Moving modules without updating L2 folder guides.
 - Running a bulk header update without dry-run first.
 - Repeated `GEB-L3` blocks in one file.
+- Chasing audit zero in a mixed workspace before classifying product subprojects, generated assets, reference code, and runtime state.
+- Adding L3 headers to trading, live runner, deploy, credential, gateway, or active session paths before issue-first review.
 
 ## Common Mistakes
 

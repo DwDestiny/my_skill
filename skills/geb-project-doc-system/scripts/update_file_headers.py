@@ -12,7 +12,7 @@ import json
 import sys
 from pathlib import Path
 
-from audit_geb_docs import CODE_EXTENSIONS, EXCLUDED_DIRS, MAX_FILE_BYTES, has_l3_header
+from audit_geb_docs import CODE_EXTENSIONS, MAX_FILE_BYTES, has_l3_header, should_skip_path
 
 
 HASH_COMMENT_EXTENSIONS = {".bash", ".py", ".rb", ".sh", ".zsh"}
@@ -33,7 +33,7 @@ def is_code_file(path: Path) -> bool:
 def iter_code_files(project_dir: Path) -> list[Path]:
     code_files: list[Path] = []
     for path in project_dir.rglob("*"):
-        if any(part in EXCLUDED_DIRS for part in path.relative_to(project_dir).parts):
+        if should_skip_path(project_dir, path):
             continue
         if not is_code_file(path):
             continue

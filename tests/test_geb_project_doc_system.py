@@ -156,6 +156,83 @@ class GebProjectDocSystemTests(unittest.TestCase):
         self.assertIn("First-run bootstrap", install_script_text)
         self.assertIn("first-run inventory", install_script_text)
 
+    def test_first_run_bootstrap_handles_mixed_and_high_risk_repositories(self):
+        skill_text = SKILL_FILE.read_text(encoding="utf-8")
+        migration_text = MIGRATION_FILE.read_text(encoding="utf-8")
+        readme_text = README_FILE.read_text(encoding="utf-8")
+
+        self.assertIn("mixed workspace", skill_text)
+        self.assertIn("trading or runtime-critical repository", skill_text)
+        self.assertIn("product subproject", skill_text)
+        self.assertIn("reference code", migration_text)
+        self.assertIn("generated assets", migration_text)
+        self.assertIn("Do not treat audit findings as a to-do list", migration_text)
+        self.assertIn("mixed workspaces", readme_text)
+        self.assertIn("high-risk runtime paths", readme_text)
+
+    def test_audit_and_update_skip_runtime_generated_and_session_paths(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            project_dir = Path(tmp_dir)
+            (project_dir / "AGENTS.md").write_text("# Project Rules\n", encoding="utf-8")
+
+            for directory in (
+                "sessions",
+                "logs",
+                "cache",
+                "generated_assets",
+                "secrets",
+                "credentials",
+                "tokens",
+                ".claude/worktrees/demo",
+            ):
+                path = project_dir / directory
+                path.mkdir(parents=True)
+                (path / "tool.py").write_text("def unsafe():\n    return 1\n", encoding="utf-8")
+
+            source_dir = project_dir / "src"
+            source_dir.mkdir()
+            (source_dir / "safe_tool.py").write_text("def safe():\n    return 1\n", encoding="utf-8")
+
+            audit_result = self.run_script(AUDIT_SCRIPT, project_dir, "--json", check=False)
+            audit_report = json.loads(audit_result.stdout)
+            finding_paths = {item["path"] for item in audit_report["findings"]}
+            self.assertIn("src/safe_tool.py", finding_paths)
+            self.assertNotIn("sessions/tool.py", finding_paths)
+            self.assertNotIn("logs/tool.py", finding_paths)
+            self.assertNotIn("cache/tool.py", finding_paths)
+            self.assertNotIn("generated_assets/tool.py", finding_paths)
+            self.assertNotIn("secrets/tool.py", finding_paths)
+            self.assertNotIn("credentials/tool.py", finding_paths)
+            self.assertNotIn("tokens/tool.py", finding_paths)
+            self.assertNotIn(".claude/worktrees/demo/tool.py", finding_paths)
+
+            dry_run = self.run_script(UPDATE_SCRIPT, project_dir, "--json")
+            dry_report = json.loads(dry_run.stdout)
+            self.assertEqual(dry_report["planned_files"], ["src/safe_tool.py"])
+
+    def test_update_skips_trading_and_runtime_critical_paths(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            project_dir = Path(tmp_dir)
+            (project_dir / "AGENTS.md").write_text("# Project Rules\n", encoding="utf-8")
+
+            high_risk_files = [
+                project_dir / "runtime" / "session_runner.py",
+                project_dir / "remote" / "run_round.sh",
+                project_dir / "gateway" / "order.py",
+                project_dir / "scripts" / "htx_live.py",
+            ]
+            for path in high_risk_files:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("def risky():\n    return 1\n", encoding="utf-8")
+
+            research_dir = project_dir / "research"
+            research_dir.mkdir()
+            (research_dir / "notebook_tool.py").write_text("def research():\n    return 1\n", encoding="utf-8")
+
+            dry_run = self.run_script(UPDATE_SCRIPT, project_dir, "--json")
+            dry_report = json.loads(dry_run.stdout)
+            self.assertEqual(dry_report["planned_files"], ["research/notebook_tool.py"])
+
 
 if __name__ == "__main__":
     unittest.main()
