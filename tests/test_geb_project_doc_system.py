@@ -16,6 +16,7 @@ AUDIT_SCRIPT = SKILL_DIR / "scripts" / "audit_geb_docs.py"
 UPDATE_SCRIPT = SKILL_DIR / "scripts" / "update_file_headers.py"
 SKILL_FILE = SKILL_DIR / "SKILL.md"
 MIGRATION_FILE = SKILL_DIR / "references" / "migration.md"
+OPENAI_METADATA_FILE = SKILL_DIR / "agents" / "openai.yaml"
 README_FILE = REPO_ROOT / "README.md"
 INSTALL_SCRIPT = REPO_ROOT / "scripts" / "install_geb_project_doc_system.sh"
 
@@ -141,12 +142,16 @@ class GebProjectDocSystemTests(unittest.TestCase):
     def test_skill_documents_first_run_bootstrap(self):
         skill_text = SKILL_FILE.read_text(encoding="utf-8")
         migration_text = MIGRATION_FILE.read_text(encoding="utf-8")
+        openai_metadata_text = OPENAI_METADATA_FILE.read_text(encoding="utf-8")
         readme_text = README_FILE.read_text(encoding="utf-8")
         install_script_text = INSTALL_SCRIPT.read_text(encoding="utf-8")
 
         self.assertIn("## First-run Bootstrap", skill_text)
         self.assertIn("first-run inventory", skill_text)
         self.assertIn("Agent runtime", skill_text)
+        self.assertIn("first-run inventory", openai_metadata_text)
+        self.assertIn("safe bootstrap", openai_metadata_text)
+        self.assertIn("before writing bulk project docs", openai_metadata_text)
         self.assertIn("## First-run Inventory", migration_text)
         self.assertIn("secrets", migration_text)
         self.assertIn("sessions", migration_text)
