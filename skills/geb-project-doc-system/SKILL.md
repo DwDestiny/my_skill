@@ -62,3 +62,9 @@ python3 skills/geb-project-doc-system/scripts/update_file_headers.py <repo> --ap
 | Writing long file headers | Keep L3 to 3-5 lines |
 | Trusting prompt hooks for bulk edits | Use scripts with dry-run and idempotency |
 | Migrating an entire monorepo at once | Migrate one module at a time |
+
+## Attribution and License Boundary
+
+This skill is inspired by Zhao Chunxiang's public GEB fractal documentation idea and references the ecosystem around L1/L2/L3 project maps.
+
+It also learned from the open-source shape of `Claudate/project-multilevel-index` and `longranger2/project-doc-bootstrap`, both published under MIT licenses. This repository's first `geb-project-doc-system` implementation is independent: its Skill text and scripts are not copied from those projects. If future changes copy or adapt third-party code, preserve the original copyright notice and license text.
