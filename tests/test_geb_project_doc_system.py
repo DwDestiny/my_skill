@@ -14,6 +14,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILL_DIR = REPO_ROOT / "skills" / "geb-project-doc-system"
 AUDIT_SCRIPT = SKILL_DIR / "scripts" / "audit_geb_docs.py"
 UPDATE_SCRIPT = SKILL_DIR / "scripts" / "update_file_headers.py"
+SKILL_FILE = SKILL_DIR / "SKILL.md"
+MIGRATION_FILE = SKILL_DIR / "references" / "migration.md"
+README_FILE = REPO_ROOT / "README.md"
+INSTALL_SCRIPT = REPO_ROOT / "scripts" / "install_geb_project_doc_system.sh"
 
 
 class GebProjectDocSystemTests(unittest.TestCase):
@@ -133,6 +137,24 @@ class GebProjectDocSystemTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             report = json.loads(result.stdout)
             self.assertIn("missing_l2_doc", {item["code"] for item in report["findings"]})
+
+    def test_skill_documents_first_run_bootstrap(self):
+        skill_text = SKILL_FILE.read_text(encoding="utf-8")
+        migration_text = MIGRATION_FILE.read_text(encoding="utf-8")
+        readme_text = README_FILE.read_text(encoding="utf-8")
+        install_script_text = INSTALL_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("## First-run Bootstrap", skill_text)
+        self.assertIn("first-run inventory", skill_text)
+        self.assertIn("Agent runtime", skill_text)
+        self.assertIn("## First-run Inventory", migration_text)
+        self.assertIn("secrets", migration_text)
+        self.assertIn("sessions", migration_text)
+        self.assertIn("worktrees", migration_text)
+        self.assertIn("## First-time Bootstrap", readme_text)
+        self.assertIn("sample project", readme_text)
+        self.assertIn("First-run bootstrap", install_script_text)
+        self.assertIn("first-run inventory", install_script_text)
 
 
 if __name__ == "__main__":

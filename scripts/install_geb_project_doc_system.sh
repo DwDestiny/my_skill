@@ -103,3 +103,15 @@ done
 for global_doc in "${global_docs[@]}"; do
   install_snippet "${global_doc}"
 done
+
+cat <<'EOF'
+
+First-run bootstrap:
+1. Run a first-run inventory before writing headers.
+2. Classify targets as project repositories, Agent runtime, active sessions, or archives.
+3. Pick one small sample project first, then expand module by module.
+4. Keep secrets, sessions, logs, caches, worktrees, generated output, browser profiles, and databases out of bulk L3 updates.
+
+Suggested next step:
+python3 skills/geb-project-doc-system/scripts/audit_geb_docs.py /path/to/repo --json
+EOF

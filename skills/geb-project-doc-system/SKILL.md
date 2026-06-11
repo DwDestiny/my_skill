@@ -1,6 +1,6 @@
 ---
 name: geb-project-doc-system
-description: Use when working in medium or large code repositories that need AI-facing project documentation, CLAUDE.md, AGENTS.md, folder guides, file headers, Input/Output/Pos notes, module boundaries, structure-change documentation sync, or context/token reduction.
+description: Use when working in medium or large code repositories that need AI-facing project documentation, first-run inventory, repository onboarding, CLAUDE.md, AGENTS.md, folder guides, file headers, Input/Output/Pos notes, module boundaries, structure-change documentation sync, or context/token reduction.
 ---
 
 # GEB Project Doc System
@@ -23,11 +23,25 @@ Do not use for tiny throwaway prototypes unless the user explicitly wants durabl
 
 ## Workflow
 
+If this is the first time using GEB in a repository or local agent workspace, run the First-run Bootstrap before editing docs in bulk.
+
 1. Read the project root `AGENTS.md` or `CLAUDE.md` before changing code.
 2. Read the nearest folder guide before editing a module.
 3. Read target file L3 headers before opening full files.
 4. When changing structure, public APIs, dependencies, or module ownership, update L3 first, then L2, then L1 if the project map changed.
 5. Run `scripts/audit_geb_docs.py <repo>` before closing the task.
+
+## First-run Bootstrap
+
+Use a first-run inventory before applying GEB to a project family:
+
+1. Classify each target as a project repository, Agent runtime, active session store, or archive/capability index.
+2. For project repositories, inspect root guides, top folders, tech stack, dirty state, and generated/vendor/cache folders.
+3. For Agent runtime targets, document the governance map only; do not add L3 headers to sessions, logs, secrets, caches, SQLite databases, or browser profiles.
+4. Pick one small sample project or module first, then run `audit_geb_docs.py`.
+5. Add or trim L1, add L2 for one module, dry-run L3 headers, review the plan, then apply only that module.
+
+The first-run inventory should produce a short priority list and exclusion list before any bulk write.
 
 ## Resource Guide
 
