@@ -46,9 +46,12 @@ flowchart LR
 首次接入一个项目或一组本机 Agent 工作区时，先做初始化盘点，不要直接全量写文件头：
 
 1. 列出目标：普通项目仓库、Agent 底座、活跃会话、历史归档分别归类。
-2. 明确排除区：`secrets`、`.env`、`sessions`、`logs`、`cache`、`node_modules`、`venv`、`.claude/worktrees`、生成物、浏览器 profile、数据库。
-3. 先选一个小的样板项目跑通流程，再扩到 P0 项目。
-4. 每个项目先补 L1/L2，最后才按模块 dry-run 并写入 L3。
+2. 如果是混合工作台，先拆开内容工作流、产品子项目、引用代码、生成资产、运行态和活跃源码。
+3. 如果是交易、部署、gateway 或运行时关键仓库，先建 issue 或 issue 草稿，冻结高风险运行路径。
+4. 明确排除区：`secrets`、`.env`、`sessions`、`logs`、`cache`、`node_modules`、`venv`、`.claude/worktrees`、生成物、浏览器 profile、数据库。
+5. 先解释 audit findings 属于源码、生成物、引用代码、产品子项目还是运行态，不要把 findings 当待办清单。
+6. 先选一个小的样板项目跑通流程，再扩到 P0 项目。
+7. 每个项目先补 L1/L2，最后才按模块 dry-run 并写入 L3。
 
 审计一个项目：
 
@@ -59,13 +62,13 @@ python3 skills/geb-project-doc-system/scripts/audit_geb_docs.py /path/to/repo
 先 dry-run 看会补哪些文件头：
 
 ```bash
-python3 skills/geb-project-doc-system/scripts/update_file_headers.py /path/to/repo --json
+python3 skills/geb-project-doc-system/scripts/update_file_headers.py /path/to/repo/safe-module --json
 ```
 
-确认后再写入：
+确认样板模块边界后再写入；不要对混合工作台根目录或运行态根目录直接 `--apply`：
 
 ```bash
-python3 skills/geb-project-doc-system/scripts/update_file_headers.py /path/to/repo --apply
+python3 skills/geb-project-doc-system/scripts/update_file_headers.py /path/to/repo/safe-module --apply
 ```
 
 安装 Git hook：
@@ -182,9 +185,12 @@ The goal is simple: read the map before reading the whole world.
 For the first use in a project or local agent workspace, start with a read-only inventory instead of writing headers immediately:
 
 1. Classify targets as project repositories, Agent runtime, active sessions, or archives.
-2. Exclude `secrets`, `.env`, `sessions`, `logs`, `cache`, `node_modules`, `venv`, `.claude/worktrees`, generated outputs, browser profiles, and databases.
-3. Pick one small sample project first, then expand to P0 projects.
-4. Add or trim L1/L2 before dry-running and applying L3 headers module by module.
+2. For mixed workspaces, split content workflows, product subprojects, reference code, generated assets, runtime state, and active source code.
+3. For trading, deployment, gateway, or other high-risk runtime paths, create an issue or issue draft before writing docs.
+4. Exclude `secrets`, `.env`, `sessions`, `logs`, `cache`, `node_modules`, `venv`, `.claude/worktrees`, generated outputs, browser profiles, and databases.
+5. Classify audit findings before action; do not treat them as a to-do list.
+6. Pick one small sample project first, then expand to P0 projects.
+7. Add or trim L1/L2 before dry-running and applying L3 headers module by module.
 
 Audit a repository:
 
@@ -195,13 +201,13 @@ python3 skills/geb-project-doc-system/scripts/audit_geb_docs.py /path/to/repo
 Preview missing file headers:
 
 ```bash
-python3 skills/geb-project-doc-system/scripts/update_file_headers.py /path/to/repo --json
+python3 skills/geb-project-doc-system/scripts/update_file_headers.py /path/to/repo/safe-module --json
 ```
 
-Apply headers after reviewing the dry run:
+Apply headers only after reviewing the sample module boundary; do not run `--apply` directly on a mixed workspace root or runtime root:
 
 ```bash
-python3 skills/geb-project-doc-system/scripts/update_file_headers.py /path/to/repo --apply
+python3 skills/geb-project-doc-system/scripts/update_file_headers.py /path/to/repo/safe-module --apply
 ```
 
 Install the pre-commit hook:

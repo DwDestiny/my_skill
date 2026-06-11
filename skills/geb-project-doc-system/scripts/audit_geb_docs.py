@@ -40,19 +40,51 @@ CODE_EXTENSIONS = {
 }
 
 EXCLUDED_DIRS = {
+    ".cache",
     ".git",
     ".hg",
+    ".pytest_cache",
+    ".serena",
     ".svn",
     ".venv",
     ".worktrees",
     "__pycache__",
+    "archived_sessions",
     "build",
+    "cache",
     "coverage",
+    "credentials",
     "dist",
+    "generated",
+    "generated_assets",
+    "generated_images",
+    "log",
+    "logs",
     "node_modules",
+    "outbox",
+    "remote",
+    "runtime",
+    "session_archives",
+    "sessions",
     "site-packages",
+    "secrets",
+    "tokens",
+    "tmp",
     "vendor",
     "venv",
+    "worktrees",
+}
+
+HIGH_RISK_FILE_NAME_FRAGMENTS = {
+    "executor",
+    "htx_live",
+    "live_runner",
+    "run_round",
+    "runtime_session",
+}
+
+HIGH_RISK_PATH_PAIRS = {
+    ("gateway", "order.py"),
 }
 
 MAX_FILE_BYTES = 500_000
@@ -75,10 +107,19 @@ def is_code_file(path: Path) -> bool:
     return path.suffix.lower() in CODE_EXTENSIONS and path.is_file()
 
 
+def should_skip_path(project_dir: Path, path: Path) -> bool:
+    relative_parts = path.relative_to(project_dir).parts
+    if any(part in EXCLUDED_DIRS for part in relative_parts):
+        return True
+    if any(fragment in path.name for fragment in HIGH_RISK_FILE_NAME_FRAGMENTS):
+        return True
+    return any(pair[0] in relative_parts and path.name == pair[1] for pair in HIGH_RISK_PATH_PAIRS)
+
+
 def iter_code_files(project_dir: Path) -> list[Path]:
     code_files: list[Path] = []
     for path in project_dir.rglob("*"):
-        if any(part in EXCLUDED_DIRS for part in path.relative_to(project_dir).parts):
+        if should_skip_path(project_dir, path):
             continue
         if not is_code_file(path):
             continue
