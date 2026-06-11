@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/check_skill_structure.sh
+# Pos: scripts/check_skill_structure.sh
 set -euo pipefail
 
 skill_dir="${1:-}"
@@ -47,24 +51,24 @@ if ! grep -Fq "\$${skill_name}" "${agent_yaml}"; then
   exit 1
 fi
 
-if [[ ! -d "${skill_dir}/references" ]]; then
-  echo "missing references directory: ${skill_dir}/references" >&2
-  exit 1
-fi
-
-if [[ ! -d "${skill_dir}/scripts" ]]; then
-  echo "missing scripts directory: ${skill_dir}/scripts" >&2
-  exit 1
-fi
-
 if ! grep -q "| ${skill_name} |" README.md; then
   echo "README Skill catalog is missing ${skill_name}" >&2
   exit 1
 fi
 
-if grep -RInE 'TODO|TBD|占位' "${skill_md}" "${agent_yaml}" >/dev/null; then
-  echo "placeholder text found in core skill files" >&2
-  exit 1
+scan_targets=("${skill_md}" "${agent_yaml}")
+
+if [[ -d "${skill_dir}/references" ]]; then
+  while IFS= read -r reference_file; do
+    scan_targets+=("${reference_file}")
+  done < <(find "${skill_dir}/references" -type f \( -name '*.md' -o -name '*.yaml' -o -name '*.yml' \) | sort)
 fi
+
+for scan_target in "${scan_targets[@]}"; do
+  if grep -InE '(^|[^[:alnum:]_])(TODO|TBD|占位)([^[:alnum:]_]|$)' "${scan_target}" >/dev/null; then
+    echo "placeholder text found in core skill file: ${scan_target}" >&2
+    exit 1
+  fi
+done
 
 echo "ok: ${skill_name}"

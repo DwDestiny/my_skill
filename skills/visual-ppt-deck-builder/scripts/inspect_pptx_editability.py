@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by skills/visual-ppt-deck-builder/scripts/inspect_pptx_editability.py
+# Pos: skills/visual-ppt-deck-builder/scripts/inspect_pptx_editability.py
 import argparse
 import html
 import json
