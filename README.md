@@ -43,6 +43,13 @@ flowchart LR
 
 ## 快速开始
 
+首次接入一个项目或一组本机 Agent 工作区时，先做初始化盘点，不要直接全量写文件头：
+
+1. 列出目标：普通项目仓库、Agent 底座、活跃会话、历史归档分别归类。
+2. 明确排除区：`secrets`、`.env`、`sessions`、`logs`、`cache`、`node_modules`、`venv`、`.claude/worktrees`、生成物、浏览器 profile、数据库。
+3. 先选一个小的样板项目跑通流程，再扩到 P0 项目。
+4. 每个项目先补 L1/L2，最后才按模块 dry-run 并写入 L3。
+
 审计一个项目：
 
 ```bash
@@ -169,6 +176,15 @@ Instead of growing one giant global prompt, each workflow becomes a focused Skil
 The goal is simple: read the map before reading the whole world.
 
 ## Quick Start
+
+## First-time Bootstrap
+
+For the first use in a project or local agent workspace, start with a read-only inventory instead of writing headers immediately:
+
+1. Classify targets as project repositories, Agent runtime, active sessions, or archives.
+2. Exclude `secrets`, `.env`, `sessions`, `logs`, `cache`, `node_modules`, `venv`, `.claude/worktrees`, generated outputs, browser profiles, and databases.
+3. Pick one small sample project first, then expand to P0 projects.
+4. Add or trim L1/L2 before dry-running and applying L3 headers module by module.
 
 Audit a repository:
 
