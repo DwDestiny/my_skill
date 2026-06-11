@@ -1,0 +1,147 @@
+{
+  "title": "AI 视觉 PPT 测试",
+  "subtitle": "商业级最小验收样张",
+  "author": "Codex",
+  "theme": {
+    "background": "F7F4EF",
+    "foreground": "17202A",
+    "accent": "1F8A70",
+    "accent_2": "E76F51",
+    "muted": "6B7280",
+    "panel": "FFFFFF",
+    "font_face": "Aptos"
+  },
+  "slides": [
+    {
+      "layout": "title",
+      "title": "AI 视觉 PPT 测试",
+      "subtitle": "验证可编辑 PPTX 生成链路",
+      "kicker": "visual-ppt-deck-builder"
+    },
+    {
+      "layout": "executive_summary",
+      "title": "一页结论",
+      "claim": "高视觉 PPT 的关键是把审美层和可编辑层拆开。",
+      "points": [
+        {
+          "label": "01",
+          "title": "母稿定审美",
+          "body": "先用整页效果图确认风格和构图。"
+        },
+        {
+          "label": "02",
+          "title": "背景去文字",
+          "body": "clean background 不承载正文和数据。"
+        },
+        {
+          "label": "03",
+          "title": "PPT 层重建",
+          "body": "标题、正文、图表都保持可编辑。"
+        }
+      ],
+      "source": "本地测试样例"
+    },
+    {
+      "layout": "architecture",
+      "title": "生产链路",
+      "claim": "流程必须先确认，再生成，再验收。",
+      "layers": [
+        {
+          "title": "确认层",
+          "body": "主题、大纲、风格和 slide plan。"
+        },
+        {
+          "title": "视觉层",
+          "body": "效果图母稿、clean background、透明素材。"
+        },
+        {
+          "title": "可编辑层",
+          "body": "文本、指标、图表、标签和来源说明。"
+        }
+      ],
+      "source": "本地测试样例"
+    },
+    {
+      "layout": "metrics",
+      "title": "验收指标",
+      "claim": "交付前必须同时证明可看、可改、可追溯。",
+      "metrics": [
+        {
+          "value": "100%",
+          "label": "关键文字可编辑"
+        },
+        {
+          "value": "0",
+          "label": "模板词残留"
+        },
+        {
+          "value": "6+",
+          "label": "商业页数门槛"
+        }
+      ],
+      "chart": {
+        "labels": ["审美", "可编辑", "可追溯"],
+        "values": [90, 95, 88],
+        "unit": "%",
+        "source": "本地测试样例"
+      },
+      "source": "本地测试样例"
+    },
+    {
+      "layout": "comparison",
+      "title": "路线对比",
+      "claim": "母稿反拆路线同时保留视觉质量和后期修改空间。",
+      "items": [
+        {
+          "title": "纯图片 PPT",
+          "body": "好看但难修改。"
+        },
+        {
+          "title": "模板转 PPT",
+          "body": "可编辑但视觉容易死板。"
+        },
+        {
+          "title": "母稿反拆",
+          "body": "先定视觉，再重建可编辑层。"
+        }
+      ],
+      "source": "本地测试样例"
+    },
+    {
+      "layout": "roadmap",
+      "title": "执行步骤",
+      "claim": "从主题到交付必须有明确阶段门禁。",
+      "phases": [
+        {
+          "period": "第 1-2 周",
+          "title": "确认",
+          "body": "主题、大纲、风格。"
+        },
+        {
+          "period": "第 3-4 周",
+          "title": "生成",
+          "body": "母稿、背景、素材。"
+        },
+        {
+          "period": "第 5-6 周",
+          "title": "重建",
+          "body": "PPTX 可编辑层。"
+        },
+        {
+          "period": "第 7 周",
+          "title": "验收",
+          "body": "质量检查和预览检查。"
+        }
+      ],
+      "source": "本地测试样例"
+    },
+    {
+      "layout": "risk_next_steps",
+      "title": "风险与下一步",
+      "claim": "最主要风险是把母稿误当最终背景。",
+      "risks": ["背景残留文字", "图表被烤进图片", "安全区被复杂纹理占用"],
+      "actions": ["重做 clean background", "用 PPT 形状重建图表", "导出预览逐页检查"],
+      "source": "本地测试样例"
+    }
+  ]
+}
