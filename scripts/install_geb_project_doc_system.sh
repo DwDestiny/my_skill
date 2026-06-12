@@ -1,110 +1,54 @@
 #!/usr/bin/env bash
 # GEB-L3
-# Input: local my_skill checkout and agent config directories
-# Output: geb-project-doc-system symlinks plus optional global trigger snippets
+# Input: local my_skill checkout and selected onboarding arguments
+# Output: delegated GEB onboarding report plus optional selected writes
 # Pos: scripts/install_geb_project_doc_system.sh
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 skill_name="geb-project-doc-system"
 skill_source="${repo_root}/skills/${skill_name}"
-dry_run="false"
-
-if [[ "${1:-}" == "--dry-run" ]]; then
-  dry_run="true"
-fi
+onboard_script="${skill_source}/scripts/onboard_geb_project_doc_system.py"
 
 if [[ ! -d "${skill_source}" ]]; then
   echo "missing skill source: ${skill_source}" >&2
   exit 2
 fi
 
-skill_dirs=(
-  "${HOME}/.codex/skills"
-  "${HOME}/.agents/skills"
-  "${HOME}/.claude/skills"
-  "${HOME}/.grok/skills"
-  "${HOME}/.config/opencode/skills"
-  "${HOME}/.config/goose/skills"
-  "${HOME}/.cursor/skills"
-  "${HOME}/.gemini/skills"
-  "${HOME}/.gemini/config/skills"
-  "${HOME}/.gemini/antigravity/skills"
-  "${HOME}/.gemini/antigravity-ide/skills"
-  "${HOME}/.trae/skills"
-  "${HOME}/.antigravity/.agents/skills"
-  "${HOME}/.hermes/skills"
-  "${HOME}/.hermes/hermes-agent/skills"
-  "${HOME}/.openclaw/skills"
-  "${HOME}/.openclaw/workspace/skills"
-  "${HOME}/.amp/skills"
-  "${HOME}/.kiro/skills"
-)
+if [[ ! -f "${onboard_script}" ]]; then
+  echo "missing onboarding script: ${onboard_script}" >&2
+  exit 2
+fi
 
-global_docs=(
-  "${HOME}/.codex/AGENTS.md"
-  "${HOME}/.claude/CLAUDE.md"
-  "${HOME}/.grok/AGENTS.md"
-  "${HOME}/.antigravity/AGENTS.md"
-  "${HOME}/.hermes/hermes-agent/AGENTS.md"
-  "${HOME}/AGENTS.md"
-)
-
-snippet_start="<!-- GEB_PROJECT_DOC_SYSTEM_START -->"
-snippet_end="<!-- GEB_PROJECT_DOC_SYSTEM_END -->"
-snippet_body='## GEB 项目文档规范
-
-仓库工作默认遵守 GEB 项目文档规范。结构变更前读取 L1 根文档、L2 目录文档和目标文件 L3 文件头；结构变更后按 L3 -> L2 -> L1 同步更新。初始化、审计、迁移或发现项目文档缺口时，使用 `geb-project-doc-system` Skill。'
-
-install_skill() {
-  local target_dir="$1"
-  local target_path="${target_dir}/${skill_name}"
-
-  [[ -d "${target_dir}" ]] || return 0
-
-  if [[ -e "${target_path}" && ! -L "${target_path}" ]]; then
-    echo "skip existing non-symlink: ${target_path}"
-    return 0
+args=()
+json_mode="false"
+for arg in "$@"; do
+  # Backward compatible dry-run spelling. The onboarding script is dry-run by
+  # default: no writes without --apply.
+  if [[ "${arg}" == "--dry-run" ]]; then
+    continue
   fi
-
-  if [[ "${dry_run}" == "true" ]]; then
-    echo "would link: ${target_path} -> ${skill_source}"
-  else
-    ln -sfn "${skill_source}" "${target_path}"
-    echo "linked: ${target_path} -> ${skill_source}"
+  if [[ "${arg}" == "--json" ]]; then
+    json_mode="true"
   fi
-}
-
-install_snippet() {
-  local doc_path="$1"
-  [[ -f "${doc_path}" ]] || return 0
-
-  if grep -Fq "${snippet_start}" "${doc_path}"; then
-    echo "snippet exists: ${doc_path}"
-    return 0
-  fi
-
-  if [[ "${dry_run}" == "true" ]]; then
-    echo "would append trigger snippet: ${doc_path}"
-  else
-    {
-      printf '\n%s\n' "${snippet_start}"
-      printf '%s\n' "${snippet_body}"
-      printf '%s\n' "${snippet_end}"
-    } >>"${doc_path}"
-    echo "appended trigger snippet: ${doc_path}"
-  fi
-}
-
-for skill_dir in "${skill_dirs[@]}"; do
-  install_skill "${skill_dir}"
+  args+=("${arg}")
 done
 
-for global_doc in "${global_docs[@]}"; do
-  install_snippet "${global_doc}"
-done
-
+if [[ "${json_mode}" != "true" ]]; then
 cat <<'EOF'
+Onboarding flow:
+1. Run onboard_geb_project_doc_system.py to list detected agents.
+2. Choose which agent entries to configure; standard agents only.
+3. Keep plugin runtimes separately; they are not standard agents.
+4. Use --apply only after review. There are no writes without --apply.
+5. Confirm the project candidate list before installing any pre-commit hook.
+6. Finish with an acceptance report and estimated token savings.
+
+Write-side Contract:
+1. For a new project, create or update the L1 root guide.
+2. For a new or expanded module, create or update the L2 folder guide.
+3. For a new source file, test, important config, or durable script, add a short L3 header.
+4. Documentation is part of the change; update L3 -> L2 -> L1 before acceptance.
 
 First-run bootstrap:
 1. Run a first-run inventory before writing headers.
@@ -112,6 +56,7 @@ First-run bootstrap:
 3. Pick one small sample project first, then expand module by module.
 4. Keep secrets, sessions, logs, caches, worktrees, generated output, browser profiles, and databases out of bulk L3 updates.
 
-Suggested next step:
-python3 skills/geb-project-doc-system/scripts/audit_geb_docs.py /path/to/repo --json
 EOF
+fi
+
+exec python3 "${onboard_script}" --skill-source "${skill_source}" "${args[@]}"

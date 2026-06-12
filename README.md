@@ -18,7 +18,7 @@
 |---|---|---|---|
 | product-expert | `skills/product-expert/` | 已入库 | 从一个产品想法出发，完成需求探知、产品定位、MVP 规划、评分和推荐 |
 | visual-ppt-deck-builder | `skills/visual-ppt-deck-builder/` | 已入库 | 从主题、大纲和风格样张出发，生成高视觉质量且可编辑的 PPTX |
-| geb-project-doc-system | `skills/geb-project-doc-system/` | v0.1 | 为大中型代码仓库建立 L1/L2/L3 AI 项目文档体系，减少 Agent 盲读和上下文浪费 |
+| geb-project-doc-system | `skills/geb-project-doc-system/` | v0.2 | 为大中型代码仓库建立 L1/L2/L3 AI 项目文档体系，减少 Agent 盲读和上下文浪费 |
 
 ## 重点：GEB Project Doc System
 
@@ -42,6 +42,24 @@ flowchart LR
 - 你希望减少盲读文件、重复解释和 token 浪费。
 
 ## 快速开始
+
+## 写入侧契约
+
+GEB 不只是读取顺序。新项目要创建或更新 L1 根文档；新增或扩展目录/模块要创建或更新 L2 目录文档；新增源文件、测试、重要配置或长期脚本要补短 L3 文件头。文档是变更的一部分，结构变更验收前必须按 L3 -> L2 -> L1 回写。
+
+## 用户安装向导
+
+第一次做整机接入时，不要静默装到所有目录。先用产品化入口检测本地标准 Agent、插件/能力运行区和项目候选，用户确认后再写入：
+
+```bash
+scripts/install_geb_project_doc_system.sh --json
+scripts/install_geb_project_doc_system.sh --agents codex,claude --apply
+scripts/install_geb_project_doc_system.sh --project /path/to/repo --install-hooks --apply
+```
+
+脚本只做机械发现和执行：发现 Agent 入口、建立 Skill 链接、写入受管理 snippet、安装已确认项目的 hook。已有全局提示词是否语义合格，应由智能体读取后判断，不由脚本猜。
+
+向导交付的结果应包括：已检测的标准 Agent、单列的插件/能力运行区、用户选择的配置范围、项目候选清单、hook 安装状态、验收命令、剩余风险和 estimated token savings。
 
 首次接入一个项目或一组本机 Agent 工作区时，先做初始化盘点，不要直接全量写文件头：
 
@@ -79,11 +97,12 @@ skills/geb-project-doc-system/scripts/install_git_hook.sh /path/to/repo
 
 ## 推荐安装方式
 
-一键安装到本机常见 Agent 目录，并给已有全局规则文件追加短触发声明：
+先运行安装向导做检测；默认只报告，不写入。确认标准 Agent 清单后，再显式选择要配置的 Agent，并用 `--apply` 写入 Skill 链接和全局短提示词。插件/能力运行区会单独列出，不计入标准 Agent。
 
 ```bash
-scripts/install_geb_project_doc_system.sh --dry-run
-scripts/install_geb_project_doc_system.sh
+scripts/install_geb_project_doc_system.sh --json
+scripts/install_geb_project_doc_system.sh --agents codex,claude --apply
+scripts/install_geb_project_doc_system.sh --project /path/to/repo --install-hooks --apply
 ```
 
 也可以手动链接：
@@ -97,8 +116,9 @@ ln -sfn "$(pwd)/skills/geb-project-doc-system" ~/.grok/skills/geb-project-doc-sy
 再在全局 `AGENTS.md` / `CLAUDE.md` 放一段短声明：
 
 ```md
-仓库工作默认遵守 GEB 项目文档规范。结构变更前读取 L1/L2/L3；
-结构变更后同步更新 L3 -> L2 -> L1；初始化、审计或迁移时使用
+仓库工作默认遵守 GEB 项目文档规范。读文件前按 L1/L2/L3 渐进披露；
+写文件时也按 GEB 记录：新项目更新 L1，新模块更新 L2，新文件补短 L3；
+结构变更后同步更新 L3 -> L2 -> L1。初始化、审计或迁移时使用
 `geb-project-doc-system` Skill。
 ```
 
@@ -166,7 +186,7 @@ Instead of growing one giant global prompt, each workflow becomes a focused Skil
 |---|---|---|---|
 | product-expert | `skills/product-expert/` | Available | Product discovery, positioning, MVP planning, scoring, and recommendation |
 | visual-ppt-deck-builder | `skills/visual-ppt-deck-builder/` | Available | Build high-quality editable PPTX decks from a topic, outline, and visual direction |
-| geb-project-doc-system | `skills/geb-project-doc-system/` | v0.1 | Maintain L1/L2/L3 AI-facing project documentation for medium and large code repositories |
+| geb-project-doc-system | `skills/geb-project-doc-system/` | v0.2 | Maintain L1/L2/L3 AI-facing project documentation for medium and large code repositories |
 
 ## GEB Project Doc System
 
@@ -179,6 +199,24 @@ Instead of growing one giant global prompt, each workflow becomes a focused Skil
 The goal is simple: read the map before reading the whole world.
 
 ## Quick Start
+
+## Write-side Contract
+
+GEB is not only a reading order. For a new project, create or update the L1 root guide. For a new or expanded module, create or update the L2 folder guide. For a new source file, test file, important config file, or durable script, add a short L3 header. Documentation is part of the change, so structure changes update L3 -> L2 -> L1 before acceptance.
+
+## User Onboarding Flow
+
+For a first machine-wide rollout, do not install everywhere silently.
+
+Use `scripts/onboard_geb_project_doc_system.py` as the productized entrypoint. It has no writes without --apply. It configures standard agents only, lists plugin runtimes separately, can install a pre-commit hook for confirmed Git projects, and finishes with an acceptance report.
+
+1. First detect local agents and show a detected agent list.
+2. Ask the user to choose which agents to configure.
+3. Install the Skill and short global prompt only for the selected agents.
+4. Build a project candidate list from owned, active repositories.
+5. Ask the user to confirm the project candidate list before bulk changes.
+6. Produce a digitalization plan, then migrate L1/L2/L3 module by module.
+7. Finish with an acceptance report that lists configured agents, upgraded projects, exclusions, validation commands, residual risks, and estimated token savings.
 
 ## First-time Bootstrap
 
@@ -218,12 +256,15 @@ skills/geb-project-doc-system/scripts/install_git_hook.sh /path/to/repo
 
 ## Installation
 
-Install into common local agent skill directories and append a short trigger rule to existing global rule files:
+Run the onboarding wrapper first. It reports by default and writes nothing until the user selects standard agents or projects and passes `--apply`. Plugin/capability runtimes are listed separately and are not treated as standard agents.
 
 ```bash
-scripts/install_geb_project_doc_system.sh --dry-run
-scripts/install_geb_project_doc_system.sh
+scripts/install_geb_project_doc_system.sh --json
+scripts/install_geb_project_doc_system.sh --agents codex,claude --apply
+scripts/install_geb_project_doc_system.sh --project /path/to/repo --install-hooks --apply
 ```
+
+The script handles mechanical work only: detecting entries, linking the Skill, writing the managed snippet, and installing confirmed project hooks. Existing global prompt quality is a semantic review task for the agent, not a script heuristic.
 
 Or link the Skill manually:
 
@@ -237,9 +278,11 @@ Then add a short global rule to `AGENTS.md` / `CLAUDE.md`:
 
 ```md
 Repository work follows the GEB project documentation standard by default.
-Before structural changes, read L1/L2/L3. After structural changes, update
-L3 -> L2 -> L1. Use the `geb-project-doc-system` Skill for initialization,
-audit, or migration.
+Before reading files, load L1/L2/L3 progressively. When writing files,
+create or update L1 for new projects, L2 for new modules, and short L3
+headers for new source/test/config/script files. After structural changes,
+update L3 -> L2 -> L1. Use the `geb-project-doc-system` Skill for
+initialization, audit, or migration.
 ```
 
 Keep global prompts short. Load the Skill when detail is needed.

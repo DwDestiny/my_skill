@@ -22,6 +22,16 @@ Required inventory output:
 - Dirty-state summary for git repositories.
 - Finding classification: source code, product subproject, reference code, generated assets, runtime state, high-risk path, or deferred.
 
+Initialization deliverables:
+
+- `inventory report`: one concise report per target family with classification, root docs, stack signals, dirty state, audit counts, and human-readable risk notes.
+- `priority list`: the sample project, P0 project repositories, P0 Agent runtime maps, and P1/P2 follow-ups in execution order.
+- `exclusion list`: paths that must not receive L2/L3 changes in the first pass, including generated, vendor, runtime, secret, cache, log, session, archive, and database paths.
+- `verification log`: read-only commands, audit commands, local checks, skipped commands, and why skipped commands would be unsafe or too expensive.
+- `first safe batch`: the smallest low-risk module, folder guide, or Agent governance map that can be migrated and verified before wider rollout.
+
+If the inventory reveals mixed ownership, high-risk runtime paths, live trading, unclear generated output, or unknown repository authority, stop after inventory. Do not apply L2 or L3 changes until the first safe batch is reviewed.
+
 Do not write anything until this inventory is reviewed.
 
 Do not treat audit findings as a to-do list. The audit shows where documentation might be missing; the first-run inventory decides which findings are valid first-batch work.
