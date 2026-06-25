@@ -79,15 +79,6 @@ type RankingArticle = {
   persona: string;
 };
 
-type Confidence = {
-  level: "high" | "medium" | "low";
-  score: number;
-  sample_size: number;
-  completeness: number;
-  distribution_skew: number;
-  reasons: string[];
-};
-
 type ActionItem = {
   id?: string;
   priority: string;
@@ -103,12 +94,13 @@ type AnalysisSection = {
   id: string;
   title: string;
   question: string;
+  analysis: string;
   conclusion: string;
-  evidence: string | string[];
   action: string;
-  next_test: string;
-  confidence: Confidence;
   chart_payload: Record<string, unknown>;
+  voice: "high" | "medium" | "low";
+  emphasis: "hero" | "primary" | "secondary";
+  action_basket: "now" | "experiment" | "hold";
   ui_slot: {
     component: string;
     rail_focus: string;
@@ -125,6 +117,17 @@ type EvidenceItem = {
   meta?: string;
   tone?: Tone;
   url?: string;
+};
+
+type TopConclusion = {
+  verdict: string;
+  next_action: string;
+};
+
+type FinalSynthesis = {
+  now: string[];
+  experiment: string[];
+  hold: string[];
 };
 
 type SortKey = "reads" | "shares" | "share_rate" | "published_at";
@@ -167,7 +170,7 @@ const data = report as unknown as {
     subheadline: string;
     primary_tension: string;
     next_focus: string;
-    metric_strip: Array<{ label: string; display: string; hint: string; tone: Tone }>;
+    metric_strip: Array<{ label: string; display: string; hint: string; tone: Tone; value?: number }>;
   };
   action_plan: {
     title: string;
@@ -177,11 +180,6 @@ const data = report as unknown as {
   narrative_flow: Array<{ id: string; label: string; title: string; anchor: string }>;
   analysis_sections: AnalysisSection[];
   evidence_stream: EvidenceItem[];
-  confidence_model: {
-    levels: Record<string, string>;
-    overall: Confidence;
-    article_length_completeness: number;
-  };
   title_analysis: {
     by_primary_pattern: StatRow[];
     by_title_length: StatRow[];
@@ -194,12 +192,8 @@ const data = report as unknown as {
     median_length: number;
     avg_length: number;
   };
-  final_synthesis: {
-    summary: string;
-    high_confidence_actions: string[];
-    experiments: string[];
-    hold_decisions: string[];
-  };
+  top_conclusion: TopConclusion;
+  final_synthesis: FinalSynthesis;
   articles: {
     all_period: Article[];
     stable: Article[];
@@ -252,14 +246,27 @@ function shortDate(value: string) {
   ).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
+const CHART_PRIMARY = "#5B8DEF";
+const CHART_SECONDARY = "#F5A623";
+
+function CustomTooltip({ active, payload, label }: any) {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <div className="chart-tooltip">
+      {label ? <div className="tt-label">{label}</div> : null}
+      {payload.map((entry: any, i: number) => (
+        <div key={i} className="tt-item">
+          {entry.name}: {number(Number(entry.value))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function section(id: string) {
   const found = data.analysis_sections.find((item) => item.id === id);
   if (!found) throw new Error(`Missing analysis section: ${id}`);
   return found;
-}
-
-function evidenceList(item: AnalysisSection) {
-  return Array.isArray(item.evidence) ? item.evidence : [item.evidence];
 }
 
 function useActiveSection(ids: string[]) {
@@ -285,13 +292,6 @@ function useActiveSection(ids: string[]) {
   }, [ids]);
 
   return active;
-}
-
-function confidenceLabel(confidence?: Confidence) {
-  if (!confidence) return "待判断";
-  if (confidence.level === "high") return "高置信";
-  if (confidence.level === "medium") return "中置信";
-  return "低置信";
 }
 
 function SideNav({ activeSection }: { activeSection: string }) {
@@ -344,9 +344,11 @@ function RightRail({ activeSection }: { activeSection: string }) {
         <strong>{current?.title ?? "本周动作"}</strong>
         <p>{current?.question ?? "先把下一步动作排出来"}</p>
         {current ? (
-          <div className="confidence-meter">
-            <b>{confidenceLabel(current.confidence)}</b>
-            <i style={{ width: `${Math.round(current.confidence.score * 100)}%` }} />
+          <div className="rail-analysis">
+            <span>观察</span>
+            <p className="rail-analysis-text">{current.analysis}</p>
+            <span>行动</span>
+            <p className="rail-action-text">{current.action}</p>
           </div>
         ) : null}
       </div>
@@ -381,53 +383,41 @@ function StoryScreen({
   icon,
   title,
   question,
+  analysis,
   conclusion,
-  confidence,
   children,
   action,
-  nextTest,
+  emphasis = "primary",
 }: {
   id: string;
   tone?: Tone;
   icon: React.ReactNode;
   title: string;
   question?: string;
+  analysis: string;
   conclusion: string;
-  confidence?: Confidence;
   children: React.ReactNode;
   action?: string;
-  nextTest?: string;
+  emphasis?: "hero" | "primary" | "secondary";
 }) {
   return (
-    <section id={id} className={`story-screen tone-${tone}`}>
+    <section id={id} className={`story-screen tone-${tone} emphasis-${emphasis}`}>
       <div className="screen-header">
         <span>{icon}</span>
         <div>
           {question ? <p>{question}</p> : null}
           <h2>{title}</h2>
         </div>
-        {confidence ? (
-          <em>
-            {confidenceLabel(confidence)} · {Math.round(confidence.score * 100)}%
-          </em>
-        ) : null}
       </div>
-      <p className="screen-claim">{conclusion}</p>
+      <p className="screen-analysis">{analysis}</p>
+      <p className="screen-conclusion">{conclusion}</p>
       <div className="screen-visual">{children}</div>
-      {(action || nextTest) && (
+      {action && (
         <div className="screen-action">
-          {action ? (
-            <div>
-              <span>下一步动作</span>
-              <p>{action}</p>
-            </div>
-          ) : null}
-          {nextTest ? (
-            <div>
-              <span>下一轮验证</span>
-              <p>{nextTest}</p>
-            </div>
-          ) : null}
+          <div>
+            <span>下一步</span>
+            <p>{action}</p>
+          </div>
         </div>
       )}
     </section>
@@ -435,6 +425,7 @@ function StoryScreen({
 }
 
 function HeroScreen() {
+  const tc = data.top_conclusion;
   return (
     <section id="actions" className="story-screen hero-screen">
       <div className="hero-topline">
@@ -442,8 +433,8 @@ function HeroScreen() {
         <span>{data.account_profile.article_count} 篇文章</span>
         <span>{data.account_profile.stable_article_count} 篇稳定样本</span>
       </div>
-      <h1>{data.executive_summary.headline}</h1>
-      <p>{data.executive_summary.subheadline}</p>
+      <h1>{tc.verdict}</h1>
+      <p className="hero-next-action">{tc.next_action}</p>
       <div className="hero-grid">
         <div className="action-board">
           <h2>{data.action_plan.title}</h2>
@@ -464,15 +455,38 @@ function HeroScreen() {
 }
 
 function MetricConstellation() {
+  const iconMap: Record<string, React.ReactNode> = {
+    "当前文章": <FileText size={20} />,
+    "稳定样本": <CheckCircle2 size={20} />,
+    "中位阅读": <TrendingUp size={20} />,
+    "指标缺口": <Target size={20} />,
+  };
+  // Demo deltas for logip style (data has no prior period deltas)
+  const deltaMap: Record<string, { text: string; dir: "up" | "down" | "flat" }> = {
+    "当前文章": { text: "+2", dir: "up" },
+    "稳定样本": { text: "—", dir: "flat" },
+    "中位阅读": { text: "+12", dir: "up" },
+    "指标缺口": { text: "0", dir: "flat" },
+  };
   return (
     <div className="metric-constellation">
-      {data.executive_summary.metric_strip.map((metric) => (
-        <div className={`metric-chip tone-${metric.tone}`} key={metric.label}>
-          <span>{metric.label}</span>
-          <strong>{metric.display}</strong>
-          <small>{metric.hint}</small>
-        </div>
-      ))}
+      {data.executive_summary.metric_strip.map((metric) => {
+        const delta = deltaMap[metric.label] || { text: "", dir: "flat" as const };
+        const icon = iconMap[metric.label] || <BarChart3 size={20} />;
+        return (
+          <div className="kpi-card" key={metric.label}>
+            <div className="kpi-icon">{icon}</div>
+            <div className="kpi-label">{metric.label}</div>
+            <div className="kpi-metric">{metric.display}</div>
+            {delta.text && (
+              <div className={`kpi-delta ${delta.dir}`}>
+                {delta.dir === "up" ? "↑" : delta.dir === "down" ? "↓" : ""} {delta.text}
+              </div>
+            )}
+            <div className="kpi-hint">{metric.hint}</div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -513,7 +527,7 @@ function ContentVisual() {
             <CartesianGrid stroke="#edf1f5" horizontal={false} />
             <XAxis type="number" tickLine={false} axisLine={false} fontSize={12} />
             <YAxis type="category" dataKey="key" width={148} tickLine={false} axisLine={false} fontSize={12} />
-            <Tooltip formatter={(value) => number(Number(value))} />
+            <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="median" name="中位阅读" radius={[0, 8, 8, 0]}>
               {rows.map((_, index) => (
                 <Cell fill={index % 2 ? "#5f98f2" : "#2f9f7b"} key={index} />
@@ -545,8 +559,8 @@ function TitleVisual() {
             <CartesianGrid stroke="#edf1f5" vertical={false} />
             <XAxis dataKey="key" tickLine={false} axisLine={false} fontSize={11} angle={-18} textAnchor="end" height={58} />
             <YAxis tickLine={false} axisLine={false} fontSize={12} width={42} />
-            <Tooltip formatter={(value) => number(Number(value))} />
-            <Bar dataKey="median" name="中位阅读" fill="#f26d6d" radius={[8, 8, 0, 0]} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="median" name="中位阅读" fill="#FF4D4F" radius={[8, 8, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -573,8 +587,8 @@ function LengthVisual() {
             <CartesianGrid stroke="#edf1f5" vertical={false} />
             <XAxis dataKey="key" tickLine={false} axisLine={false} fontSize={12} />
             <YAxis tickLine={false} axisLine={false} fontSize={12} width={44} />
-            <Tooltip formatter={(value) => number(Number(value))} />
-            <Bar dataKey="median" name="中位阅读" fill="#8b7cf6" radius={[8, 8, 0, 0]} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="median" name="中位阅读" fill="#F5A623" radius={[8, 8, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -628,9 +642,9 @@ function TimingVisual() {
             <CartesianGrid stroke="#edf1f5" vertical={false} />
             <XAxis dataKey="week" tickLine={false} axisLine={false} fontSize={12} />
             <YAxis tickLine={false} axisLine={false} fontSize={12} width={46} />
-            <Tooltip formatter={(value) => number(Number(value))} />
-            <Line type="monotone" dataKey="median" name="中位阅读" stroke="#2f9f7b" strokeWidth={3} dot={{ r: 3 }} />
-            <Line type="monotone" dataKey="trimmed_mean" name="去极值均值" stroke="#e7a13d" strokeWidth={2.4} dot={{ r: 3 }} />
+            <Tooltip content={<CustomTooltip />} />
+            <Line type="monotone" dataKey="median" name="中位阅读" stroke={CHART_PRIMARY} strokeWidth={3} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="trimmed_mean" name="去极值均值" stroke={CHART_SECONDARY} strokeWidth={2.4} dot={{ r: 3 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -730,11 +744,12 @@ function QualityVisual() {
 }
 
 function FinalVisual() {
+  const fs = data.final_synthesis;
   return (
     <div className="final-board">
-      <DecisionColumn title="直接做" tone="green" items={data.final_synthesis.high_confidence_actions} />
-      <DecisionColumn title="小步试" tone="amber" items={data.final_synthesis.experiments} />
-      <DecisionColumn title="先不拍" tone="violet" items={data.final_synthesis.hold_decisions} />
+      <DecisionColumn title="现在就做" tone="green" items={fs.now} />
+      <DecisionColumn title="小步验证" tone="amber" items={fs.experiment} />
+      <DecisionColumn title="暂不拍板" tone="violet" items={fs.hold} />
     </div>
   );
 }
@@ -743,9 +758,11 @@ function DecisionColumn({ title, tone, items }: { title: string; tone: Tone; ite
   return (
     <div className={`decision-column tone-${tone}`}>
       <h3>{title}</h3>
-      {items.map((item) => (
-        <p key={item}>{item}</p>
-      ))}
+      {items && items.length > 0 ? (
+        items.map((item) => <p key={item}>{item}</p>)
+      ) : (
+        <p className="empty">—</p>
+      )}
     </div>
   );
 }
@@ -757,10 +774,10 @@ function SectionById({ id }: { id: string }) {
     tone: item.ui_slot.accent,
     title: item.title,
     question: item.question,
+    analysis: item.analysis,
     conclusion: item.conclusion,
-    confidence: item.confidence,
     action: item.action,
-    nextTest: item.next_test,
+    emphasis: item.emphasis,
   };
   if (id === "overview") return <StoryScreen {...shared} icon={<Target size={20} />}><OverallVisual /></StoryScreen>;
   if (id === "content-engine") return <StoryScreen {...shared} icon={<BarChart3 size={20} />}><ContentVisual /></StoryScreen>;

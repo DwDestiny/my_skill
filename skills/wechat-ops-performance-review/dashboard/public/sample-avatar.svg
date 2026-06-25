@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="16" y1="16" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F4F5F7"/>
+      <stop offset="100%" stop-color="#E6E8EC"/>
+    </linearGradient>
+  </defs>
+  <!-- outer circle subtle -->
+  <circle cx="32" cy="32" r="31" fill="url(#bg)" stroke="#E6E8EC" stroke-width="1"/>
+  <!-- soft primary tint inner -->
+  <circle cx="32" cy="32" r="24" fill="#5B8DEF" fill-opacity="0.12"/>
+  <!-- abstract neutral mark: rounded square + dot for SaaS neutral -->
+  <rect x="23" y="23" width="18" height="18" rx="5" fill="#5B8DEF" fill-opacity="0.85"/>
+  <circle cx="32" cy="32" r="4" fill="#FFFFFF"/>
+</svg>
