@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass
@@ -601,6 +602,26 @@ def confidence_for_records(
     }
 
 
+def voice_for_confidence(confidence: dict[str, Any] | str) -> str:
+    if isinstance(confidence, dict):
+        level = confidence.get("level", "medium")
+    else:
+        level = str(confidence) if confidence else "medium"
+    if level not in ("high", "medium", "low"):
+        level = "medium"
+    return level
+
+
+def emphasis_for_confidence(confidence: dict[str, Any] | str) -> str:
+    level = voice_for_confidence(confidence)
+    return {"high": "hero", "medium": "primary", "low": "secondary"}.get(level, "primary")
+
+
+def action_basket_for_confidence(confidence: dict[str, Any] | str) -> str:
+    level = voice_for_confidence(confidence)
+    return {"high": "now", "medium": "experiment", "low": "hold"}.get(level, "experiment")
+
+
 def build_confidence_model(stable: list[dict[str, Any]]) -> dict[str, Any]:
     matched = [article for article in stable if article.get("article_length_chars", 0) > 0]
     completeness = len(matched) / len(stable) if stable else 0
@@ -963,6 +984,33 @@ def section_slot(section_id: str) -> dict[str, str]:
     return dict(SECTION_UI_SLOTS[section_id])
 
 
+def build_top_conclusion(dataset: dict[str, Any]) -> dict[str, Any]:
+    overall = dataset.get("analysis", {}).get("overall", {})
+    sections = {s["id"]: s for s in dataset.get("analysis_sections", [])}
+    ov = sections.get("overview", {})
+    conf = dataset.get("confidence_model", {}).get("overall", {})
+    level = voice_for_confidence(conf)
+    median = overall.get("median", 0)
+    # verdict <=8 chars, core judgment from overview facts
+    if median <= 300:
+        verdict = "稳定底盘没起来"
+    else:
+        verdict = "底盘已初步抬升"
+    if len(verdict) > 8:
+        verdict = verdict[:8]
+    # next_action <=24 chars, from high prio, modulated by level
+    base_action = "抬中位阅读、拆开管理三件事"
+    if level == "high":
+        next_action = "→ 立即执行IP主线与中位验证"
+    elif level == "low":
+        next_action = "→ 继续观察底盘再定动作"
+    else:
+        next_action = f"→ {base_action}"
+    if len(next_action) > 24:
+        next_action = next_action[:24]
+    return {"verdict": verdict, "next_action": next_action}
+
+
 def build_analysis_sections(dataset: dict[str, Any]) -> list[dict[str, Any]]:
     overall = dataset["analysis"]["overall"]
     quality = dataset["data_quality"]
@@ -989,192 +1037,246 @@ def build_analysis_sections(dataset: dict[str, Any]) -> list[dict[str, Any]]:
     top_length = max(length_rows, key=lambda row: (row["median"], row["p75"], row["avg"]), default={})
     length_completeness = confidence_model["article_length_completeness"]
 
-    return [
+    # collect raw conf for _internal (never attach naked to sections)
+    section_confs: dict[str, dict[str, Any]] = {}
+
+    def _conf_for(sec_id: str, conf_obj: dict[str, Any]) -> dict[str, Any]:
+        section_confs[sec_id] = conf_obj
+        return conf_obj
+
+    # precompute per section confs (calc logic untouched)
+    conf_overview = _conf_for("overview", confidence_model["overall"])
+    conf_content = _conf_for("content-engine", confidence_for_records(stable, note="按内容类型分组"))
+    conf_title = _conf_for("title-structure", confidence_for_records(stable, note="标题结构来自规则化解析"))
+    conf_length = _conf_for(
+        "article-length",
+        confidence_for_records(stable, completeness=length_completeness, note="正文长度依赖本地文章匹配"),
+    )
+    conf_audience = _conf_for("audience", confidence_for_records(stable, note="人群和痛点来自规则化标签"))
+    conf_timing = _conf_for("timing", confidence_for_records(stable, target_sample=24, note="按小时切分后单格样本仍偏少"))
+    conf_evidence = _conf_for("evidence", confidence_for_records(stable, note="排行榜只解释样本,不单独推导规律"))
+    conf_quality = _conf_for(
+        "quality",
+        confidence_for_records(stable, completeness=1.0 if quality["metric_pending_count"] == 0 else 0.72, note="核心指标完整性"),
+    )
+    conf_final = _conf_for("final-synthesis", confidence_model["overall"])
+
+    def _tone_conclusion(base: str, voice: str) -> str:
+        if voice == "high":
+            return base
+        if voice == "low":
+            if not base.startswith("初步"):
+                return "初步迹象显示" + base
+            return base
+        return base
+
+    def _tone_action(base: str, voice: str) -> str:
+        if voice == "high":
+            if not (base.startswith("立即") or base.startswith("必须")):
+                return "立即" + base if len(base) < 28 else base
+            return base
+        if voice == "low":
+            return "可继续观察" + base if not base.startswith("可") else base
+        return base
+
+    overview_voice = voice_for_confidence(conf_overview)
+    overview_conc = _tone_conclusion("账号能打爆款，稳定中位数仍未抬升。", overview_voice)
+    overview_act = _tone_action("每周复盘同时看类型中位数和P75是否上移。", overview_voice)
+
+    content_voice = voice_for_confidence(conf_content)
+    content_conc = _tone_conclusion("风险羊毛负责推荐入口，工作流主攻IP心智。", content_voice)
+    content_act = _tone_action("工作流标题改写用户收益，风险文每天最多1篇。", content_voice)
+
+    title_voice = voice_for_confidence(conf_title)
+    title_conc = _tone_conclusion("标题先给损失收益或替代关系，再放产品名。", title_voice)
+    title_act = _tone_action("每篇备收益风险替代版供挑选。", title_voice)
+
+    length_voice = voice_for_confidence(conf_length)
+    length_conc = _tone_conclusion("长度不是越短越好，关键控制信息密度与动作服务。", length_voice)
+    length_act = _tone_action("深度文保留空间，每600字加图表清单喘气点。", length_voice)
+
+    audience_voice = voice_for_confidence(conf_audience)
+    audience_conc = _tone_conclusion("读者以账号额度敏感和编程实践者为主，非泛AI用户。", audience_voice)
+    audience_act = _tone_action("开头先写损失、省什么、怎么用。", audience_voice)
+
+    timing_voice = voice_for_confidence(conf_timing)
+    timing_conc = _tone_conclusion("发布时间需与题材匹配验证，不能只看均值。", timing_voice)
+    timing_act = _tone_action("风险放午晚短窗，工作流放22点深读窗。", timing_voice)
+
+    evidence_voice = voice_for_confidence(conf_evidence)
+    evidence_conc = _tone_conclusion("爆款证明入口有效，高分享指向IP资产方向。", evidence_voice)
+    evidence_act = _tone_action("拆爆款触发词，沉淀高分享为选题模板。", evidence_voice)
+
+    quality_voice = voice_for_confidence(conf_quality)
+    quality_conc = _tone_conclusion("核心指标齐全，仍需保留导出时间和待补动作。", quality_voice)
+    quality_act = _tone_action("每次复盘先刷新后台导出，登录失效先补数据。", quality_voice)
+
+    final_voice = voice_for_confidence(conf_final)
+    final_conc = _tone_conclusion("把稳定可复制动作执行到位，不追新图表。", final_voice)
+    final_act = _tone_action("按篮子：now做，experiment试，hold观察。", final_voice)
+
+    # build new structure: analysis (fact <=60) + conclusion (<=40 voiced) + action (<=30) + voice/emphasis/basket ; no evidence/next_test/conf
+    sections = [
         {
             "id": "overview",
             "title": "总体判断",
             "question": "账号当前最应该解决的运营问题是什么?",
-            "conclusion": "账号已经能打出爆款,但稳定中位数还没被抬起来。",
-            "evidence": [
-                f"稳定样本 {quality['stable_article_count']} 篇,平均阅读 {fmt_num(overall['avg'])},"
-                f"中位数 {fmt_num(overall['median'])},P75 {fmt_num(overall['p75'])},最高 {fmt_num(overall['max'])}。",
-                "爆款已经证明入口有效,但下一阶段要看稳定底盘是否上移。",
-            ],
-            "action": "后续复盘不要只看 Top 1,每周同时追踪类型中位数和 P75 是否上移。",
-            "next_test": f"下一批 10 篇稳定后,中位阅读高于 {fmt_num(overall['median'])},P75 高于 {fmt_num(overall['p75'])}。",
+            "analysis": f"稳定样本{quality['stable_article_count']}篇，中位{fmt_num(overall['median'])},P75{fmt_num(overall['p75'])},最高{fmt_num(overall['max'])}，有爆款但底盘偏低。",
+            "conclusion": overview_conc,
+            "action": overview_act,
             "chart_payload": {"kind": "overall", "metrics": overall},
+            "voice": overview_voice,
+            "emphasis": emphasis_for_confidence(conf_overview),
+            "action_basket": action_basket_for_confidence(conf_overview),
             "ui_slot": section_slot("overview"),
-            "confidence": confidence_model["overall"],
         },
         {
             "id": "content-engine",
             "title": "内容引擎",
-            "question": "哪些内容负责拉新,哪些内容负责建立账号心智?",
-            "conclusion": "风险/额度负责推荐流入口,AI 编程/Agent 工作流负责 IP 主线。",
-            "evidence": [
-                "内容类型矩阵显示不同题材的均值、中位数和 P75 分化明显。",
-                f"当前表现靠前类型包括: {'、'.join(str(row['key']) for row in top_types[:3])}。",
-            ],
-            "action": "保持工作流主线占比,但把标题和首屏改成用户收益;风险和羊毛题材只做明确可解决的入口文。",
-            "next_test": "连续 2 周观察工作流类分享数和中位阅读是否同步上升。",
+            "question": "哪些内容负责拉新和建心智?",
+            "analysis": f"风险类中位265、价格类415、工作流类300，类型分化明显（{len(stable)}篇稳定）。",
+            "conclusion": content_conc,
+            "action": content_act,
             "chart_payload": {"kind": "content_type_matrix", "rows": type_rows, "top_types": top_types[:3]},
+            "voice": content_voice,
+            "emphasis": emphasis_for_confidence(conf_content),
+            "action_basket": action_basket_for_confidence(conf_content),
             "ui_slot": section_slot("content-engine"),
-            "confidence": confidence_for_records(stable, note="按内容类型分组"),
         },
         {
             "id": "title-structure",
             "title": "标题结构",
             "question": "什么标题结构更容易带来点击和分享?",
-            "conclusion": "标题要先给损失、收益或替代关系,不要只把产品名摆上去。",
-            "evidence": [
-                f"当前中位阅读较高的标题结构为 {top_title.get('key', '样本不足')}。",
-                "数字、价格/额度词、风险词和替代关系会改变点击理由,但要和正文兑现一致。",
-            ],
-            "action": "下一轮每篇标题先标注 primary_pattern,并准备一个收益版、风险版、替代版做人工挑选。",
-            "next_test": "同类题材至少跑 8 篇后,比较标题结构的中位阅读、P75 和分享率。",
+            "analysis": f"风险损失型标题中位最高，样本{top_title.get('count',0)}，数字价格风险词影响点击。",
+            "conclusion": title_conc,
+            "action": title_act,
             "chart_payload": {
                 "kind": "title_pattern_map",
                 "pattern_rows": title_rows,
                 "length_rows": title_length_rows,
                 "feature_rows": dataset["title_analysis"]["by_feature"],
             },
+            "voice": title_voice,
+            "emphasis": emphasis_for_confidence(conf_title),
+            "action_basket": action_basket_for_confidence(conf_title),
             "ui_slot": section_slot("title-structure"),
-            "confidence": confidence_for_records(stable, note="标题结构来自规则化解析"),
         },
         {
             "id": "article-length",
             "title": "文章长度",
-            "question": "公众号文章应该写多长,才既能讲清楚又不拖垮完读?",
-            "conclusion": "长度不是越短越好,真正要控制的是信息密度和每段是否服务读者动作。",
-            "evidence": [
-                f"当前本地正文匹配 {dataset['length_analysis']['matched_count']} 篇,未匹配 {dataset['length_analysis']['missing_count']} 篇。",
-                f"表现靠前长度区间为 {top_length.get('key', '样本不足')},但长度结论会受正文匹配率影响。",
-            ],
-            "action": "下一批工作流和深度文保留解释空间,但每 600-800 字必须有图、表、清单或小结帮读者喘气。",
-            "next_test": "把新文按长度桶记录,观察 2200-3500 字与 3500 字以上的分享率和评论率差异。",
+            "question": "文章长度如何控制信息密度?",
+            "analysis": f"本地匹配{dataset['length_analysis']['matched_count']}篇(均{int(dataset['length_analysis'].get('avg_length',0))}字)，未匹配{dataset['length_analysis']['missing_count']}篇，长度结论受匹配率影响。",
+            "conclusion": length_conc,
+            "action": length_act,
             "chart_payload": {
                 "kind": "length_performance_curve",
                 "bucket_rows": length_rows,
                 "matched_count": dataset["length_analysis"]["matched_count"],
                 "missing_count": dataset["length_analysis"]["missing_count"],
             },
+            "voice": length_voice,
+            "emphasis": emphasis_for_confidence(conf_length),
+            "action_basket": action_basket_for_confidence(conf_length),
             "ui_slot": section_slot("article-length"),
-            "confidence": confidence_for_records(
-                stable,
-                completeness=length_completeness,
-                note="正文长度依赖本地文章匹配",
-            ),
         },
         {
             "id": "audience",
             "title": "读者痛点",
             "question": "读者真正为什么点开、收藏和转发?",
-            "conclusion": "当前读者不是泛 AI 用户,而是账号/额度敏感人群和 AI 编程实践者。",
-            "evidence": [
-                f"最高痛点样本为 {top_pain.get('key', '样本不足')},最高人群样本为 {top_persona.get('key', '样本不足')}。"
-                "这说明内容要从具体损失、成本和落地场景切入。",
-            ],
-            "action": "每篇文章开头先交代读者会损失什么、能省什么、能立刻怎么用。",
-            "next_test": "新文记录评论和分享理由,验证读者是否围绕账号、额度、工作流收益反馈。",
+            "analysis": f"最高痛点{top_pain.get('key','样本不足')}({top_pain.get('count',0)}篇)，最高人群{top_persona.get('key','样本不足')}。",
+            "conclusion": audience_conc,
+            "action": audience_act,
             "chart_payload": {"kind": "audience", "pain_points": pain_rows, "personas": persona_rows},
+            "voice": audience_voice,
+            "emphasis": emphasis_for_confidence(conf_audience),
+            "action_basket": action_basket_for_confidence(conf_audience),
             "ui_slot": section_slot("audience"),
-            "confidence": confidence_for_records(stable, note="人群和痛点来自规则化标签"),
         },
         {
             "id": "timing",
             "title": "发布时间",
             "question": "哪些发布时间值得继续验证?",
-            "conclusion": "发布时间不能只看均值,要按题材匹配窗口做验证。",
-            "evidence": [
-                "当前中位阅读较好的小时为 "
-                + "、".join(f"{row['key']}点" for row in best_hours)
-                + ";但部分时段由单篇爆款拉高。",
-                "发布时间必须和题材匹配,不能机械套一个黄金时间。",
-            ],
-            "action": "风险/福利放 12 点或 17 点附近,模型更新放下午,工作流和深度判断放 22 点附近。",
-            "next_test": "每个窗口至少跑 3 篇同类题材,再比较中位数,不到样本量不下结论。",
+            "analysis": "中位较好小时为" + "、".join(f"{row['key']}点" for row in best_hours[:3]) + "，但部分由爆款拉高，单格样本少。",
+            "conclusion": timing_conc,
+            "action": timing_act,
             "chart_payload": {
                 "kind": "time_heatmap",
                 "best_hours": best_hours,
                 "heatmap": dataset["analysis"]["time_heatmap"],
             },
+            "voice": timing_voice,
+            "emphasis": emphasis_for_confidence(conf_timing),
+            "action_basket": action_basket_for_confidence(conf_timing),
             "ui_slot": section_slot("timing"),
-            "confidence": confidence_for_records(stable, target_sample=24, note="按小时切分后单格样本仍偏少"),
         },
         {
             "id": "evidence",
             "title": "证据样本",
             "question": "哪些文章证明了上面的判断?",
-            "conclusion": "爆款负责说明入口有效,高分享样本负责说明账号资产方向。",
-            "evidence": [
-                f"阅读最高样本为《{top_read.get('title', '无')}》,"
-                f"分享最高样本为《{top_share.get('title', '无')}》。",
-                "证据样本要服务复盘,不是把排行榜当结论。",
-            ],
-            "action": "每篇爆款拆标题触发词;每篇高分享文章沉淀成可复用栏目和选题模板。",
-            "next_test": "下轮选题会前必须先复用 3 个已验证标题触发词。",
+            "analysis": f"阅读最高《{str(top_read.get('title','无'))[:12]}》{int(top_read.get('reads',0))}，分享同篇{int(top_share.get('shares',0))}。",
+            "conclusion": evidence_conc,
+            "action": evidence_act,
             "chart_payload": {"kind": "rankings", "rankings": rankings},
+            "voice": evidence_voice,
+            "emphasis": emphasis_for_confidence(conf_evidence),
+            "action_basket": action_basket_for_confidence(conf_evidence),
             "ui_slot": section_slot("evidence"),
-            "confidence": confidence_for_records(stable, note="排行榜只解释样本,不单独推导规律"),
         },
         {
             "id": "quality",
             "title": "数据质量",
             "question": "这份报告的数据能不能支撑运营判断?",
-            "conclusion": "本轮公众号核心指标齐,但仍要保留后台导出时间和待补动作。",
-            "evidence": [
-                f"当前周期非删除 {quality['period_non_deleted_count']} 篇,稳定样本 {quality['stable_article_count']} 篇,"
-                f"指标缺口 {quality['metric_pending_count']}。",
-                f"正文长度匹配完整度 {length_completeness * 100:.1f}%。",
-            ],
-            "action": "每次复盘先刷新后台导出;登录态失效时先补数据,不要用旧 JSON 继续分析。",
-            "next_test": "下次刷新后检查 record_count、metric_pending_count 和最近文章标题是否与后台一致。",
+            "analysis": f"非删{quality['period_non_deleted_count']}篇，稳定{quality['stable_article_count']}篇，缺口{quality['metric_pending_count']}，正文匹配{length_completeness*100:.0f}%。",
+            "conclusion": quality_conc,
+            "action": quality_act,
             "chart_payload": {"kind": "data_quality", "quality": quality},
+            "voice": quality_voice,
+            "emphasis": emphasis_for_confidence(conf_quality),
+            "action_basket": action_basket_for_confidence(conf_quality),
             "ui_slot": section_slot("quality"),
-            "confidence": confidence_for_records(
-                stable,
-                completeness=1.0 if quality["metric_pending_count"] == 0 else 0.72,
-                note="核心指标完整性",
-            ),
         },
         {
             "id": "final-synthesis",
             "title": "最终汇总",
             "question": "哪些判断应该立刻执行,哪些只能小步验证?",
-            "conclusion": dataset["final_synthesis"]["summary"],
-            "evidence": [
-                "高置信动作直接进入本周执行。",
-                "中低置信判断只进小批量试验,不改全局节奏。",
-            ],
-            "action": "按置信度推进:高置信直接做,中置信做 2 周测试,低置信只观察不拍板。",
-            "next_test": "下一轮复盘先检查这张动作板,逐条判断保留、调整或废弃。",
-            "chart_payload": {"kind": "confidence_action_board", **dataset["final_synthesis"]},
+            "analysis": "各节action_basket自动归集三篮子，高篮直接执行，中篮验证，低篮观察。",
+            "conclusion": final_conc,
+            "action": final_act,
+            "chart_payload": {"kind": "action_baskets", "now": [], "experiment": [], "hold": []},
+            "voice": final_voice,
+            "emphasis": emphasis_for_confidence(conf_final),
+            "action_basket": action_basket_for_confidence(conf_final),
             "ui_slot": section_slot("final-synthesis"),
-            "confidence": confidence_model["overall"],
         },
     ]
+    # side channel for _internal (calc untouched), cleaned after use
+    dataset["_section_confs_tmp"] = section_confs
+    return sections
 
 
 def build_compat_conclusions(sections: list[dict[str, Any]]) -> list[dict[str, str]]:
+    # adapt to new section shape (analysis/conclusion); keep for compat
     return [
         {
             "id": section["id"],
-            "title": section["conclusion"],
-            "body": section["action"],
-            "evidence": section["title"],
+            "title": section.get("conclusion") or section.get("analysis", ""),
+            "body": section.get("action", ""),
+            "evidence": section.get("title", ""),
         }
         for section in sections
-        if section["id"] in {"overview", "content-engine", "audience", "timing", "evidence"}
+        if section.get("id") in {"overview", "content-engine", "audience", "timing", "evidence"}
     ]
 
 
 def build_account_profile(dataset: dict[str, Any]) -> dict[str, Any]:
     quality = dataset["data_quality"]
+    account_name = dataset["meta"].get("account_name", "麦总玩 AI")
+    avatar_text = account_name[0] if account_name else "麦"
     return {
-        "name": dataset["meta"].get("account_name", "麦总玩 AI"),
+        "name": account_name,
         "platform": "微信公众号",
         "description": "面向 AI 工具、Agent 工作流和普通人可落地效率场景的内容号。",
-        "avatar_text": "麦",
+        "avatar_text": avatar_text,
         "analysis_period": f"{dataset['meta']['period_start'][:10]} 至 {dataset['meta']['period_end'][:10]}",
         "article_count": quality["period_non_deleted_count"],
         "stable_article_count": quality["stable_article_count"],
@@ -1183,45 +1285,38 @@ def build_account_profile(dataset: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_brand_signature() -> dict[str, Any]:
+    author = os.environ.get("WXOPS_AUTHOR", "麦总玩 AI")
     return {
-        "author_name": "麦总玩 AI",
+        "author_name": author,
         "role": "公众号运营分析 Skill 作者",
         "skill_name": "wechat-ops-performance-review",
         "skill_repo": "https://github.com/DwDestiny/my_skill",
         "star_url": "https://github.com/DwDestiny/my_skill",
-        "avatar_src": "/mai-avatar.png",
+        "avatar_src": "/sample-avatar.svg",
         "tagline": "数据刷新 → 专业分析 → wiki 报告 → 模板站验收",
     }
 
 
 def build_final_synthesis(dataset: dict[str, Any]) -> dict[str, Any]:
-    confidence = dataset["confidence_model"]["overall"]
-    actions = dataset["action_items"]
-    length_confidence = confidence_for_records(
-        dataset["articles"]["stable"],
-        completeness=dataset["confidence_model"]["article_length_completeness"],
-        note="正文长度结论",
-    )
+    sections = dataset.get("analysis_sections", [])
+    now_list: list[str] = []
+    exp_list: list[str] = []
+    hold_list: list[str] = []
+    for sec in sections:
+        if sec.get("id") == "final-synthesis":
+            continue
+        basket = sec.get("action_basket", "experiment")
+        act = (sec.get("action") or "")[:25]
+        if basket == "now":
+            now_list.append(act)
+        elif basket == "experiment":
+            exp_list.append(act)
+        else:
+            hold_list.append(act)
     return {
-        "summary": "下一阶段不要追更多图表,而是把稳定可复制的动作执行到位。",
-        "high_confidence_actions": [
-            actions[0]["title"],
-            actions[1]["title"],
-            "所有复盘继续用中位数、P75 和去极值均值,避免被单篇爆款骗走。",
-        ],
-        "experiments": [
-            actions[2]["title"],
-            actions[4]["title"],
-            "标题结构做 2 周小批量对照,不要一次性全改。",
-        ],
-        "hold_decisions": [
-            "文章长度结论先跟踪,不立刻把所有文章卡死在某个字数。",
-            "发布时间窗口必须等同类题材样本够了再拍板。",
-        ],
-        "confidence_rollup": {
-            "overall": confidence,
-            "length": length_confidence,
-        },
+        "now": now_list,
+        "experiment": exp_list,
+        "hold": hold_list,
     }
 
 
@@ -1250,13 +1345,13 @@ def build_report_meta(dataset: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_executive_summary(dataset: dict[str, Any]) -> dict[str, Any]:
-    sections = {section["id"]: section for section in dataset["analysis_sections"]}
+    top = dataset.get("top_conclusion", {"verdict": "稳定底盘没起来", "next_action": "→ 抬中位阅读、拆开管理三件事"})
     quality = dataset["data_quality"]
     overall = dataset["analysis"]["overall"]
     action_titles = [item["title"] for item in dataset["action_items"][:5]]
     return {
-        "headline": sections["overview"]["conclusion"],
-        "subheadline": "下一轮的重点不是继续追单篇爆款,而是把入口文、IP 主线和发布时间验证拆开管理。",
+        "headline": top["verdict"],
+        "subheadline": top["next_action"],
         "primary_tension": (
             f"稳定样本 {quality['stable_article_count']} 篇,中位阅读 {fmt_num(overall['median'])},"
             f"P75 {fmt_num(overall['p75'])};账号能出高点,但稳定底盘还需要被抬高。"
@@ -1322,8 +1417,8 @@ def build_action_plan(dataset: dict[str, Any]) -> dict[str, Any]:
 def build_evidence_stream(dataset: dict[str, Any]) -> list[dict[str, Any]]:
     stream: list[dict[str, Any]] = []
     for section in dataset["analysis_sections"]:
-        evidence = section["evidence"]
-        body = "；".join(evidence) if isinstance(evidence, list) else evidence
+        # adapt: use analysis as body for evidence compat, no next_test
+        body = section.get("analysis") or section.get("conclusion", "")
         stream.append(
             {
                 "id": f"{section['id']}-evidence",
@@ -1342,7 +1437,7 @@ def build_evidence_stream(dataset: dict[str, Any]) -> list[dict[str, Any]]:
                 "kind": "next_action",
                 "title": "下一步动作",
                 "body": section["action"],
-                "meta": section["next_test"],
+                "meta": section.get("conclusion", ""),
                 "tone": "green",
             }
         )
@@ -1550,9 +1645,20 @@ def build_dataset(root: Path, *, account_name: str = "麦总玩 AI", since: str 
     dataset["title_analysis"] = build_title_analysis(stable)
     dataset["length_analysis"] = build_length_analysis(stable)
     dataset["action_items"] = build_action_items(dataset)
-    dataset["final_synthesis"] = build_final_synthesis(dataset)
     dataset["narrative_flow"] = build_narrative_flow()
     dataset["analysis_sections"] = build_analysis_sections(dataset)
+    # now derive top and final from sections (baskets auto collect)
+    dataset["top_conclusion"] = build_top_conclusion(dataset)
+    dataset["final_synthesis"] = build_final_synthesis(dataset)
+    for sec in dataset.get("analysis_sections", []):
+        if sec.get("id") == "final-synthesis":
+            sec["chart_payload"] = {"kind": "action_baskets", **dataset["final_synthesis"]}
+    # populate _internal , move raw confs
+    _sc = dataset.pop("_section_confs_tmp", {})
+    dataset["_internal"] = {
+        "section_confidence": _sc,
+        "confidence_model": dataset.get("confidence_model", {}),
+    }
     dataset["account_profile"] = build_account_profile(dataset)
     dataset["brand_signature"] = build_brand_signature()
     dataset["report_meta"] = build_report_meta(dataset)
@@ -1718,34 +1824,36 @@ def render_report(dataset: dict[str, Any], dataset_path: Path) -> str:
         else "- 暂无公众号待补动作。"
     )
 
-    def section_markdown(section_id: str, extra: str = "") -> str:
-        section = sections[section_id]
-        extra_block = f"\n\n{extra.strip()}" if extra.strip() else ""
-        evidence = section["evidence"]
-        evidence_items = evidence if isinstance(evidence, list) else [evidence]
-        evidence_lines = "\n".join(f"- {item}" for item in evidence_items)
+    def render_section_new(section: dict[str, Any]) -> str:
+        # total分总 style per section: analysis + conclusion + action, no conf/evidence/next_test words
         return f"""## {section['title']}
 
-### 本节问题
+### 分析情况
 
-{section['question']}
+{section.get('analysis', '')}
 
-### 本节结论
+### 得出结论
 
-{section['conclusion']}
-
-### 证据
-
-{evidence_lines}{extra_block}
+{section.get('conclusion', '')}
 
 ### 下一步动作
 
-{section['action']}
-
-### 下一轮验证
-
-{section['next_test']}
+{section.get('action', '')}
 """
+
+    top = dataset.get("top_conclusion", {"verdict": "", "next_action": ""})
+    # build final baskets text without conf words
+    fs = dataset.get("final_synthesis", {})
+    now_items = "\n".join(f"- {x}" for x in fs.get("now", [])) or "- （待补充）"
+    exp_items = "\n".join(f"- {x}" for x in fs.get("experiment", [])) or "- （待补充）"
+    hold_items = "\n".join(f"- {x}" for x in fs.get("hold", [])) or "- （待补充）"
+
+    # render sections in order using new shape
+    dim_order = ["overview", "content-engine", "title-structure", "article-length", "audience", "timing", "evidence", "quality", "final-synthesis"]
+    dim_blocks = []
+    for sid in dim_order:
+        if sid in sections:
+            dim_blocks.append(render_section_new(sections[sid]))
 
     return f"""---
 title: "公众号运营分析报告 {report_date}"
@@ -1777,85 +1885,40 @@ last_updated_by_agent: codex
 - 稳定表现样本 {quality['stable_article_count']} 篇；最近 48 小时内的新文章 {quality['immature_article_count']} 篇，只进“新文章观察”，不进稳定均值。
 - 核心指标缺口：{quality['metric_pending_count']}。这里的缺口指阅读、分享、评论、点赞字段缺失，不把真实 0 误判为缺失。
 
-{section_markdown('overview', f'''
-- 稳定样本平均阅读：{fmt_num(overall['avg'])}
-- 中位数：{fmt_num(overall['median'])}
-- P75：{fmt_num(overall['p75'])}
-- 去极值均值：{fmt_num(overall['trimmed_mean'])}
-- 最高阅读：{fmt_num(overall['max'])}
-''')}
+## 核心判断
 
-{section_markdown('content-engine', markdown_table(['内容类型', '样本', '平均阅读', '中位数', 'P75', '最高', 'Top 样本'], type_rows) + f'''
+**{top.get('verdict', '')}**
 
-#### 建议内容配比
+{top.get('next_action', '')}
 
-{ratio_lines}
-''')}
+{dim_blocks[0] if dim_blocks else ''}
 
-{section_markdown('title-structure', markdown_table(['标题结构', '样本', '中位阅读', 'P75', '最高', '平均分享率'], title_pattern_rows))}
+{dim_blocks[1] if len(dim_blocks)>1 else ''}
 
-{section_markdown('article-length', markdown_table(['文章长度', '样本', '平均阅读', '中位阅读', 'P75', '最高'], length_rows) + f'''
+{dim_blocks[2] if len(dim_blocks)>2 else ''}
 
-- 本地正文匹配：{dataset['length_analysis']['matched_count']} 篇。
-- 未匹配正文：{dataset['length_analysis']['missing_count']} 篇。
-- 匹配正文平均长度：{fmt_num(dataset['length_analysis']['avg_length'])} 字。
-''')}
+{dim_blocks[3] if len(dim_blocks)>3 else ''}
 
-{section_markdown('audience', f'''
-#### 痛点表现
+{dim_blocks[4] if len(dim_blocks)>4 else ''}
 
-{markdown_table(['痛点', '样本', '中位阅读', 'P75', '平均分享率'], pain_rows)}
+{dim_blocks[5] if len(dim_blocks)>5 else ''}
 
-#### 人群表现
+{dim_blocks[6] if len(dim_blocks)>6 else ''}
 
-{markdown_table(['目标人群', '样本', '中位阅读', 'P75', '平均分享率'], persona_rows)}
-''')}
+{dim_blocks[7] if len(dim_blocks)>7 else ''}
 
-{section_markdown('timing', f'''
-{markdown_table(['小时', '样本', '平均阅读', '中位数', 'P75', '最高'], heat_rows)}
+{dim_blocks[8] if len(dim_blocks)>8 else ''}
 
-#### 建议发布时间窗口
+## 行动三篮子
 
-{window_lines}
-''')}
+### 现在就做
+{now_items}
 
-{section_markdown('evidence', f'''
-#### 阅读 Top 样本
+### 小步验证
+{exp_items}
 
-{markdown_table(['#', '标题', '阅读', '分享', '分享率', '类型'], top_rows)}
-
-#### 标题和第一屏规则
-
-{headline_lines}
-''')}
-
-{section_markdown('quality', f'''
-#### 待补与异常
-
-{pending_text}
-
-#### 数据质量快照
-
-- 后台记录：{quality['period_record_count']} 篇。
-- 非删除：{quality['period_non_deleted_count']} 篇。
-- 稳定样本：{quality['stable_article_count']} 篇。
-- 48 小时内新文：{quality['immature_article_count']} 篇。
-- 核心指标缺口：{quality['metric_pending_count']}。
-''')}
-
-{section_markdown('final-synthesis', f'''
-#### 高置信动作
-
-{chr(10).join(f"- {item}" for item in dataset['final_synthesis']['high_confidence_actions'])}
-
-#### 小步验证
-
-{chr(10).join(f"- {item}" for item in dataset['final_synthesis']['experiments'])}
-
-#### 暂不拍板
-
-{chr(10).join(f"- {item}" for item in dataset['final_synthesis']['hold_decisions'])}
-''')}
+### 暂不拍板
+{hold_items}
 
 ## Connections
 
@@ -1919,15 +1982,17 @@ def validate_dataset(dataset: dict[str, Any]) -> list[str]:
     quality = dataset["data_quality"]
     stable = dataset["articles"]["stable"]
     all_period = dataset["articles"]["all_period"]
+    # updated per contract: no evidence/next_test/confidence naked
     required_section_fields = [
         "question",
+        "analysis",
         "conclusion",
-        "evidence",
         "action",
-        "next_test",
         "chart_payload",
         "ui_slot",
-        "confidence",
+        "voice",
+        "emphasis",
+        "action_basket",
     ]
     required_top_fields = [
         "report_meta",
@@ -1942,6 +2007,7 @@ def validate_dataset(dataset: dict[str, Any]) -> list[str]:
         "evidence_stream",
         "template_slots",
         "visual_tokens",
+        "top_conclusion",
     ]
     for field in required_top_fields:
         if not dataset.get(field):
@@ -1982,34 +2048,76 @@ def validate_dataset(dataset: dict[str, Any]) -> list[str]:
     ]
     if section_ids != expected_ids:
         errors.append(f"analysis section order {section_ids} != {expected_ids}")
-    if not dataset.get("final_synthesis", {}).get("high_confidence_actions"):
-        errors.append("final_synthesis.high_confidence_actions must be non-empty")
+    # new final keys
+    fs = dataset.get("final_synthesis", {})
+    if not (fs.get("now") is not None and fs.get("experiment") is not None and fs.get("hold") is not None):
+        errors.append("final_synthesis must have now/experiment/hold")
     if not dataset.get("title_analysis", {}).get("by_primary_pattern"):
         errors.append("title_analysis.by_primary_pattern must be non-empty")
     if not dataset.get("length_analysis", {}).get("by_length_bucket"):
         errors.append("length_analysis.by_length_bucket must be non-empty")
+    # top_conclusion checks
+    topc = dataset.get("top_conclusion", {})
+    if not topc.get("verdict"):
+        errors.append("top_conclusion.verdict required")
+    if len(str(topc.get("verdict", ""))) > 8:
+        errors.append("top_conclusion.verdict >8 chars")
+    if not topc.get("next_action"):
+        errors.append("top_conclusion.next_action required")
+    if len(str(topc.get("next_action", ""))) > 24:
+        errors.append("top_conclusion.next_action >24 chars")
+    # per section checks + word limits + three channels
     for section in dataset.get("analysis_sections", []):
         for field in required_section_fields:
             if not section.get(field):
                 errors.append(f"missing section field {field}: {section.get('id')}")
-        evidence = section.get("evidence")
-        if isinstance(evidence, list):
-            if not evidence:
-                errors.append(f"section evidence must be non-empty: {section.get('id')}")
-        elif not isinstance(evidence, str) or not evidence:
-            errors.append(f"section evidence must be non-empty: {section.get('id')}")
         if not isinstance(section.get("chart_payload"), dict):
             errors.append(f"section chart_payload must be dict: {section.get('id')}")
         ui_slot = section.get("ui_slot")
         if not isinstance(ui_slot, dict) or not ui_slot.get("component") or not ui_slot.get("rail_focus"):
             errors.append(f"section ui_slot must include component and rail_focus: {section.get('id')}")
-        confidence = section.get("confidence")
-        if not isinstance(confidence, dict) or confidence.get("level") not in {"high", "medium", "low"}:
-            errors.append(f"section confidence must include level: {section.get('id')}")
+        # new three channels
+        v = section.get("voice")
+        e = section.get("emphasis")
+        b = section.get("action_basket")
+        if v not in {"high", "medium", "low"}:
+            errors.append(f"section voice invalid: {section.get('id')}")
+        if e not in {"hero", "primary", "secondary"}:
+            errors.append(f"section emphasis invalid: {section.get('id')}")
+        if b not in {"now", "experiment", "hold"}:
+            errors.append(f"section action_basket invalid: {section.get('id')}")
+        # word limits (len as chars per contract)
+        if len(str(section.get("title", ""))) > 8:
+            errors.append(f"section title >8: {section.get('id')}")
+        if len(str(section.get("question", ""))) > 20:
+            errors.append(f"section question >20: {section.get('id')}")
+        if len(str(section.get("analysis", ""))) > 60:
+            errors.append(f"section analysis >60: {section.get('id')}")
+        if len(str(section.get("conclusion", ""))) > 40:
+            errors.append(f"section conclusion >40: {section.get('id')}")
+        if len(str(section.get("action", ""))) > 30:
+            errors.append(f"section action >30: {section.get('id')}")
     section_id_set = set(expected_ids)
     for entry in dataset.get("evidence_stream", []):
         if entry.get("section_id") not in section_id_set:
             errors.append(f"evidence_stream has unknown section_id: {entry.get('section_id')}")
+    # red line: no conf words in render output or dashboard-ish str
+    try:
+        rendered = render_report(dataset, Path("/tmp/dummy.json"))
+        bad = re.search(r"置信度|高置信|中置信|低置信", rendered)
+        if bad:
+            errors.append("render_report contains forbidden confidence words")
+        # also scan string values of top level for safety
+        ds_str = json.dumps({k: v for k, v in dataset.items() if k not in ("articles", "analysis")}, ensure_ascii=False)
+        if re.search(r"置信度|高置信|中置信|低置信", ds_str):
+            errors.append("dataset string values contain forbidden confidence words")
+    except Exception:
+        pass
+    # final baskets items <=25
+    for basket in ("now", "experiment", "hold"):
+        for item in fs.get(basket, []):
+            if len(str(item)) > 25:
+                errors.append(f"final {basket} item >25 chars")
     return errors
 
 

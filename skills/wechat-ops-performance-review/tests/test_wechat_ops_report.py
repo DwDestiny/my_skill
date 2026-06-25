@@ -25,7 +25,9 @@ def test_wechat_ops_report_dataset_is_complete():
     assert dataset["confidence_model"]["levels"]
     assert dataset["title_analysis"]["by_primary_pattern"]
     assert dataset["length_analysis"]["by_length_bucket"]
-    assert dataset["final_synthesis"]["high_confidence_actions"]
+    assert "now" in dataset["final_synthesis"]
+    assert "experiment" in dataset["final_synthesis"]
+    assert "hold" in dataset["final_synthesis"]
     assert dataset["evidence_stream"]
     assert [section["id"] for section in dataset["analysis_sections"]] == [
         "overview",
@@ -38,21 +40,29 @@ def test_wechat_ops_report_dataset_is_complete():
         "quality",
         "final-synthesis",
     ]
+    topc = dataset.get("top_conclusion", {})
+    assert topc.get("verdict")
+    assert len(str(topc.get("verdict", ""))) <= 8
+    assert topc.get("next_action")
+    assert len(str(topc.get("next_action", ""))) <= 24
 
 
 def test_every_analysis_section_has_narrative_contract():
     dataset = build_dataset(FIXTURES, account_name="样例运营号")
     for section in dataset["analysis_sections"]:
         assert section["question"]
+        assert section.get("analysis")
         assert section["conclusion"]
-        assert section["evidence"]
         assert section["action"]
-        assert section["next_test"]
         assert isinstance(section["chart_payload"], dict)
         assert section["ui_slot"]["component"]
         assert section["ui_slot"]["rail_focus"]
-        assert section["confidence"]["level"] in {"high", "medium", "low"}
-        assert 0 <= section["confidence"]["score"] <= 1
+        assert section["voice"] in {"high", "medium", "low"}
+        assert section["emphasis"] in {"hero", "primary", "secondary"}
+        assert section["action_basket"] in {"now", "experiment", "hold"}
+        # sample char limits
+        assert len(str(section.get("analysis", ""))) <= 60
+        assert len(str(section.get("conclusion", ""))) <= 40
 
 
 def test_template_contract_is_self_describing():
@@ -118,3 +128,18 @@ def test_wiki_report_starts_with_weekly_actions_and_links_dataset():
     assert str(DATASET_PATH) in report
     assert "分析平台：只看微信公众号" in report
     assert "头条、Twitter/X" in report
+
+
+def test_top_conclusion_and_final_baskets_and_redline():
+    dataset = build_dataset(FIXTURES, account_name="样例运营号")
+    report = render_report(dataset, DATASET_PATH)
+    topc = dataset.get("top_conclusion", {})
+    assert topc.get("verdict")
+    assert len(str(topc.get("verdict", ""))) <= 8
+    assert topc.get("next_action")
+    assert len(str(topc.get("next_action", ""))) <= 24
+    fs = dataset.get("final_synthesis", {})
+    assert set(fs.keys()) >= {"now", "experiment", "hold"}
+    # red line: zero occurrences of forbidden words
+    forbidden_count = sum(report.count(w) for w in ["置信度", "高置信", "中置信", "低置信"])
+    assert forbidden_count == 0, "found forbidden words in report: %d" % forbidden_count

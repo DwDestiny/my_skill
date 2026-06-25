@@ -6361,51 +6361,6 @@
       "due": "连续 2 周"
     }
   ],
-  "final_synthesis": {
-    "summary": "下一阶段不要追更多图表,而是把稳定可复制的动作执行到位。",
-    "high_confidence_actions": [
-      "把 AI 编程/Agent 工作流继续做成 IP 主线",
-      "保留风险/账号/额度题材作为推荐流入口",
-      "所有复盘继续用中位数、P75 和去极值均值,避免被单篇爆款骗走。"
-    ],
-    "experiments": [
-      "羊毛/价格文必须补齐领取路径和风险边界",
-      "用题材匹配发布时间窗口做 2 周验证",
-      "标题结构做 2 周小批量对照,不要一次性全改。"
-    ],
-    "hold_decisions": [
-      "文章长度结论先跟踪,不立刻把所有文章卡死在某个字数。",
-      "发布时间窗口必须等同类题材样本够了再拍板。"
-    ],
-    "confidence_rollup": {
-      "overall": {
-        "level": "medium",
-        "score": 0.63,
-        "sample_size": 18,
-        "completeness": 0.222,
-        "distribution_skew": 57.89,
-        "reasons": [
-          "存在单篇爆款明显拉高均值",
-          "样本量足够支撑阶段性判断",
-          "存在本地正文或指标匹配缺口",
-          "全局稳定样本"
-        ]
-      },
-      "length": {
-        "level": "medium",
-        "score": 0.63,
-        "sample_size": 18,
-        "completeness": 0.222,
-        "distribution_skew": 57.89,
-        "reasons": [
-          "存在单篇爆款明显拉高均值",
-          "样本量足够支撑阶段性判断",
-          "存在本地正文或指标匹配缺口",
-          "正文长度结论"
-        ]
-      }
-    }
-  },
   "narrative_flow": [
     {
       "id": "actions",
@@ -6473,13 +6428,9 @@
       "id": "overview",
       "title": "总体判断",
       "question": "账号当前最应该解决的运营问题是什么?",
-      "conclusion": "账号已经能打出爆款,但稳定中位数还没被抬起来。",
-      "evidence": [
-        "稳定样本 18 篇,平均阅读 2,122.50,中位数 285,P75 442.50,最高 16,500。",
-        "爆款已经证明入口有效,但下一阶段要看稳定底盘是否上移。"
-      ],
-      "action": "后续复盘不要只看 Top 1,每周同时追踪类型中位数和 P75 是否上移。",
-      "next_test": "下一批 10 篇稳定后,中位阅读高于 285,P75 高于 442.50。",
+      "analysis": "稳定样本18篇，中位285,P75442.50,最高16,500，有爆款但底盘偏低。",
+      "conclusion": "账号能打爆款，稳定中位数仍未抬升。",
+      "action": "每周复盘同时看类型中位数和P75是否上移。",
       "chart_payload": {
         "kind": "overall",
         "metrics": {
@@ -6491,36 +6442,22 @@
           "trimmed_mean": 1353.12
         }
       },
+      "voice": "medium",
+      "emphasis": "primary",
+      "action_basket": "experiment",
       "ui_slot": {
         "component": "summary_metrics",
         "rail_focus": "operating_tension",
         "accent": "green"
-      },
-      "confidence": {
-        "level": "medium",
-        "score": 0.63,
-        "sample_size": 18,
-        "completeness": 0.222,
-        "distribution_skew": 57.89,
-        "reasons": [
-          "存在单篇爆款明显拉高均值",
-          "样本量足够支撑阶段性判断",
-          "存在本地正文或指标匹配缺口",
-          "全局稳定样本"
-        ]
       }
     },
     {
       "id": "content-engine",
       "title": "内容引擎",
-      "question": "哪些内容负责拉新,哪些内容负责建立账号心智?",
-      "conclusion": "风险/额度负责推荐流入口,AI 编程/Agent 工作流负责 IP 主线。",
-      "evidence": [
-        "内容类型矩阵显示不同题材的均值、中位数和 P75 分化明显。",
-        "当前表现靠前类型包括: 价格/额度/羊毛情报、AI 编程/Agent 工作流、模型发布/能力解读。"
-      ],
-      "action": "保持工作流主线占比,但把标题和首屏改成用户收益;风险和羊毛题材只做明确可解决的入口文。",
-      "next_test": "连续 2 周观察工作流类分享数和中位阅读是否同步上升。",
+      "question": "哪些内容负责拉新和建心智?",
+      "analysis": "风险类中位265、价格类415、工作流类300，类型分化明显（18篇稳定）。",
+      "conclusion": "风险羊毛负责推荐入口，工作流主攻IP心智。",
+      "action": "立即工作流标题改写用户收益，风险文每天最多1篇。",
       "chart_payload": {
         "kind": "content_type_matrix",
         "rows": [
@@ -6677,35 +6614,22 @@
           }
         ]
       },
+      "voice": "high",
+      "emphasis": "hero",
+      "action_basket": "now",
       "ui_slot": {
         "component": "content_type_matrix",
         "rail_focus": "topic_ratio",
         "accent": "blue"
-      },
-      "confidence": {
-        "level": "high",
-        "score": 0.81,
-        "sample_size": 18,
-        "completeness": 1.0,
-        "distribution_skew": 57.89,
-        "reasons": [
-          "存在单篇爆款明显拉高均值",
-          "样本量足够支撑阶段性判断",
-          "按内容类型分组"
-        ]
       }
     },
     {
       "id": "title-structure",
       "title": "标题结构",
       "question": "什么标题结构更容易带来点击和分享?",
-      "conclusion": "标题要先给损失、收益或替代关系,不要只把产品名摆上去。",
-      "evidence": [
-        "当前中位阅读较高的标题结构为 教程清单型。",
-        "数字、价格/额度词、风险词和替代关系会改变点击理由,但要和正文兑现一致。"
-      ],
-      "action": "下一轮每篇标题先标注 primary_pattern,并准备一个收益版、风险版、替代版做人工挑选。",
-      "next_test": "同类题材至少跑 8 篇后,比较标题结构的中位阅读、P75 和分享率。",
+      "analysis": "风险损失型标题中位最高，样本2，数字价格风险词影响点击。",
+      "conclusion": "标题先给损失收益或替代关系，再放产品名。",
+      "action": "立即每篇备收益风险替代版供挑选。",
       "chart_payload": {
         "kind": "title_pattern_map",
         "pattern_rows": [
@@ -6973,35 +6897,22 @@
           }
         ]
       },
+      "voice": "high",
+      "emphasis": "hero",
+      "action_basket": "now",
       "ui_slot": {
         "component": "title_pattern_map",
         "rail_focus": "headline_strategy",
         "accent": "coral"
-      },
-      "confidence": {
-        "level": "high",
-        "score": 0.81,
-        "sample_size": 18,
-        "completeness": 1.0,
-        "distribution_skew": 57.89,
-        "reasons": [
-          "存在单篇爆款明显拉高均值",
-          "样本量足够支撑阶段性判断",
-          "标题结构来自规则化解析"
-        ]
       }
     },
     {
       "id": "article-length",
       "title": "文章长度",
-      "question": "公众号文章应该写多长,才既能讲清楚又不拖垮完读?",
-      "conclusion": "长度不是越短越好,真正要控制的是信息密度和每段是否服务读者动作。",
-      "evidence": [
-        "当前本地正文匹配 4 篇,未匹配 14 篇。",
-        "表现靠前长度区间为 1200-2200字,但长度结论会受正文匹配率影响。"
-      ],
-      "action": "下一批工作流和深度文保留解释空间,但每 600-800 字必须有图、表、清单或小结帮读者喘气。",
-      "next_test": "把新文按长度桶记录,观察 2200-3500 字与 3500 字以上的分享率和评论率差异。",
+      "question": "文章长度如何控制信息密度?",
+      "analysis": "本地匹配4篇(均2580字)，未匹配14篇，长度结论受匹配率影响。",
+      "conclusion": "长度不是越短越好，关键控制信息密度与动作服务。",
+      "action": "深度文保留空间，每600字加图表清单喘气点。",
       "chart_payload": {
         "kind": "length_performance_curve",
         "bucket_rows": [
@@ -7094,35 +7005,22 @@
         "matched_count": 4,
         "missing_count": 14
       },
+      "voice": "medium",
+      "emphasis": "primary",
+      "action_basket": "experiment",
       "ui_slot": {
         "component": "length_performance_curve",
         "rail_focus": "reading_depth",
         "accent": "violet"
-      },
-      "confidence": {
-        "level": "medium",
-        "score": 0.63,
-        "sample_size": 18,
-        "completeness": 0.222,
-        "distribution_skew": 57.89,
-        "reasons": [
-          "存在单篇爆款明显拉高均值",
-          "样本量足够支撑阶段性判断",
-          "存在本地正文或指标匹配缺口",
-          "正文长度依赖本地文章匹配"
-        ]
       }
     },
     {
       "id": "audience",
       "title": "读者痛点",
       "question": "读者真正为什么点开、收藏和转发?",
-      "conclusion": "当前读者不是泛 AI 用户,而是账号/额度敏感人群和 AI 编程实践者。",
-      "evidence": [
-        "最高痛点样本为 成本、额度与订阅压力,最高人群样本为 AI 编程/Agent 实践者。这说明内容要从具体损失、成本和落地场景切入。"
-      ],
-      "action": "每篇文章开头先交代读者会损失什么、能省什么、能立刻怎么用。",
-      "next_test": "新文记录评论和分享理由,验证读者是否围绕账号、额度、工作流收益反馈。",
+      "analysis": "最高痛点成本、额度与订阅压力(4篇)，最高人群AI 编程/Agent 实践者。",
+      "conclusion": "读者以账号额度敏感和编程实践者为主，非泛AI用户。",
+      "action": "立即开头先写损失、省什么、怎么用。",
       "chart_payload": {
         "kind": "audience",
         "pain_points": [
@@ -7326,35 +7224,22 @@
           }
         ]
       },
+      "voice": "high",
+      "emphasis": "hero",
+      "action_basket": "now",
       "ui_slot": {
         "component": "audience_split",
         "rail_focus": "reader_motivation",
         "accent": "green"
-      },
-      "confidence": {
-        "level": "high",
-        "score": 0.81,
-        "sample_size": 18,
-        "completeness": 1.0,
-        "distribution_skew": 57.89,
-        "reasons": [
-          "存在单篇爆款明显拉高均值",
-          "样本量足够支撑阶段性判断",
-          "人群和痛点来自规则化标签"
-        ]
       }
     },
     {
       "id": "timing",
       "title": "发布时间",
       "question": "哪些发布时间值得继续验证?",
-      "conclusion": "发布时间不能只看均值,要按题材匹配窗口做验证。",
-      "evidence": [
-        "当前中位阅读较好的小时为 9点、14点、16点、10点;但部分时段由单篇爆款拉高。",
-        "发布时间必须和题材匹配,不能机械套一个黄金时间。"
-      ],
-      "action": "风险/福利放 12 点或 17 点附近,模型更新放下午,工作流和深度判断放 22 点附近。",
-      "next_test": "每个窗口至少跑 3 篇同类题材,再比较中位数,不到样本量不下结论。",
+      "analysis": "中位较好小时为9点、14点、16点，但部分由爆款拉高，单格样本少。",
+      "conclusion": "发布时间需与题材匹配验证，不能只看均值。",
+      "action": "风险放午晚短窗，工作流放22点深读窗。",
       "chart_payload": {
         "kind": "time_heatmap",
         "best_hours": [
@@ -9278,35 +9163,22 @@
           }
         ]
       },
+      "voice": "medium",
+      "emphasis": "primary",
+      "action_basket": "experiment",
       "ui_slot": {
         "component": "time_window_trend",
         "rail_focus": "publish_experiment",
         "accent": "amber"
-      },
-      "confidence": {
-        "level": "medium",
-        "score": 0.71,
-        "sample_size": 18,
-        "completeness": 1.0,
-        "distribution_skew": 57.89,
-        "reasons": [
-          "存在单篇爆款明显拉高均值",
-          "样本量中等,适合做下一轮验证",
-          "按小时切分后单格样本仍偏少"
-        ]
       }
     },
     {
       "id": "evidence",
       "title": "证据样本",
       "question": "哪些文章证明了上面的判断?",
-      "conclusion": "爆款负责说明入口有效,高分享样本负责说明账号资产方向。",
-      "evidence": [
-        "阅读最高样本为《Codex 插件集成 Agent 工作流指南》,分享最高样本为《Codex 插件集成 Agent 工作流指南》。",
-        "证据样本要服务复盘,不是把排行榜当结论。"
-      ],
-      "action": "每篇爆款拆标题触发词;每篇高分享文章沉淀成可复用栏目和选题模板。",
-      "next_test": "下轮选题会前必须先复用 3 个已验证标题触发词。",
+      "analysis": "阅读最高《Codex 插件集成 A》16500，分享同篇180。",
+      "conclusion": "爆款证明入口有效，高分享指向IP资产方向。",
+      "action": "立即拆爆款触发词，沉淀高分享为选题模板。",
       "chart_payload": {
         "kind": "rankings",
         "rankings": {
@@ -9812,35 +9684,22 @@
           ]
         }
       },
+      "voice": "high",
+      "emphasis": "hero",
+      "action_basket": "now",
       "ui_slot": {
         "component": "evidence_table",
         "rail_focus": "sample_review",
         "accent": "blue"
-      },
-      "confidence": {
-        "level": "high",
-        "score": 0.81,
-        "sample_size": 18,
-        "completeness": 1.0,
-        "distribution_skew": 57.89,
-        "reasons": [
-          "存在单篇爆款明显拉高均值",
-          "样本量足够支撑阶段性判断",
-          "排行榜只解释样本,不单独推导规律"
-        ]
       }
     },
     {
       "id": "quality",
       "title": "数据质量",
       "question": "这份报告的数据能不能支撑运营判断?",
-      "conclusion": "本轮公众号核心指标齐,但仍要保留后台导出时间和待补动作。",
-      "evidence": [
-        "当前周期非删除 20 篇,稳定样本 18 篇,指标缺口 0。",
-        "正文长度匹配完整度 22.2%。"
-      ],
-      "action": "每次复盘先刷新后台导出;登录态失效时先补数据,不要用旧 JSON 继续分析。",
-      "next_test": "下次刷新后检查 record_count、metric_pending_count 和最近文章标题是否与后台一致。",
+      "analysis": "非删20篇，稳定18篇，缺口0，正文匹配22%。",
+      "conclusion": "核心指标齐全，仍需保留导出时间和待补动作。",
+      "action": "立即每次复盘先刷新后台导出，登录失效先补数据。",
       "chart_payload": {
         "kind": "data_quality",
         "quality": {
@@ -9865,12 +9724,156 @@
           "metric_attempt_rows": 0
         }
       },
+      "voice": "high",
+      "emphasis": "hero",
+      "action_basket": "now",
       "ui_slot": {
         "component": "data_quality",
         "rail_focus": "data_integrity",
         "accent": "amber"
+      }
+    },
+    {
+      "id": "final-synthesis",
+      "title": "最终汇总",
+      "question": "哪些判断应该立刻执行,哪些只能小步验证?",
+      "analysis": "各节action_basket自动归集三篮子，高篮直接执行，中篮验证，低篮观察。",
+      "conclusion": "把稳定可复制动作执行到位，不追新图表。",
+      "action": "按篮子：now做，experiment试，hold观察。",
+      "chart_payload": {
+        "kind": "action_baskets",
+        "now": [
+          "立即工作流标题改写用户收益，风险文每天最多1篇。",
+          "立即每篇备收益风险替代版供挑选。",
+          "立即开头先写损失、省什么、怎么用。",
+          "立即拆爆款触发词，沉淀高分享为选题模板。",
+          "立即每次复盘先刷新后台导出，登录失效先补数据。"
+        ],
+        "experiment": [
+          "每周复盘同时看类型中位数和P75是否上移。",
+          "深度文保留空间，每600字加图表清单喘气点。",
+          "风险放午晚短窗，工作流放22点深读窗。"
+        ],
+        "hold": []
       },
-      "confidence": {
+      "voice": "medium",
+      "emphasis": "primary",
+      "action_basket": "experiment",
+      "ui_slot": {
+        "component": "confidence_action_board",
+        "rail_focus": "final_decision",
+        "accent": "green"
+      }
+    }
+  ],
+  "top_conclusion": {
+    "verdict": "稳定底盘没起来",
+    "next_action": "→ 抬中位阅读、拆开管理三件事"
+  },
+  "final_synthesis": {
+    "now": [
+      "立即工作流标题改写用户收益，风险文每天最多1篇。",
+      "立即每篇备收益风险替代版供挑选。",
+      "立即开头先写损失、省什么、怎么用。",
+      "立即拆爆款触发词，沉淀高分享为选题模板。",
+      "立即每次复盘先刷新后台导出，登录失效先补数据。"
+    ],
+    "experiment": [
+      "每周复盘同时看类型中位数和P75是否上移。",
+      "深度文保留空间，每600字加图表清单喘气点。",
+      "风险放午晚短窗，工作流放22点深读窗。"
+    ],
+    "hold": []
+  },
+  "_internal": {
+    "section_confidence": {
+      "overview": {
+        "level": "medium",
+        "score": 0.63,
+        "sample_size": 18,
+        "completeness": 0.222,
+        "distribution_skew": 57.89,
+        "reasons": [
+          "存在单篇爆款明显拉高均值",
+          "样本量足够支撑阶段性判断",
+          "存在本地正文或指标匹配缺口",
+          "全局稳定样本"
+        ]
+      },
+      "content-engine": {
+        "level": "high",
+        "score": 0.81,
+        "sample_size": 18,
+        "completeness": 1.0,
+        "distribution_skew": 57.89,
+        "reasons": [
+          "存在单篇爆款明显拉高均值",
+          "样本量足够支撑阶段性判断",
+          "按内容类型分组"
+        ]
+      },
+      "title-structure": {
+        "level": "high",
+        "score": 0.81,
+        "sample_size": 18,
+        "completeness": 1.0,
+        "distribution_skew": 57.89,
+        "reasons": [
+          "存在单篇爆款明显拉高均值",
+          "样本量足够支撑阶段性判断",
+          "标题结构来自规则化解析"
+        ]
+      },
+      "article-length": {
+        "level": "medium",
+        "score": 0.63,
+        "sample_size": 18,
+        "completeness": 0.222,
+        "distribution_skew": 57.89,
+        "reasons": [
+          "存在单篇爆款明显拉高均值",
+          "样本量足够支撑阶段性判断",
+          "存在本地正文或指标匹配缺口",
+          "正文长度依赖本地文章匹配"
+        ]
+      },
+      "audience": {
+        "level": "high",
+        "score": 0.81,
+        "sample_size": 18,
+        "completeness": 1.0,
+        "distribution_skew": 57.89,
+        "reasons": [
+          "存在单篇爆款明显拉高均值",
+          "样本量足够支撑阶段性判断",
+          "人群和痛点来自规则化标签"
+        ]
+      },
+      "timing": {
+        "level": "medium",
+        "score": 0.71,
+        "sample_size": 18,
+        "completeness": 1.0,
+        "distribution_skew": 57.89,
+        "reasons": [
+          "存在单篇爆款明显拉高均值",
+          "样本量中等,适合做下一轮验证",
+          "按小时切分后单格样本仍偏少"
+        ]
+      },
+      "evidence": {
+        "level": "high",
+        "score": 0.81,
+        "sample_size": 18,
+        "completeness": 1.0,
+        "distribution_skew": 57.89,
+        "reasons": [
+          "存在单篇爆款明显拉高均值",
+          "样本量足够支撑阶段性判断",
+          "排行榜只解释样本,不单独推导规律"
+        ]
+      },
+      "quality": {
         "level": "high",
         "score": 0.81,
         "sample_size": 18,
@@ -9881,71 +9884,8 @@
           "样本量足够支撑阶段性判断",
           "核心指标完整性"
         ]
-      }
-    },
-    {
-      "id": "final-synthesis",
-      "title": "最终汇总",
-      "question": "哪些判断应该立刻执行,哪些只能小步验证?",
-      "conclusion": "下一阶段不要追更多图表,而是把稳定可复制的动作执行到位。",
-      "evidence": [
-        "高置信动作直接进入本周执行。",
-        "中低置信判断只进小批量试验,不改全局节奏。"
-      ],
-      "action": "按置信度推进:高置信直接做,中置信做 2 周测试,低置信只观察不拍板。",
-      "next_test": "下一轮复盘先检查这张动作板,逐条判断保留、调整或废弃。",
-      "chart_payload": {
-        "kind": "confidence_action_board",
-        "summary": "下一阶段不要追更多图表,而是把稳定可复制的动作执行到位。",
-        "high_confidence_actions": [
-          "把 AI 编程/Agent 工作流继续做成 IP 主线",
-          "保留风险/账号/额度题材作为推荐流入口",
-          "所有复盘继续用中位数、P75 和去极值均值,避免被单篇爆款骗走。"
-        ],
-        "experiments": [
-          "羊毛/价格文必须补齐领取路径和风险边界",
-          "用题材匹配发布时间窗口做 2 周验证",
-          "标题结构做 2 周小批量对照,不要一次性全改。"
-        ],
-        "hold_decisions": [
-          "文章长度结论先跟踪,不立刻把所有文章卡死在某个字数。",
-          "发布时间窗口必须等同类题材样本够了再拍板。"
-        ],
-        "confidence_rollup": {
-          "overall": {
-            "level": "medium",
-            "score": 0.63,
-            "sample_size": 18,
-            "completeness": 0.222,
-            "distribution_skew": 57.89,
-            "reasons": [
-              "存在单篇爆款明显拉高均值",
-              "样本量足够支撑阶段性判断",
-              "存在本地正文或指标匹配缺口",
-              "全局稳定样本"
-            ]
-          },
-          "length": {
-            "level": "medium",
-            "score": 0.63,
-            "sample_size": 18,
-            "completeness": 0.222,
-            "distribution_skew": 57.89,
-            "reasons": [
-              "存在单篇爆款明显拉高均值",
-              "样本量足够支撑阶段性判断",
-              "存在本地正文或指标匹配缺口",
-              "正文长度结论"
-            ]
-          }
-        }
       },
-      "ui_slot": {
-        "component": "confidence_action_board",
-        "rail_focus": "final_decision",
-        "accent": "green"
-      },
-      "confidence": {
+      "final-synthesis": {
         "level": "medium",
         "score": 0.63,
         "sample_size": 18,
@@ -9958,13 +9898,40 @@
           "全局稳定样本"
         ]
       }
+    },
+    "confidence_model": {
+      "levels": {
+        "high": "可以直接进入本周动作,但仍要用下一批文章复核。",
+        "medium": "适合做 A/B 或小批量验证,不要一口气改全局策略。",
+        "low": "只作为观察线索,不写成运营规律。"
+      },
+      "drivers": [
+        "样本量",
+        "均值是否被单篇爆款拉高",
+        "指标和本地正文匹配完整度",
+        "48 小时成熟窗口"
+      ],
+      "overall": {
+        "level": "medium",
+        "score": 0.63,
+        "sample_size": 18,
+        "completeness": 0.222,
+        "distribution_skew": 57.89,
+        "reasons": [
+          "存在单篇爆款明显拉高均值",
+          "样本量足够支撑阶段性判断",
+          "存在本地正文或指标匹配缺口",
+          "全局稳定样本"
+        ]
+      },
+      "article_length_completeness": 0.222
     }
-  ],
+  },
   "account_profile": {
     "name": "样例运营号",
     "platform": "微信公众号",
     "description": "面向 AI 工具、Agent 工作流和普通人可落地效率场景的内容号。",
-    "avatar_text": "麦",
+    "avatar_text": "样",
     "analysis_period": "2025-12-20 至 2026-01-15",
     "article_count": 20,
     "stable_article_count": 18,
@@ -9976,7 +9943,7 @@
     "skill_name": "wechat-ops-performance-review",
     "skill_repo": "https://github.com/DwDestiny/my_skill",
     "star_url": "https://github.com/DwDestiny/my_skill",
-    "avatar_src": "/mai-avatar.png",
+    "avatar_src": "/sample-avatar.svg",
     "tagline": "数据刷新 → 专业分析 → wiki 报告 → 模板站验收"
   },
   "report_meta": {
@@ -9999,8 +9966,8 @@
     "scope_note": "当前模板只服务公众号运营分析；头条、Twitter/X、GitHub 不进入主报告。"
   },
   "executive_summary": {
-    "headline": "账号已经能打出爆款,但稳定中位数还没被抬起来。",
-    "subheadline": "下一轮的重点不是继续追单篇爆款,而是把入口文、IP 主线和发布时间验证拆开管理。",
+    "headline": "稳定底盘没起来",
+    "subheadline": "→ 抬中位阅读、拆开管理三件事",
     "primary_tension": "稳定样本 18 篇,中位阅读 285,P75 442.50;账号能出高点,但稳定底盘还需要被抬高。",
     "next_focus": "先执行五个动作,再用下一批稳定样本验证中位数、P75 和分享率是否上移。",
     "metric_strip": [
@@ -10108,7 +10075,7 @@
       "section_id": "overview",
       "kind": "section_evidence",
       "title": "总体判断",
-      "body": "稳定样本 18 篇,平均阅读 2,122.50,中位数 285,P75 442.50,最高 16,500。；爆款已经证明入口有效,但下一阶段要看稳定底盘是否上移。",
+      "body": "稳定样本18篇，中位285,P75442.50,最高16,500，有爆款但底盘偏低。",
       "meta": "账号当前最应该解决的运营问题是什么?",
       "tone": "green"
     },
@@ -10117,8 +10084,8 @@
       "section_id": "overview",
       "kind": "next_action",
       "title": "下一步动作",
-      "body": "后续复盘不要只看 Top 1,每周同时追踪类型中位数和 P75 是否上移。",
-      "meta": "下一批 10 篇稳定后,中位阅读高于 285,P75 高于 442.50。",
+      "body": "每周复盘同时看类型中位数和P75是否上移。",
+      "meta": "账号能打爆款，稳定中位数仍未抬升。",
       "tone": "green"
     },
     {
@@ -10126,8 +10093,8 @@
       "section_id": "content-engine",
       "kind": "section_evidence",
       "title": "内容引擎",
-      "body": "内容类型矩阵显示不同题材的均值、中位数和 P75 分化明显。；当前表现靠前类型包括: 价格/额度/羊毛情报、AI 编程/Agent 工作流、模型发布/能力解读。",
-      "meta": "哪些内容负责拉新,哪些内容负责建立账号心智?",
+      "body": "风险类中位265、价格类415、工作流类300，类型分化明显（18篇稳定）。",
+      "meta": "哪些内容负责拉新和建心智?",
       "tone": "blue"
     },
     {
@@ -10135,8 +10102,8 @@
       "section_id": "content-engine",
       "kind": "next_action",
       "title": "下一步动作",
-      "body": "保持工作流主线占比,但把标题和首屏改成用户收益;风险和羊毛题材只做明确可解决的入口文。",
-      "meta": "连续 2 周观察工作流类分享数和中位阅读是否同步上升。",
+      "body": "立即工作流标题改写用户收益，风险文每天最多1篇。",
+      "meta": "风险羊毛负责推荐入口，工作流主攻IP心智。",
       "tone": "green"
     },
     {
@@ -10144,7 +10111,7 @@
       "section_id": "title-structure",
       "kind": "section_evidence",
       "title": "标题结构",
-      "body": "当前中位阅读较高的标题结构为 教程清单型。；数字、价格/额度词、风险词和替代关系会改变点击理由,但要和正文兑现一致。",
+      "body": "风险损失型标题中位最高，样本2，数字价格风险词影响点击。",
       "meta": "什么标题结构更容易带来点击和分享?",
       "tone": "coral"
     },
@@ -10153,8 +10120,8 @@
       "section_id": "title-structure",
       "kind": "next_action",
       "title": "下一步动作",
-      "body": "下一轮每篇标题先标注 primary_pattern,并准备一个收益版、风险版、替代版做人工挑选。",
-      "meta": "同类题材至少跑 8 篇后,比较标题结构的中位阅读、P75 和分享率。",
+      "body": "立即每篇备收益风险替代版供挑选。",
+      "meta": "标题先给损失收益或替代关系，再放产品名。",
       "tone": "green"
     },
     {
@@ -10162,8 +10129,8 @@
       "section_id": "article-length",
       "kind": "section_evidence",
       "title": "文章长度",
-      "body": "当前本地正文匹配 4 篇,未匹配 14 篇。；表现靠前长度区间为 1200-2200字,但长度结论会受正文匹配率影响。",
-      "meta": "公众号文章应该写多长,才既能讲清楚又不拖垮完读?",
+      "body": "本地匹配4篇(均2580字)，未匹配14篇，长度结论受匹配率影响。",
+      "meta": "文章长度如何控制信息密度?",
       "tone": "violet"
     },
     {
@@ -10171,8 +10138,8 @@
       "section_id": "article-length",
       "kind": "next_action",
       "title": "下一步动作",
-      "body": "下一批工作流和深度文保留解释空间,但每 600-800 字必须有图、表、清单或小结帮读者喘气。",
-      "meta": "把新文按长度桶记录,观察 2200-3500 字与 3500 字以上的分享率和评论率差异。",
+      "body": "深度文保留空间，每600字加图表清单喘气点。",
+      "meta": "长度不是越短越好，关键控制信息密度与动作服务。",
       "tone": "green"
     },
     {
@@ -10180,7 +10147,7 @@
       "section_id": "audience",
       "kind": "section_evidence",
       "title": "读者痛点",
-      "body": "最高痛点样本为 成本、额度与订阅压力,最高人群样本为 AI 编程/Agent 实践者。这说明内容要从具体损失、成本和落地场景切入。",
+      "body": "最高痛点成本、额度与订阅压力(4篇)，最高人群AI 编程/Agent 实践者。",
       "meta": "读者真正为什么点开、收藏和转发?",
       "tone": "green"
     },
@@ -10189,8 +10156,8 @@
       "section_id": "audience",
       "kind": "next_action",
       "title": "下一步动作",
-      "body": "每篇文章开头先交代读者会损失什么、能省什么、能立刻怎么用。",
-      "meta": "新文记录评论和分享理由,验证读者是否围绕账号、额度、工作流收益反馈。",
+      "body": "立即开头先写损失、省什么、怎么用。",
+      "meta": "读者以账号额度敏感和编程实践者为主，非泛AI用户。",
       "tone": "green"
     },
     {
@@ -10198,7 +10165,7 @@
       "section_id": "timing",
       "kind": "section_evidence",
       "title": "发布时间",
-      "body": "当前中位阅读较好的小时为 9点、14点、16点、10点;但部分时段由单篇爆款拉高。；发布时间必须和题材匹配,不能机械套一个黄金时间。",
+      "body": "中位较好小时为9点、14点、16点，但部分由爆款拉高，单格样本少。",
       "meta": "哪些发布时间值得继续验证?",
       "tone": "amber"
     },
@@ -10207,8 +10174,8 @@
       "section_id": "timing",
       "kind": "next_action",
       "title": "下一步动作",
-      "body": "风险/福利放 12 点或 17 点附近,模型更新放下午,工作流和深度判断放 22 点附近。",
-      "meta": "每个窗口至少跑 3 篇同类题材,再比较中位数,不到样本量不下结论。",
+      "body": "风险放午晚短窗，工作流放22点深读窗。",
+      "meta": "发布时间需与题材匹配验证，不能只看均值。",
       "tone": "green"
     },
     {
@@ -10216,7 +10183,7 @@
       "section_id": "evidence",
       "kind": "section_evidence",
       "title": "证据样本",
-      "body": "阅读最高样本为《Codex 插件集成 Agent 工作流指南》,分享最高样本为《Codex 插件集成 Agent 工作流指南》。；证据样本要服务复盘,不是把排行榜当结论。",
+      "body": "阅读最高《Codex 插件集成 A》16500，分享同篇180。",
       "meta": "哪些文章证明了上面的判断?",
       "tone": "blue"
     },
@@ -10225,8 +10192,8 @@
       "section_id": "evidence",
       "kind": "next_action",
       "title": "下一步动作",
-      "body": "每篇爆款拆标题触发词;每篇高分享文章沉淀成可复用栏目和选题模板。",
-      "meta": "下轮选题会前必须先复用 3 个已验证标题触发词。",
+      "body": "立即拆爆款触发词，沉淀高分享为选题模板。",
+      "meta": "爆款证明入口有效，高分享指向IP资产方向。",
       "tone": "green"
     },
     {
@@ -10234,7 +10201,7 @@
       "section_id": "quality",
       "kind": "section_evidence",
       "title": "数据质量",
-      "body": "当前周期非删除 20 篇,稳定样本 18 篇,指标缺口 0。；正文长度匹配完整度 22.2%。",
+      "body": "非删20篇，稳定18篇，缺口0，正文匹配22%。",
       "meta": "这份报告的数据能不能支撑运营判断?",
       "tone": "amber"
     },
@@ -10243,8 +10210,8 @@
       "section_id": "quality",
       "kind": "next_action",
       "title": "下一步动作",
-      "body": "每次复盘先刷新后台导出;登录态失效时先补数据,不要用旧 JSON 继续分析。",
-      "meta": "下次刷新后检查 record_count、metric_pending_count 和最近文章标题是否与后台一致。",
+      "body": "立即每次复盘先刷新后台导出，登录失效先补数据。",
+      "meta": "核心指标齐全，仍需保留导出时间和待补动作。",
       "tone": "green"
     },
     {
@@ -10252,7 +10219,7 @@
       "section_id": "final-synthesis",
       "kind": "section_evidence",
       "title": "最终汇总",
-      "body": "高置信动作直接进入本周执行。；中低置信判断只进小批量试验,不改全局节奏。",
+      "body": "各节action_basket自动归集三篮子，高篮直接执行，中篮验证，低篮观察。",
       "meta": "哪些判断应该立刻执行,哪些只能小步验证?",
       "tone": "green"
     },
@@ -10261,8 +10228,8 @@
       "section_id": "final-synthesis",
       "kind": "next_action",
       "title": "下一步动作",
-      "body": "按置信度推进:高置信直接做,中置信做 2 周测试,低置信只观察不拍板。",
-      "meta": "下一轮复盘先检查这张动作板,逐条判断保留、调整或废弃。",
+      "body": "按篮子：now做，experiment试，hold观察。",
+      "meta": "把稳定可复制动作执行到位，不追新图表。",
       "tone": "green"
     },
     {
@@ -10488,32 +10455,32 @@
   "conclusions": [
     {
       "id": "overview",
-      "title": "账号已经能打出爆款,但稳定中位数还没被抬起来。",
-      "body": "后续复盘不要只看 Top 1,每周同时追踪类型中位数和 P75 是否上移。",
+      "title": "账号能打爆款，稳定中位数仍未抬升。",
+      "body": "每周复盘同时看类型中位数和P75是否上移。",
       "evidence": "总体判断"
     },
     {
       "id": "content-engine",
-      "title": "风险/额度负责推荐流入口,AI 编程/Agent 工作流负责 IP 主线。",
-      "body": "保持工作流主线占比,但把标题和首屏改成用户收益;风险和羊毛题材只做明确可解决的入口文。",
+      "title": "风险羊毛负责推荐入口，工作流主攻IP心智。",
+      "body": "立即工作流标题改写用户收益，风险文每天最多1篇。",
       "evidence": "内容引擎"
     },
     {
       "id": "audience",
-      "title": "当前读者不是泛 AI 用户,而是账号/额度敏感人群和 AI 编程实践者。",
-      "body": "每篇文章开头先交代读者会损失什么、能省什么、能立刻怎么用。",
+      "title": "读者以账号额度敏感和编程实践者为主，非泛AI用户。",
+      "body": "立即开头先写损失、省什么、怎么用。",
       "evidence": "读者痛点"
     },
     {
       "id": "timing",
-      "title": "发布时间不能只看均值,要按题材匹配窗口做验证。",
-      "body": "风险/福利放 12 点或 17 点附近,模型更新放下午,工作流和深度判断放 22 点附近。",
+      "title": "发布时间需与题材匹配验证，不能只看均值。",
+      "body": "风险放午晚短窗，工作流放22点深读窗。",
       "evidence": "发布时间"
     },
     {
       "id": "evidence",
-      "title": "爆款负责说明入口有效,高分享样本负责说明账号资产方向。",
-      "body": "每篇爆款拆标题触发词;每篇高分享文章沉淀成可复用栏目和选题模板。",
+      "title": "爆款证明入口有效，高分享指向IP资产方向。",
+      "body": "立即拆爆款触发词，沉淀高分享为选题模板。",
       "evidence": "证据样本"
     }
   ]
