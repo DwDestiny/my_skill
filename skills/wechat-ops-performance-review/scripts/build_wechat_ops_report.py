@@ -1112,8 +1112,8 @@ def build_analysis_sections(dataset: dict[str, Any]) -> list[dict[str, Any]]:
     quality_act = _tone_action("每次复盘先刷新后台导出，登录失效先补数据。", quality_voice)
 
     final_voice = voice_for_confidence(conf_final)
-    final_conc = _tone_conclusion("把稳定可复制动作执行到位，不追新图表。", final_voice)
-    final_act = _tone_action("按篮子：now做，experiment试，hold观察。", final_voice)
+    final_conc = _tone_conclusion("先把可复制的动作执行到位，不盲目追加新图表。", final_voice)
+    final_act = _tone_action("可执行的优先落地，验证的先小步试，暂缓的等数据。", final_voice)
 
     # build new structure: analysis (fact <=60) + conclusion (<=40 voiced) + action (<=30) + voice/emphasis/basket ; no evidence/next_test/conf
     sections = [
@@ -1239,7 +1239,7 @@ def build_analysis_sections(dataset: dict[str, Any]) -> list[dict[str, Any]]:
             "id": "final-synthesis",
             "title": "最终汇总",
             "question": "哪些判断应该立刻执行,哪些只能小步验证?",
-            "analysis": "各节action_basket自动归集三篮子，高篮直接执行，中篮验证，低篮观察。",
+            "analysis": "可直接执行的动作优先落地，小步验证的先试一试，暂缓的等更多样本。",
             "conclusion": final_conc,
             "action": final_act,
             "chart_payload": {"kind": "action_baskets", "now": [], "experiment": [], "hold": []},
@@ -1909,7 +1909,7 @@ last_updated_by_agent: codex
 
 {dim_blocks[8] if len(dim_blocks)>8 else ''}
 
-## 行动三篮子
+## 行动分档
 
 ### 现在就做
 {now_items}

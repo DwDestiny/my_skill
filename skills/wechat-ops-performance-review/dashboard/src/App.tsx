@@ -343,15 +343,18 @@ function RightRail({ activeSection }: { activeSection: string }) {
         <span>当前屏幕</span>
         <strong>{current?.title ?? "本周动作"}</strong>
         <p>{current?.question ?? "先把下一步动作排出来"}</p>
-        {current ? (
-          <div className="rail-analysis">
-            <span>观察</span>
-            <p className="rail-analysis-text">{current.analysis}</p>
-            <span>行动</span>
-            <p className="rail-action-text">{current.action}</p>
-          </div>
+        {current && current.conclusion ? (
+          <p className="rail-conclusion">{current.conclusion}</p>
         ) : null}
       </div>
+      {current ? (
+        <div className="rail-analysis">
+          <span>本屏观察</span>
+          <p className="rail-analysis-text">{current.analysis}</p>
+          <span>下一步</span>
+          <p className="rail-action-text">{current.action}</p>
+        </div>
+      ) : null}
       <div className="rail-stream">
         <h2>证据与动作</h2>
         {items.map((item) => (
@@ -362,7 +365,6 @@ function RightRail({ activeSection }: { activeSection: string }) {
             rel="noreferrer"
             target={item.url ? "_blank" : undefined}
           >
-            <span>{item.kind.replace("_", " ")}</span>
             <strong>{item.title}</strong>
             <p>{item.body}</p>
             {item.meta ? <small>{item.meta}</small> : null}
@@ -461,28 +463,15 @@ function MetricConstellation() {
     "中位阅读": <TrendingUp size={20} />,
     "指标缺口": <Target size={20} />,
   };
-  // Demo deltas for logip style (data has no prior period deltas)
-  const deltaMap: Record<string, { text: string; dir: "up" | "down" | "flat" }> = {
-    "当前文章": { text: "+2", dir: "up" },
-    "稳定样本": { text: "—", dir: "flat" },
-    "中位阅读": { text: "+12", dir: "up" },
-    "指标缺口": { text: "0", dir: "flat" },
-  };
   return (
     <div className="metric-constellation">
       {data.executive_summary.metric_strip.map((metric) => {
-        const delta = deltaMap[metric.label] || { text: "", dir: "flat" as const };
         const icon = iconMap[metric.label] || <BarChart3 size={20} />;
         return (
           <div className="kpi-card" key={metric.label}>
             <div className="kpi-icon">{icon}</div>
             <div className="kpi-label">{metric.label}</div>
             <div className="kpi-metric">{metric.display}</div>
-            {delta.text && (
-              <div className={`kpi-delta ${delta.dir}`}>
-                {delta.dir === "up" ? "↑" : delta.dir === "down" ? "↓" : ""} {delta.text}
-              </div>
-            )}
             <div className="kpi-hint">{metric.hint}</div>
           </div>
         );
@@ -530,7 +519,7 @@ function ContentVisual() {
             <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="median" name="中位阅读" radius={[0, 8, 8, 0]}>
               {rows.map((_, index) => (
-                <Cell fill={index % 2 ? "#5f98f2" : "#2f9f7b"} key={index} />
+                <Cell fill={CHART_PRIMARY} key={index} />
               ))}
             </Bar>
           </BarChart>
@@ -560,7 +549,7 @@ function TitleVisual() {
             <XAxis dataKey="key" tickLine={false} axisLine={false} fontSize={11} angle={-18} textAnchor="end" height={58} />
             <YAxis tickLine={false} axisLine={false} fontSize={12} width={42} />
             <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="median" name="中位阅读" fill="#FF4D4F" radius={[8, 8, 0, 0]} />
+            <Bar dataKey="median" name="中位阅读" fill={CHART_PRIMARY} radius={[8, 8, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -588,7 +577,7 @@ function LengthVisual() {
             <XAxis dataKey="key" tickLine={false} axisLine={false} fontSize={12} />
             <YAxis tickLine={false} axisLine={false} fontSize={12} width={44} />
             <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="median" name="中位阅读" fill="#F5A623" radius={[8, 8, 0, 0]} />
+            <Bar dataKey="median" name="中位阅读" fill={CHART_PRIMARY} radius={[8, 8, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
