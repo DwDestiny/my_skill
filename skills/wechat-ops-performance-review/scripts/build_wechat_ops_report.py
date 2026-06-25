@@ -25,10 +25,15 @@ from analyze.classify import *
 from analyze.confidence import *
 from analyze.constants import *
 from analyze.enrich import *
-from analyze.io_utils import *
+from analyze.io_utils import *  # includes load_raw_audience, load_raw_trend
 from analyze.stats import *
 from analyze.m7_standards import build_benchmark
 from analyze.m2_viral_genes import build_viral_genes, classify_quadrant, reverse_viral_formula
+from analyze.m1_checkup import build_checkup
+from analyze.m3_content_engine import build_content_engine
+from analyze.m4_audience import build_audience
+from analyze.m5_growth_funnel import build_growth_funnel
+from analyze.m6_action_plan import build_action_plan_v2
 
 
 @dataclass(frozen=True)
@@ -902,6 +907,29 @@ def build_dataset(root: Path, *, account_name: str = "麦总玩 AI", since: str 
     }
     dataset["benchmark"] = build_benchmark(stable)
     dataset["viral_genes"] = build_viral_genes(stable, dataset["benchmark"])
+    # 新增 modules 与 account（仅追加，不改旧字段）
+    audience_raw = load_raw_audience(root)
+    trend_raw = load_raw_trend(root)
+    bm = dataset["benchmark"]
+    vg = dataset["viral_genes"]
+    checkup = build_checkup(stable, bm, audience_raw)
+    content_engine = build_content_engine(stable, dataset["analysis"]["by_content_type"], bm)
+    audience_mod = build_audience(stable, audience_raw, dataset["analysis"]["by_pain_point"], dataset["analysis"]["by_persona"])
+    growth_funnel = build_growth_funnel(stable, audience_raw, trend_raw, vg["viral_formula"])
+    action_plan_v2 = build_action_plan_v2(vg, checkup, content_engine, audience_mod, growth_funnel)
+    dataset["modules"] = {
+        "checkup": checkup,
+        "content_engine": content_engine,
+        "audience": audience_mod,
+        "growth_funnel": growth_funnel,
+        "action_plan": action_plan_v2,
+    }
+    dataset["account"] = {
+        "name": account_name,
+        "cumulate_user": audience_raw.get("cumulate_user"),
+        "avatar_local": None,
+        "available": audience_raw.get("available", False),
+    }
     dataset["confidence_model"] = build_confidence_model(stable)
     dataset["title_analysis"] = build_title_analysis(stable)
     dataset["length_analysis"] = build_length_analysis(stable)

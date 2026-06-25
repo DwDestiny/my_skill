@@ -85,3 +85,38 @@ def compact_match_key(value: str | None) -> str:
     if not value:
         return ""
     return re.sub(r"[\s\W_]+", "", value.lower())
+
+
+def load_raw_audience(root: Path) -> dict[str, Any]:
+    """读取 root/raw/audience.json，不存在或异常返回 {"available": False}。"""
+    p = root / "raw" / "audience.json"
+    if not p.exists():
+        return {"available": False}
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            return {"available": False}
+        d = dict(data)
+        # ensure flag
+        if "available" not in d:
+            d["available"] = True
+        return d
+    except Exception:
+        return {"available": False}
+
+
+def load_raw_trend(root: Path) -> dict[str, Any]:
+    """读取 root/raw/content-trend.json，不存在或异常返回 {"available": False}。"""
+    p = root / "raw" / "content-trend.json"
+    if not p.exists():
+        return {"available": False}
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            return {"available": False}
+        d = dict(data)
+        if "available" not in d:
+            d["available"] = True
+        return d
+    except Exception:
+        return {"available": False}

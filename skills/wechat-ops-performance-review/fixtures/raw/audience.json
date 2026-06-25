@@ -1,0 +1,308 @@
+{
+  "available": true,
+  "captured_at": "2026-01-15T18:00:00+08:00",
+  "cumulate_user": 12091,
+  "summary": {
+    "new_user_7d": 311,
+    "cancel_user_7d": 72,
+    "netgain_7d": 239
+  },
+  "daily": [
+    {
+      "date": "2025-12-17",
+      "new_user": 30,
+      "cancel_user": 10,
+      "netgain": 20,
+      "cumulate": 11220
+    },
+    {
+      "date": "2025-12-18",
+      "new_user": 37,
+      "cancel_user": 10,
+      "netgain": 27,
+      "cumulate": 11247
+    },
+    {
+      "date": "2025-12-19",
+      "new_user": 44,
+      "cancel_user": 11,
+      "netgain": 33,
+      "cumulate": 11280
+    },
+    {
+      "date": "2025-12-20",
+      "new_user": 50,
+      "cancel_user": 12,
+      "netgain": 38,
+      "cumulate": 11318
+    },
+    {
+      "date": "2025-12-21",
+      "new_user": 55,
+      "cancel_user": 8,
+      "netgain": 47,
+      "cumulate": 11365
+    },
+    {
+      "date": "2025-12-22",
+      "new_user": 43,
+      "cancel_user": 8,
+      "netgain": 35,
+      "cumulate": 11400
+    },
+    {
+      "date": "2025-12-23",
+      "new_user": 45,
+      "cancel_user": 9,
+      "netgain": 36,
+      "cumulate": 11436
+    },
+    {
+      "date": "2025-12-24",
+      "new_user": 46,
+      "cancel_user": 10,
+      "netgain": 36,
+      "cumulate": 11472
+    },
+    {
+      "date": "2025-12-25",
+      "new_user": 45,
+      "cancel_user": 6,
+      "netgain": 39,
+      "cumulate": 11511
+    },
+    {
+      "date": "2025-12-26",
+      "new_user": 43,
+      "cancel_user": 7,
+      "netgain": 36,
+      "cumulate": 11547
+    },
+    {
+      "date": "2025-12-27",
+      "new_user": 28,
+      "cancel_user": 7,
+      "netgain": 21,
+      "cumulate": 11568
+    },
+    {
+      "date": "2025-12-28",
+      "new_user": 26,
+      "cancel_user": 8,
+      "netgain": 18,
+      "cumulate": 11586
+    },
+    {
+      "date": "2025-12-29",
+      "new_user": 26,
+      "cancel_user": 5,
+      "netgain": 21,
+      "cumulate": 11607
+    },
+    {
+      "date": "2025-12-30",
+      "new_user": 26,
+      "cancel_user": 6,
+      "netgain": 20,
+      "cumulate": 11627
+    },
+    {
+      "date": "2025-12-31",
+      "new_user": 29,
+      "cancel_user": 7,
+      "netgain": 22,
+      "cumulate": 11649
+    },
+    {
+      "date": "2026-01-01",
+      "new_user": 17,
+      "cancel_user": 8,
+      "netgain": 9,
+      "cumulate": 11658
+    },
+    {
+      "date": "2026-01-02",
+      "new_user": 22,
+      "cancel_user": 6,
+      "netgain": 16,
+      "cumulate": 11674
+    },
+    {
+      "date": "2026-01-03",
+      "new_user": 28,
+      "cancel_user": 7,
+      "netgain": 21,
+      "cumulate": 11695
+    },
+    {
+      "date": "2026-01-04",
+      "new_user": 36,
+      "cancel_user": 9,
+      "netgain": 27,
+      "cumulate": 11722
+    },
+    {
+      "date": "2026-01-05",
+      "new_user": 42,
+      "cancel_user": 10,
+      "netgain": 32,
+      "cumulate": 11754
+    },
+    {
+      "date": "2026-01-06",
+      "new_user": 35,
+      "cancel_user": 7,
+      "netgain": 28,
+      "cumulate": 11782
+    },
+    {
+      "date": "2026-01-07",
+      "new_user": 42,
+      "cancel_user": 9,
+      "netgain": 33,
+      "cumulate": 11815
+    },
+    {
+      "date": "2026-01-08",
+      "new_user": 48,
+      "cancel_user": 11,
+      "netgain": 37,
+      "cumulate": 11852
+    },
+    {
+      "date": "2026-01-09",
+      "new_user": 52,
+      "cancel_user": 12,
+      "netgain": 40,
+      "cumulate": 11892
+    },
+    {
+      "date": "2026-01-10",
+      "new_user": 55,
+      "cancel_user": 9,
+      "netgain": 46,
+      "cumulate": 11938
+    },
+    {
+      "date": "2026-01-11",
+      "new_user": 42,
+      "cancel_user": 10,
+      "netgain": 32,
+      "cumulate": 11970
+    },
+    {
+      "date": "2026-01-12",
+      "new_user": 42,
+      "cancel_user": 11,
+      "netgain": 31,
+      "cumulate": 12001
+    },
+    {
+      "date": "2026-01-13",
+      "new_user": 41,
+      "cancel_user": 12,
+      "netgain": 29,
+      "cumulate": 12030
+    },
+    {
+      "date": "2026-01-14",
+      "new_user": 40,
+      "cancel_user": 9,
+      "netgain": 31,
+      "cumulate": 12061
+    },
+    {
+      "date": "2026-01-15",
+      "new_user": 39,
+      "cancel_user": 9,
+      "netgain": 30,
+      "cumulate": 12091
+    }
+  ],
+  "city": [
+    {
+      "name": "北京",
+      "value": 2180
+    },
+    {
+      "name": "上海",
+      "value": 1890
+    },
+    {
+      "name": "深圳",
+      "value": 1420
+    },
+    {
+      "name": "广州",
+      "value": 1180
+    },
+    {
+      "name": "杭州",
+      "value": 920
+    },
+    {
+      "name": "成都",
+      "value": 780
+    },
+    {
+      "name": "武汉",
+      "value": 560
+    },
+    {
+      "name": "西安",
+      "value": 430
+    },
+    {
+      "name": "南京",
+      "value": 390
+    },
+    {
+      "name": "其他",
+      "value": 2090
+    }
+  ],
+  "age": [
+    {
+      "range": "18-25",
+      "value": 0.22
+    },
+    {
+      "range": "26-35",
+      "value": 0.41
+    },
+    {
+      "range": "36-45",
+      "value": 0.24
+    },
+    {
+      "range": "46+",
+      "value": 0.13
+    }
+  ],
+  "gender": {
+    "male": 0.66,
+    "female": 0.34
+  },
+  "user_source": [
+    {
+      "source": "公众号搜索",
+      "value": 0.34
+    },
+    {
+      "source": "文章内分享",
+      "value": 0.28
+    },
+    {
+      "source": "扫一扫二维码",
+      "value": 0.16
+    },
+    {
+      "source": "名片分享",
+      "value": 0.12
+    },
+    {
+      "source": "其他",
+      "value": 0.1
+    }
+  ]
+}
