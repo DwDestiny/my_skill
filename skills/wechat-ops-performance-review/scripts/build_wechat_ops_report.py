@@ -1,0 +1,2042 @@
+#!/usr/bin/env python3
+"""Build a WeChat-only operations report for wiki and dashboard use.
+
+This script is intentionally read-only toward external platforms. It reads the
+latest WeChat publish-record export plus local social ops indexes, then writes a
+human-readable wiki report and a machine-readable JSON dataset.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import re
+from collections import Counter, defaultdict
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from statistics import mean, median
+from typing import Any
+from zoneinfo import ZoneInfo
+
+
+CN_TZ = ZoneInfo("Asia/Shanghai")
+OPS_START = datetime(2026, 4, 18, tzinfo=CN_TZ)
+REPORT_DATE = "2026-06-23"
+
+CONTENT_TYPES = [
+    "风险/账号/额度焦虑",
+    "价格/额度/羊毛情报",
+    "模型发布/能力解读",
+    "AI 编程/Agent 工作流",
+    "产品/副业/商业化",
+    "泛 AI 热点/效率工具",
+]
+
+PAIN_POINTS = [
+    "账号安全与权限焦虑",
+    "成本、额度与订阅压力",
+    "工具选择与效率落地",
+    "模型能力判断",
+    "副业产品化与变现",
+    "热点信息差与谈资",
+]
+
+PERSONAS = [
+    "Claude/Codex/GPT 重度用户",
+    "AI 编程/Agent 实践者",
+    "省钱党与套餐比较用户",
+    "产品经理/独立开发者",
+    "非技术效率工具用户",
+    "AI 新闻观察者",
+]
+
+WEEKDAY_LABELS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+
+SECTION_UI_SLOTS: dict[str, dict[str, str]] = {
+    "overview": {
+        "component": "summary_metrics",
+        "rail_focus": "operating_tension",
+        "accent": "green",
+    },
+    "content-engine": {
+        "component": "content_type_matrix",
+        "rail_focus": "topic_ratio",
+        "accent": "blue",
+    },
+    "title-structure": {
+        "component": "title_pattern_map",
+        "rail_focus": "headline_strategy",
+        "accent": "coral",
+    },
+    "article-length": {
+        "component": "length_performance_curve",
+        "rail_focus": "reading_depth",
+        "accent": "violet",
+    },
+    "audience": {
+        "component": "audience_split",
+        "rail_focus": "reader_motivation",
+        "accent": "green",
+    },
+    "timing": {
+        "component": "time_window_trend",
+        "rail_focus": "publish_experiment",
+        "accent": "amber",
+    },
+    "evidence": {
+        "component": "evidence_table",
+        "rail_focus": "sample_review",
+        "accent": "blue",
+    },
+    "quality": {
+        "component": "data_quality",
+        "rail_focus": "data_integrity",
+        "accent": "amber",
+    },
+    "final-synthesis": {
+        "component": "confidence_action_board",
+        "rail_focus": "final_decision",
+        "accent": "green",
+    },
+}
+
+VISUAL_TOKENS: dict[str, Any] = {
+    "layout": "three_column_report_shell",
+    "background": "#f4f6fb",
+    "surface": "#ffffff",
+    "surface_muted": "#f8fafc",
+    "ink": "#101828",
+    "muted": "#667085",
+    "line": "#e7ebf0",
+    "accent_green": "#2f9f7b",
+    "accent_blue": "#5f98f2",
+    "accent_amber": "#e7a13d",
+    "accent_coral": "#f26d6d",
+    "accent_violet": "#8b7cf6",
+    "radius_shell": 26,
+    "radius_control": 8,
+    "shadow": "0 28px 70px rgba(32, 41, 63, 0.12)",
+    "density": "low",
+    "screen_rule": "one_claim_one_visual_one_action",
+}
+
+TITLE_PATTERN_KEYS = [
+    "风险损失型",
+    "价格福利型",
+    "模型发布型",
+    "对比替代型",
+    "教程清单型",
+    "疑问反常识型",
+    "工作流案例型",
+    "普通资讯型",
+]
+
+TITLE_LENGTH_BUCKETS = ["16字内", "17-24字", "25-34字", "35字以上"]
+ARTICLE_LENGTH_BUCKETS = ["1200字内", "1200-2200字", "2200-3500字", "3500字以上", "未匹配正文"]
+
+
+@dataclass(frozen=True)
+class Paths:
+    root: Path
+    wiki_repo: Path
+    report_path: Path
+    dataset_path: Path
+    dashboard_data_path: Path
+
+
+def read_json(path: Path, default: Any) -> Any:
+    if not path.exists():
+        return default
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def read_jsonl(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    rows: list[dict[str, Any]] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            rows.append(json.loads(line))
+    return rows
+
+
+def parse_dt(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    text = value.replace("Z", "+00:00")
+    try:
+        dt = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=CN_TZ)
+    return dt.astimezone(CN_TZ)
+
+
+def iso_dt(dt: datetime | None) -> str | None:
+    return dt.isoformat() if dt else None
+
+
+def latest_publish_export(root: Path) -> Path:
+    candidates = sorted((root / "reports" / "wechat").glob("publish-records-*.json"))
+    candidates = [p for p in candidates if not p.name.endswith(".summary.json")]
+    if not candidates:
+        raise FileNotFoundError("No reports/wechat/publish-records-*.json export found")
+    return candidates[-1]
+
+
+def normalize_number(value: Any) -> int:
+    if value is None:
+        return 0
+    if isinstance(value, (int, float)):
+        return int(value)
+    text = str(value).replace(",", "").strip()
+    if not text:
+        return 0
+    try:
+        return int(float(text))
+    except ValueError:
+        return 0
+
+
+def normalize_money(value: Any) -> float:
+    if value is None:
+        return 0.0
+    try:
+        return float(str(value).replace(",", "").strip() or 0)
+    except ValueError:
+        return 0.0
+
+
+def text_blob(record: dict[str, Any]) -> str:
+    return f"{record.get('title', '')} {record.get('digest', '')}".lower()
+
+
+def has_any(text: str, keywords: list[str]) -> bool:
+    return any(keyword.lower() in text for keyword in keywords)
+
+
+def classify_content(record: dict[str, Any]) -> str:
+    text = text_blob(record)
+    title = str(record.get("title", "")).lower()
+
+    risk_terms = [
+        "封号",
+        "废掉",
+        "认证",
+        "kyc",
+        "验证",
+        "卡",
+        "收紧",
+        "缩水",
+        "不够用",
+        "掉",
+        "停用",
+        "叫停",
+        "限制",
+        "翻车",
+        "跳票",
+        "失望",
+        "调查",
+        "风险",
+        "危机",
+        "白名单",
+        "auth",
+        "401",
+    ]
+    price_terms = [
+        "免费",
+        "额度",
+        "价格",
+        "低价",
+        "便宜",
+        "省钱",
+        "羊毛",
+        "优惠",
+        "订阅",
+        "会员",
+        "pro",
+        "plus",
+        "美金",
+        "元",
+        "套餐",
+        "充值",
+        "开源第一",
+        "彻底免费",
+    ]
+    agent_terms = [
+        "codex",
+        "claude code",
+        "agent",
+        "mcp",
+        "skill",
+        "插件",
+        "工作流",
+        "github",
+        "开源",
+        "代码",
+        "编程",
+        "工程师",
+        "cursor",
+        "opencode",
+        "codegraph",
+        "项目",
+        "ide",
+        "cli",
+    ]
+    model_terms = [
+        "glm",
+        "gpt",
+        "claude",
+        "deepseek",
+        "kimi",
+        "minimax",
+        "qwen",
+        "fable",
+        "模型",
+        "benchmark",
+        "跑分",
+        "性能",
+        "发布",
+        "能力",
+        "anthropic",
+        "openai",
+    ]
+    business_terms = [
+        "产品",
+        "副业",
+        "商业化",
+        "闲鱼",
+        "变现",
+        "收入",
+        "增长",
+        "pm",
+        "独立开发",
+        "创业",
+    ]
+
+    if has_any(text, risk_terms):
+        return "风险/账号/额度焦虑"
+    if has_any(text, price_terms):
+        return "价格/额度/羊毛情报"
+    if has_any(text, agent_terms):
+        return "AI 编程/Agent 工作流"
+    if has_any(text, model_terms):
+        return "模型发布/能力解读"
+    if has_any(text, business_terms):
+        return "产品/副业/商业化"
+    if re.search(r"ai|工具|效率|输入法|办公|ppt|浏览器|教程", title):
+        return "泛 AI 热点/效率工具"
+    return "泛 AI 热点/效率工具"
+
+
+def classify_pain(record: dict[str, Any], content_type: str) -> str:
+    text = text_blob(record)
+    if content_type == "风险/账号/额度焦虑":
+        return "账号安全与权限焦虑"
+    if content_type == "价格/额度/羊毛情报":
+        return "成本、额度与订阅压力"
+    if content_type == "AI 编程/Agent 工作流":
+        return "工具选择与效率落地"
+    if content_type == "模型发布/能力解读":
+        return "模型能力判断"
+    if content_type == "产品/副业/商业化":
+        return "副业产品化与变现"
+    if has_any(text, ["免费", "价格", "额度", "订阅"]):
+        return "成本、额度与订阅压力"
+    return "热点信息差与谈资"
+
+
+def classify_persona(record: dict[str, Any], content_type: str, pain: str) -> str:
+    text = text_blob(record)
+    if has_any(text, ["codex", "claude", "gpt", "openai", "anthropic", "kimi"]):
+        if content_type == "AI 编程/Agent 工作流":
+            return "AI 编程/Agent 实践者"
+        return "Claude/Codex/GPT 重度用户"
+    if pain == "成本、额度与订阅压力":
+        return "省钱党与套餐比较用户"
+    if content_type == "产品/副业/商业化":
+        return "产品经理/独立开发者"
+    if content_type == "泛 AI 热点/效率工具":
+        return "非技术效率工具用户"
+    return "AI 新闻观察者"
+
+
+def compact_match_key(value: str | None) -> str:
+    if not value:
+        return ""
+    return re.sub(r"[\s\W_]+", "", value.lower())
+
+
+def build_article_lookup(root: Path) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
+    index = read_json(root / "data/social_ops/indexes/articles.json", {"items": []})
+    by_url: dict[str, dict[str, Any]] = {}
+    by_title: dict[str, dict[str, Any]] = {}
+    for item in index.get("items", []):
+        title_key = compact_match_key(item.get("title"))
+        if title_key and title_key not in by_title:
+            by_title[title_key] = item
+        wechat = item.get("platforms", {}).get("wechat", {})
+        for value in [
+            item.get("url"),
+            item.get("public_url"),
+            item.get("content_url"),
+            wechat.get("public_url"),
+        ]:
+            if value:
+                by_url[str(value).strip()] = item
+    return by_url, by_title
+
+
+def title_length_bucket(title: str) -> str:
+    length = len(title.strip())
+    if length <= 16:
+        return "16字内"
+    if length <= 24:
+        return "17-24字"
+    if length <= 34:
+        return "25-34字"
+    return "35字以上"
+
+
+def title_structure(title: str) -> dict[str, Any]:
+    text = title.lower()
+    has_number = bool(re.search(r"\d|一|二|三|四|五|六|七|八|九|十|百|千|万|亿", title))
+    has_price_word = has_any(text, ["免费", "额度", "价格", "会员", "订阅", "美金", "元", "羊毛"])
+    has_risk_word = has_any(text, ["封号", "废掉", "限制", "卡", "缩水", "失效", "崩", "风险", "截止", "焦虑"])
+    has_model_word = has_any(text, ["glm", "kimi", "deepseek", "claude", "gpt", "minimax", "qwen", "模型"])
+    has_comparison = bool(re.search(r"vs|比|对比|替代|不如|超过|打败|拿下|第一", text))
+    has_question = bool(re.search(r"[?？]|为什么|怎么|能不能|是不是|到底|凭什么", title))
+    has_tutorial = has_any(text, ["教程", "指南", "手把手", "完整", "附", "清单", "步骤", "一文"])
+    has_workflow = has_any(text, ["codex", "claude code", "agent", "skill", "工作流", "github", "插件", "项目"])
+
+    patterns: list[str] = []
+    if has_risk_word:
+        patterns.append("风险损失型")
+    if has_price_word:
+        patterns.append("价格福利型")
+    if has_model_word and has_any(text, ["发布", "开源", "上线", "新", "更新", "拿下"]):
+        patterns.append("模型发布型")
+    if has_comparison:
+        patterns.append("对比替代型")
+    if has_tutorial or has_number:
+        patterns.append("教程清单型")
+    if has_question:
+        patterns.append("疑问反常识型")
+    if has_workflow:
+        patterns.append("工作流案例型")
+    if not patterns:
+        patterns.append("普通资讯型")
+
+    return {
+        "length": len(title.strip()),
+        "length_bucket": title_length_bucket(title),
+        "primary_pattern": patterns[0],
+        "patterns": patterns,
+        "has_number": has_number,
+        "has_price_word": has_price_word,
+        "has_risk_word": has_risk_word,
+        "has_model_word": has_model_word,
+        "has_comparison": has_comparison,
+        "has_question": has_question,
+        "has_tutorial": has_tutorial,
+    }
+
+
+def strip_markdown_for_length(text: str) -> str:
+    text = re.sub(r"(?s)^---.*?---", "", text, count=1)
+    text = re.sub(r"(?s)```.*?```", "", text)
+    text = re.sub(r"!\[[^\]]*\]\([^)]+\)", "", text)
+    text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    text = re.sub(r"[#>*_`~\-|]", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def count_article_chars(text: str) -> int:
+    clean = strip_markdown_for_length(text)
+    cjk = re.findall(r"[\u4e00-\u9fff]", clean)
+    ascii_words = re.findall(r"[A-Za-z0-9][A-Za-z0-9+._/-]*", clean)
+    return len(cjk) + sum(len(word) for word in ascii_words)
+
+
+def length_bucket(length: int) -> str:
+    if length <= 0:
+        return "未匹配正文"
+    if length < 1200:
+        return "1200字内"
+    if length < 2200:
+        return "1200-2200字"
+    if length < 3500:
+        return "2200-3500字"
+    return "3500字以上"
+
+
+def select_article_source(root: Path, article_dir: str) -> Path | None:
+    if not article_dir:
+        return None
+    base = root / article_dir
+    if not base.exists():
+        return None
+    for name in ["article.wechat.source.md", "article.wechat.md", "article.md"]:
+        candidate = base / name
+        if candidate.exists():
+            return candidate
+    candidates = [
+        p
+        for p in sorted(base.glob("*.md"))
+        if not re.search(r"(twitter|toutiao|zhihu|digest|metadata|raw|before)", p.name, re.I)
+    ]
+    return candidates[0] if candidates else None
+
+
+def enrich_article(article: dict[str, Any], root: Path, by_url: dict[str, dict[str, Any]], by_title: dict[str, dict[str, Any]]) -> None:
+    item = by_url.get(article.get("url", "")) or by_title.get(compact_match_key(article.get("title")))
+    if item:
+        article["article_dir"] = article.get("article_dir") or item.get("article_dir") or ""
+        article["article_slug"] = article.get("article_slug") or item.get("article_slug") or ""
+        article["content_id"] = article.get("content_id") or item.get("content_id") or article.get("id")
+
+    source = select_article_source(root, article.get("article_dir", ""))
+    length = count_article_chars(source.read_text(encoding="utf-8")) if source else 0
+    article["title_structure"] = title_structure(article.get("title", ""))
+    article["title_primary_pattern"] = article["title_structure"]["primary_pattern"]
+    article["title_length_bucket"] = article["title_structure"]["length_bucket"]
+    article["article_length_chars"] = length
+    article["article_length_source"] = str(source) if source else ""
+    article["length_bucket"] = length_bucket(length)
+    article["length_status"] = "matched_local_article" if source else "missing_local_article"
+
+
+def percentile(values: list[float], pct: float) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return float(ordered[0])
+    idx = (len(ordered) - 1) * pct
+    lo = math.floor(idx)
+    hi = math.ceil(idx)
+    if lo == hi:
+        return float(ordered[lo])
+    return float(ordered[lo] + (ordered[hi] - ordered[lo]) * (idx - lo))
+
+
+def trimmed_mean(values: list[float]) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    if len(ordered) < 5:
+        return float(mean(ordered))
+    trim = max(1, int(len(ordered) * 0.1))
+    middle = ordered[trim:-trim] or ordered
+    return float(mean(middle))
+
+
+def stat_pack(records: list[dict[str, Any]], field: str = "reads") -> dict[str, Any]:
+    values = [float(r.get(field, 0) or 0) for r in records]
+    return {
+        "count": len(values),
+        "avg": round(mean(values), 2) if values else 0,
+        "median": round(median(values), 2) if values else 0,
+        "p75": round(percentile(values, 0.75), 2) if values else 0,
+        "max": int(max(values)) if values else 0,
+        "trimmed_mean": round(trimmed_mean(values), 2) if values else 0,
+    }
+
+
+def confidence_for_records(
+    records: list[dict[str, Any]],
+    *,
+    completeness: float = 1.0,
+    target_sample: int = 18,
+    note: str = "",
+) -> dict[str, Any]:
+    count = len(records)
+    stats = stat_pack(records)
+    median_value = float(stats["median"] or 0)
+    max_value = float(stats["max"] or 0)
+    avg_value = float(stats["avg"] or 0)
+    sample_score = min(1.0, count / target_sample) if target_sample else 1.0
+    skew_ratio = max_value / median_value if median_value else (8.0 if max_value else 1.0)
+    avg_ratio = avg_value / median_value if median_value else (3.0 if avg_value else 1.0)
+    distribution_score = 1.0
+    reasons: list[str] = []
+    if skew_ratio > 8 or avg_ratio > 2.6:
+        distribution_score = 0.45
+        reasons.append("存在单篇爆款明显拉高均值")
+    elif skew_ratio > 5 or avg_ratio > 1.8:
+        distribution_score = 0.68
+        reasons.append("分布有一定长尾,结论需同时看中位数")
+    else:
+        reasons.append("分布相对稳定")
+    if count < 6:
+        reasons.append("样本量偏少")
+    elif count < target_sample:
+        reasons.append("样本量中等,适合做下一轮验证")
+    else:
+        reasons.append("样本量足够支撑阶段性判断")
+    if completeness < 0.92:
+        reasons.append("存在本地正文或指标匹配缺口")
+    if note:
+        reasons.append(note)
+    score = round(
+        max(0.0, min(1.0, sample_score * 0.42 + distribution_score * 0.34 + completeness * 0.24)),
+        2,
+    )
+    if score >= 0.74:
+        level = "high"
+    elif score >= 0.52:
+        level = "medium"
+    else:
+        level = "low"
+    return {
+        "level": level,
+        "score": score,
+        "sample_size": count,
+        "completeness": round(completeness, 3),
+        "distribution_skew": round(skew_ratio, 2),
+        "reasons": reasons[:4],
+    }
+
+
+def build_confidence_model(stable: list[dict[str, Any]]) -> dict[str, Any]:
+    matched = [article for article in stable if article.get("article_length_chars", 0) > 0]
+    completeness = len(matched) / len(stable) if stable else 0
+    return {
+        "levels": {
+            "high": "可以直接进入本周动作,但仍要用下一批文章复核。",
+            "medium": "适合做 A/B 或小批量验证,不要一口气改全局策略。",
+            "low": "只作为观察线索,不写成运营规律。",
+        },
+        "drivers": [
+            "样本量",
+            "均值是否被单篇爆款拉高",
+            "指标和本地正文匹配完整度",
+            "48 小时成熟窗口",
+        ],
+        "overall": confidence_for_records(stable, completeness=completeness, note="全局稳定样本"),
+        "article_length_completeness": round(completeness, 3),
+    }
+
+
+def rate(numerator: float, denominator: float) -> float:
+    if denominator <= 0:
+        return 0.0
+    return round(numerator / denominator, 4)
+
+
+def build_article(record: dict[str, Any], captured_at: datetime) -> dict[str, Any]:
+    published_at = parse_dt(record.get("published_at"))
+    content_type = classify_content(record)
+    pain = classify_pain(record, content_type)
+    persona = classify_persona(record, content_type, pain)
+    reads = normalize_number(record.get("read_num"))
+    shares = normalize_number(record.get("share_num"))
+    comments = normalize_number(record.get("comment_num"))
+    comments_with_replies = normalize_number(record.get("total_comment_count_contains_reply"))
+    likes = normalize_number(record.get("like_num"))
+    old_likes = normalize_number(record.get("old_like_num"))
+    moment_likes = normalize_number(record.get("moment_like_num"))
+    is_deleted = bool(record.get("is_deleted"))
+    hours_since_publish = None
+    is_immature = False
+    if published_at:
+        hours_since_publish = round((captured_at - published_at).total_seconds() / 3600, 2)
+        is_immature = hours_since_publish < 48
+    article_key = (
+        record.get("content_id")
+        or f"wechat_backend/{record.get('appmsgid', '')}-{record.get('itemidx', '')}"
+    )
+    return {
+        "id": article_key,
+        "content_id": record.get("content_id") or article_key,
+        "article_dir": record.get("article_dir") or "",
+        "article_slug": record.get("article_slug") or "",
+        "title": record.get("title") or "",
+        "digest": record.get("digest") or "",
+        "url": record.get("content_url") or "",
+        "cover": record.get("cover") or record.get("pic_cdn_url_235_1") or "",
+        "published_at": iso_dt(published_at),
+        "date": published_at.date().isoformat() if published_at else "",
+        "hour": published_at.hour if published_at else None,
+        "weekday": published_at.weekday() + 1 if published_at else None,
+        "weekday_label": WEEKDAY_LABELS[published_at.weekday()] if published_at else "",
+        "iso_week": f"{published_at.isocalendar().year}-W{published_at.isocalendar().week:02d}"
+        if published_at
+        else "",
+        "month": published_at.strftime("%Y-%m") if published_at else "",
+        "status": "deleted" if is_deleted else "published",
+        "is_deleted": is_deleted,
+        "is_immature": is_immature,
+        "hours_since_publish": hours_since_publish,
+        "reads": reads,
+        "likes": likes,
+        "old_likes": old_likes,
+        "moment_likes": moment_likes,
+        "comments": comments,
+        "comments_with_replies": comments_with_replies,
+        "shares": shares,
+        "reprints": normalize_number(record.get("reprint_num")),
+        "reward_money": normalize_money(record.get("reward_money")),
+        "share_rate": rate(shares, reads),
+        "comment_rate": rate(comments, reads),
+        "like_rate": rate(likes + old_likes + moment_likes, reads),
+        "content_type": content_type,
+        "pain_point": pain,
+        "persona": persona,
+    }
+
+
+def group_stats(records: list[dict[str, Any]], key: str, fixed_keys: list[str] | None = None) -> list[dict[str, Any]]:
+    groups: dict[Any, list[dict[str, Any]]] = defaultdict(list)
+    for record in records:
+        groups[record.get(key)].append(record)
+    keys = fixed_keys if fixed_keys is not None else sorted(groups.keys())
+    output = []
+    for group_key in keys:
+        rows = groups.get(group_key, [])
+        stats = stat_pack(rows)
+        top = max(rows, key=lambda r: r.get("reads", 0), default=None)
+        total_reads = sum(r.get("reads", 0) for r in rows)
+        output.append(
+            {
+                "key": group_key,
+                **stats,
+                "total_reads": total_reads,
+                "share_rate_avg": round(mean([r.get("share_rate", 0) for r in rows]), 4)
+                if rows
+                else 0,
+                "comment_rate_avg": round(mean([r.get("comment_rate", 0) for r in rows]), 4)
+                if rows
+                else 0,
+                "top_sample": {
+                    "title": top.get("title"),
+                    "reads": top.get("reads"),
+                    "url": top.get("url"),
+                }
+                if top
+                else None,
+            }
+        )
+    return output
+
+
+def time_heatmap(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    groups: dict[tuple[int, int], list[dict[str, Any]]] = defaultdict(list)
+    for record in records:
+        weekday = record.get("weekday")
+        hour = record.get("hour")
+        if weekday is not None and hour is not None:
+            groups[(weekday, hour)].append(record)
+    cells = []
+    for weekday in range(1, 8):
+        for hour in range(0, 24):
+            rows = groups.get((weekday, hour), [])
+            stats = stat_pack(rows)
+            cells.append(
+                {
+                    "weekday": weekday,
+                    "weekday_label": WEEKDAY_LABELS[weekday - 1],
+                    "hour": hour,
+                    **stats,
+                }
+            )
+    return cells
+
+
+def weekly_trend(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for record in records:
+        if record.get("iso_week"):
+            groups[record["iso_week"]].append(record)
+    rows = []
+    for week in sorted(groups):
+        records_for_week = groups[week]
+        dates = [parse_dt(r.get("published_at")) for r in records_for_week if r.get("published_at")]
+        week_start = min(dates).date().isoformat() if dates else ""
+        rows.append({"week": week, "week_start": week_start, **stat_pack(records_for_week)})
+    return rows
+
+
+def top_n(records: list[dict[str, Any]], key: str, n: int = 12) -> list[dict[str, Any]]:
+    return [
+        {
+            "title": record["title"],
+            "url": record["url"],
+            "published_at": record["published_at"],
+            "reads": record["reads"],
+            "shares": record["shares"],
+            "comments": record["comments"],
+            "share_rate": record["share_rate"],
+            "content_type": record["content_type"],
+            "pain_point": record["pain_point"],
+            "persona": record["persona"],
+        }
+        for record in sorted(records, key=lambda r: r.get(key, 0), reverse=True)[:n]
+    ]
+
+
+def build_rankings(records: list[dict[str, Any]]) -> dict[str, Any]:
+    reads = [r["reads"] for r in records]
+    read_median = median(reads) if reads else 0
+    share_rate_candidates = [r["share_rate"] for r in records if r["reads"] >= 30]
+    share_rate_p75 = percentile(share_rate_candidates, 0.75) if share_rate_candidates else 0
+    potential = [
+        r
+        for r in records
+        if r["reads"] <= max(read_median * 2, 80)
+        and r["reads"] >= 30
+        and r["share_rate"] >= share_rate_p75
+    ]
+    return {
+        "top_reads": top_n(records, "reads"),
+        "top_shares": top_n(records, "shares"),
+        "top_share_rate": top_n([r for r in records if r["reads"] >= 30], "share_rate"),
+        "low_read_high_share_potential": top_n(potential, "shares"),
+    }
+
+
+def build_title_analysis(stable: list[dict[str, Any]]) -> dict[str, Any]:
+    pattern_rows = group_stats(stable, "title_primary_pattern", TITLE_PATTERN_KEYS)
+    length_rows = group_stats(stable, "title_length_bucket", TITLE_LENGTH_BUCKETS)
+    feature_rows = []
+    for key, label in [
+        ("has_number", "带数字"),
+        ("has_price_word", "带价格/额度词"),
+        ("has_risk_word", "带风险/损失词"),
+        ("has_model_word", "带模型名"),
+        ("has_comparison", "带对比/替代"),
+        ("has_question", "带疑问"),
+        ("has_tutorial", "带教程/清单"),
+    ]:
+        rows = [article for article in stable if article.get("title_structure", {}).get(key)]
+        feature_rows.append({"key": label, **stat_pack(rows), "share_rate_avg": round(mean([r.get("share_rate", 0) for r in rows]), 4) if rows else 0})
+    return {
+        "by_primary_pattern": pattern_rows,
+        "by_title_length": length_rows,
+        "by_feature": feature_rows,
+        "top_patterns": sorted(pattern_rows, key=lambda row: (row["median"], row["p75"], row["avg"]), reverse=True)[:4],
+    }
+
+
+def build_length_analysis(stable: list[dict[str, Any]]) -> dict[str, Any]:
+    bucket_rows = group_stats(stable, "length_bucket", ARTICLE_LENGTH_BUCKETS)
+    matched = [article for article in stable if article.get("article_length_chars", 0) > 0]
+    lengths = [article["article_length_chars"] for article in matched]
+    return {
+        "by_length_bucket": bucket_rows,
+        "matched_count": len(matched),
+        "missing_count": len(stable) - len(matched),
+        "median_length": round(median(lengths), 2) if lengths else 0,
+        "avg_length": round(mean(lengths), 2) if lengths else 0,
+        "top_buckets": sorted(bucket_rows, key=lambda row: (row["median"], row["p75"], row["avg"]), reverse=True)[:4],
+    }
+
+
+def build_conclusions(dataset: dict[str, Any]) -> list[dict[str, str]]:
+    stats_by_type = {row["key"]: row for row in dataset["analysis"]["by_content_type"]}
+    risk = stats_by_type.get("风险/账号/额度焦虑", {})
+    price = stats_by_type.get("价格/额度/羊毛情报", {})
+    agent = stats_by_type.get("AI 编程/Agent 工作流", {})
+    model = stats_by_type.get("模型发布/能力解读", {})
+    hour_best = sorted(
+        [row for row in dataset["analysis"]["by_hour"] if row["count"] >= 3],
+        key=lambda row: (row["median"], row["p75"], row["avg"]),
+        reverse=True,
+    )[:3]
+    best_hours = "、".join(f"{row['key']}点" for row in hour_best) or "样本不足"
+    return [
+        {
+            "id": "risk-engine",
+            "title": "账号风险、验证、额度焦虑是当前最强推荐流入口",
+            "body": (
+                f"这一类稳定样本 {risk.get('count', 0)} 篇，平均阅读 {risk.get('avg', 0)}，"
+                f"中位数 {risk.get('median', 0)}，P75 {risk.get('p75', 0)}。它不是靠老粉打开，"
+                "而是用直接损失感把推荐入口打穿。"
+            ),
+            "evidence": "内容类型矩阵",
+        },
+        {
+            "id": "price-volatility",
+            "title": "免费、额度、价格情报能爆，但普通稿波动很大",
+            "body": (
+                f"价格/额度类平均阅读 {price.get('avg', 0)}，但中位数只有 {price.get('median', 0)}。"
+                "这说明爆款会把均值抬高，日常选题必须写清楚适用场景、领取路径和风险边界。"
+            ),
+            "evidence": "排行榜与类型分布",
+        },
+        {
+            "id": "ip-mainline",
+            "title": "AI 编程/Agent 是 IP 主线，不该只用阅读量裁掉",
+            "body": (
+                f"工作流类样本最多（{agent.get('count', 0)} 篇），中位数 {agent.get('median', 0)}，"
+                "阅读不如风险文，但它负责建立“这个号真会用工具”的信任。标题必须从项目意义改成用户收益。"
+            ),
+            "evidence": "内容类型矩阵",
+        },
+        {
+            "id": "model-topic",
+            "title": "模型发布文要和成本、可用性、替代关系绑定",
+            "body": (
+                f"模型能力类平均阅读 {model.get('avg', 0)}，中位数 {model.get('median', 0)}。"
+                "单纯讲模型变强不够，最好回答“谁能免费用、能替代谁、现在该不该切”。"
+            ),
+            "evidence": "痛点/人群分布",
+        },
+        {
+            "id": "publish-window",
+            "title": "发布时间不能只看均值，优先试 9-10、12、15-17、22 点窗口",
+            "body": (
+                f"按稳定样本看，中位数较好的小时集中在 {best_hours}；但多个时段是爆款拉高均值，"
+                "后续应该用题材匹配窗口，而不是机械定点。"
+            ),
+            "evidence": "发布时间热力图",
+        },
+    ]
+
+
+def build_action_items(dataset: dict[str, Any]) -> list[dict[str, Any]]:
+    overall = dataset["analysis"]["overall"]
+    stable_count = dataset["data_quality"]["stable_article_count"]
+    return [
+        {
+            "priority": "P0",
+            "title": "把 AI 编程/Agent 工作流继续做成 IP 主线",
+            "why": f"稳定样本 {stable_count} 篇里,工作流类样本最多,但中位阅读仍偏低;问题不是不该写,而是标题和首屏还不够用户收益化。",
+            "action": "下一批工作流文章标题先写少踩什么坑、少花多少 token、少翻多少文件,不要用项目名当主角。",
+            "owner": "老梁",
+            "due": "下一轮 7 天",
+        },
+        {
+            "priority": "P0",
+            "title": "保留风险/账号/额度题材作为推荐流入口",
+            "why": "风险类能打穿推荐流,但不能让账号变成焦虑广播站。",
+            "action": "每天最多 1 篇强风险入口文;每篇都要给检查清单或解决路径。",
+            "owner": "老梁",
+            "due": "本周持续",
+        },
+        {
+            "priority": "P1",
+            "title": "羊毛/价格文必须补齐领取路径和风险边界",
+            "why": "价格/额度类均值容易被爆款拉高,普通稿波动大。",
+            "action": "所有羊毛文首屏写清免费额度、适用人群、入口路径、到期或限制。",
+            "owner": "老梁",
+            "due": "下一篇开始",
+        },
+        {
+            "priority": "P1",
+            "title": "模型发布文绑定可用性和替代关系",
+            "why": "单纯讲模型变强不能稳定转化阅读。",
+            "action": "模型文固定回答:谁能用、哪里免费、替代谁、现在该不该切。",
+            "owner": "老梁",
+            "due": "下一篇模型文",
+        },
+        {
+            "priority": "P2",
+            "title": "用题材匹配发布时间窗口做 2 周验证",
+            "why": f"当前稳定中位阅读 {overall['median']},多个高均值时段有爆款拉高,需要验证题材窗口而不是机械定点。",
+            "action": "风险/福利放午间或晚间短窗口,工作流和深度判断放夜间深读窗口,每周复盘中位数和 P75。",
+            "owner": "老梁",
+            "due": "连续 2 周",
+        },
+    ]
+
+
+def build_narrative_flow() -> list[dict[str, str]]:
+    return [
+        {"id": "actions", "label": "01", "title": "本周动作", "anchor": "actions"},
+        {"id": "overview", "label": "02", "title": "总体判断", "anchor": "overview"},
+        {"id": "content-engine", "label": "03", "title": "内容引擎", "anchor": "content-engine"},
+        {"id": "title-structure", "label": "04", "title": "标题结构", "anchor": "title-structure"},
+        {"id": "article-length", "label": "05", "title": "文章长度", "anchor": "article-length"},
+        {"id": "audience", "label": "06", "title": "读者痛点", "anchor": "audience"},
+        {"id": "timing", "label": "07", "title": "发布时间", "anchor": "timing"},
+        {"id": "evidence", "label": "08", "title": "证据样本", "anchor": "evidence"},
+        {"id": "quality", "label": "09", "title": "数据质量", "anchor": "quality"},
+        {"id": "final-synthesis", "label": "10", "title": "最终汇总", "anchor": "final-synthesis"},
+    ]
+
+
+def section_slot(section_id: str) -> dict[str, str]:
+    return dict(SECTION_UI_SLOTS[section_id])
+
+
+def build_analysis_sections(dataset: dict[str, Any]) -> list[dict[str, Any]]:
+    overall = dataset["analysis"]["overall"]
+    quality = dataset["data_quality"]
+    stable = dataset["articles"]["stable"]
+    type_rows = dataset["analysis"]["by_content_type"]
+    pain_rows = dataset["analysis"]["by_pain_point"]
+    persona_rows = dataset["analysis"]["by_persona"]
+    rankings = dataset["analysis"]["rankings"]
+    title_rows = dataset["title_analysis"]["by_primary_pattern"]
+    title_length_rows = dataset["title_analysis"]["by_title_length"]
+    length_rows = dataset["length_analysis"]["by_length_bucket"]
+    confidence_model = dataset["confidence_model"]
+    best_hours = sorted(
+        [row for row in dataset["analysis"]["by_hour"] if row["count"] >= 3],
+        key=lambda row: (row["median"], row["p75"], row["avg"]),
+        reverse=True,
+    )[:4]
+    top_types = sorted(type_rows, key=lambda row: (row["median"], row["p75"], row["avg"]), reverse=True)
+    top_pain = max(pain_rows, key=lambda row: (row["median"], row["p75"], row["avg"]), default={})
+    top_persona = max(persona_rows, key=lambda row: (row["median"], row["p75"], row["avg"]), default={})
+    top_read = rankings["top_reads"][0] if rankings["top_reads"] else {}
+    top_share = rankings["top_shares"][0] if rankings["top_shares"] else {}
+    top_title = max(title_rows, key=lambda row: (row["median"], row["p75"], row["avg"]), default={})
+    top_length = max(length_rows, key=lambda row: (row["median"], row["p75"], row["avg"]), default={})
+    length_completeness = confidence_model["article_length_completeness"]
+
+    return [
+        {
+            "id": "overview",
+            "title": "总体判断",
+            "question": "账号当前最应该解决的运营问题是什么?",
+            "conclusion": "账号已经能打出爆款,但稳定中位数还没被抬起来。",
+            "evidence": [
+                f"稳定样本 {quality['stable_article_count']} 篇,平均阅读 {fmt_num(overall['avg'])},"
+                f"中位数 {fmt_num(overall['median'])},P75 {fmt_num(overall['p75'])},最高 {fmt_num(overall['max'])}。",
+                "爆款已经证明入口有效,但下一阶段要看稳定底盘是否上移。",
+            ],
+            "action": "后续复盘不要只看 Top 1,每周同时追踪类型中位数和 P75 是否上移。",
+            "next_test": f"下一批 10 篇稳定后,中位阅读高于 {fmt_num(overall['median'])},P75 高于 {fmt_num(overall['p75'])}。",
+            "chart_payload": {"kind": "overall", "metrics": overall},
+            "ui_slot": section_slot("overview"),
+            "confidence": confidence_model["overall"],
+        },
+        {
+            "id": "content-engine",
+            "title": "内容引擎",
+            "question": "哪些内容负责拉新,哪些内容负责建立账号心智?",
+            "conclusion": "风险/额度负责推荐流入口,AI 编程/Agent 工作流负责 IP 主线。",
+            "evidence": [
+                "内容类型矩阵显示不同题材的均值、中位数和 P75 分化明显。",
+                f"当前表现靠前类型包括: {'、'.join(str(row['key']) for row in top_types[:3])}。",
+            ],
+            "action": "保持工作流主线占比,但把标题和首屏改成用户收益;风险和羊毛题材只做明确可解决的入口文。",
+            "next_test": "连续 2 周观察工作流类分享数和中位阅读是否同步上升。",
+            "chart_payload": {"kind": "content_type_matrix", "rows": type_rows, "top_types": top_types[:3]},
+            "ui_slot": section_slot("content-engine"),
+            "confidence": confidence_for_records(stable, note="按内容类型分组"),
+        },
+        {
+            "id": "title-structure",
+            "title": "标题结构",
+            "question": "什么标题结构更容易带来点击和分享?",
+            "conclusion": "标题要先给损失、收益或替代关系,不要只把产品名摆上去。",
+            "evidence": [
+                f"当前中位阅读较高的标题结构为 {top_title.get('key', '样本不足')}。",
+                "数字、价格/额度词、风险词和替代关系会改变点击理由,但要和正文兑现一致。",
+            ],
+            "action": "下一轮每篇标题先标注 primary_pattern,并准备一个收益版、风险版、替代版做人工挑选。",
+            "next_test": "同类题材至少跑 8 篇后,比较标题结构的中位阅读、P75 和分享率。",
+            "chart_payload": {
+                "kind": "title_pattern_map",
+                "pattern_rows": title_rows,
+                "length_rows": title_length_rows,
+                "feature_rows": dataset["title_analysis"]["by_feature"],
+            },
+            "ui_slot": section_slot("title-structure"),
+            "confidence": confidence_for_records(stable, note="标题结构来自规则化解析"),
+        },
+        {
+            "id": "article-length",
+            "title": "文章长度",
+            "question": "公众号文章应该写多长,才既能讲清楚又不拖垮完读?",
+            "conclusion": "长度不是越短越好,真正要控制的是信息密度和每段是否服务读者动作。",
+            "evidence": [
+                f"当前本地正文匹配 {dataset['length_analysis']['matched_count']} 篇,未匹配 {dataset['length_analysis']['missing_count']} 篇。",
+                f"表现靠前长度区间为 {top_length.get('key', '样本不足')},但长度结论会受正文匹配率影响。",
+            ],
+            "action": "下一批工作流和深度文保留解释空间,但每 600-800 字必须有图、表、清单或小结帮读者喘气。",
+            "next_test": "把新文按长度桶记录,观察 2200-3500 字与 3500 字以上的分享率和评论率差异。",
+            "chart_payload": {
+                "kind": "length_performance_curve",
+                "bucket_rows": length_rows,
+                "matched_count": dataset["length_analysis"]["matched_count"],
+                "missing_count": dataset["length_analysis"]["missing_count"],
+            },
+            "ui_slot": section_slot("article-length"),
+            "confidence": confidence_for_records(
+                stable,
+                completeness=length_completeness,
+                note="正文长度依赖本地文章匹配",
+            ),
+        },
+        {
+            "id": "audience",
+            "title": "读者痛点",
+            "question": "读者真正为什么点开、收藏和转发?",
+            "conclusion": "当前读者不是泛 AI 用户,而是账号/额度敏感人群和 AI 编程实践者。",
+            "evidence": [
+                f"最高痛点样本为 {top_pain.get('key', '样本不足')},最高人群样本为 {top_persona.get('key', '样本不足')}。"
+                "这说明内容要从具体损失、成本和落地场景切入。",
+            ],
+            "action": "每篇文章开头先交代读者会损失什么、能省什么、能立刻怎么用。",
+            "next_test": "新文记录评论和分享理由,验证读者是否围绕账号、额度、工作流收益反馈。",
+            "chart_payload": {"kind": "audience", "pain_points": pain_rows, "personas": persona_rows},
+            "ui_slot": section_slot("audience"),
+            "confidence": confidence_for_records(stable, note="人群和痛点来自规则化标签"),
+        },
+        {
+            "id": "timing",
+            "title": "发布时间",
+            "question": "哪些发布时间值得继续验证?",
+            "conclusion": "发布时间不能只看均值,要按题材匹配窗口做验证。",
+            "evidence": [
+                "当前中位阅读较好的小时为 "
+                + "、".join(f"{row['key']}点" for row in best_hours)
+                + ";但部分时段由单篇爆款拉高。",
+                "发布时间必须和题材匹配,不能机械套一个黄金时间。",
+            ],
+            "action": "风险/福利放 12 点或 17 点附近,模型更新放下午,工作流和深度判断放 22 点附近。",
+            "next_test": "每个窗口至少跑 3 篇同类题材,再比较中位数,不到样本量不下结论。",
+            "chart_payload": {
+                "kind": "time_heatmap",
+                "best_hours": best_hours,
+                "heatmap": dataset["analysis"]["time_heatmap"],
+            },
+            "ui_slot": section_slot("timing"),
+            "confidence": confidence_for_records(stable, target_sample=24, note="按小时切分后单格样本仍偏少"),
+        },
+        {
+            "id": "evidence",
+            "title": "证据样本",
+            "question": "哪些文章证明了上面的判断?",
+            "conclusion": "爆款负责说明入口有效,高分享样本负责说明账号资产方向。",
+            "evidence": [
+                f"阅读最高样本为《{top_read.get('title', '无')}》,"
+                f"分享最高样本为《{top_share.get('title', '无')}》。",
+                "证据样本要服务复盘,不是把排行榜当结论。",
+            ],
+            "action": "每篇爆款拆标题触发词;每篇高分享文章沉淀成可复用栏目和选题模板。",
+            "next_test": "下轮选题会前必须先复用 3 个已验证标题触发词。",
+            "chart_payload": {"kind": "rankings", "rankings": rankings},
+            "ui_slot": section_slot("evidence"),
+            "confidence": confidence_for_records(stable, note="排行榜只解释样本,不单独推导规律"),
+        },
+        {
+            "id": "quality",
+            "title": "数据质量",
+            "question": "这份报告的数据能不能支撑运营判断?",
+            "conclusion": "本轮公众号核心指标齐,但仍要保留后台导出时间和待补动作。",
+            "evidence": [
+                f"当前周期非删除 {quality['period_non_deleted_count']} 篇,稳定样本 {quality['stable_article_count']} 篇,"
+                f"指标缺口 {quality['metric_pending_count']}。",
+                f"正文长度匹配完整度 {length_completeness * 100:.1f}%。",
+            ],
+            "action": "每次复盘先刷新后台导出;登录态失效时先补数据,不要用旧 JSON 继续分析。",
+            "next_test": "下次刷新后检查 record_count、metric_pending_count 和最近文章标题是否与后台一致。",
+            "chart_payload": {"kind": "data_quality", "quality": quality},
+            "ui_slot": section_slot("quality"),
+            "confidence": confidence_for_records(
+                stable,
+                completeness=1.0 if quality["metric_pending_count"] == 0 else 0.72,
+                note="核心指标完整性",
+            ),
+        },
+        {
+            "id": "final-synthesis",
+            "title": "最终汇总",
+            "question": "哪些判断应该立刻执行,哪些只能小步验证?",
+            "conclusion": dataset["final_synthesis"]["summary"],
+            "evidence": [
+                "高置信动作直接进入本周执行。",
+                "中低置信判断只进小批量试验,不改全局节奏。",
+            ],
+            "action": "按置信度推进:高置信直接做,中置信做 2 周测试,低置信只观察不拍板。",
+            "next_test": "下一轮复盘先检查这张动作板,逐条判断保留、调整或废弃。",
+            "chart_payload": {"kind": "confidence_action_board", **dataset["final_synthesis"]},
+            "ui_slot": section_slot("final-synthesis"),
+            "confidence": confidence_model["overall"],
+        },
+    ]
+
+
+def build_compat_conclusions(sections: list[dict[str, Any]]) -> list[dict[str, str]]:
+    return [
+        {
+            "id": section["id"],
+            "title": section["conclusion"],
+            "body": section["action"],
+            "evidence": section["title"],
+        }
+        for section in sections
+        if section["id"] in {"overview", "content-engine", "audience", "timing", "evidence"}
+    ]
+
+
+def build_account_profile(dataset: dict[str, Any]) -> dict[str, Any]:
+    quality = dataset["data_quality"]
+    return {
+        "name": "麦总玩 AI",
+        "platform": "微信公众号",
+        "description": "面向 AI 工具、Agent 工作流和普通人可落地效率场景的内容号。",
+        "avatar_text": "麦",
+        "analysis_period": f"{dataset['meta']['period_start'][:10]} 至 {dataset['meta']['period_end'][:10]}",
+        "article_count": quality["period_non_deleted_count"],
+        "stable_article_count": quality["stable_article_count"],
+        "generated_at": dataset["meta"]["generated_at"],
+    }
+
+
+def build_brand_signature() -> dict[str, Any]:
+    return {
+        "author_name": "麦总玩 AI",
+        "role": "公众号运营分析 Skill 作者",
+        "skill_name": "wechat-ops-performance-review",
+        "skill_repo": "https://github.com/DwDestiny/my_skill",
+        "star_url": "https://github.com/DwDestiny/my_skill",
+        "avatar_src": "/mai-avatar.png",
+        "tagline": "数据刷新 → 专业分析 → wiki 报告 → 模板站验收",
+    }
+
+
+def build_final_synthesis(dataset: dict[str, Any]) -> dict[str, Any]:
+    confidence = dataset["confidence_model"]["overall"]
+    actions = dataset["action_items"]
+    length_confidence = confidence_for_records(
+        dataset["articles"]["stable"],
+        completeness=dataset["confidence_model"]["article_length_completeness"],
+        note="正文长度结论",
+    )
+    return {
+        "summary": "下一阶段不要追更多图表,而是把稳定可复制的动作执行到位。",
+        "high_confidence_actions": [
+            actions[0]["title"],
+            actions[1]["title"],
+            "所有复盘继续用中位数、P75 和去极值均值,避免被单篇爆款骗走。",
+        ],
+        "experiments": [
+            actions[2]["title"],
+            actions[4]["title"],
+            "标题结构做 2 周小批量对照,不要一次性全改。",
+        ],
+        "hold_decisions": [
+            "文章长度结论先跟踪,不立刻把所有文章卡死在某个字数。",
+            "发布时间窗口必须等同类题材样本够了再拍板。",
+        ],
+        "confidence_rollup": {
+            "overall": confidence,
+            "length": length_confidence,
+        },
+    }
+
+
+def build_report_meta(dataset: dict[str, Any]) -> dict[str, Any]:
+    meta = dataset["meta"]
+    quality = dataset["data_quality"]
+    return {
+        "template_version": "wechat-ops-template-v2.1",
+        "title": "公众号运营诊断报告",
+        "account_name": "麦总玩 AI",
+        "platform": "wechat",
+        "platform_scope": "wechat_only",
+        "period_label": f"{meta['period_start'][:10]} 至 {meta['period_end'][:10]}",
+        "generated_at": meta["generated_at"],
+        "source_export": meta["source_export"],
+        "source_captured_at": meta.get("source_captured_at"),
+        "data_quality_summary": {
+            "raw_record_count": quality["raw_record_count"],
+            "period_non_deleted_count": quality["period_non_deleted_count"],
+            "stable_article_count": quality["stable_article_count"],
+            "immature_article_count": quality["immature_article_count"],
+            "metric_pending_count": quality["metric_pending_count"],
+        },
+        "scope_note": "当前模板只服务公众号运营分析；头条、Twitter/X、GitHub 不进入主报告。",
+    }
+
+
+def build_executive_summary(dataset: dict[str, Any]) -> dict[str, Any]:
+    sections = {section["id"]: section for section in dataset["analysis_sections"]}
+    quality = dataset["data_quality"]
+    overall = dataset["analysis"]["overall"]
+    action_titles = [item["title"] for item in dataset["action_items"][:5]]
+    return {
+        "headline": sections["overview"]["conclusion"],
+        "subheadline": "下一轮的重点不是继续追单篇爆款,而是把入口文、IP 主线和发布时间验证拆开管理。",
+        "primary_tension": (
+            f"稳定样本 {quality['stable_article_count']} 篇,中位阅读 {fmt_num(overall['median'])},"
+            f"P75 {fmt_num(overall['p75'])};账号能出高点,但稳定底盘还需要被抬高。"
+        ),
+        "next_focus": "先执行五个动作,再用下一批稳定样本验证中位数、P75 和分享率是否上移。",
+        "metric_strip": [
+            {
+                "label": "当前文章",
+                "value": quality["period_non_deleted_count"],
+                "display": fmt_num(quality["period_non_deleted_count"]),
+                "hint": "公众号当前周期非删除文章",
+                "tone": "green",
+            },
+            {
+                "label": "稳定样本",
+                "value": quality["stable_article_count"],
+                "display": fmt_num(quality["stable_article_count"]),
+                "hint": "已过 48 小时,进入稳定均值",
+                "tone": "blue",
+            },
+            {
+                "label": "中位阅读",
+                "value": overall["median"],
+                "display": fmt_num(overall["median"]),
+                "hint": f"P75 {fmt_num(overall['p75'])}",
+                "tone": "green",
+            },
+            {
+                "label": "指标缺口",
+                "value": quality["metric_pending_count"],
+                "display": fmt_num(quality["metric_pending_count"]),
+                "hint": "核心指标缺失数量",
+                "tone": "amber" if quality["metric_pending_count"] else "green",
+            },
+        ],
+        "week_actions": action_titles,
+    }
+
+
+def build_action_plan(dataset: dict[str, Any]) -> dict[str, Any]:
+    items = []
+    for index, item in enumerate(dataset["action_items"], start=1):
+        items.append(
+            {
+                "id": f"action-{index:02d}",
+                "priority": item["priority"],
+                "title": item["title"],
+                "why": item["why"],
+                "action": item["action"],
+                "owner": item["owner"],
+                "due": item["due"],
+                "status": "planned",
+                "validation": "下次复盘时必须用中位阅读、P75、分享率和样本标题复核这条动作是否有效。",
+            }
+        )
+    return {
+        "title": "本周先做这 5 件事",
+        "summary": "先做动作,再看证据;不要把报告做成只会解释过去的数据墙。",
+        "items": items,
+    }
+
+
+def build_evidence_stream(dataset: dict[str, Any]) -> list[dict[str, Any]]:
+    stream: list[dict[str, Any]] = []
+    for section in dataset["analysis_sections"]:
+        evidence = section["evidence"]
+        body = "；".join(evidence) if isinstance(evidence, list) else evidence
+        stream.append(
+            {
+                "id": f"{section['id']}-evidence",
+                "section_id": section["id"],
+                "kind": "section_evidence",
+                "title": section["title"],
+                "body": body,
+                "meta": section["question"],
+                "tone": section["ui_slot"]["accent"],
+            }
+        )
+        stream.append(
+            {
+                "id": f"{section['id']}-action",
+                "section_id": section["id"],
+                "kind": "next_action",
+                "title": "下一步动作",
+                "body": section["action"],
+                "meta": section["next_test"],
+                "tone": "green",
+            }
+        )
+
+    for index, article in enumerate(dataset["analysis"]["rankings"]["top_reads"][:5], start=1):
+        stream.append(
+            {
+                "id": f"top-read-{index}",
+                "section_id": "evidence",
+                "kind": "article_sample",
+                "title": article["title"],
+                "body": (
+                    f"阅读 {fmt_num(article['reads'])},分享 {fmt_num(article['shares'])},"
+                    f"分享率 {article['share_rate'] * 100:.1f}%"
+                ),
+                "meta": article["content_type"],
+                "url": article.get("url", ""),
+                "tone": "blue",
+            }
+        )
+    return stream
+
+
+def build_template_slots(dataset: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "template_name": "wechat_ops_three_column_report",
+        "layout": "left_nav_center_story_right_context",
+        "left_nav": {
+            "source": "narrative_flow",
+            "behavior": "sticky desktop; horizontal overflow on mobile",
+        },
+        "hero": {
+            "source": "executive_summary",
+            "required_blocks": ["headline", "action_plan.items", "metric_strip"],
+        },
+        "main_flow": [
+            {
+                "section_id": item["id"],
+                "anchor": item["anchor"],
+                "title": item["title"],
+                "source": "analysis_sections" if item["id"] != "actions" else "action_plan",
+                "ui_slot": SECTION_UI_SLOTS.get(item["id"], {"component": "action_plan"}),
+            }
+            for item in dataset["narrative_flow"]
+        ],
+        "right_rail": {
+            "source": "evidence_stream",
+            "active_section_key": "section_id",
+            "default_section": "overview",
+        },
+        "evidence_table": {
+            "source": "articles.stable",
+            "filters": ["content_type", "pain_point", "include_immature"],
+            "sorts": ["reads", "shares", "share_rate", "published_at"],
+        },
+        "mobile": {
+            "layout": "single_column",
+            "right_rail": "inline_context_after_hero",
+            "nav": "top_horizontal_scroll",
+        },
+    }
+
+
+def build_visual_tokens() -> dict[str, Any]:
+    return dict(VISUAL_TOKENS)
+
+
+def load_ledger_quality(root: Path) -> dict[str, Any]:
+    article_index = read_json(root / "data/social_ops/indexes/articles.json", {"items": []})
+    pending_index = read_json(root / "data/social_ops/indexes/pending_actions.json", {"items": []})
+    metric_attempts = read_jsonl(root / "data/social_ops/metrics/metric_attempts.jsonl")
+    status_counts = Counter(
+        item.get("platforms", {}).get("wechat", {}).get("normalized_status", "none")
+        for item in article_index.get("items", [])
+    )
+    wechat_pending = [
+        item for item in pending_index.get("items", []) if item.get("platform") == "wechat"
+    ]
+    attempts_status = Counter(
+        item.get("status", "unknown")
+        for item in metric_attempts
+        if item.get("platform") == "wechat"
+    )
+    return {
+        "wechat_ledger_status_counts": dict(sorted(status_counts.items())),
+        "wechat_pending_actions": wechat_pending,
+        "metric_attempt_status_counts": dict(sorted(attempts_status.items())),
+        "metric_attempt_rows": sum(1 for item in metric_attempts if item.get("platform") == "wechat"),
+    }
+
+
+def build_dataset(root: Path) -> dict[str, Any]:
+    raw_path = latest_publish_export(root)
+    raw = read_json(raw_path, {})
+    captured_at = parse_dt(raw.get("captured_at")) or datetime.now(timezone.utc).astimezone(CN_TZ)
+    raw_records = raw.get("records", [])
+    by_url, by_title = build_article_lookup(root)
+    articles = [build_article(record, captured_at) for record in raw_records]
+    for article in articles:
+        enrich_article(article, root, by_url, by_title)
+    period_articles = [
+        article
+        for article in articles
+        if article.get("published_at") and parse_dt(article["published_at"]) >= OPS_START
+    ]
+    non_deleted = [article for article in period_articles if not article["is_deleted"]]
+    deleted = [article for article in period_articles if article["is_deleted"]]
+    immature = [article for article in non_deleted if article["is_immature"]]
+    stable = [article for article in non_deleted if not article["is_immature"]]
+    missing_core_metrics = [
+        article
+        for article in non_deleted
+        if any(article.get(field) is None for field in ["reads", "shares", "comments", "likes"])
+    ]
+
+    by_hour = group_stats(stable, "hour")
+    by_weekday = group_stats(stable, "weekday", list(range(1, 8)))
+    for row in by_weekday:
+        row["label"] = WEEKDAY_LABELS[int(row["key"]) - 1] if row["key"] else ""
+    dataset = {
+        "meta": {
+            "report_date": REPORT_DATE,
+            "generated_at": captured_at.isoformat(),
+            "period_start": OPS_START.isoformat(),
+            "period_end": captured_at.isoformat(),
+            "source_export": str(raw_path),
+            "source_captured_at": raw.get("captured_at"),
+            "dashboard_concept_image": "/Users/dw/.codex/generated_images/019e58a5-eaaf-71a2-a965-60b0ffb8dcfc/ig_0f7739fa5824e5c5016a3a567b90f8819a83fd699336568fb1.png",
+            "platform_scope": "wechat_only",
+        },
+        "data_quality": {
+            "raw_record_count": len(raw_records),
+            "period_record_count": len(period_articles),
+            "period_non_deleted_count": len(non_deleted),
+            "period_deleted_count": len(deleted),
+            "stable_article_count": len(stable),
+            "immature_article_count": len(immature),
+            "metric_pending_count": len(missing_core_metrics),
+            "backend_totals": raw.get("totals", {}),
+            "match_stats": raw.get("match_stats", {}),
+            **load_ledger_quality(root),
+        },
+        "articles": {
+            "all_period": sorted(non_deleted, key=lambda r: r["published_at"] or "", reverse=True),
+            "stable": sorted(stable, key=lambda r: r["published_at"] or "", reverse=True),
+            "immature": sorted(immature, key=lambda r: r["published_at"] or "", reverse=True),
+            "deleted": sorted(deleted, key=lambda r: r["published_at"] or "", reverse=True),
+        },
+        "analysis": {
+            "overall": stat_pack(stable),
+            "by_content_type": group_stats(stable, "content_type", CONTENT_TYPES),
+            "by_pain_point": group_stats(stable, "pain_point", PAIN_POINTS),
+            "by_persona": group_stats(stable, "persona", PERSONAS),
+            "by_hour": by_hour,
+            "by_weekday": by_weekday,
+            "by_week": weekly_trend(stable),
+            "by_month": group_stats(stable, "month"),
+            "time_heatmap": time_heatmap(stable),
+            "rankings": build_rankings(stable),
+            "by_title_pattern": group_stats(stable, "title_primary_pattern", TITLE_PATTERN_KEYS),
+            "by_title_length": group_stats(stable, "title_length_bucket", TITLE_LENGTH_BUCKETS),
+            "by_article_length": group_stats(stable, "length_bucket", ARTICLE_LENGTH_BUCKETS),
+        },
+        "recommendations": {
+            "topic_ratio": [
+                {"label": "AI 编程/Agent 工作流", "ratio": 0.40, "role": "IP 主线"},
+                {"label": "风险/账号/额度焦虑", "ratio": 0.25, "role": "推荐流入口"},
+                {"label": "价格/额度/羊毛情报", "ratio": 0.20, "role": "转化与收藏入口"},
+                {"label": "模型发布/能力解读", "ratio": 0.10, "role": "热点解释与判断"},
+                {"label": "泛 AI 热点/效率工具", "ratio": 0.05, "role": "拓圈与轻量内容"},
+            ],
+            "publish_windows": [
+                {"window": "09:00-10:30", "best_for": "刚需工具、价格/额度更新"},
+                {"window": "12:00-12:45", "best_for": "强风险、强利益短通知"},
+                {"window": "15:00-17:30", "best_for": "模型发布、官方更新、二次解读"},
+                {"window": "22:00-22:45", "best_for": "深度判断、争议复盘、工作流文章"},
+            ],
+            "headline_rules": [
+                "风险文标题先写直接损失，再写对象：谁今天会被卡、会少什么、要检查什么。",
+                "羊毛文标题必须写清免费/额度/价格和适用人群，不写泛泛的“福利来了”。",
+                "工作流文标题不要讲项目意义，先讲用户少翻多少文件、少花多少 token、少踩什么坑。",
+                "模型发布文必须绑定可用性：谁能用、哪里免费、能不能替代当前方案。",
+            ],
+        },
+    }
+    dataset["confidence_model"] = build_confidence_model(stable)
+    dataset["title_analysis"] = build_title_analysis(stable)
+    dataset["length_analysis"] = build_length_analysis(stable)
+    dataset["action_items"] = build_action_items(dataset)
+    dataset["final_synthesis"] = build_final_synthesis(dataset)
+    dataset["narrative_flow"] = build_narrative_flow()
+    dataset["analysis_sections"] = build_analysis_sections(dataset)
+    dataset["account_profile"] = build_account_profile(dataset)
+    dataset["brand_signature"] = build_brand_signature()
+    dataset["report_meta"] = build_report_meta(dataset)
+    dataset["executive_summary"] = build_executive_summary(dataset)
+    dataset["action_plan"] = build_action_plan(dataset)
+    dataset["evidence_stream"] = build_evidence_stream(dataset)
+    dataset["template_slots"] = build_template_slots(dataset)
+    dataset["visual_tokens"] = build_visual_tokens()
+    dataset["conclusions"] = build_compat_conclusions(dataset["analysis_sections"])
+    return dataset
+
+
+def fmt_num(value: Any) -> str:
+    if isinstance(value, float):
+        if value.is_integer():
+            return f"{int(value):,}"
+        return f"{value:,.2f}"
+    if isinstance(value, int):
+        return f"{value:,}"
+    return str(value)
+
+
+def markdown_table(headers: list[str], rows: list[list[Any]]) -> str:
+    out = ["| " + " | ".join(headers) + " |", "| " + " | ".join(["---"] * len(headers)) + " |"]
+    for row in rows:
+        out.append("| " + " | ".join(str(cell) for cell in row) + " |")
+    return "\n".join(out)
+
+
+def render_report(dataset: dict[str, Any], dataset_path: Path) -> str:
+    quality = dataset["data_quality"]
+    overall = dataset["analysis"]["overall"]
+    sections = {section["id"]: section for section in dataset["analysis_sections"]}
+    source_name = Path(dataset["meta"]["source_export"]).name
+
+    action_rows = [
+        [
+            item["priority"],
+            item["title"],
+            item["why"],
+            item["action"],
+            item["due"],
+        ]
+        for item in dataset["action_items"]
+    ]
+
+    section_flow_rows = []
+    for item in dataset["narrative_flow"]:
+        if item["id"] == "actions":
+            question = "本周先做哪几件事?"
+        else:
+            question = sections[item["id"]]["question"]
+        section_flow_rows.append([item["label"], item["title"], question])
+
+    type_rows = []
+    for row in dataset["analysis"]["by_content_type"]:
+        sample = row.get("top_sample") or {}
+        type_rows.append(
+            [
+                row["key"],
+                row["count"],
+                fmt_num(row["avg"]),
+                fmt_num(row["median"]),
+                fmt_num(row["p75"]),
+                fmt_num(row["max"]),
+                sample.get("title", "无"),
+            ]
+        )
+
+    pain_rows = [
+        [
+            row["key"],
+            row["count"],
+            fmt_num(row["median"]),
+            fmt_num(row["p75"]),
+            f"{row.get('share_rate_avg', 0) * 100:.1f}%",
+        ]
+        for row in dataset["analysis"]["by_pain_point"]
+    ]
+
+    persona_rows = [
+        [
+            row["key"],
+            row["count"],
+            fmt_num(row["median"]),
+            fmt_num(row["p75"]),
+            f"{row.get('share_rate_avg', 0) * 100:.1f}%",
+        ]
+        for row in dataset["analysis"]["by_persona"]
+    ]
+
+    title_pattern_rows = [
+        [
+            row["key"],
+            row["count"],
+            fmt_num(row["median"]),
+            fmt_num(row["p75"]),
+            fmt_num(row["max"]),
+            f"{row.get('share_rate_avg', 0) * 100:.1f}%",
+        ]
+        for row in dataset["title_analysis"]["by_primary_pattern"]
+    ]
+
+    length_rows = [
+        [
+            row["key"],
+            row["count"],
+            fmt_num(row["avg"]),
+            fmt_num(row["median"]),
+            fmt_num(row["p75"]),
+            fmt_num(row["max"]),
+        ]
+        for row in dataset["length_analysis"]["by_length_bucket"]
+    ]
+
+    top_rows = [
+        [
+            i + 1,
+            item["title"],
+            fmt_num(item["reads"]),
+            fmt_num(item["shares"]),
+            f"{item['share_rate'] * 100:.1f}%",
+            item["content_type"],
+        ]
+        for i, item in enumerate(dataset["analysis"]["rankings"]["top_reads"][:10])
+    ]
+
+    heat_rows = []
+    for row in sorted(
+        [x for x in dataset["analysis"]["by_hour"] if x["count"] >= 3],
+        key=lambda x: (x["median"], x["p75"], x["avg"]),
+        reverse=True,
+    )[:8]:
+        heat_rows.append(
+            [
+                f"{row['key']}点",
+                row["count"],
+                fmt_num(row["avg"]),
+                fmt_num(row["median"]),
+                fmt_num(row["p75"]),
+                fmt_num(row["max"]),
+            ]
+        )
+
+    ratio_lines = "\n".join(
+        f"- {int(item['ratio'] * 100)}%：{item['label']}（{item['role']}）"
+        for item in dataset["recommendations"]["topic_ratio"]
+    )
+    headline_lines = "\n".join(f"- {item}" for item in dataset["recommendations"]["headline_rules"])
+    window_lines = "\n".join(
+        f"- `{item['window']}`：{item['best_for']}"
+        for item in dataset["recommendations"]["publish_windows"]
+    )
+
+    pending_actions = quality.get("wechat_pending_actions", [])
+    pending_text = (
+        "\n".join(
+            f"- {item.get('title', item.get('content_id'))}：{item.get('action')}，下一步 {item.get('public_url', '')}"
+            for item in pending_actions
+        )
+        if pending_actions
+        else "- 暂无公众号待补动作。"
+    )
+
+    def section_markdown(section_id: str, extra: str = "") -> str:
+        section = sections[section_id]
+        extra_block = f"\n\n{extra.strip()}" if extra.strip() else ""
+        evidence = section["evidence"]
+        evidence_items = evidence if isinstance(evidence, list) else [evidence]
+        evidence_lines = "\n".join(f"- {item}" for item in evidence_items)
+        return f"""## {section['title']}
+
+### 本节问题
+
+{section['question']}
+
+### 本节结论
+
+{section['conclusion']}
+
+### 证据
+
+{evidence_lines}{extra_block}
+
+### 下一步动作
+
+{section['action']}
+
+### 下一轮验证
+
+{section['next_test']}
+"""
+
+    return f"""---
+title: "公众号运营分析报告 2026-06-23"
+type: report
+tags: [operations, social-ops, wechat, analytics]
+date: 2026-06-23
+sources:
+  - reports/wechat/{source_name}
+  - data/social_ops/metrics/metric_attempts.jsonl
+created_by_agent: codex
+last_updated_by_agent: codex
+---
+
+## 本周先做这 5 件事
+
+{markdown_table(['优先级', '动作', '为什么', '具体执行', '截止'], action_rows)}
+
+这份报告不是日常监控盘，而是阶段性运营诊断。阅读顺序固定为：先确定本周动作，再看为什么这些动作成立，最后看样本和数据质量。
+
+{markdown_table(['步骤', '章节', '要回答的问题'], section_flow_rows)}
+
+## 数据口径
+
+- 分析平台：只看微信公众号；头条、Twitter/X、GitHub、小红书、知乎全部不进入本轮表现分析。
+- 分析周期：`{dataset['meta']['period_start']}` 到 `{dataset['meta']['period_end']}`。
+- 机器数据源：`{dataset['meta']['source_export']}`。
+- 结构化数据源：`{dataset_path}`。
+- 当前周期后台记录 {quality['period_record_count']} 篇，其中非删除 {quality['period_non_deleted_count']} 篇、删除 {quality['period_deleted_count']} 篇。
+- 稳定表现样本 {quality['stable_article_count']} 篇；最近 48 小时内的新文章 {quality['immature_article_count']} 篇，只进“新文章观察”，不进稳定均值。
+- 核心指标缺口：{quality['metric_pending_count']}。这里的缺口指阅读、分享、评论、点赞字段缺失，不把真实 0 误判为缺失。
+
+{section_markdown('overview', f'''
+- 稳定样本平均阅读：{fmt_num(overall['avg'])}
+- 中位数：{fmt_num(overall['median'])}
+- P75：{fmt_num(overall['p75'])}
+- 去极值均值：{fmt_num(overall['trimmed_mean'])}
+- 最高阅读：{fmt_num(overall['max'])}
+''')}
+
+{section_markdown('content-engine', markdown_table(['内容类型', '样本', '平均阅读', '中位数', 'P75', '最高', 'Top 样本'], type_rows) + f'''
+
+#### 建议内容配比
+
+{ratio_lines}
+''')}
+
+{section_markdown('title-structure', markdown_table(['标题结构', '样本', '中位阅读', 'P75', '最高', '平均分享率'], title_pattern_rows))}
+
+{section_markdown('article-length', markdown_table(['文章长度', '样本', '平均阅读', '中位阅读', 'P75', '最高'], length_rows) + f'''
+
+- 本地正文匹配：{dataset['length_analysis']['matched_count']} 篇。
+- 未匹配正文：{dataset['length_analysis']['missing_count']} 篇。
+- 匹配正文平均长度：{fmt_num(dataset['length_analysis']['avg_length'])} 字。
+''')}
+
+{section_markdown('audience', f'''
+#### 痛点表现
+
+{markdown_table(['痛点', '样本', '中位阅读', 'P75', '平均分享率'], pain_rows)}
+
+#### 人群表现
+
+{markdown_table(['目标人群', '样本', '中位阅读', 'P75', '平均分享率'], persona_rows)}
+''')}
+
+{section_markdown('timing', f'''
+{markdown_table(['小时', '样本', '平均阅读', '中位数', 'P75', '最高'], heat_rows)}
+
+#### 建议发布时间窗口
+
+{window_lines}
+''')}
+
+{section_markdown('evidence', f'''
+#### 阅读 Top 样本
+
+{markdown_table(['#', '标题', '阅读', '分享', '分享率', '类型'], top_rows)}
+
+#### 标题和第一屏规则
+
+{headline_lines}
+''')}
+
+{section_markdown('quality', f'''
+#### 待补与异常
+
+{pending_text}
+
+#### 数据质量快照
+
+- 后台记录：{quality['period_record_count']} 篇。
+- 非删除：{quality['period_non_deleted_count']} 篇。
+- 稳定样本：{quality['stable_article_count']} 篇。
+- 48 小时内新文：{quality['immature_article_count']} 篇。
+- 核心指标缺口：{quality['metric_pending_count']}。
+''')}
+
+{section_markdown('final-synthesis', f'''
+#### 高置信动作
+
+{chr(10).join(f"- {item}" for item in dataset['final_synthesis']['high_confidence_actions'])}
+
+#### 小步验证
+
+{chr(10).join(f"- {item}" for item in dataset['final_synthesis']['experiments'])}
+
+#### 暂不拍板
+
+{chr(10).join(f"- {item}" for item in dataset['final_synthesis']['hold_decisions'])}
+''')}
+
+## Connections
+
+- [[社媒运营总账]]：当前运营事实入口。
+- [[发布记录台账]]：公众号发布状态和链接回填入口。
+- [[指标采集账本]]：指标采集口径和数据缺口入口。
+"""
+
+
+def write_outputs(dataset: dict[str, Any], paths: Paths) -> None:
+    paths.dataset_path.parent.mkdir(parents=True, exist_ok=True)
+    paths.report_path.parent.mkdir(parents=True, exist_ok=True)
+    paths.dashboard_data_path.parent.mkdir(parents=True, exist_ok=True)
+    paths.dataset_path.write_text(
+        json.dumps(dataset, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    paths.dashboard_data_path.write_text(
+        json.dumps(dataset, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    paths.report_path.write_text(render_report(dataset, paths.dataset_path), encoding="utf-8")
+
+
+def update_social_ops_index(paths: Paths) -> None:
+    index_path = paths.wiki_repo / "wiki/operations/social-ops/index.md"
+    if not index_path.exists():
+        return
+    text = index_path.read_text(encoding="utf-8")
+    link = "- [公众号运营分析报告 2026-06-23](wechat-ops-report-2026-06-23.md) — 当前运营期公众号表现、题材、人群、发布时间与下一阶段内容配比。"
+    if "wechat-ops-report-2026-06-23.md" not in text:
+        if "## 自动区块外补充" in text:
+            text = text.replace("## 自动区块外补充", f"## 自动区块外补充\n\n{link}\n")
+        else:
+            text = text.rstrip() + "\n\n## 自动区块外补充\n\n" + link + "\n"
+        index_path.write_text(text, encoding="utf-8")
+
+
+def append_wiki_log(paths: Paths) -> None:
+    log_path = paths.wiki_repo / "wiki/log.md"
+    if not log_path.exists():
+        return
+    marker = "## [2026-06-23] report | 公众号运营分析报告"
+    text = log_path.read_text(encoding="utf-8")
+    if marker in text:
+        return
+    entry = (
+        f"\n{marker}\n\n"
+        "新增 `operations/social-ops/wechat-ops-report-2026-06-23.md` 和同名 JSON 数据集，"
+        "只分析公众号当前运营期表现。\n"
+    )
+    log_path.write_text(text.rstrip() + "\n" + entry, encoding="utf-8")
+
+
+def validate_dataset(dataset: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    quality = dataset["data_quality"]
+    stable = dataset["articles"]["stable"]
+    all_period = dataset["articles"]["all_period"]
+    required_section_fields = [
+        "question",
+        "conclusion",
+        "evidence",
+        "action",
+        "next_test",
+        "chart_payload",
+        "ui_slot",
+        "confidence",
+    ]
+    required_top_fields = [
+        "report_meta",
+        "account_profile",
+        "executive_summary",
+        "action_plan",
+        "confidence_model",
+        "title_analysis",
+        "length_analysis",
+        "final_synthesis",
+        "brand_signature",
+        "evidence_stream",
+        "template_slots",
+        "visual_tokens",
+    ]
+    for field in required_top_fields:
+        if not dataset.get(field):
+            errors.append(f"missing template contract field: {field}")
+    if quality["metric_pending_count"] != 0:
+        errors.append(f"metric_pending_count is {quality['metric_pending_count']}, expected 0")
+    if dataset.get("meta", {}).get("platform_scope") != "wechat_only":
+        errors.append("platform_scope must be wechat_only")
+    if dataset.get("report_meta", {}).get("platform_scope") != "wechat_only":
+        errors.append("report_meta.platform_scope must be wechat_only")
+    if len(dataset.get("action_plan", {}).get("items", [])) != 5:
+        errors.append("action_plan.items must contain 5 actions")
+    if dataset.get("template_slots", {}).get("layout") != "left_nav_center_story_right_context":
+        errors.append("template_slots.layout must be left_nav_center_story_right_context")
+    if dataset.get("visual_tokens", {}).get("layout") != "three_column_report_shell":
+        errors.append("visual_tokens.layout must be three_column_report_shell")
+    for article in all_period:
+        for field in ["content_type", "pain_point", "persona", "published_at"]:
+            if not article.get(field):
+                errors.append(f"missing {field}: {article.get('title')}")
+    for article in stable:
+        if article.get("is_immature"):
+            errors.append(f"immature article leaked into stable stats: {article.get('title')}")
+    type_count = sum(row["count"] for row in dataset["analysis"]["by_content_type"])
+    if type_count != len(stable):
+        errors.append(f"content type count {type_count} != stable count {len(stable)}")
+    section_ids = [section.get("id") for section in dataset.get("analysis_sections", [])]
+    expected_ids = [
+        "overview",
+        "content-engine",
+        "title-structure",
+        "article-length",
+        "audience",
+        "timing",
+        "evidence",
+        "quality",
+        "final-synthesis",
+    ]
+    if section_ids != expected_ids:
+        errors.append(f"analysis section order {section_ids} != {expected_ids}")
+    if not dataset.get("final_synthesis", {}).get("high_confidence_actions"):
+        errors.append("final_synthesis.high_confidence_actions must be non-empty")
+    if not dataset.get("title_analysis", {}).get("by_primary_pattern"):
+        errors.append("title_analysis.by_primary_pattern must be non-empty")
+    if not dataset.get("length_analysis", {}).get("by_length_bucket"):
+        errors.append("length_analysis.by_length_bucket must be non-empty")
+    for section in dataset.get("analysis_sections", []):
+        for field in required_section_fields:
+            if not section.get(field):
+                errors.append(f"missing section field {field}: {section.get('id')}")
+        evidence = section.get("evidence")
+        if isinstance(evidence, list):
+            if not evidence:
+                errors.append(f"section evidence must be non-empty: {section.get('id')}")
+        elif not isinstance(evidence, str) or not evidence:
+            errors.append(f"section evidence must be non-empty: {section.get('id')}")
+        if not isinstance(section.get("chart_payload"), dict):
+            errors.append(f"section chart_payload must be dict: {section.get('id')}")
+        ui_slot = section.get("ui_slot")
+        if not isinstance(ui_slot, dict) or not ui_slot.get("component") or not ui_slot.get("rail_focus"):
+            errors.append(f"section ui_slot must include component and rail_focus: {section.get('id')}")
+        confidence = section.get("confidence")
+        if not isinstance(confidence, dict) or confidence.get("level") not in {"high", "medium", "low"}:
+            errors.append(f"section confidence must include level: {section.get('id')}")
+    section_id_set = set(expected_ids)
+    for entry in dataset.get("evidence_stream", []):
+        if entry.get("section_id") not in section_id_set:
+            errors.append(f"evidence_stream has unknown section_id: {entry.get('section_id')}")
+    return errors
+
+
+def build_paths(root: Path, wiki_repo: Path) -> Paths:
+    return Paths(
+        root=root,
+        wiki_repo=wiki_repo,
+        report_path=wiki_repo
+        / "wiki/operations/social-ops/wechat-ops-report-2026-06-23.md",
+        dataset_path=wiki_repo
+        / "wiki/operations/social-ops/datasets/wechat-ops-report-2026-06-23.json",
+        dashboard_data_path=root / "reports/wechat-ops-dashboard/src/data/report.json",
+    )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--root", default="/Users/dw/Desktop/claude")
+    parser.add_argument("--wiki-root", default="/Users/dw/wiki")
+    parser.add_argument("--check", action="store_true", help="validate generated dataset only")
+    args = parser.parse_args()
+
+    root = Path(args.root).resolve()
+    wiki_repo = Path(args.wiki_root).resolve()
+    paths = build_paths(root, wiki_repo)
+    dataset = build_dataset(root)
+    errors = validate_dataset(dataset)
+    if args.check:
+        if errors:
+            print("\n".join(errors))
+            return 1
+        print(
+            "ok: "
+            f"{dataset['data_quality']['period_non_deleted_count']} current non-deleted, "
+            f"{dataset['data_quality']['stable_article_count']} stable, "
+            f"{dataset['data_quality']['metric_pending_count']} metric pending"
+        )
+        return 0
+
+    if errors:
+        print("Dataset validation failed:")
+        print("\n".join(errors))
+        return 1
+    write_outputs(dataset, paths)
+    update_social_ops_index(paths)
+    append_wiki_log(paths)
+    print(f"wrote {paths.report_path}")
+    print(f"wrote {paths.dataset_path}")
+    print(f"wrote {paths.dashboard_data_path}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
