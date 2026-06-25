@@ -313,12 +313,11 @@ function useActiveSection(ids: string[]) {
 function SideNav({ activeSection }: { activeSection: string }) {
   return (
     <aside className="side-nav" aria-label="报告导航">
-      <div className="account-card">
-        <div className="account-mark">{data.account_profile.avatar_text}</div>
-        <div>
-          <span>{data.account_profile.platform}</span>
-          <strong>{data.account_profile.name}</strong>
-          <p>{data.account_profile.analysis_period}</p>
+      <div className="nav-brand">
+        <div className="nav-brand-mark"><Layers3 size={18} /></div>
+        <div className="nav-brand-text">
+          <strong>运营诊断</strong>
+          <span>WeChat Ops Review</span>
         </div>
       </div>
       <nav aria-label="报告章节">
@@ -349,44 +348,54 @@ function SideNav({ activeSection }: { activeSection: string }) {
 }
 
 function RightRail({ activeSection }: { activeSection: string }) {
-  const sectionId = activeSection === "actions" ? "overview" : activeSection;
+  const sectionId =
+    activeSection === "actions" || activeSection === "hero" ? "overview" : activeSection;
   const current = data.analysis_sections.find((item) => item.id === sectionId);
-  const items = data.evidence_stream.filter((item) => item.section_id === sectionId).slice(0, 4);
+  const p = data.account_profile;
+  const avatar = data.brand_signature?.avatar_src || "/sample-avatar.svg";
+  const fansVal = p.fans_count != null ? number(p.fans_count) : "待接入";
+  const mpStats = [
+    { label: "粉丝数", value: fansVal },
+    { label: "总阅读", value: number(p.total_reads) },
+    { label: "发文数", value: number(p.article_count) },
+    { label: "发布频率", value: p.publish_frequency != null ? `${p.publish_frequency}/周` : "-" },
+  ];
 
   return (
-    <aside className="context-rail" aria-label="当前章节上下文">
-      <div className={`rail-current tone-${current?.ui_slot.accent ?? "green"}`}>
-        <span>当前屏幕</span>
-        <strong>{current?.title ?? "本周动作"}</strong>
-        <p>{current?.question ?? "先把下一步动作排出来"}</p>
-        {current && current.conclusion ? (
-          <p className="rail-conclusion">{current.conclusion}</p>
-        ) : null}
+    <aside className="context-rail" aria-label="公众号信息与当前上下文">
+      {/* 视觉重点：被分析公众号的信息卡（照 logip 右上用户卡） */}
+      <div className="mp-card">
+        <div className="mp-avatar">
+          <img src={avatar} alt="公众号头像" />
+        </div>
+        <div className="mp-name">{p.name}</div>
+        <div className="mp-handle">微信公众号 · {p.analysis_period}</div>
+        <div className="mp-stats">
+          {mpStats.map((s) => (
+            <div className="mp-stat" key={s.label}>
+              <b>{s.value}</b>
+              <span>{s.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* 当前屏上下文 */}
       {current ? (
-        <div className="rail-analysis">
-          <span>本屏观察</span>
-          <p className="rail-analysis-text">{current.analysis}</p>
-          <span>下一步</span>
-          <p className="rail-action-text">{current.action}</p>
+        <div className="rail-context">
+          <span className="rail-eyebrow">当前 · {current.title}</span>
+          <p className="rail-q">{current.question}</p>
+          <div className="rail-block">
+            <span>本屏观察</span>
+            <p>{current.analysis}</p>
+          </div>
+          <div className="rail-block">
+            <span>下一步</span>
+            <p className="accent">{current.action}</p>
+          </div>
         </div>
       ) : null}
-      <div className="rail-stream">
-        <h2>证据与动作</h2>
-        {items.map((item) => (
-          <a
-            className={`rail-item tone-${item.tone ?? "green"}`}
-            href={item.url || `#${item.section_id}`}
-            key={item.id}
-            rel="noreferrer"
-            target={item.url ? "_blank" : undefined}
-          >
-            <strong>{item.title}</strong>
-            <p>{item.body}</p>
-            {item.meta ? <small>{item.meta}</small> : null}
-          </a>
-        ))}
-      </div>
+
       <div className="rail-scope">
         <CheckCircle2 size={15} />
         <p>{data.report_meta.scope_note}</p>
@@ -446,86 +455,32 @@ function StoryScreen({
 function HeroScreen() {
   const p = data.account_profile;
   const tc = data.top_conclusion;
-  const avatar = data.brand_signature?.avatar_src || "/sample-avatar.svg";
-
-  const totalVal = number(p.total_reads);
-  const avgVal = number(p.avg_reads);
-  const medianVal = number(p.median_reads);
-  const countVal = number(p.article_count);
-  const freqVal = p.publish_frequency != null ? `${p.publish_frequency}/周` : "-";
-  const explosiveVal = number(p.explosive_count);
-  const fansVal = p.fans_count != null ? number(p.fans_count) : "待接入";
+  const kpis = [
+    { icon: <TrendingUp size={18} />, color: "mint", label: "中位阅读", value: number(p.median_reads), hint: "稳定样本中位（次）" },
+    { icon: <BarChart3 size={18} />, color: "peach", label: "篇均阅读", value: number(p.avg_reads), hint: "平均每篇（次）" },
+    { icon: <Sparkles size={18} />, color: "butter", label: "爆款数", value: number(p.explosive_count), hint: "≥P90 阅读篇数" },
+    { icon: <CheckCircle2 size={18} />, color: "lavender", label: "稳定样本", value: number(p.stable_article_count), hint: "已过 48h 进均值" },
+  ];
 
   return (
     <section id="hero" className="story-screen hero-screen">
-      {/* 顶部：圆头像 + 名称(display大) + caption */}
-      <div className="hero-profile">
-        <div className="hero-avatar">
-          <img src={avatar} alt="公众号头像占位" />
-        </div>
-        <div className="hero-identity">
-          <div className="hero-name">{p.name}</div>
-          <div className="hero-caption">微信公众号 · {p.analysis_period}</div>
-        </div>
-      </div>
-
-      {/* 核心数据 bento：总阅读做大卡(焦点)；篇均/中位/发文/频率右侧小卡叠放；爆款/粉丝底部窄条 */}
-      <div className="hero-bento">
-        <div className="bento-card bento-total">
-          <div className="bento-icon mint"><BarChart3 size={22} /></div>
-          <div className="bento-label">总阅读</div>
-          <div className="bento-metric">{totalVal}</div>
-          <div className="bento-caption">周期内全部阅读数之和</div>
-        </div>
-
-        <div className="bento-card bento-small bento-avg">
-          <div className="bento-icon peach"><BarChart3 size={16} /></div>
-          <div className="bento-label">篇均阅读</div>
-          <div className="bento-metric">{avgVal}</div>
-          <div className="bento-caption">平均每篇文章</div>
-        </div>
-
-        <div className="bento-card bento-small bento-median">
-          <div className="bento-icon butter"><BarChart3 size={16} /></div>
-          <div className="bento-label">中位阅读</div>
-          <div className="bento-metric">{medianVal}</div>
-          <div className="bento-caption">稳定样本中位</div>
-        </div>
-
-        <div className="bento-card bento-small bento-count">
-          <div className="bento-icon lavender"><FileText size={16} /></div>
-          <div className="bento-label">发文数</div>
-          <div className="bento-metric">{countVal}</div>
-          <div className="bento-caption">周期非删文章</div>
-        </div>
-
-        <div className="bento-card bento-small bento-freq">
-          <div className="bento-icon blush"><CalendarClock size={16} /></div>
-          <div className="bento-label">发布频率</div>
-          <div className="bento-metric">{freqVal}</div>
-          <div className="bento-caption">篇/周（运营周期内）</div>
-        </div>
-
-        <div className="bento-card bento-narrow bento-hit">
-          <div className="bento-icon mint"><Sparkles size={16} /></div>
-          <div className="bento-label">爆款数</div>
-          <div className="bento-metric">{explosiveVal}</div>
-          <div className="bento-caption">≥P90 阅读</div>
-        </div>
-
-        <div className="bento-card bento-narrow bento-fans">
-          <div className="bento-icon sky"><Users size={16} /></div>
-          <div className="bento-label">粉丝数</div>
-          <div className="bento-metric">{fansVal}</div>
-          <div className="bento-caption">爬虫接入后更新</div>
-        </div>
-      </div>
-
-      {/* 底部：verdict（整体判断，大字）+ next_action 收尾 */}
-      <div className="hero-verdict">{tc.verdict}</div>
+      <div className="hero-eyebrow">运营诊断 · {p.analysis_period}</div>
+      <h1 className="hero-verdict-big">{tc.verdict}</h1>
       <p className="hero-next">{tc.next_action}</p>
 
-      {/* 本周先做5件事 已移出第一屏：见 ActionPlanSection */}
+      {/* logip 式 KPI 横条：圆 icon + label + 大数字，紧凑横排 */}
+      <div className="kpi-row">
+        {kpis.map((k) => (
+          <div className="kpi-cell" key={k.label}>
+            <div className={`kpi-ico ${k.color}`}>{k.icon}</div>
+            <div className="kpi-body">
+              <span className="kpi-l">{k.label}</span>
+              <strong className="kpi-v">{k.value}</strong>
+              <small className="kpi-h">{k.hint}</small>
+            </div>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }

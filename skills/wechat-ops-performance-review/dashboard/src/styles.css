@@ -1279,6 +1279,189 @@ select {
   font-weight: 600;
 }
 
+/* ===== logip 照抄 v2：左栏轻量 + 右栏公众号卡(视觉重点) + KPI 横条 ===== */
+
+/* 左栏品牌（轻量，纯功能区） */
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 22px 16px;
+}
+.nav-brand-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--mint);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+.nav-brand-text strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--on-surface);
+  line-height: 1.1;
+}
+.nav-brand-text span {
+  font-size: 11px;
+  color: var(--on-surface-faint);
+  letter-spacing: 0.3px;
+}
+
+/* 右栏：公众号信息卡 = 视觉重点（照 logip 右上用户卡） */
+.context-rail {
+  background: var(--surface);
+  padding: 22px;
+  gap: 20px;
+}
+.mp-card {
+  background: var(--surface-subtle);
+  border-radius: 20px;
+  padding: 24px 20px 20px;
+  text-align: center;
+}
+.mp-avatar {
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 3px solid var(--surface);
+  box-shadow: 0 6px 18px rgba(120, 110, 90, 0.16);
+  background: var(--surface);
+}
+.mp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.mp-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--on-surface);
+  line-height: 1.2;
+}
+.mp-handle {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--on-surface-faint);
+}
+.mp-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 12px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.mp-stat b {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--on-surface);
+  line-height: 1.1;
+}
+.mp-stat span {
+  font-size: 11px;
+  color: var(--on-surface-muted);
+}
+
+/* 右栏当前上下文 */
+.rail-context {
+  display: grid;
+  gap: 10px;
+}
+.rail-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+}
+.rail-q {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--on-surface);
+  line-height: 1.4;
+}
+.rail-block {
+  display: grid;
+  gap: 3px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.rail-block > span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--on-surface-faint);
+}
+.rail-block p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--on-surface);
+}
+.rail-block p.accent { color: var(--primary); }
+
+/* 中栏首屏：logip 式 */
+.hero-eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.hero-screen h1.hero-verdict-big {
+  max-width: none;
+  margin: 0;
+  font-size: clamp(34px, 5vw, 52px);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.5px;
+  color: var(--on-surface);
+}
+
+/* logip KPI 横条：圆 icon + label + 大数字，紧凑横排 */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 40px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+.kpi-cell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.kpi-cell:not(:last-child) {
+  border-right: 1px solid var(--line);
+  padding-right: 20px;
+}
+.kpi-ico {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  flex: 0 0 auto;
+}
+.kpi-ico.mint { background: var(--mint); }
+.kpi-ico.peach { background: var(--peach); }
+.kpi-ico.butter { background: var(--butter); }
+.kpi-ico.lavender { background: var(--lavender); }
+.kpi-ico.blush { background: var(--blush); }
+.kpi-ico.sky { background: var(--sky); }
+.kpi-body { display: flex; flex-direction: column; min-width: 0; }
+.kpi-l { font-size: 12px; color: var(--on-surface-muted); font-weight: 500; }
+.kpi-v { font-size: 26px; font-weight: 700; color: var(--on-surface); line-height: 1.05; }
+.kpi-h { font-size: 11px; color: var(--on-surface-faint); margin-top: 1px; }
+
+@media (max-width: 980px) {
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .kpi-cell:nth-child(2n) { border-right: 0; padding-right: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
