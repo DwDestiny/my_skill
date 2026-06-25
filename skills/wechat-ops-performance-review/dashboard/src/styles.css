@@ -518,15 +518,16 @@ select {
 }
 
 .screen-visual {
-  margin-top: clamp(34px, 5vh, 56px);
+  /* 焦点周围留更多白；区块间距 28-36px */
+  margin-top: clamp(28px, 4.5vh, 40px);
 }
 
 .screen-action {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 28px;
-  margin-top: 28px;
-  padding-top: 18px;
+  gap: 32px;
+  margin-top: 32px;
+  padding-top: 20px;
   border-top: 1px solid var(--line);
 }
 
@@ -537,12 +538,20 @@ select {
   line-height: 1.6;
 }
 
-.overall-visual,
-.split-visual {
+.overall-visual {
+  /* 2块 62:38 */
   display: grid;
-  grid-template-columns: minmax(0, 1.18fr) minmax(260px, 0.72fr);
-  gap: 32px;
-  align-items: center;
+  grid-template-columns: minmax(0, 1.22fr) minmax(240px, 0.78fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.split-visual {
+  /* 维度屏图文 62:38，主焦点图大，结论/辅小但不弱化；绝不50:50 */
+  display: grid;
+  grid-template-columns: minmax(0, 1.22fr) minmax(240px, 0.78fr);
+  gap: 28px;
+  align-items: start;
 }
 
 .big-number {
@@ -582,7 +591,6 @@ select {
 }
 
 .metric-stack div,
-.quality-grid div,
 .ratio-board div,
 .window-board div,
 .dual-list article {
@@ -593,15 +601,35 @@ select {
 }
 
 .metric-stack div:first-child,
-.quality-grid div:nth-child(-n + 3),
 .ratio-board div:first-child,
 .window-board div:first-child,
 .dual-list article:first-of-type {
   border-top: 1px solid var(--line);
 }
 
+/* quality 现为列表堆叠（多块） */
+.quality-grid div {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.quality-grid div:first-child {
+  border-top: 1px solid var(--line);
+}
+.quality-grid span {
+  color: var(--on-surface-muted);
+  font-size: 13px;
+  flex: 0 0 92px;
+}
+.quality-grid strong {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
 .metric-stack b,
-.quality-grid strong,
 .ratio-board b,
 .length-summary strong {
   font-size: 26px;
@@ -639,6 +667,7 @@ select {
   line-height: 1.5;
 }
 
+/* 旧 pattern-cloud 保留以兼容其他（如需），但标题结构已改用排行条（见 TitleVisual） */
 .pattern-cloud {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
@@ -667,6 +696,59 @@ select {
   font-weight: 700;
 }
 
+/* 标题结构排行条：横向，按中位阅读降序，条长比例错落；主次分明 */
+.title-visual {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.ranking-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+}
+.rank-bar-row {
+  display: grid;
+  grid-template-columns: 92px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+.rank-name {
+  color: var(--on-surface);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rank-track {
+  height: 10px;
+  background: var(--surface-subtle);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.rank-fill {
+  height: 100%;
+  background: var(--mint);
+  border-radius: 999px;
+  transition: width 200ms ease;
+}
+.rank-val {
+  font-weight: 700;
+  color: var(--on-surface);
+  white-space: nowrap;
+  font-size: 13px;
+  text-align: right;
+}
+.rank-val .rank-unit {
+  color: var(--on-surface-faint);
+  font-weight: 500;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
 .length-summary {
   padding: 24px;
   border-radius: 18px;
@@ -681,9 +763,10 @@ select {
 }
 
 .dual-list {
+  /* 2块用62:38 主辅，不等分 */
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 48px;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: 36px;
 }
 
 .dual-list h3 {
@@ -809,43 +892,70 @@ select {
 }
 
 .quality-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0 30px;
+  /* 6 项多块：改列表式，避免均匀 3 列豆腐；用列布局主次可读 */
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .final-board {
+  /* 3篮子：主次分明，now 最显眼大，hold 最淡小；不用等宽 */
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px;
+  grid-template-columns: 1.45fr 1fr 0.8fr;
+  gap: 28px;
 }
 
 .decision-column {
-  min-height: 340px;
-  padding: 24px;
+  min-height: 280px;
+  padding: 20px;
   border-radius: 18px;
   background: var(--surface-subtle);
 }
 
 .decision-column h3 {
-  margin: 0 0 16px;
-  font-size: 18px;
+  margin: 0 0 14px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--on-surface);
 }
 
 .decision-column p {
   margin: 0;
-  padding: 12px 0;
+  padding: 10px 0;
   border-top: 1px solid rgba(20, 28, 46, 0.08);
   color: var(--on-surface);
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
 .decision-column p.empty {
   color: var(--on-surface-faint);
   font-style: italic;
+}
+
+/* final 层次：now 最大最醒目，hold 最小淡化 */
+.decision-column.tone-green {
+  padding: 24px;
+  min-height: 300px;
+}
+.decision-column.tone-green h3 {
+  font-size: 19px;
+}
+.decision-column.tone-green p {
+  font-size: 14.5px;
+}
+.decision-column.tone-violet {
+  opacity: 0.82;
+  padding: 16px;
+  min-height: 220px;
+}
+.decision-column.tone-violet h3 {
+  font-size: 15px;
+  opacity: 0.9;
+}
+.decision-column.tone-violet p {
+  font-size: 13px;
+  opacity: 0.85;
 }
 
 .context-rail {
@@ -1019,12 +1129,12 @@ select {
   font-weight: 700;
 }
 
-/* ===== DESIGN.md 马卡龙 Hero：公众号身份画像 ===== */
+/* ===== DESIGN.md 马卡龙 Hero：公众号身份画像 (bento 错落) ===== */
 .hero-profile {
   display: flex;
   align-items: center;
   gap: 18px;
-  margin-bottom: 18px;
+  margin-bottom: 8px;
 }
 .hero-avatar {
   width: 72px;
@@ -1055,72 +1165,105 @@ select {
   font-weight: 500;
 }
 
-/* 核心数据画像条：7项 */
-.profile-metrics {
-  display: flex;
-  flex-wrap: wrap;
+/* bento 布局：总阅读大焦点 + 小卡叠放 + 底部窄条；用 grid-template-areas 实现不等 */
+.hero-bento {
+  display: grid;
+  grid-template-columns: 1.9fr 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  grid-template-areas:
+    "total avg median"
+    "total count freq"
+    "hit fans fans";
   gap: 12px;
-  margin: 20px 0 28px;
+  margin: 22px 0 36px;
+  /* 焦点周围留更多白，区块间距符合 28-36px */
 }
-.metric-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  min-width: 108px;
-  padding: 10px 14px;
-  border-radius: 14px;
+.bento-card {
   background: var(--surface);
+  border-radius: 18px;
   box-shadow: var(--shadow);
-  flex: 1 1 108px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
 }
-.metric-icon {
-  width: 36px;
-  height: 36px;
+.bento-total { grid-area: total; padding: 18px 20px; }
+.bento-total .bento-metric {
+  font-size: 42px;
+  line-height: 0.96;
+  font-weight: 700;
+  color: var(--on-surface);
+  margin: 6px 0 4px;
+}
+.bento-avg { grid-area: avg; }
+.bento-median { grid-area: median; }
+.bento-count { grid-area: count; }
+.bento-freq { grid-area: freq; }
+.bento-small {
+  /* 小而克制 */
+  padding: 12px 14px;
+}
+.bento-small .bento-metric {
+  font-size: 22px;
+  line-height: 1.0;
+  font-weight: 700;
+  color: var(--on-surface);
+  margin: 2px 0 2px;
+}
+.bento-hit { grid-area: hit; }
+.bento-fans { grid-area: fans; }
+.bento-narrow {
+  /* 底部窄条 */
+  padding: 10px 14px;
+}
+.bento-narrow .bento-metric {
+  font-size: 18px;
+  line-height: 1.0;
+  font-weight: 700;
+  margin: 1px 0;
+}
+
+.bento-icon {
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
   display: grid;
   place-items: center;
   color: #fff;
   flex: 0 0 auto;
-  font-size: 15px;
+  margin-bottom: 6px;
 }
-.metric-icon.mint { background: var(--mint); }
-.metric-icon.peach { background: var(--peach); }
-.metric-icon.butter { background: var(--butter); }
-.metric-icon.blush { background: var(--blush); }
-.metric-icon.lavender { background: var(--lavender); }
-.metric-icon.sky { background: var(--sky); }
-.metric-icon.danger { background: var(--danger); }
+.bento-icon.mint { background: var(--mint); }
+.bento-icon.peach { background: var(--peach); }
+.bento-icon.butter { background: var(--butter); }
+.bento-icon.blush { background: var(--blush); }
+.bento-icon.lavender { background: var(--lavender); }
+.bento-icon.sky { background: var(--sky); }
 
-.metric-num {
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1.05;
-  color: var(--on-surface);
-}
-.metric-label {
+.bento-label {
   font-size: 12px;
   font-weight: 600;
   color: var(--on-surface);
-  margin-top: 2px;
 }
-.metric-caption {
+.bento-caption {
   font-size: 11px;
   color: var(--on-surface-faint);
   margin-top: 1px;
+  line-height: 1.3;
 }
 
-/* 第一屏整体判断 */
+/* 第一屏整体判断：大字收尾焦点 */
 .hero-verdict {
-  margin: 12px 0 8px;
-  font-size: 20px;
+  margin: 10px 0 6px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--on-surface);
-  line-height: 1.35;
+  line-height: 1.32;
+  letter-spacing: -0.1px;
 }
 .hero-next {
   color: var(--on-surface-muted);
   font-size: 15px;
-  margin: 0 0 16px;
+  margin: 0 0 12px;
 }
 
 /* 动作列表（已移出第一屏，独立呈现时使用） */
@@ -1226,10 +1369,27 @@ select {
   }
 
   .metric-constellation,
-  .pattern-cloud,
-  .quality-grid {
+  .pattern-cloud {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .quality-grid {
+    /* 窄屏仍纵向列表 */
+  }
+
+  /* hero bento 窄屏降级：总阅读独占，其余 2 列或堆叠，保持大小差异 */
+  .hero-bento {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "total total"
+      "avg median"
+      "count freq"
+      "hit fans";
+    gap: 10px;
+    margin: 18px 0 28px;
+  }
+  .bento-total .bento-metric { font-size: 34px; }
+  .bento-small .bento-metric { font-size: 18px; }
+  .bento-narrow .bento-metric { font-size: 16px; }
 }
 
 @media (max-width: 640px) {
@@ -1266,9 +1426,11 @@ select {
   }
 
   .metric-constellation,
-  .pattern-cloud,
-  .quality-grid {
+  .pattern-cloud {
     grid-template-columns: 1fr;
+  }
+  .quality-grid {
+    /* 窄屏列表 */
   }
 
   .ranking-list a {
@@ -1280,5 +1442,26 @@ select {
   .ranking-list small {
     grid-column: 2;
     text-align: left;
+  }
+
+  /* 更窄：bento 全部纵向，焦点仍较大 */
+  .hero-bento {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "total"
+      "avg"
+      "median"
+      "count"
+      "freq"
+      "hit"
+      "fans";
+    gap: 8px;
+  }
+  .bento-total .bento-metric { font-size: 32px; }
+
+  .rank-bar-row {
+    grid-template-columns: 72px 1fr auto;
+    font-size: 13px;
+    gap: 8px;
   }
 }

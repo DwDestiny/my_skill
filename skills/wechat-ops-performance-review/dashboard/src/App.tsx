@@ -447,18 +447,18 @@ function HeroScreen() {
   const p = data.account_profile;
   const tc = data.top_conclusion;
   const avatar = data.brand_signature?.avatar_src || "/sample-avatar.svg";
-  // 画像条 7 项
-  const profileMetrics = [
-    { key: "fans", label: "粉丝数", value: p.fans_count != null ? number(p.fans_count) : "待接入", caption: "爬虫接入后更新", color: "sky" },
-    { key: "total", label: "总阅读", value: number(p.total_reads), caption: "周期内全部阅读数之和", color: "mint" },
-    { key: "avg", label: "篇均阅读", value: number(p.avg_reads), caption: "平均每篇文章阅读", color: "peach" },
-    { key: "median", label: "中位阅读", value: number(p.median_reads), caption: "稳定样本中位", color: "butter" },
-    { key: "count", label: "发文数", value: number(p.article_count), caption: "周期非删文章", color: "lavender" },
-    { key: "freq", label: "发布频率", value: p.publish_frequency != null ? `${p.publish_frequency}/周` : "-", caption: "篇/周（运营周期内）", color: "blush" },
-    { key: "explosive", label: "爆款数", value: number(p.explosive_count), caption: "≥P90 阅读文章数", color: "mint" },
-  ];
+
+  const totalVal = number(p.total_reads);
+  const avgVal = number(p.avg_reads);
+  const medianVal = number(p.median_reads);
+  const countVal = number(p.article_count);
+  const freqVal = p.publish_frequency != null ? `${p.publish_frequency}/周` : "-";
+  const explosiveVal = number(p.explosive_count);
+  const fansVal = p.fans_count != null ? number(p.fans_count) : "待接入";
+
   return (
     <section id="hero" className="story-screen hero-screen">
+      {/* 顶部：圆头像 + 名称(display大) + caption */}
       <div className="hero-profile">
         <div className="hero-avatar">
           <img src={avatar} alt="公众号头像占位" />
@@ -469,21 +469,59 @@ function HeroScreen() {
         </div>
       </div>
 
-      {/* 核心数据画像条 */}
-      <div className="profile-metrics">
-        {profileMetrics.map((m, idx) => (
-          <div className="metric-item" key={m.key}>
-            <div className={`metric-icon ${m.color}`}>{getProfileIcon(m.key)}</div>
-            <div>
-              <div className="metric-num">{m.value}</div>
-              <div className="metric-label">{m.label}</div>
-              <div className="metric-caption">{m.caption}</div>
-            </div>
-          </div>
-        ))}
+      {/* 核心数据 bento：总阅读做大卡(焦点)；篇均/中位/发文/频率右侧小卡叠放；爆款/粉丝底部窄条 */}
+      <div className="hero-bento">
+        <div className="bento-card bento-total">
+          <div className="bento-icon mint"><BarChart3 size={22} /></div>
+          <div className="bento-label">总阅读</div>
+          <div className="bento-metric">{totalVal}</div>
+          <div className="bento-caption">周期内全部阅读数之和</div>
+        </div>
+
+        <div className="bento-card bento-small bento-avg">
+          <div className="bento-icon peach"><BarChart3 size={16} /></div>
+          <div className="bento-label">篇均阅读</div>
+          <div className="bento-metric">{avgVal}</div>
+          <div className="bento-caption">平均每篇文章</div>
+        </div>
+
+        <div className="bento-card bento-small bento-median">
+          <div className="bento-icon butter"><BarChart3 size={16} /></div>
+          <div className="bento-label">中位阅读</div>
+          <div className="bento-metric">{medianVal}</div>
+          <div className="bento-caption">稳定样本中位</div>
+        </div>
+
+        <div className="bento-card bento-small bento-count">
+          <div className="bento-icon lavender"><FileText size={16} /></div>
+          <div className="bento-label">发文数</div>
+          <div className="bento-metric">{countVal}</div>
+          <div className="bento-caption">周期非删文章</div>
+        </div>
+
+        <div className="bento-card bento-small bento-freq">
+          <div className="bento-icon blush"><CalendarClock size={16} /></div>
+          <div className="bento-label">发布频率</div>
+          <div className="bento-metric">{freqVal}</div>
+          <div className="bento-caption">篇/周（运营周期内）</div>
+        </div>
+
+        <div className="bento-card bento-narrow bento-hit">
+          <div className="bento-icon mint"><Sparkles size={16} /></div>
+          <div className="bento-label">爆款数</div>
+          <div className="bento-metric">{explosiveVal}</div>
+          <div className="bento-caption">≥P90 阅读</div>
+        </div>
+
+        <div className="bento-card bento-narrow bento-fans">
+          <div className="bento-icon sky"><Users size={16} /></div>
+          <div className="bento-label">粉丝数</div>
+          <div className="bento-metric">{fansVal}</div>
+          <div className="bento-caption">爬虫接入后更新</div>
+        </div>
       </div>
 
-      {/* 整体判断 */}
+      {/* 底部：verdict（整体判断，大字）+ next_action 收尾 */}
       <div className="hero-verdict">{tc.verdict}</div>
       <p className="hero-next">{tc.next_action}</p>
 
@@ -581,6 +619,8 @@ function OverallVisual() {
 
 function ContentVisual() {
   const rows = data.analysis.by_content_type.filter((row) => row.count > 0);
+  // 内容配比 5 项多块：按比例排序，主次分明（最大在上）
+  const ratios = [...data.recommendations.topic_ratio].sort((a, b) => b.ratio - a.ratio);
   return (
     <div className="split-visual">
       <div className="chart-frame">
@@ -599,7 +639,7 @@ function ContentVisual() {
         </ResponsiveContainer>
       </div>
       <div className="ratio-board">
-        {data.recommendations.topic_ratio.map((item) => (
+        {ratios.map((item) => (
           <div key={item.label}>
             <b>{Math.round(item.ratio * 100)}%</b>
             <strong>{item.label}</strong>
@@ -612,12 +652,20 @@ function ContentVisual() {
 }
 
 function TitleVisual() {
-  const rows = data.title_analysis.by_primary_pattern.filter((row) => row.count > 0);
+  const chartRows = data.title_analysis.by_primary_pattern.filter((row) => row.count > 0);
+  // 排行式：按中位阅读降序，条长按比例，最高最长；标题结构多模块不用均匀网格
+  const rankRows = [...data.title_analysis.by_primary_pattern]
+    .filter((row) => row.count > 0)
+    .sort((a, b) => (b.median || 0) - (a.median || 0));
+
+  const maxMedian = Math.max(0, ...rankRows.map((r) => r.median || 0));
+
   return (
-    <div className="split-visual">
+    <div className="title-visual">
+      {/* 图为主焦点 62% 侧（chart） */}
       <div className="chart-frame">
-        <ResponsiveContainer width="100%" height={330}>
-          <BarChart data={rows} margin={{ top: 12, right: 18, left: 0, bottom: 46 }}>
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart data={chartRows} margin={{ top: 12, right: 18, left: 0, bottom: 46 }}>
             <CartesianGrid stroke="#EDE9E3" vertical={false} />
             <XAxis dataKey="key" tickLine={false} axisLine={false} fontSize={11} angle={-18} textAnchor="end" height={58} label={{ value: "标题模式", position: "insideBottom", offset: -12, fontSize: 11 }} />
             <YAxis tickLine={false} axisLine={false} fontSize={12} width={42} label={{ value: "中位阅读", angle: -90, position: "insideLeft", fontSize: 11 }} />
@@ -626,14 +674,23 @@ function TitleVisual() {
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div className="pattern-cloud">
-        {data.title_analysis.by_feature.map((row) => (
-          <div key={String(row.key)}>
-            <span>{row.key} · 中位阅读</span>
-            <strong>{number(row.median)}</strong>
-            <small>{row.count} 篇</small>
-          </div>
-        ))}
+      {/* 横向排行条：按数值排序，条长比例，标 名称 + 数值 + "中位阅读"；见 DESIGN.md 标题结构 wireframe */}
+      <div className="ranking-bars">
+        {rankRows.map((row, idx) => {
+          const v = row.median || 0;
+          const pct = maxMedian > 0 ? Math.max(8, Math.round((v / maxMedian) * 100)) : 30;
+          return (
+            <div className="rank-bar-row" key={String(row.key)}>
+              <div className="rank-name">{String(row.key)}</div>
+              <div className="rank-track">
+                <div className="rank-fill" style={{ width: `${pct}%` }} />
+              </div>
+              <div className="rank-val">
+                {number(v)} <span className="rank-unit">中位阅读</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
