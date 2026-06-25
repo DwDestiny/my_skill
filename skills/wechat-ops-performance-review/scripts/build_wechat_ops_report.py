@@ -22,8 +22,6 @@ from zoneinfo import ZoneInfo
 
 
 CN_TZ = ZoneInfo("Asia/Shanghai")
-OPS_START = datetime(2026, 4, 18, tzinfo=CN_TZ)
-REPORT_DATE = "2026-06-23"
 
 CONTENT_TYPES = [
     "风险/账号/额度焦虑",
@@ -140,10 +138,11 @@ ARTICLE_LENGTH_BUCKETS = ["1200字内", "1200-2200字", "2200-3500字", "3500字
 @dataclass(frozen=True)
 class Paths:
     root: Path
-    wiki_repo: Path
+    wiki_repo: Path | None
     report_path: Path
     dataset_path: Path
     dashboard_data_path: Path
+    report_date: str
 
 
 def read_json(path: Path, default: Any) -> Any:
@@ -1172,7 +1171,7 @@ def build_compat_conclusions(sections: list[dict[str, Any]]) -> list[dict[str, s
 def build_account_profile(dataset: dict[str, Any]) -> dict[str, Any]:
     quality = dataset["data_quality"]
     return {
-        "name": "麦总玩 AI",
+        "name": dataset["meta"].get("account_name", "麦总玩 AI"),
         "platform": "微信公众号",
         "description": "面向 AI 工具、Agent 工作流和普通人可落地效率场景的内容号。",
         "avatar_text": "麦",
@@ -1232,7 +1231,7 @@ def build_report_meta(dataset: dict[str, Any]) -> dict[str, Any]:
     return {
         "template_version": "wechat-ops-template-v2.1",
         "title": "公众号运营诊断报告",
-        "account_name": "麦总玩 AI",
+        "account_name": meta.get("account_name", "麦总玩 AI"),
         "platform": "wechat",
         "platform_scope": "wechat_only",
         "period_label": f"{meta['period_start'][:10]} 至 {meta['period_end'][:10]}",
@@ -1435,11 +1434,29 @@ def load_ledger_quality(root: Path) -> dict[str, Any]:
     }
 
 
-def build_dataset(root: Path) -> dict[str, Any]:
+def build_dataset(root: Path, *, account_name: str = "麦总玩 AI", since: str | None = None) -> dict[str, Any]:
     raw_path = latest_publish_export(root)
     raw = read_json(raw_path, {})
     captured_at = parse_dt(raw.get("captured_at")) or datetime.now(timezone.utc).astimezone(CN_TZ)
     raw_records = raw.get("records", [])
+    # derive report_date from captured_at's date part (YYYY-MM-DD)
+    report_date = captured_at.date().isoformat()
+    # compute effective OPS_START: use --since if provided, else earliest publish date, else fallback
+    if since:
+        try:
+            d = datetime.strptime(since, "%Y-%m-%d").date()
+            ops_start = datetime.combine(d, datetime.min.time(), tzinfo=CN_TZ)
+        except Exception:
+            ops_start = datetime(2026, 4, 18, tzinfo=CN_TZ)
+    else:
+        publish_dts = [parse_dt(r.get("published_at")) for r in raw_records if r.get("published_at")]
+        publish_dts = [d for d in publish_dts if d]
+        if publish_dts:
+            min_dt = min(publish_dts)
+            min_d = min_dt.date()
+            ops_start = datetime.combine(min_d, datetime.min.time(), tzinfo=CN_TZ)
+        else:
+            ops_start = datetime(2026, 4, 18, tzinfo=CN_TZ)
     by_url, by_title = build_article_lookup(root)
     articles = [build_article(record, captured_at) for record in raw_records]
     for article in articles:
@@ -1447,7 +1464,7 @@ def build_dataset(root: Path) -> dict[str, Any]:
     period_articles = [
         article
         for article in articles
-        if article.get("published_at") and parse_dt(article["published_at"]) >= OPS_START
+        if article.get("published_at") and parse_dt(article["published_at"]) >= ops_start
     ]
     non_deleted = [article for article in period_articles if not article["is_deleted"]]
     deleted = [article for article in period_articles if article["is_deleted"]]
@@ -1465,13 +1482,13 @@ def build_dataset(root: Path) -> dict[str, Any]:
         row["label"] = WEEKDAY_LABELS[int(row["key"]) - 1] if row["key"] else ""
     dataset = {
         "meta": {
-            "report_date": REPORT_DATE,
+            "report_date": report_date,
+            "account_name": account_name,
             "generated_at": captured_at.isoformat(),
-            "period_start": OPS_START.isoformat(),
+            "period_start": ops_start.isoformat(),
             "period_end": captured_at.isoformat(),
             "source_export": str(raw_path),
             "source_captured_at": raw.get("captured_at"),
-            "dashboard_concept_image": "/Users/dw/.codex/generated_images/019e58a5-eaaf-71a2-a965-60b0ffb8dcfc/ig_0f7739fa5824e5c5016a3a567b90f8819a83fd699336568fb1.png",
             "platform_scope": "wechat_only",
         },
         "data_quality": {
@@ -1570,6 +1587,7 @@ def render_report(dataset: dict[str, Any], dataset_path: Path) -> str:
     overall = dataset["analysis"]["overall"]
     sections = {section["id"]: section for section in dataset["analysis_sections"]}
     source_name = Path(dataset["meta"]["source_export"]).name
+    report_date = dataset.get("meta", {}).get("report_date", "unknown")
 
     action_rows = [
         [
@@ -1730,10 +1748,10 @@ def render_report(dataset: dict[str, Any], dataset_path: Path) -> str:
 """
 
     return f"""---
-title: "公众号运营分析报告 2026-06-23"
+title: "公众号运营分析报告 {report_date}"
 type: report
 tags: [operations, social-ops, wechat, analytics]
-date: 2026-06-23
+date: {report_date}
 sources:
   - reports/wechat/{source_name}
   - data/social_ops/metrics/metric_attempts.jsonl
@@ -1861,12 +1879,15 @@ def write_outputs(dataset: dict[str, Any], paths: Paths) -> None:
 
 
 def update_social_ops_index(paths: Paths) -> None:
+    if paths.wiki_repo is None:
+        return
     index_path = paths.wiki_repo / "wiki/operations/social-ops/index.md"
     if not index_path.exists():
         return
     text = index_path.read_text(encoding="utf-8")
-    link = "- [公众号运营分析报告 2026-06-23](wechat-ops-report-2026-06-23.md) — 当前运营期公众号表现、题材、人群、发布时间与下一阶段内容配比。"
-    if "wechat-ops-report-2026-06-23.md" not in text:
+    rd = paths.report_date
+    link = f"- [公众号运营分析报告 {rd}](wechat-ops-report-{rd}.md) — 当前运营期公众号表现、题材、人群、发布时间与下一阶段内容配比。"
+    if f"wechat-ops-report-{rd}.md" not in text:
         if "## 自动区块外补充" in text:
             text = text.replace("## 自动区块外补充", f"## 自动区块外补充\n\n{link}\n")
         else:
@@ -1875,16 +1896,19 @@ def update_social_ops_index(paths: Paths) -> None:
 
 
 def append_wiki_log(paths: Paths) -> None:
+    if paths.wiki_repo is None:
+        return
     log_path = paths.wiki_repo / "wiki/log.md"
     if not log_path.exists():
         return
-    marker = "## [2026-06-23] report | 公众号运营分析报告"
+    rd = paths.report_date
+    marker = f"## [{rd}] report | 公众号运营分析报告"
     text = log_path.read_text(encoding="utf-8")
     if marker in text:
         return
     entry = (
         f"\n{marker}\n\n"
-        "新增 `operations/social-ops/wechat-ops-report-2026-06-23.md` 和同名 JSON 数据集，"
+        f"新增 `operations/social-ops/wechat-ops-report-{rd}.md` 和同名 JSON 数据集，"
         "只分析公众号当前运营期表现。\n"
     )
     log_path.write_text(text.rstrip() + "\n" + entry, encoding="utf-8")
@@ -1989,29 +2013,50 @@ def validate_dataset(dataset: dict[str, Any]) -> list[str]:
     return errors
 
 
-def build_paths(root: Path, wiki_repo: Path) -> Paths:
+def build_paths(workspace: Path, wiki_repo: Path | None, report_date: str) -> Paths:
+    if wiki_repo is None:
+        out_dir = workspace / "output"
+        report_path = out_dir / f"wechat-ops-report-{report_date}.md"
+        dataset_path = out_dir / f"wechat-ops-report-{report_date}.json"
+    else:
+        report_path = wiki_repo / f"wiki/operations/social-ops/wechat-ops-report-{report_date}.md"
+        dataset_path = wiki_repo / f"wiki/operations/social-ops/datasets/wechat-ops-report-{report_date}.json"
+    dashboard_data_path = Path(__file__).resolve().parents[1] / "dashboard" / "src" / "data" / "report.json"
     return Paths(
-        root=root,
+        root=workspace,
         wiki_repo=wiki_repo,
-        report_path=wiki_repo
-        / "wiki/operations/social-ops/wechat-ops-report-2026-06-23.md",
-        dataset_path=wiki_repo
-        / "wiki/operations/social-ops/datasets/wechat-ops-report-2026-06-23.json",
-        dashboard_data_path=root / "reports/wechat-ops-dashboard/src/data/report.json",
+        report_path=report_path,
+        dataset_path=dataset_path,
+        dashboard_data_path=dashboard_data_path,
+        report_date=report_date,
     )
+
+
+def derive_report_date(workspace: Path) -> str:
+    """Derive report_date (YYYY-MM-DD) from the captured_at date part in latest publish export."""
+    raw_path = latest_publish_export(workspace)
+    raw = read_json(raw_path, {})
+    captured_at = parse_dt(raw.get("captured_at")) or datetime.now(timezone.utc).astimezone(CN_TZ)
+    return captured_at.date().isoformat()
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", default="/Users/dw/Desktop/claude")
-    parser.add_argument("--wiki-root", default="/Users/dw/wiki")
+    parser.add_argument("--workspace", default=None, help="数据与产物工作区")
+    parser.add_argument("--wiki-root", default=None, help="wiki 仓库根（不传则不写入外部 wiki，只输出到 workspace/output/）")
+    parser.add_argument("--account-name", default="麦总玩 AI", help="公众号账号名")
+    parser.add_argument("--since", default=None, help="运营期起始日，ISO 日期如 2026-04-18（不传则取数据中最早发布时间当天或回退到 2026-04-18）")
     parser.add_argument("--check", action="store_true", help="validate generated dataset only")
     args = parser.parse_args()
 
-    root = Path(args.root).resolve()
-    wiki_repo = Path(args.wiki_root).resolve()
-    paths = build_paths(root, wiki_repo)
-    dataset = build_dataset(root)
+    if not args.workspace:
+        print("错误: 必须通过 --workspace 指定数据与产物工作区路径")
+        return 1
+    workspace = Path(args.workspace).resolve()
+    wiki_repo = Path(args.wiki_root).resolve() if args.wiki_root else None
+    report_date = derive_report_date(workspace)
+    paths = build_paths(workspace, wiki_repo, report_date)
+    dataset = build_dataset(workspace, account_name=args.account_name, since=args.since)
     errors = validate_dataset(dataset)
     if args.check:
         if errors:
@@ -2030,8 +2075,9 @@ def main() -> int:
         print("\n".join(errors))
         return 1
     write_outputs(dataset, paths)
-    update_social_ops_index(paths)
-    append_wiki_log(paths)
+    if wiki_repo is not None:
+        update_social_ops_index(paths)
+        append_wiki_log(paths)
     print(f"wrote {paths.report_path}")
     print(f"wrote {paths.dataset_path}")
     print(f"wrote {paths.dashboard_data_path}")

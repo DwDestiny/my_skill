@@ -20,7 +20,6 @@ from typing import Any
 from playwright.sync_api import Page, sync_playwright
 
 
-ROOT = Path("/Users/dw/Desktop/claude")
 CDP_URL = os.environ.get("LAOLIANG_CDP_URL", "http://127.0.0.1:9333")
 
 
@@ -120,7 +119,7 @@ def normalize_records(groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return records
 
 
-def export_records(root: Path, cdp_url: str) -> Path:
+def export_records(workspace: Path, cdp_url: str) -> Path:
     captured_at = datetime.now(timezone.utc).isoformat()
     with sync_playwright() as playwright:
         browser = playwright.chromium.connect_over_cdp(cdp_url)
@@ -177,7 +176,7 @@ def export_records(root: Path, cdp_url: str) -> Path:
     if not records:
         raise RuntimeError("data_empty: backend returned zero publish records")
 
-    out_dir = root / "reports" / "wechat"
+    out_dir = workspace / "reports" / "wechat"
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     out_path = out_dir / f"publish-records-{stamp}.json"
@@ -216,11 +215,15 @@ def export_records(root: Path, cdp_url: str) -> Path:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", default=str(ROOT))
+    parser.add_argument("--workspace", default=None, help="数据与产物工作区")
     parser.add_argument("--cdp-url", default=CDP_URL)
     args = parser.parse_args()
+    if not args.workspace:
+        print("错误: 必须通过 --workspace 指定数据与产物工作区路径")
+        return 1
+    workspace = Path(args.workspace).resolve()
     try:
-        out_path = export_records(Path(args.root).resolve(), args.cdp_url)
+        out_path = export_records(workspace, args.cdp_url)
     except Exception as exc:
         print(json.dumps({"status": "failed", "error": str(exc)}, ensure_ascii=False))
         return 1
