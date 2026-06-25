@@ -1,21 +1,14 @@
 from pathlib import Path
 
-from scripts.social_ops.build_wechat_ops_report import (
-    CONTENT_TYPES,
-    build_dataset,
-    render_report,
-    validate_dataset,
-)
+from build_wechat_ops_report import CONTENT_TYPES, build_dataset, render_report, validate_dataset
 
 
-ROOT = Path("/Users/dw/Desktop/claude")
-DATASET_PATH = Path(
-    "/Users/dw/wiki/wiki/operations/social-ops/datasets/wechat-ops-report-2026-06-23.json"
-)
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
+DATASET_PATH = FIXTURES / "output" / "dataset.json"
 
 
 def test_wechat_ops_report_dataset_is_complete():
-    dataset = build_dataset(ROOT)
+    dataset = build_dataset(FIXTURES, account_name="样例运营号")
     errors = validate_dataset(dataset)
     assert errors == []
     assert dataset["meta"]["platform_scope"] == "wechat_only"
@@ -27,7 +20,7 @@ def test_wechat_ops_report_dataset_is_complete():
     assert len(dataset["action_plan"]["items"]) == 5
     assert dataset["template_slots"]["layout"] == "left_nav_center_story_right_context"
     assert dataset["visual_tokens"]["layout"] == "three_column_report_shell"
-    assert dataset["account_profile"]["name"] == "麦总玩 AI"
+    assert dataset["account_profile"]["name"] == "样例运营号"
     assert dataset["brand_signature"]["skill_name"] == "wechat-ops-performance-review"
     assert dataset["confidence_model"]["levels"]
     assert dataset["title_analysis"]["by_primary_pattern"]
@@ -48,7 +41,7 @@ def test_wechat_ops_report_dataset_is_complete():
 
 
 def test_every_analysis_section_has_narrative_contract():
-    dataset = build_dataset(ROOT)
+    dataset = build_dataset(FIXTURES, account_name="样例运营号")
     for section in dataset["analysis_sections"]:
         assert section["question"]
         assert section["conclusion"]
@@ -63,7 +56,7 @@ def test_every_analysis_section_has_narrative_contract():
 
 
 def test_template_contract_is_self_describing():
-    dataset = build_dataset(ROOT)
+    dataset = build_dataset(FIXTURES, account_name="样例运营号")
     assert dataset["template_slots"]["left_nav"]["source"] == "narrative_flow"
     assert dataset["template_slots"]["hero"]["source"] == "executive_summary"
     assert dataset["template_slots"]["right_rail"]["source"] == "evidence_stream"
@@ -82,7 +75,7 @@ def test_template_contract_is_self_describing():
 
 
 def test_content_type_stats_match_stable_articles():
-    dataset = build_dataset(ROOT)
+    dataset = build_dataset(FIXTURES, account_name="样例运营号")
     stable = dataset["articles"]["stable"]
     by_type_count = sum(row["count"] for row in dataset["analysis"]["by_content_type"])
 
@@ -92,7 +85,7 @@ def test_content_type_stats_match_stable_articles():
 
 
 def test_every_period_article_has_operating_tags_and_metrics():
-    dataset = build_dataset(ROOT)
+    dataset = build_dataset(FIXTURES, account_name="样例运营号")
     for article in dataset["articles"]["all_period"]:
         assert article["content_type"]
         assert article["pain_point"]
@@ -106,7 +99,7 @@ def test_every_period_article_has_operating_tags_and_metrics():
 
 
 def test_title_and_length_analysis_are_usable():
-    dataset = build_dataset(ROOT)
+    dataset = build_dataset(FIXTURES, account_name="样例运营号")
     stable = dataset["articles"]["stable"]
     matched_lengths = [article for article in stable if article["article_length_chars"] > 0]
 
@@ -117,7 +110,7 @@ def test_title_and_length_analysis_are_usable():
 
 
 def test_wiki_report_starts_with_weekly_actions_and_links_dataset():
-    dataset = build_dataset(ROOT)
+    dataset = build_dataset(FIXTURES, account_name="样例运营号")
     report = render_report(dataset, DATASET_PATH)
     body_after_frontmatter = report.split("---", 2)[-1].lstrip()
 
