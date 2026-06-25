@@ -1272,15 +1272,44 @@ def build_account_profile(dataset: dict[str, Any]) -> dict[str, Any]:
     quality = dataset["data_quality"]
     account_name = dataset["meta"].get("account_name", "麦总玩 AI")
     avatar_text = account_name[0] if account_name else "麦"
+    articles = dataset.get("articles", {}).get("all_period", [])
+    reads = [int(a.get("reads", 0) or 0) for a in articles]
+    total_reads = sum(reads)
+    avg_reads = int(round(mean(reads))) if reads else 0
+    median_reads = int(round(median(reads))) if reads else 0
+    # 运营周数：用 meta 期起止计算
+    start_s = dataset["meta"].get("period_start", "")
+    end_s = dataset["meta"].get("period_end", "")
+    weeks = 1.0
+    try:
+        start_dt = parse_dt(start_s)
+        end_dt = parse_dt(end_s)
+        if start_dt and end_dt:
+            days = max(1, (end_dt - start_dt).days)
+            weeks = max(1.0, round(days / 7.0, 2))
+    except Exception:
+        weeks = 1.0
+    article_n = quality.get("period_non_deleted_count", len(articles))
+    publish_frequency = round(article_n / weeks, 1) if weeks > 0 else 0.0
+    # 爆款：reads >= P90
+    p90 = percentile([float(r) for r in reads], 0.9) if reads else 0.0
+    explosive_count = sum(1 for r in reads if r >= p90) if p90 > 0 else 0
     return {
         "name": account_name,
         "platform": "微信公众号",
         "description": "面向 AI 工具、Agent 工作流和普通人可落地效率场景的内容号。",
         "avatar_text": avatar_text,
         "analysis_period": f"{dataset['meta']['period_start'][:10]} 至 {dataset['meta']['period_end'][:10]}",
-        "article_count": quality["period_non_deleted_count"],
+        "article_count": article_n,
         "stable_article_count": quality["stable_article_count"],
         "generated_at": dataset["meta"]["generated_at"],
+        # 新增画像字段（DESIGN.md 要求）
+        "total_reads": total_reads,
+        "avg_reads": avg_reads,
+        "median_reads": median_reads,
+        "publish_frequency": publish_frequency,
+        "explosive_count": explosive_count,
+        "fans_count": None,
     }
 
 

@@ -24,6 +24,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -142,6 +143,13 @@ const data = report as unknown as {
     article_count: number;
     stable_article_count: number;
     generated_at: string;
+    // 新增画像字段
+    total_reads?: number;
+    avg_reads?: number;
+    median_reads?: number;
+    publish_frequency?: number;
+    explosive_count?: number;
+    fans_count?: number | null;
   };
   brand_signature: {
     author_name: string;
@@ -222,12 +230,20 @@ const data = report as unknown as {
 const sectionIds = data.narrative_flow.map((item) => item.anchor);
 const allTypes = ["全部类型", ...data.analysis.by_content_type.map((row) => String(row.key))];
 const toneColor: Record<string, string> = {
-  green: "#2f9f7b",
-  blue: "#5f98f2",
-  amber: "#e7a13d",
-  coral: "#f26d6d",
-  violet: "#8b7cf6",
+  green: "#5FC9A3", // mint
+  blue: "#76C5E8", // sky (克制)
+  amber: "#FFC95C", // butter
+  coral: "#FF93A8", // blush
+  violet: "#A99CE8", // lavender
+  mint: "#5FC9A3",
+  peach: "#FF9E7A",
+  butter: "#FFC95C",
+  blush: "#FF93A8",
+  lavender: "#A99CE8",
+  sky: "#76C5E8",
 };
+
+const MACARON = ["#5FC9A3", "#FF9E7A", "#FFC95C", "#FF93A8", "#A99CE8", "#76C5E8"];
 
 function number(value: number | undefined, maximumFractionDigits = 0) {
   return (value ?? 0).toLocaleString("zh-CN", { maximumFractionDigits });
@@ -246,8 +262,8 @@ function shortDate(value: string) {
   ).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
-const CHART_PRIMARY = "#5B8DEF";
-const CHART_SECONDARY = "#F5A623";
+const CHART_PRIMARY = "#5FC9A3"; // mint
+const CHART_SECONDARY = "#FF9E7A"; // peach
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload || !payload.length) return null;
@@ -412,7 +428,8 @@ function StoryScreen({
         </div>
       </div>
       <p className="screen-analysis">{analysis}</p>
-      <p className="screen-conclusion">{conclusion}</p>
+      <div className="visual-guide">① 看图 → ② 看结论</div>
+      <p className="screen-conclusion conclusion-text">{conclusion}</p>
       <div className="screen-visual">{children}</div>
       {action && (
         <div className="screen-action">
@@ -427,36 +444,92 @@ function StoryScreen({
 }
 
 function HeroScreen() {
+  const p = data.account_profile;
   const tc = data.top_conclusion;
+  const avatar = data.brand_signature?.avatar_src || "/sample-avatar.svg";
+  // 画像条 7 项
+  const profileMetrics = [
+    { key: "fans", label: "粉丝数", value: p.fans_count != null ? number(p.fans_count) : "待接入", caption: "爬虫接入后更新", color: "sky" },
+    { key: "total", label: "总阅读", value: number(p.total_reads), caption: "周期内全部阅读数之和", color: "mint" },
+    { key: "avg", label: "篇均阅读", value: number(p.avg_reads), caption: "平均每篇文章阅读", color: "peach" },
+    { key: "median", label: "中位阅读", value: number(p.median_reads), caption: "稳定样本中位", color: "butter" },
+    { key: "count", label: "发文数", value: number(p.article_count), caption: "周期非删文章", color: "lavender" },
+    { key: "freq", label: "发布频率", value: p.publish_frequency != null ? `${p.publish_frequency}/周` : "-", caption: "篇/周（运营周期内）", color: "blush" },
+    { key: "explosive", label: "爆款数", value: number(p.explosive_count), caption: "≥P90 阅读文章数", color: "mint" },
+  ];
   return (
-    <section id="actions" className="story-screen hero-screen">
-      <div className="hero-topline">
-        <span>{shortDate(data.account_profile.generated_at)}</span>
-        <span>{data.account_profile.article_count} 篇文章</span>
-        <span>{data.account_profile.stable_article_count} 篇稳定样本</span>
-      </div>
-      <h1>{tc.verdict}</h1>
-      <p className="hero-next-action">{tc.next_action}</p>
-      <div className="hero-grid">
-        <div className="action-board">
-          <h2>{data.action_plan.title}</h2>
-          {data.action_plan.items.slice(0, 3).map((item) => (
-            <article key={item.id ?? item.title}>
-              <b>{item.priority}</b>
-              <div>
-                <strong>{item.title}</strong>
-                <span>{item.action}</span>
-              </div>
-            </article>
-          ))}
+    <section id="hero" className="story-screen hero-screen">
+      <div className="hero-profile">
+        <div className="hero-avatar">
+          <img src={avatar} alt="公众号头像占位" />
         </div>
-        <MetricConstellation />
+        <div className="hero-identity">
+          <div className="hero-name">{p.name}</div>
+          <div className="hero-caption">微信公众号 · {p.analysis_period}</div>
+        </div>
+      </div>
+
+      {/* 核心数据画像条 */}
+      <div className="profile-metrics">
+        {profileMetrics.map((m, idx) => (
+          <div className="metric-item" key={m.key}>
+            <div className={`metric-icon ${m.color}`}>{getProfileIcon(m.key)}</div>
+            <div>
+              <div className="metric-num">{m.value}</div>
+              <div className="metric-label">{m.label}</div>
+              <div className="metric-caption">{m.caption}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 整体判断 */}
+      <div className="hero-verdict">{tc.verdict}</div>
+      <p className="hero-next">{tc.next_action}</p>
+
+      {/* 本周先做5件事 已移出第一屏：见 ActionPlanSection */}
+    </section>
+  );
+}
+
+function getProfileIcon(key: string) {
+  // 简单 emoji 或 lucide 占位，颜色由容器控制
+  if (key === "fans") return <Users size={18} />;
+  if (key === "total" || key === "avg" || key === "median") return <BarChart3 size={18} />;
+  if (key === "count") return <FileText size={18} />;
+  if (key === "freq") return <CalendarClock size={18} />;
+  if (key === "explosive") return <Sparkles size={18} />;
+  return <Target size={18} />;
+}
+
+function ActionPlanSection() {
+  // 独立一屏/区块：本周先做5件事，从第一屏移出
+  return (
+    <section id="actions" className="story-screen" style={{ minHeight: "auto", paddingTop: 8, paddingBottom: 32 }}>
+      <div className="screen-header">
+        <span><ListChecks size={20} /></span>
+        <div>
+          <h2>本周先做 5 件事</h2>
+        </div>
+      </div>
+      <div className="action-strip">
+        <h3>{data.action_plan.title}</h3>
+        {data.action_plan.items.map((item, i) => (
+          <article key={item.id ?? i} style={{ display: "grid", gridTemplateColumns: "48px 1fr", gap: 12, padding: "10px 0", borderTop: "1px solid var(--line)" }}>
+            <b style={{ background: "var(--surface-subtle)", borderRadius: 8, height: 26, display: "grid", placeItems: "center", fontSize: 12, color: "var(--mint)" }}>{item.priority}</b>
+            <div>
+              <strong>{item.title}</strong>
+              <span style={{ display: "block", color: "var(--on-surface-muted)", fontSize: 14, marginTop: 4 }}>{item.action}</span>
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   );
 }
 
 function MetricConstellation() {
+  // 保留旧组件（若其他处引用），现已不再用于 Hero
   const iconMap: Record<string, React.ReactNode> = {
     "当前文章": <FileText size={20} />,
     "稳定样本": <CheckCircle2 size={20} />,
@@ -482,15 +555,15 @@ function MetricConstellation() {
 
 function OverallVisual() {
   const rows = [
-    ["平均阅读", number(data.analysis.overall.avg, 1)],
-    ["中位阅读", number(data.analysis.overall.median)],
-    ["P75", number(data.analysis.overall.p75)],
-    ["去极值", number(data.analysis.overall.trimmed_mean, 1)],
+    ["平均阅读（次）", number(data.analysis.overall.avg, 1)],
+    ["中位阅读（次）", number(data.analysis.overall.median)],
+    ["P75（次）", number(data.analysis.overall.p75)],
+    ["去极值均值（次）", number(data.analysis.overall.trimmed_mean, 1)],
   ];
   return (
     <div className="overall-visual">
       <div className="big-number">
-        <span>稳定样本中位阅读</span>
+        <span>稳定样本中位阅读（次）</span>
         <strong>{number(data.analysis.overall.median)}</strong>
         <p>{data.executive_summary.primary_tension}</p>
       </div>
@@ -512,14 +585,14 @@ function ContentVisual() {
     <div className="split-visual">
       <div className="chart-frame">
         <ResponsiveContainer width="100%" height={360}>
-          <BarChart data={rows} layout="vertical" margin={{ top: 8, right: 18, left: 12, bottom: 8 }}>
-            <CartesianGrid stroke="#edf1f5" horizontal={false} />
-            <XAxis type="number" tickLine={false} axisLine={false} fontSize={12} />
+          <BarChart data={rows} layout="vertical" margin={{ top: 8, right: 18, left: 12, bottom: 22 }}>
+            <CartesianGrid stroke="#EDE9E3" horizontal={false} />
+            <XAxis type="number" tickLine={false} axisLine={false} fontSize={12} label={{ value: "中位阅读（次）", position: "insideBottom", offset: -5, fontSize: 11 }} />
             <YAxis type="category" dataKey="key" width={148} tickLine={false} axisLine={false} fontSize={12} />
             <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="median" name="中位阅读" radius={[0, 8, 8, 0]}>
+            <Bar dataKey="median" name="中位阅读（次）" radius={[0, 8, 8, 0]}>
               {rows.map((_, index) => (
-                <Cell fill={CHART_PRIMARY} key={index} />
+                <Cell fill={MACARON[index % MACARON.length]} key={index} />
               ))}
             </Bar>
           </BarChart>
@@ -544,19 +617,19 @@ function TitleVisual() {
     <div className="split-visual">
       <div className="chart-frame">
         <ResponsiveContainer width="100%" height={330}>
-          <BarChart data={rows} margin={{ top: 12, right: 18, left: 0, bottom: 36 }}>
-            <CartesianGrid stroke="#edf1f5" vertical={false} />
-            <XAxis dataKey="key" tickLine={false} axisLine={false} fontSize={11} angle={-18} textAnchor="end" height={58} />
-            <YAxis tickLine={false} axisLine={false} fontSize={12} width={42} />
+          <BarChart data={rows} margin={{ top: 12, right: 18, left: 0, bottom: 46 }}>
+            <CartesianGrid stroke="#EDE9E3" vertical={false} />
+            <XAxis dataKey="key" tickLine={false} axisLine={false} fontSize={11} angle={-18} textAnchor="end" height={58} label={{ value: "标题模式", position: "insideBottom", offset: -12, fontSize: 11 }} />
+            <YAxis tickLine={false} axisLine={false} fontSize={12} width={42} label={{ value: "中位阅读", angle: -90, position: "insideLeft", fontSize: 11 }} />
             <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="median" name="中位阅读" fill={CHART_PRIMARY} radius={[8, 8, 0, 0]} />
+            <Bar dataKey="median" name="中位阅读（次）" fill={CHART_PRIMARY} radius={[8, 8, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
       <div className="pattern-cloud">
         {data.title_analysis.by_feature.map((row) => (
           <div key={String(row.key)}>
-            <span>{row.key}</span>
+            <span>{row.key} · 中位阅读</span>
             <strong>{number(row.median)}</strong>
             <small>{row.count} 篇</small>
           </div>
@@ -573,17 +646,17 @@ function LengthVisual() {
       <div className="chart-frame">
         <ResponsiveContainer width="100%" height={330}>
           <BarChart data={rows} margin={{ top: 12, right: 18, left: 0, bottom: 24 }}>
-            <CartesianGrid stroke="#edf1f5" vertical={false} />
-            <XAxis dataKey="key" tickLine={false} axisLine={false} fontSize={12} />
-            <YAxis tickLine={false} axisLine={false} fontSize={12} width={44} />
+            <CartesianGrid stroke="#EDE9E3" vertical={false} />
+            <XAxis dataKey="key" tickLine={false} axisLine={false} fontSize={12} label={{ value: "长度分桶", position: "insideBottom", offset: -8, fontSize: 11 }} />
+            <YAxis tickLine={false} axisLine={false} fontSize={12} width={44} label={{ value: "中位阅读", angle: -90, position: "insideLeft", fontSize: 11 }} />
             <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="median" name="中位阅读" fill={CHART_PRIMARY} radius={[8, 8, 0, 0]} />
+            <Bar dataKey="median" name="中位阅读（次）" fill={CHART_PRIMARY} radius={[8, 8, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
       <div className="length-summary">
         <strong>{number(data.length_analysis.avg_length)}</strong>
-        <span>匹配正文平均长度</span>
+        <span>匹配正文平均长度（字）</span>
         <p>
           已匹配 {number(data.length_analysis.matched_count)} 篇，未匹配{" "}
           {number(data.length_analysis.missing_count)} 篇。长度结论只做辅助，不替代内容密度判断。
@@ -605,7 +678,7 @@ function AudienceVisual() {
 function MiniStat({ title, rows }: { title: string; rows: StatRow[] }) {
   return (
     <div>
-      <h3>{title}</h3>
+      <h3>{title}（中位阅读）</h3>
       {rows.map((row) => (
         <article key={String(row.key)}>
           <span>{row.key}</span>
@@ -627,13 +700,14 @@ function TimingVisual() {
     <div className="split-visual">
       <div className="chart-frame">
         <ResponsiveContainer width="100%" height={320}>
-          <LineChart data={rows} margin={{ top: 16, right: 20, left: 0, bottom: 8 }}>
-            <CartesianGrid stroke="#edf1f5" vertical={false} />
-            <XAxis dataKey="week" tickLine={false} axisLine={false} fontSize={12} />
-            <YAxis tickLine={false} axisLine={false} fontSize={12} width={46} />
+          <LineChart data={rows} margin={{ top: 16, right: 20, left: 0, bottom: 18 }}>
+            <CartesianGrid stroke="#EDE9E3" vertical={false} />
+            <XAxis dataKey="week" tickLine={false} axisLine={false} fontSize={12} label={{ value: "ISO 周", position: "insideBottom", offset: -6, fontSize: 11 }} />
+            <YAxis tickLine={false} axisLine={false} fontSize={12} width={46} label={{ value: "阅读量", angle: -90, position: "insideLeft", fontSize: 11 }} />
             <Tooltip content={<CustomTooltip />} />
-            <Line type="monotone" dataKey="median" name="中位阅读" stroke={CHART_PRIMARY} strokeWidth={3} dot={{ r: 3 }} />
-            <Line type="monotone" dataKey="trimmed_mean" name="去极值均值" stroke={CHART_SECONDARY} strokeWidth={2.4} dot={{ r: 3 }} />
+            <Legend />
+            <Line type="monotone" dataKey="median" name="中位阅读（次）" stroke={CHART_PRIMARY} strokeWidth={3} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="trimmed_mean" name="去极值均值（次）" stroke={CHART_SECONDARY} strokeWidth={2.4} dot={{ r: 3 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -788,6 +862,7 @@ export default function App() {
         <SideNav activeSection={activeSection} />
         <main className="story-scroll" aria-label="公众号运营诊断报告">
           <HeroScreen />
+          <ActionPlanSection />
           {contentSections.map((item) => (
             <SectionById id={item.id} key={item.id} />
           ))}

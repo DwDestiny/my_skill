@@ -1,20 +1,43 @@
 :root {
   color-scheme: light;
-  font-family: "Inter, 'Plus Jakarta Sans', Manrope, -apple-system, system-ui, sans-serif";
-  /* DESIGN.md tokens */
-  --primary: #5B8DEF;
-  --secondary: #F5A623;
-  --success: #34C759;
-  --danger: #FF4D4F;
-  --canvas: #E6E8EC;
+  font-family: "'PingFang SC', 'Noto Sans SC', Inter, -apple-system, system-ui, sans-serif";
+  /* DESIGN.md 马卡龙浅色版 tokens（严格遵守） */
+  --canvas: #FBF9F5;
   --surface: #FFFFFF;
-  --surface-subtle: #F4F5F7;
-  --on-surface: #1A1D1F;
-  --on-surface-muted: #6F767E;
-  --on-surface-faint: #9AA0A6;
-  --chart-tooltip: #1C1F2A;
+  --surface-subtle: #F5F2EC;
+  --on-surface: #2A2A33;
+  --on-surface-muted: #76727E;
+  --on-surface-faint: #A8A4AE;
+  --chart-tooltip: #2A2A33;
 
-  /* legacy aliases mapped to new for minimal breakage in accents */
+  /* 马卡龙色板 */
+  --mint: #5FC9A3;
+  --peach: #FF9E7A;
+  --butter: #FFC95C;
+  --blush: #FF93A8;
+  --lavender: #A99CE8;
+  --sky: #76C5E8;
+  --success: #5FC9A3;
+  --danger: #FF7A8A;
+
+  /* 语义别名（主强调用 mint） */
+  --primary: var(--mint);
+  --secondary: var(--peach);
+  --amber: var(--butter);
+  --coral: var(--blush);
+  --violet: var(--lavender);
+
+  /* 兼容旧类但指向新色（逐步替换） */
+  --line: #EDE9E3;
+  --line-strong: #E2DCD3;
+  --green: var(--mint);
+  --green-soft: #EAF7F2;
+  --blue-soft: #EAF4F9;
+  --amber-soft: #FDF5E6;
+  --coral-soft: #FDEDF0;
+  --violet-soft: #F0EBFA;
+  --shadow: 0 12px 32px rgba(120, 110, 90, 0.08);
+
   --app-bg: var(--canvas);
   --paper: var(--surface);
   --paper-soft: var(--surface-subtle);
@@ -22,19 +45,6 @@
   --ink-soft: var(--on-surface-muted);
   --muted: var(--on-surface-muted);
   --faint: var(--on-surface-faint);
-  --line: #E6E8EC;
-  --line-strong: #D9DDE3;
-  --green: var(--success);
-  --green-soft: #E8F5E9;
-  --blue: var(--primary);
-  --blue-soft: #EBF0FE;
-  --amber: var(--secondary);
-  --amber-soft: #FFF4E5;
-  --coral: var(--danger);
-  --coral-soft: #FFEBEB;
-  --violet: #8B7CF6;
-  --violet-soft: #F1EFFF;
-  --shadow: 0 18px 40px rgba(20, 28, 46, 0.08);
 }
 
 * {
@@ -78,10 +88,11 @@ select {
   height: calc(100vh - 56px);
   margin: 0 auto;
   overflow: hidden;
-  border: 1px solid rgba(230, 232, 236, 0.6);
-  border-radius: 28px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  /* 奶白 canvas 铺满，不做灰框包白卡外壳 */
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .side-nav,
@@ -95,6 +106,7 @@ select {
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--line);
+  background: var(--surface);
 }
 
 .account-card {
@@ -112,7 +124,7 @@ select {
   place-items: center;
   color: #ffffff;
   border-radius: 18px;
-  background: var(--primary);
+  background: var(--mint);
   font-size: 22px;
   font-weight: 700;
 }
@@ -239,6 +251,7 @@ select {
   scroll-padding-top: 0;
   scroll-snap-type: y proximity;
   border-right: 1px solid var(--line);
+  background: var(--surface);
 }
 
 .story-screen {
@@ -465,24 +478,43 @@ select {
   line-height: 1.45;
 }
 
-/* emphasis visual hierarchy per DESIGN.md (confidence internalized) */
+/* DESIGN.md: conclusion-text 用于维度屏结论，主色不灰化，17px/600 */
+.conclusion-text {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+/* 视觉引导：①看图 → ②看结论 */
+.visual-guide {
+  font-size: 12px;
+  color: var(--on-surface-faint);
+  margin-bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* emphasis visual hierarchy per DESIGN.md (confidence internalized)
+   低置信用降饱和马卡龙色 + 略缩小，仍可读 */
 .story-screen.emphasis-hero .screen-conclusion {
   font-size: 28px;
   font-weight: 700;
   color: var(--on-surface);
   padding-left: 14px;
-  border-left: 4px solid var(--primary);
+  border-left: 4px solid var(--mint);
 }
 .story-screen.emphasis-primary .screen-conclusion {
   /* normal */
 }
 .story-screen.emphasis-secondary {
-  opacity: 0.82;
+  /* 降饱和马卡龙 + 略小，不灰死 */
+  font-size: 0.96em;
 }
 .story-screen.emphasis-secondary .screen-conclusion,
 .story-screen.emphasis-secondary .screen-analysis {
-  color: var(--on-surface-muted);
-  font-size: 15px;
+  color: var(--mint);
+  opacity: 0.78;
 }
 
 .screen-visual {
@@ -583,6 +615,11 @@ select {
   padding-top: 8px;
 }
 
+/* 去除冷灰网格，使用暖调 */
+.chart-frame .recharts-cartesian-grid line {
+  stroke: #EDE9E3;
+}
+
 .ratio-board b {
   color: var(--primary);
   font-weight: 700;
@@ -604,7 +641,7 @@ select {
 
 .pattern-cloud {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
   gap: 12px;
 }
 
@@ -926,7 +963,7 @@ select {
 }
 
 .rail-item.tone-violet strong {
-  color: #8B7CF6;
+  color: var(--lavender);
 }
 
 .rail-scope {
@@ -980,6 +1017,123 @@ select {
   gap: 5px;
   color: var(--primary);
   font-weight: 700;
+}
+
+/* ===== DESIGN.md 马卡龙 Hero：公众号身份画像 ===== */
+.hero-profile {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.hero-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  overflow: hidden;
+  flex: 0 0 auto;
+  border: 3px solid var(--surface);
+  box-shadow: 0 4px 12px rgba(120,110,90,0.12);
+  background: var(--surface-subtle);
+}
+.hero-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hero-identity .hero-name {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--on-surface);
+  letter-spacing: -0.2px;
+}
+.hero-identity .hero-caption {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--on-surface-faint);
+  font-weight: 500;
+}
+
+/* 核心数据画像条：7项 */
+.profile-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0 28px;
+}
+.metric-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 108px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  flex: 1 1 108px;
+}
+.metric-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  flex: 0 0 auto;
+  font-size: 15px;
+}
+.metric-icon.mint { background: var(--mint); }
+.metric-icon.peach { background: var(--peach); }
+.metric-icon.butter { background: var(--butter); }
+.metric-icon.blush { background: var(--blush); }
+.metric-icon.lavender { background: var(--lavender); }
+.metric-icon.sky { background: var(--sky); }
+.metric-icon.danger { background: var(--danger); }
+
+.metric-num {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--on-surface);
+}
+.metric-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--on-surface);
+  margin-top: 2px;
+}
+.metric-caption {
+  font-size: 11px;
+  color: var(--on-surface-faint);
+  margin-top: 1px;
+}
+
+/* 第一屏整体判断 */
+.hero-verdict {
+  margin: 12px 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--on-surface);
+  line-height: 1.35;
+}
+.hero-next {
+  color: var(--on-surface-muted);
+  font-size: 15px;
+  margin: 0 0 16px;
+}
+
+/* 动作列表（已移出第一屏，独立呈现时使用） */
+.action-strip {
+  margin-top: 12px;
+  padding: 16px 20px;
+  background: var(--surface-subtle);
+  border-radius: 16px;
+}
+.action-strip h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 @media (prefers-reduced-motion: reduce) {
