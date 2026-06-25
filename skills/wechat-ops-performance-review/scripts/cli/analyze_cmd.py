@@ -142,31 +142,28 @@ def run(
     # === 正常模式：需要 playwright + 已登录态 ===
     print_step("正常模式", "将使用持久化浏览器上下文复用登录态抓取最新数据")
 
-    # 懒导入 export（此时才 import，会带入 playwright）
+    config = env.load_config(workspace)
+    account_name = account_name_override or config.get("account_name") or "我的公众号"
+    profile_dir = env.get_browser_profile_dir(workspace)
+
+    # 懒导入 orchestrator（此时才 import，会带入 playwright）
     try:
-        from scripts.export_wechat_publish_records import export_via_persistent  # type: ignore
+        from scripts.fetch.orchestrator import run as fetch_run  # type: ignore
     except ImportError as e:
         print_error(f"无法导入抓取模块: {e}")
         print_info("请确认已运行 wxops init 安装 playwright，或手动 python3 -m pip install playwright")
         return 1
 
-    config = env.load_config(workspace)
-    account_name = account_name_override or config.get("account_name") or "我的公众号"
-    profile_dir = env.get_browser_profile_dir(workspace)
-
-    print_step("复用登录态抓取 publish records", f"profile={profile_dir}")
-    try:
-        out_path = export_via_persistent(workspace, profile_dir, headless=True)
-        print_success(f"抓取完成: {out_path}")
-    except Exception as exc:
-        msg = str(exc)
-        if "login_required" in msg or "token_or_cookie_invalid" in msg:
-            print_error("登录态无效或已过期。")
-            print_info("请运行: wxops login  重新扫码登录")
-            print_warn("不会使用旧数据继续分析。")
-            return 1
-        print_error(f"抓取失败: {msg}")
+    print_step("多接口抓取（文章列表 + 账号 + 粉丝画像 + 内容趋势）", f"profile={profile_dir}")
+    result = fetch_run(workspace, profile_dir, headless=True)
+    if result.get("status") != "ok":
+        err = result.get("error", "抓取失败")
+        hint = result.get("hint", "")
+        print_error(str(err))
+        if hint:
+            print_info(str(hint))
         return 1
+    print_success(f"抓取完成: publish={result.get('publish_export')}, raw={result.get('raw_dir')}")
 
     # 构建
     rc = _run_build(workspace, account_name)
