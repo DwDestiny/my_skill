@@ -27,6 +27,8 @@ from analyze.constants import *
 from analyze.enrich import *
 from analyze.io_utils import *
 from analyze.stats import *
+from analyze.m7_standards import build_benchmark
+from analyze.m2_viral_genes import build_viral_genes, classify_quadrant, reverse_viral_formula
 
 
 @dataclass(frozen=True)
@@ -898,6 +900,8 @@ def build_dataset(root: Path, *, account_name: str = "麦总玩 AI", since: str 
             ],
         },
     }
+    dataset["benchmark"] = build_benchmark(stable)
+    dataset["viral_genes"] = build_viral_genes(stable, dataset["benchmark"])
     dataset["confidence_model"] = build_confidence_model(stable)
     dataset["title_analysis"] = build_title_analysis(stable)
     dataset["length_analysis"] = build_length_analysis(stable)
