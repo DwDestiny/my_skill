@@ -38,7 +38,7 @@ def build_action_plan_v2(
         "工作流深读文 + 22点验证",
     ][:2]
 
-    analysis = "按各模块篮子归集行动；下周选题来自 viral_formula。"
+    analysis = "按各模块篮子归集行动；下周选题由爆款基因反推得出。"
     chart_payload = {
         "kind": "action_baskets_v2",
         "now": now,

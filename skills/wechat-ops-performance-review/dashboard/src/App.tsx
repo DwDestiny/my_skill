@@ -333,6 +333,7 @@ function Screen({
   conclusion,
   action,
   children,
+  wide,
 }: {
   id: string;
   no: string;
@@ -341,8 +342,26 @@ function Screen({
   conclusion?: string;
   action?: string;
   children: React.ReactNode;
+  wide?: boolean;
 }) {
   const { ref, seen } = useInView<HTMLDivElement>();
+  const concl =
+    conclusion || action ? (
+      <>
+        {conclusion ? (
+          <div className="mod-concl">
+            <span className="tag">结论</span>
+            <p>{conclusion}</p>
+          </div>
+        ) : null}
+        {action ? (
+          <div className="mod-action">
+            <span className="tag tag-act">下一步</span>
+            <p>{action}</p>
+          </div>
+        ) : null}
+      </>
+    ) : null;
   return (
     <section id={id} className="screen module">
       <header className="mod-head">
@@ -350,24 +369,9 @@ function Screen({
         <h2>{title}</h2>
         {question ? <p>{question}</p> : null}
       </header>
-      <div className={`mod-body${seen ? " in" : ""}`} ref={ref as any}>
+      <div className={`mod-body${wide ? " wide" : ""}${seen ? " in" : ""}`} ref={ref as any}>
         <div className="mod-visual">{children}</div>
-        {(conclusion || action) && (
-          <aside className="mod-aside">
-            {conclusion ? (
-              <div className="mod-concl">
-                <span className="tag">结论</span>
-                <p>{conclusion}</p>
-              </div>
-            ) : null}
-            {action ? (
-              <div className="mod-action">
-                <span className="tag tag-act">下一步</span>
-                <p>{action}</p>
-              </div>
-            ) : null}
-          </aside>
-        )}
+        {concl ? wide ? <div className="mod-inline">{concl}</div> : <aside className="mod-aside">{concl}</aside> : null}
       </div>
     </section>
   );
@@ -424,18 +428,35 @@ function CheckupScreen() {
   );
 }
 
-/* ===================== 02 爆款基因(四象限) ===================== */
+/* ===================== 02 爆款基因(四象限,可下钻) ===================== */
+const QUADRANT_DESC: Record<string, string> = {
+  爆款: "高读高享 · 复制这个配方",
+  标题党: "高读低享 · 标题骗到点击但内容没留住",
+  深度遗珠: "低读高享 · 内容好但标题/时段没拉到量",
+  平稳: "低读低享 · 常规盘",
+};
+
 function ViralScreen() {
   const vg = data.viral_genes ?? {};
   const bm = data.benchmark ?? {};
-  const points = (vg.quadrant ?? []).map((a: any) => ({
+  const all = vg.quadrant ?? [];
+  const counts = vg.quadrant_counts ?? {};
+  const order = ["爆款", "标题党", "深度遗珠", "平稳"];
+  const [active, setActive] = React.useState<string | null>(null);
+
+  const points = all.map((a: any) => ({
     x: a.reads,
     y: (a.share_rate ?? 0) * 100,
     q: a.quadrant,
     title: a.title,
+    dim: active ? a.quadrant !== active : false,
   }));
-  const counts = vg.quadrant_counts ?? {};
-  const order = ["爆款", "标题党", "深度遗珠", "平稳"];
+  const drillList = active
+    ? all
+        .filter((a: any) => a.quadrant === active)
+        .sort((a: any, b: any) => (b.reads ?? 0) - (a.reads ?? 0))
+    : [];
+
   return (
     <Screen
       id="viral"
@@ -479,8 +500,8 @@ function ViralScreen() {
               <ReferenceLine y={(bm.share_rate_median ?? 0) * 100} stroke="#C9C2D6" strokeDasharray="4 4" />
               <Tooltip
                 cursor={{ strokeDasharray: "3 3" }}
-                content={({ active, payload }: any) => {
-                  if (!active || !payload?.length) return null;
+                content={({ active: act, payload }: any) => {
+                  if (!act || !payload?.length) return null;
                   const d = payload[0].payload;
                   return (
                     <div className="chart-tip">
@@ -495,7 +516,11 @@ function ViralScreen() {
               />
               <Scatter data={points} isAnimationActive={!prefersReducedMotion}>
                 {points.map((p: any, i: number) => (
-                  <Cell key={i} fill={QUADRANT_COLOR[p.q] ?? MACARON.sky} />
+                  <Cell
+                    key={i}
+                    fill={QUADRANT_COLOR[p.q] ?? MACARON.sky}
+                    fillOpacity={p.dim ? 0.16 : 1}
+                  />
                 ))}
               </Scatter>
             </ScatterChart>
@@ -503,15 +528,42 @@ function ViralScreen() {
         </div>
         <div className="quadrant-legend">
           {order.map((q) => (
-            <div key={q} className="qleg">
+            <button
+              key={q}
+              type="button"
+              className={`qleg${active === q ? " on" : ""}`}
+              onClick={() => setActive(active === q ? null : q)}
+            >
               <i style={{ background: QUADRANT_COLOR[q] }} />
               <span>{q}</span>
               <b>{counts[q] ?? 0}</b>
-            </div>
+            </button>
           ))}
-          <p className="qhint">高读高享=爆款，高读低享=标题党，低读高享=深度遗珠。</p>
+          <p className="qhint">点击查看该象限具体文章。高读高享=爆款，高读低享=标题党，低读高享=深度遗珠。</p>
         </div>
       </div>
+
+      {active ? (
+        <div className="drill">
+          <div className="drill-head">
+            <span className="drill-dot" style={{ background: QUADRANT_COLOR[active] }} />
+            <strong>{active}</strong>
+            <span className="drill-desc">{QUADRANT_DESC[active]}</span>
+            <span className="drill-count">{drillList.length} 篇</span>
+          </div>
+          <ol className="drill-list">
+            {drillList.map((a: any, i: number) => (
+              <li key={i}>
+                <span className="dl-rank">{i + 1}</span>
+                <span className="dl-title">{a.title}</span>
+                <span className="dl-type">{a.content_type}</span>
+                <span className="dl-reads">{fmtNum(a.reads)}</span>
+                <span className="dl-share">{(a.share_rate * 100).toFixed(1)}%</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ) : null}
     </Screen>
   );
 }
@@ -574,7 +626,7 @@ function AudienceScreen() {
   const age = au.age ?? [];
   const src = au.user_source ?? [];
   return (
-    <Screen id="audience" no="04" title="读者画像" question="你的读者到底是谁？" conclusion={au.conclusion} action={au.action}>
+    <Screen id="audience" no="04" title="读者画像" question="你的读者到底是谁？" conclusion={au.conclusion} action={au.action} wide>
       {available ? (
         <div className="audience-wrap">
           <div className="aud-city">
@@ -624,7 +676,7 @@ function GrowthScreen() {
   }));
   const plan = g.startup_plan ?? [];
   return (
-    <Screen id="growth" no="05" title="涨粉漏斗" question="怎么涨粉、怎么起号？" conclusion={g.conclusion} action={g.action}>
+    <Screen id="growth" no="05" title="涨粉漏斗" question="怎么涨粉、怎么起号？" conclusion={g.conclusion} action={g.action} wide>
       <div className="growth-wrap">
         <div className="growth-chart">
           <h4>粉丝净增趋势</h4>
