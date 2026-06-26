@@ -68,3 +68,7 @@ pnpm -C reports/wechat-ops-dashboard build
 ```
 
 Then open the local dashboard and verify desktop plus mobile: account info is primary, author card is secondary, each screen has a clear visual focus, and every action is backed by confidence.
+
+## Dashboard Preview
+
+See `README.md` for the full visual walkthrough (照镜子 / 找方向 / 规划矩阵 / 爆款基因 / 量化标准 / 数据不足兜底). Screenshots live in `docs/assets/`.
