@@ -7,67 +7,88 @@ description: Use when reviewing WeChat official account performance, refreshing 
 
 ## Core Principle
 
-Turn公众号数据 into a decision report, not a crowded dashboard. The output must answer: what to do next, why the data supports it, how confident the conclusion is, and how to test it next.
+Turn公众号数据 into a decision report, not a crowded dashboard. 产出必须回答四问:**接下来写什么、数据为何支持、结论有多稳、下一步怎么验证**。
 
-## Standard Workflow
+其中"有多稳"是引擎**内部**用来决定展开多少屏、给几个方向的依据,**绝不**在看板上渲染成"置信度 73%"这类数字。置信度内化,只影响呈现,不给用户打分。
 
-1. **Refresh data**: get the latest `reports/wechat/publish-records-*.json`; if login is stale, stop and ask for a fresh scan/login rather than analyzing old data.
-2. **Build the contract**: run the report builder so wiki JSON, wiki Markdown, and dashboard data all come from one source.
-3. **Analyze**: use average, median, P75, max, trimmed mean, sample count, and confidence. Never turn one爆款 into a rule.
-4. **Generate the experience**: produce a low-density narrative report: account overview first, one claim per screen, evidence and action beside each section.
-5. **Verify**: run data tests, build the local site, open it, and check desktop/mobile screenshots.
+## 三步上手(向导式 CLI)
 
-Use `scripts/run_wechat_ops_report.sh` when working in the default local repo layout.
+面向使用者的标准路径是可执行入口 `scripts/wxops`:
+
+1. `scripts/wxops init` — 环境自检(Python / Node / playwright 依赖)+ 创建工作区(默认 `~/.wxops`,存放登录态/抓取数据/输出)+ 写配置。
+2. `scripts/wxops login` — 引导微信扫码登录公众号后台,登录态持久化到工作区。
+3. `scripts/wxops analyze` — 抓取最新数据 → 构建报告 → 启动本地看板。
+
+先看效果、不想登录抓取:`scripts/wxops analyze --demo`,直接用 skill 内 `fixtures/` 演示数据跑通全链路(仍需 Node 构建看板,但**无需登录与真实抓取**)。
+
+## Standard Workflow(报告生成内部流程)
+
+1. **Refresh data**:取最新 `publish-records-*.json`;若登录态过期,停下要求重新扫码/抓取,绝不拿旧数据硬分析。
+2. **Build the contract**:`python3 scripts/build_wechat_ops_report.py --workspace <dir>` —— wiki JSON、wiki Markdown、dashboard 数据全部同源,不各算各的。
+3. **Analyze**:用 average、median、P75、max、trimmed mean、sample count 和内化置信度。Never turn one爆款 into a rule。
+4. **向前看(forward_looking 方向引擎)**:在诊断之上反推方向——**照镜子**(账号一句话画像 + 六维形状)→ **候选路径**(从历史文章长出的可走方向,每个标信号距离 + 要补什么 + 怎么变现)→ **内容矩阵**(配比 + 四周排期)。样本不足时引擎自锁该屏,不硬凑结论。
+5. **爆款基因(viral_genes 四象限)**:高读高享=爆款 / 高读低享=标题党 / 低读高享=深度遗珠 / 双低=待提升。反推"什么题材 + 什么标题型,在本号能爆"。
+6. **Generate the experience**:低密度叙事,一屏一结论,证据与动作随行。
+7. **Verify**:跑数据测试 + 构建本地站点 + 桌面/移动截图核对。
 
 ## Required Output Contract
 
-Read `references/report-contract.md` before changing the schema or report experience.
+Read `references/report-contract.md` and `DATA_CONTRACT.md` before changing the schema or report experience.
 
 The JSON must include:
 
-- `account_profile`: analyzed account identity, period, article counts, update time.
-- `executive_summary`: first-screen judgment and core metrics.
-- `action_plan`: 3-5 next actions with why/action/owner/due/validation.
-- `analysis_sections`: total-split-total sections, each with conclusion, evidence, action, next test, confidence, and UI slot.
-- `title_analysis`: title pattern, title length, and feature performance.
-- `length_analysis`: local article length buckets and match quality.
-- `confidence_model`: high/medium/low rules and completeness notes.
-- `final_synthesis`: do now, test small, do not decide yet.
-- `brand_signature`: small source/author card only; never make it the page hero.
+- `account_profile`:analyzed account identity, period, article counts, update time.
+- `executive_summary`:first-screen judgment and core metrics.
+- `action_plan`:3-5 next actions with why/action/owner/due/validation.
+- `analysis_sections`:total-split-total sections, each with conclusion, evidence, action, next test, confidence, and UI slot.
+- `viral_genes`:四象限定位 + 反推"题材 × 标题型"爆款组合。
+- `forward_looking`:照镜子(mirror)、候选路径(candidate_paths)、内容矩阵(content_matrix)、数据充分度(data_sufficiency)。
+- `title_analysis` / `length_analysis`:标题型与正文长度分桶表现。
+- `confidence_model`:high/medium/low 规则与完整度说明(**内部用,不渲染数字**)。
+- `final_synthesis`:do now、test small、do not decide yet。
+- `brand_signature`:small source/author card only;never make it the page hero。
 
 ## Analysis Rules
 
 - Only analyze WeChat unless the user explicitly expands scope.
 - Separate stable articles from recent 48-hour immature articles.
 - Classify every article by content type, pain point, persona, title pattern, and length bucket.
+- **爆款标准相对自身**:不是绝对阅读量,是相对本号的倍数(本号均值的 1.5 倍即记爆款)。10 万粉的号和 800 粉的号不用同一把尺子。
 - Every section must have a confidence level derived from sample count, distribution skew, and data completeness.
 - End with a synthesis board: high-confidence actions, experiments, and hold decisions.
+
+## 置信度内化(红线)
+
+- 引擎**内部**计算 `data_sufficiency` 与各结论置信档,用来决定哪些屏展开、给几个方向、候选数量上限。
+- UI **绝不**渲染"置信度 73%"、百分比、进度条或"置信度"字样。样本不足只表现为"该屏暂不展开",而非给用户打分。
+- 看板任何位置出现置信度数字 = 违反契约,必须改。
 
 ## Experience Rules
 
 - Left top: the analyzed公众号信息, not the Skill author.
 - Left bottom: a small source card with author/avatar/Skill/GitHub link.
-- Center: scroll-snapping narrative screens; one main visual per screen.
+- Center: scroll narrative screens; one main visual per screen.
 - Right: fixed context rail for current evidence, action, and confidence.
 - Avoid card walls, crowded first screens, grey-heavy shells, and text-only explanations.
 
 ## Validation
 
-Run these before calling the review complete:
+最稳的一条(用演示数据跑通全链路):
 
 ```bash
-scripts/run_wechat_ops_report.sh
+scripts/wxops analyze --demo
 ```
 
-Or manually:
+或手动分步(针对真实工作区):
 
 ```bash
-python3 scripts/social_ops/build_wechat_ops_report.py --check
-python3 -m pytest tests/test_wechat_ops_report.py -q
-pnpm -C reports/wechat-ops-dashboard build
+python3 scripts/build_wechat_ops_report.py --workspace ~/.wxops         # 构建
+python3 scripts/build_wechat_ops_report.py --workspace ~/.wxops --check  # 校验同源
+python3 -m pytest tests/ -q                                             # 数据/引擎测试
+pnpm -C dashboard build                                                 # 看板构建
 ```
 
-Then open the local dashboard and verify desktop plus mobile: account info is primary, author card is secondary, each screen has a clear visual focus, and every action is backed by confidence.
+Then open the local dashboard and verify desktop plus mobile: account info is primary, author card is secondary, each screen has a clear visual focus, and no confidence number leaks into the UI.
 
 ## Dashboard Preview
 

@@ -8,12 +8,28 @@
 |---|---|---|---|
 | product-expert | `skills/product-expert/` | 已入库 | 从一个产品想法出发，完成需求探知、产品定位、MVP 规划、评分和推荐 |
 | visual-ppt-deck-builder | `skills/visual-ppt-deck-builder/` | 已入库 | 从主题、大纲和风格样张出发，生成高视觉质量且可编辑的 PPTX |
+| wechat-ops-performance-review | `skills/wechat-ops-performance-review/` | 已入库 · 可 plugin 安装 | 公众号运营复盘：量化诊断 + 爆款基因反推 + 向前看方向引擎 + 本地叙事看板（详见该目录 `README.md`） |
 
 新增 Skill 时，必须同步更新这张表。README 是仓库的入口，也是 Skill 总目录。
+
+## 一键安装（Claude Code plugin）
+
+本仓库根的 `.claude-plugin/marketplace.json` 把仓库声明为一个 plugin marketplace。在 Claude Code 里：
+
+```
+/plugin marketplace add DwDestiny/my_skill
+/plugin install wechat-ops-performance-review@maizong-skills
+```
+
+- `@` 后是 marketplace 名（`maizong-skills`），不是仓库名。
+- 安装后 skill 自动被发现，按任务上下文调用。
+- 该 skill 含 Python 脚本与 Node 看板，首次使用按其 `README.md` / `requirements.txt` 装依赖（`pip install -r requirements.txt && playwright install chromium`、`pnpm -C dashboard install`）。
 
 ## 仓库结构
 
 ```text
+.claude-plugin/
+  marketplace.json          # 把本仓声明为 plugin marketplace
 skills/
   product-expert/
     SKILL.md
@@ -24,6 +40,14 @@ skills/
     agents/openai.yaml
     references/
     scripts/
+  wechat-ops-performance-review/
+    .claude-plugin/plugin.json   # 单 skill plugin 清单
+    SKILL.md
+    README.md                    # 产品门面 + 看板截图画廊
+    DESIGN.md / DATA_CONTRACT.md
+    scripts/                     # wxops CLI + 抓取/分析/构建
+    dashboard/                   # 本地叙事看板(Vite + React)
+    references/ fixtures/ tests/ docs/
 docs/
   repository-architecture.md
   skill-intake-checklist.md

@@ -1,0 +1,11 @@
+# WeChat Ops Performance Review — Python 依赖
+# 需要 Python 3.9+（用到 zoneinfo），推荐 3.10+。
+
+# 运行时:扫码登录 + 公众号后台抓取
+playwright>=1.40
+
+# 装完 playwright 后还需下载浏览器内核(一次性):
+#   playwright install chromium
+
+# 仅跑测试时需要(运行/抓取不需要):
+# pytest>=7.0

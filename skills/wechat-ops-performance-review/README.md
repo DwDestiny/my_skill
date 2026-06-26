@@ -102,6 +102,38 @@
 
 ---
 
+## 安装与使用
+
+**通过 Claude Code plugin 一键装**(推荐):
+
+```
+/plugin marketplace add DwDestiny/my_skill
+/plugin install wechat-ops-performance-review@maizong-skills
+```
+
+**装依赖**(首次):
+
+```bash
+pip install -r requirements.txt && playwright install chromium   # Python 抓取
+pnpm -C dashboard install                                        # 看板
+```
+
+**三步上手**(向导式 CLI):
+
+```bash
+scripts/wxops init      # 环境自检 + 建工作区(默认 ~/.wxops)
+scripts/wxops login     # 扫码登录公众号后台
+scripts/wxops analyze   # 抓取 → 构建报告 → 启动看板
+```
+
+不想登录、先看效果:
+
+```bash
+scripts/wxops analyze --demo   # 用内置脱敏样本跑通全链路
+```
+
+---
+
 > **关于截图数据**:以上全部基于**脱敏模拟样本**。账号名与头像经本人授权公开,运营数据(阅读量 / 粉丝 / 画像 / 趋势)均为合成,**不含任何真实后台数据或可追溯链接**。
 
 <div align="center">
