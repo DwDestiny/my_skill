@@ -1,7 +1,7 @@
 {
   "meta": {
     "report_date": "2026-01-15",
-    "account_name": "麦总玩AI",
+    "account_name": "麦总玩 AI",
     "generated_at": "2026-01-15T18:00:00+08:00",
     "period_start": "2025-11-15T00:00:00+08:00",
     "period_end": "2026-01-15T18:00:00+08:00",
@@ -10986,7 +10986,7 @@
     }
   },
   "account_profile": {
-    "name": "麦总玩AI",
+    "name": "麦总玩 AI",
     "platform": "微信公众号",
     "description": "面向 AI 工具、Agent 工作流和普通人可落地效率场景的内容号。",
     "avatar_text": "麦",
@@ -11013,7 +11013,7 @@
   "report_meta": {
     "template_version": "wechat-ops-template-v2.1",
     "title": "公众号运营诊断报告",
-    "account_name": "麦总玩AI",
+    "account_name": "麦总玩 AI",
     "platform": "wechat",
     "platform_scope": "wechat_only",
     "period_label": "2025-11-15 至 2026-01-15",
@@ -11547,5 +11547,478 @@
       "body": "立即拆爆款触发词，沉淀高分享为选题模板。",
       "evidence": "证据样本"
     }
-  ]
+  ],
+  "forward_looking": {
+    "engine_version": "direction-engine-v1",
+    "model_name": "动态方向推导引擎（方向 = f(历史文章现状)）",
+    "data_sufficiency": {
+      "passed": true,
+      "article_count": 18,
+      "threshold": 15,
+      "recent_gap_days": 4,
+      "gap_threshold_days": 30,
+      "reasons": [],
+      "statement": "样本充足（18 篇稳定样本），可进行方向推导。"
+    },
+    "signals": [
+      {
+        "key": "topic_distribution",
+        "name": "题材分布与集中度",
+        "reads_as": "这个号实际在写什么、主轴清不清晰",
+        "computability": "直接可算",
+        "level": "弱",
+        "detail": {
+          "distribution": [
+            {
+              "type": "风险/账号/额度焦虑",
+              "count": 4,
+              "share": 0.222
+            },
+            {
+              "type": "价格/额度/羊毛情报",
+              "count": 4,
+              "share": 0.222
+            },
+            {
+              "type": "AI 编程/Agent 工作流",
+              "count": 4,
+              "share": 0.222
+            },
+            {
+              "type": "模型发布/能力解读",
+              "count": 3,
+              "share": 0.167
+            },
+            {
+              "type": "产品/副业/商业化",
+              "count": 3,
+              "share": 0.167
+            }
+          ],
+          "hhi": 0.204,
+          "main_axis": "风险/账号/额度焦虑",
+          "top_share": 0.222,
+          "total_articles": 18
+        }
+      },
+      {
+        "key": "viral_type",
+        "name": "爆款类型",
+        "reads_as": "哪类内容在这个号上能打穿推荐流",
+        "computability": "直接可算",
+        "level": "强",
+        "detail": {
+          "topic": "风险/账号/额度焦虑",
+          "title_pattern": "风险损失型",
+          "sample_count": 5,
+          "reliable": true,
+          "evidence_titles": [
+            "某会员套餐价格调整，羊毛情报速览",
+            "封号案例分析与自救路径清单",
+            "Codex 插件集成 Agent 工作流指南"
+          ]
+        }
+      },
+      {
+        "key": "interaction",
+        "name": "互动结构",
+        "reads_as": "读者以哪种行为回应这个号：传播、评论还是点赞",
+        "computability": "直接可算",
+        "level": "强",
+        "detail": {
+          "share_rate": 0.0332,
+          "comment_rate": 0.0129,
+          "like_rate": 0.0776,
+          "dominant": "点赞"
+        }
+      },
+      {
+        "key": "originality",
+        "name": "原创比例与人味浓度",
+        "reads_as": "内容有没有作者本人的判断、经历和立场",
+        "computability": "正则近似",
+        "level": "弱",
+        "detail": {
+          "coverage": 0.22,
+          "coverage_note": "仅 4 篇匹配到正文（占 22%），结论为近似估算",
+          "first_person_density": "低（近似）",
+          "personal_story_ratio": "低（近似）"
+        }
+      },
+      {
+        "key": "timeliness_depth",
+        "name": "时效结构与篇幅厚度",
+        "reads_as": "内容是追热点快销还是建方法沉淀",
+        "computability": "正则近似",
+        "level": "强",
+        "detail": {
+          "median_length": 2520,
+          "hotspot_ratio": 0.61,
+          "method_density": "高（近似）"
+        }
+      },
+      {
+        "key": "capacity_funnel",
+        "name": "产能底盘与变现链路痕迹",
+        "reads_as": "这个号能不能稳定供内容、有没有在试水变现",
+        "computability": "正则近似",
+        "level": "中",
+        "detail": {
+          "posts_per_week": 2.3,
+          "fans": 876,
+          "monetization_trace": "疑似"
+        }
+      }
+    ],
+    "mirror": {
+      "statement": "你现在是一个题材偏散、信任取向偏强、厚度中上、人味弱的号，主轴是风险/账号/额度焦虑，流量命脉来自风险/账号/额度焦虑（基于 18 篇样本），变现链路空白。",
+      "axes": [
+        {
+          "key": "orientation",
+          "label": "取向",
+          "low": "流量钩子",
+          "high": "信任认同",
+          "level": "强",
+          "note": "点赞率偏高"
+        },
+        {
+          "key": "focus",
+          "label": "聚焦",
+          "low": "泛",
+          "high": "单一主轴",
+          "level": "弱",
+          "note": ""
+        },
+        {
+          "key": "timeliness",
+          "label": "时效",
+          "low": "资讯",
+          "high": "长青",
+          "level": "强",
+          "note": "近似"
+        },
+        {
+          "key": "depth",
+          "label": "厚度",
+          "low": "轻薄",
+          "high": "厚重方法",
+          "level": "强",
+          "note": ""
+        },
+        {
+          "key": "humanity",
+          "label": "人味",
+          "low": "资产化",
+          "high": "强人设",
+          "level": "弱",
+          "note": "近似"
+        },
+        {
+          "key": "emotion",
+          "label": "情绪",
+          "low": "信息导向",
+          "high": "情绪共鸣",
+          "level": "弱",
+          "note": ""
+        }
+      ],
+      "main_axis": "风险/账号/额度焦虑",
+      "traffic_artery": {
+        "topic": "风险/账号/额度焦虑",
+        "sample_count": 5,
+        "reliable": true
+      },
+      "monetization_maturity": "空白",
+      "uncertainty_note": "人味/厚度为正则近似，正文匹配率低；流量命脉爆款锚点基于 5 篇样本。"
+    },
+    "archetype_affinity": [
+      {
+        "archetype": "资讯流量型",
+        "affinity": "高",
+        "adjacent": [
+          "人设IP型"
+        ],
+        "reason": "资讯/热点类题材占 61%，更新节奏与资讯流量型吻合"
+      },
+      {
+        "archetype": "人设IP型",
+        "affinity": "中",
+        "adjacent": [
+          "垂直专家型",
+          "社群情感型",
+          "知识服务型"
+        ],
+        "reason": "分享率均值 0.033，具备初步信任资产"
+      },
+      {
+        "archetype": "知识服务型",
+        "affinity": "中",
+        "adjacent": [
+          "垂直专家型",
+          "人设IP型"
+        ],
+        "reason": "篇幅中位 2520 字、方法密度高（近似），具备知识服务原料"
+      },
+      {
+        "archetype": "产品品牌型",
+        "affinity": "低",
+        "adjacent": [
+          "知识服务型"
+        ],
+        "reason": "有变现线索，产品/副业题材占 17%"
+      },
+      {
+        "archetype": "社群情感型",
+        "affinity": "低",
+        "adjacent": [
+          "人设IP型"
+        ],
+        "reason": "有一定评论互动（均值 0.013），具备社群基础"
+      }
+    ],
+    "candidate_paths": [
+      {
+        "id": "path-1",
+        "path_name": "沿风险/账号/额度焦虑主轴做深，把流量引擎放大",
+        "mode": "顺势放大",
+        "rationale_from_status": "你 22% 已是风险/账号/额度焦虑，这也是流量命脉所在（爆款锚点可用（5 篇样本））。沿最强信号线扩量，信号改造距离最小。",
+        "feasibility": "够得着",
+        "feasibility_note": null,
+        "gap": [
+          "更新频率要更稳（当前约 2.3 篇/周）",
+          "标题更钩子化、选题追该类型热点",
+          "876 粉离规模化门槛还远，前期先把阅读量和粉丝做起来"
+        ],
+        "monetization": "流量主广告分成为主，覆盖面与更新频率决定收入上限；中期可在高频类型下试探小额增值。",
+        "matrix_hint": "拉新桶填入「风险/账号/额度焦虑」，配比拉到 55% 以上，节奏调快；建专业桶做该主轴的深度解析，占 20% 左右。"
+      },
+      {
+        "id": "path-2",
+        "path_name": "把风险/账号/额度焦虑的认同升级为可承接的变现链路",
+        "mode": "转型升级",
+        "rationale_from_status": "读者分享率均值 0.033、点赞率均值 0.078，说明已有信任基础；但变现链路空白，认同没有被承接。把已有的互动信号转化为具体的变现路径，是当前改造成本最小的升级方向。",
+        "feasibility": "够得着",
+        "feasibility_note": null,
+        "gap": [
+          "需要明确一个最小变现单元（如知识星球/小报童/专属群）",
+          "内容结构里加入\"你能帮读者做什么\"的承接钩子",
+          "当前876 粉，先把私域阵地建起来再做规模化"
+        ],
+        "monetization": "可试水知识付费（精华合集/解读专栏）或私域变现；前期以低价/免费积累用户信任，再逐步提升变现密度。",
+        "matrix_hint": "养信任桶配比提升到 35%-45%，填入「风险/账号/额度焦虑、产品/副业相关」类的判断与复盘内容；转化桶从零开始试水，加私域承接动作。"
+      },
+      {
+        "id": "path-3",
+        "path_name": "收窄到风险/账号/额度焦虑，做单一垂直信号点",
+        "mode": "收窄聚焦",
+        "rationale_from_status": "当前题材分散（5 类均有覆盖），但风险/账号/额度焦虑信号相对突出（中位阅读 6450）。若该信号稳健，收口到单一垂直方向可以更快建立壁垒（前提：先验证更多样本）。",
+        "feasibility": "要改造",
+        "feasibility_note": "改造成本高 ≠ 不推荐，是否值得由你的目的决定",
+        "gap": [
+          "先验证 风险/账号/额度焦虑 在 5-10 篇样本上的中位阅读是否稳健",
+          "逐步减少其他题材占比，不要一次性全切",
+          "收窄后内容密度要提升，频率不能下降"
+        ],
+        "monetization": "垂直深耕可以建立该细分领域的稀缺性；中期试水垂直知识服务（课程/咨询）或品牌合作。",
+        "matrix_hint": "建专业桶大幅提升（配比 50%-60%），全部填入「风险/账号/额度焦虑」的深度解析与案例拆解；拉新桶保留少量入门级内容引流，占 20% 左右。"
+      }
+    ],
+    "candidate_cap": {
+      "min": 2,
+      "max": 4,
+      "note": "方向卡数量取决于信号强度，2-4 张；并列方向不分高下、平铺展示。"
+    },
+    "content_matrix": {
+      "model_name": "方向参数化内容矩阵（role 维度固定 / 题材维度动态）",
+      "roles": [
+        "拉新",
+        "养信任",
+        "建专业",
+        "转化",
+        "留存"
+      ],
+      "by_direction": {
+        "path-1": {
+          "buckets": [
+            {
+              "role": "拉新",
+              "topics": [
+                "产品/副业/商业化",
+                "风险/账号/额度焦虑"
+              ],
+              "weight": 0.55,
+              "horizon": "本周可发",
+              "rhythm": "节奏调快，标题钩子化"
+            },
+            {
+              "role": "建专业",
+              "topics": [
+                "风险/账号/额度焦虑"
+              ],
+              "weight": 0.25,
+              "horizon": "本周可发",
+              "rhythm": "深度解析，每篇有方法框架"
+            },
+            {
+              "role": "养信任",
+              "topics": [
+                "风险/账号/额度焦虑"
+              ],
+              "weight": 0.15,
+              "horizon": "需积累",
+              "rhythm": "加入作者判断与视角"
+            },
+            {
+              "role": "留存",
+              "topics": [
+                "模型发布/能力解读"
+              ],
+              "weight": 0.05,
+              "horizon": "需积累",
+              "rhythm": "互动引导，引发评论"
+            }
+          ],
+          "schedule": [
+            {
+              "phase": "第 1-2 周",
+              "focus": "稳定更新频率，标题钩子化",
+              "cadence": "每周 4 更",
+              "topics": [
+                "产品/副业/商业化",
+                "风险/账号/额度焦虑"
+              ]
+            },
+            {
+              "phase": "第 3-4 周",
+              "focus": "追热点选题，拉新桶配比拉满",
+              "cadence": "每周 3-4 更",
+              "topics": [
+                "产品/副业/商业化",
+                "风险/账号/额度焦虑",
+                "风险/账号/额度焦虑"
+              ]
+            }
+          ]
+        },
+        "path-2": {
+          "buckets": [
+            {
+              "role": "养信任",
+              "topics": [
+                "风险/账号/额度焦虑"
+              ],
+              "weight": 0.45,
+              "horizon": "本周可发",
+              "rhythm": "加入作者判断、复盘与立场"
+            },
+            {
+              "role": "拉新",
+              "topics": [
+                "产品/副业/商业化"
+              ],
+              "weight": 0.3,
+              "horizon": "本周可发",
+              "rhythm": "保持流量入口，引流到信任内容"
+            },
+            {
+              "role": "建专业",
+              "topics": [
+                "风险/账号/额度焦虑"
+              ],
+              "weight": 0.15,
+              "horizon": "本周可发",
+              "rhythm": "建立专业壁垒"
+            },
+            {
+              "role": "转化",
+              "topics": [
+                "风险/账号/额度焦虑"
+              ],
+              "weight": 0.1,
+              "horizon": "需积累",
+              "rhythm": "小额试水，加私域承接动作"
+            }
+          ],
+          "schedule": [
+            {
+              "phase": "第 1-2 周",
+              "focus": "加大养信任内容比例，建立私域阵地",
+              "cadence": "每周 4 更",
+              "topics": [
+                "风险/账号/额度焦虑",
+                "产品/副业/商业化"
+              ]
+            },
+            {
+              "phase": "第 3-4 周",
+              "focus": "试水转化动作，加入承接钩子",
+              "cadence": "每周 4 更",
+              "topics": [
+                "风险/账号/额度焦虑",
+                "风险/账号/额度焦虑"
+              ]
+            }
+          ]
+        },
+        "path-3": {
+          "buckets": [
+            {
+              "role": "建专业",
+              "topics": [
+                "风险/账号/额度焦虑"
+              ],
+              "weight": 0.55,
+              "horizon": "本周可发",
+              "rhythm": "深度拆解，每篇有可操作方法"
+            },
+            {
+              "role": "拉新",
+              "topics": [
+                "风险/账号/额度焦虑"
+              ],
+              "weight": 0.25,
+              "horizon": "本周可发",
+              "rhythm": "入门级内容，降低进入门槛"
+            },
+            {
+              "role": "养信任",
+              "topics": [
+                "风险/账号/额度焦虑"
+              ],
+              "weight": 0.15,
+              "horizon": "需积累",
+              "rhythm": "作者视角与判断，差异化表达"
+            },
+            {
+              "role": "留存",
+              "topics": [
+                "风险/账号/额度焦虑"
+              ],
+              "weight": 0.05,
+              "horizon": "需积累",
+              "rhythm": "社群互动，深度用户引导"
+            }
+          ],
+          "schedule": [
+            {
+              "phase": "第 1-2 周",
+              "focus": "验证风险/账号/额度焦虑更多样本的稳健性",
+              "cadence": "每周 4 更",
+              "topics": [
+                "风险/账号/额度焦虑"
+              ]
+            },
+            {
+              "phase": "第 3-4 周",
+              "focus": "逐步收窄其他题材，提升垂直密度",
+              "cadence": "每周 4 更",
+              "topics": [
+                "风险/账号/额度焦虑"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
 }

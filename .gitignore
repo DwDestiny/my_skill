@@ -7,3 +7,15 @@
 node_modules/
 __pycache__/
 .pytest_cache/
+dist/
+build/
+
+# 工具 / IDE / 会话产物(非项目代码)
+.claude/
+.serena/
+.playwright-mcp/
+effect-tests/
+
+# 临时验证截图(根目录散落,README 素材另置 docs/)
+/r4c-*.png
+/r4d-*.png

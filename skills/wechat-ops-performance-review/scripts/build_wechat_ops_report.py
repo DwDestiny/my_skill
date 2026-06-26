@@ -34,6 +34,7 @@ from analyze.m3_content_engine import build_content_engine
 from analyze.m4_audience import build_audience
 from analyze.m5_growth_funnel import build_growth_funnel
 from analyze.m6_action_plan import build_action_plan_v2
+from analyze.m8_forward import build_forward_looking
 
 
 @dataclass(frozen=True)
@@ -959,6 +960,8 @@ def build_dataset(root: Path, *, account_name: str = "麦总玩 AI", since: str 
     dataset["template_slots"] = build_template_slots(dataset)
     dataset["visual_tokens"] = build_visual_tokens()
     dataset["conclusions"] = build_compat_conclusions(dataset["analysis_sections"])
+    # 向前看引擎（只读上述字段，仅追加 forward_looking 顶层节点）
+    dataset["forward_looking"] = build_forward_looking(dataset)
     return dataset
 
 
