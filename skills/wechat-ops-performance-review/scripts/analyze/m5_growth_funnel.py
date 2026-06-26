@@ -70,20 +70,36 @@ def build_growth_funnel(
     pattern = viral_formula.get("title_pattern") or "风险损失型"
     hour = viral_formula.get("timing_hour") or 10
     reliable = bool(viral_formula.get("reliable"))
-    focus_base = topic
-    if not reliable:
-        focus_base = f"{topic}(待验证)"
+    sfx = "" if reliable else "(待验证)"
 
+    # 四周有节奏:拉新 → 建心智 → 蹭热点 → 复盘固化,而非重复同一题材
+    weeks = [
+        {
+            "focus": f"主攻爆款题材拉新{sfx}",
+            "topics": f"{topic} + {pattern}标题，{hour}点发,冲分享破圈",
+        },
+        {
+            "focus": "深度内容建心智",
+            "topics": "工作流/方法论深读文,提高在看与评论,沉淀老粉",
+        },
+        {
+            "focus": "蹭热点扩声量",
+            "topics": "模型发布/行业大事件快速跟进,绑定可用性与判断",
+        },
+        {
+            "focus": "复盘固化爆款公式",
+            "topics": f"用四象限复盘,固定「{topic}×{pattern}×{hour}点」可复制组合",
+        },
+    ]
     startup_plan = []
     targets = [read_median, int(read_median * 1.1), int(read_median * 1.2), int(read_median * 1.15)]
-    for i in range(1, 5):
-        wk = {
+    for i, w in enumerate(weeks, start=1):
+        startup_plan.append({
             "week": i,
-            "focus": focus_base,
-            "topics": f"{topic} + {pattern}标题，{hour}点附近",
-            "target": max(50, targets[i-1]) if targets[i-1] else 120,
-        }
-        startup_plan.append(wk)
+            "focus": w["focus"],
+            "topics": w["topics"],
+            "target": max(50, targets[i - 1]) if targets[i - 1] else 120,
+        })
 
     # analysis etc
     if not data_available:

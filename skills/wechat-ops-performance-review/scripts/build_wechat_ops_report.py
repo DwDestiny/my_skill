@@ -910,6 +910,7 @@ def build_dataset(root: Path, *, account_name: str = "麦总玩 AI", since: str 
     # 新增 modules 与 account（仅追加，不改旧字段）
     audience_raw = load_raw_audience(root)
     trend_raw = load_raw_trend(root)
+    account_raw = load_raw_account(root)
     bm = dataset["benchmark"]
     vg = dataset["viral_genes"]
     checkup = build_checkup(stable, bm, audience_raw)
@@ -925,9 +926,10 @@ def build_dataset(root: Path, *, account_name: str = "麦总玩 AI", since: str 
         "action_plan": action_plan_v2,
     }
     dataset["account"] = {
-        "name": account_name,
+        "name": account_raw.get("name") or account_name,
         "cumulate_user": audience_raw.get("cumulate_user"),
-        "avatar_local": None,
+        "avatar_local": account_raw.get("avatar_local"),
+        "head_img": account_raw.get("head_img"),
         "available": audience_raw.get("available", False),
     }
     dataset["confidence_model"] = build_confidence_model(stable)

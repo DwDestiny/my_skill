@@ -93,6 +93,9 @@ def build_article(record: dict[str, Any], captured_at: datetime) -> dict[str, An
     likes = normalize_number(record.get("like_num"))
     old_likes = normalize_number(record.get("old_like_num"))
     moment_likes = normalize_number(record.get("moment_like_num"))
+    zaikan = normalize_number(
+        record.get("wow_num") or record.get("looking_num") or record.get("zaikan_num")
+    )
     is_deleted = bool(record.get("is_deleted"))
     hours_since_publish = None
     is_immature = False
@@ -129,6 +132,7 @@ def build_article(record: dict[str, Any], captured_at: datetime) -> dict[str, An
         "likes": likes,
         "old_likes": old_likes,
         "moment_likes": moment_likes,
+        "zaikan": zaikan,
         "comments": comments,
         "comments_with_replies": comments_with_replies,
         "shares": shares,
@@ -137,6 +141,7 @@ def build_article(record: dict[str, Any], captured_at: datetime) -> dict[str, An
         "share_rate": rate(shares, reads),
         "comment_rate": rate(comments, reads),
         "like_rate": rate(likes + old_likes + moment_likes, reads),
+        "zaikan_rate": rate(zaikan, reads),
         "content_type": content_type,
         "pain_point": pain,
         "persona": persona,

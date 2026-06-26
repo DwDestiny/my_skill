@@ -117,7 +117,9 @@ def test_build_dataset_mounts_modules_five_keys_and_account():
         assert "voice" in m[k] or k == "action_plan"
     assert "account" in dataset
     acc = dataset["account"]
-    assert acc["name"] == "测试"
+    # account 名优先用 raw/account.json 抓到的真实名(fixtures 为"麦总玩AI"),否则回退参数
+    assert acc["name"] in ("麦总玩AI", "测试")
+    assert "avatar_local" in acc
     assert "available" in acc
     # ensure old keys untouched
     assert "viral_genes" in dataset

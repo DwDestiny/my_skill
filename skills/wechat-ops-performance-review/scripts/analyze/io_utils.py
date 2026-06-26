@@ -120,3 +120,15 @@ def load_raw_trend(root: Path) -> dict[str, Any]:
         return d
     except Exception:
         return {"available": False}
+
+
+def load_raw_account(root: Path) -> dict[str, Any]:
+    """读取 root/raw/account.json（账号名/头像），不存在或异常返回 {}。"""
+    p = root / "raw" / "account.json"
+    if not p.exists():
+        return {}
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        return dict(data) if isinstance(data, dict) else {}
+    except Exception:
+        return {}

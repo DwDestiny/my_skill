@@ -27,7 +27,8 @@
       "moment_like_num": 1,
       "reprint_num": 1,
       "reward_money": "0.00",
-      "is_deleted": true
+      "is_deleted": true,
+      "wow_num": 5
     },
     {
       "appmsgid": 2247000001,
@@ -48,7 +49,8 @@
       "reward_money": "0.00",
       "is_deleted": false,
       "content_id": "content/2026/01/03/risk-account-limit",
-      "article_dir": "content/2026/01/03/risk-account-limit"
+      "article_dir": "content/2026/01/03/risk-account-limit",
+      "wow_num": 218
     },
     {
       "appmsgid": 2247000002,
@@ -67,7 +69,8 @@
       "moment_like_num": 24,
       "reprint_num": 1,
       "reward_money": "0.00",
-      "is_deleted": false
+      "is_deleted": false,
+      "wow_num": 258
     },
     {
       "appmsgid": 2247000003,
@@ -88,7 +91,8 @@
       "reward_money": "0.00",
       "is_deleted": false,
       "content_id": "content/2026/01/05/risk-validate",
-      "article_dir": "content/2026/01/05/risk-validate"
+      "article_dir": "content/2026/01/05/risk-validate",
+      "wow_num": 143
     },
     {
       "appmsgid": 2247000004,
@@ -107,7 +111,8 @@
       "moment_like_num": 6,
       "reprint_num": 1,
       "reward_money": "0.00",
-      "is_deleted": false
+      "is_deleted": false,
+      "wow_num": 106
     },
     {
       "appmsgid": 2247000005,
@@ -128,7 +133,8 @@
       "reward_money": "0.00",
       "is_deleted": false,
       "content_id": "content/2026/01/07/alloc-sheep-wool",
-      "article_dir": "content/2026/01/07/alloc-sheep-wool"
+      "article_dir": "content/2026/01/07/alloc-sheep-wool",
+      "wow_num": 325
     },
     {
       "appmsgid": 2247000006,
@@ -149,7 +155,8 @@
       "reward_money": "0.00",
       "is_deleted": false,
       "content_id": "content/2026/01/08/price-member",
-      "article_dir": "content/2026/01/08/price-member"
+      "article_dir": "content/2026/01/08/price-member",
+      "wow_num": 18
     },
     {
       "appmsgid": 2247000007,
@@ -168,7 +175,8 @@
       "moment_like_num": 1,
       "reprint_num": 1,
       "reward_money": "0.00",
-      "is_deleted": false
+      "is_deleted": false,
+      "wow_num": 12
     },
     {
       "appmsgid": 2247000008,
@@ -187,7 +195,8 @@
       "moment_like_num": 3,
       "reprint_num": 1,
       "reward_money": "0.00",
-      "is_deleted": true
+      "is_deleted": true,
+      "wow_num": 63
     },
     {
       "appmsgid": 2247000009,
@@ -208,7 +217,8 @@
       "reward_money": "0.00",
       "is_deleted": false,
       "content_id": "content/2026/01/12/deepseek-bench",
-      "article_dir": "content/2026/01/12/deepseek-bench"
+      "article_dir": "content/2026/01/12/deepseek-bench",
+      "wow_num": 188
     },
     {
       "appmsgid": 2247000010,
@@ -227,7 +237,8 @@
       "moment_like_num": 8,
       "reprint_num": 1,
       "reward_money": "0.00",
-      "is_deleted": false
+      "is_deleted": false,
+      "wow_num": 157
     },
     {
       "appmsgid": 2247000011,
@@ -246,7 +257,8 @@
       "moment_like_num": 1,
       "reprint_num": 1,
       "reward_money": "0.00",
-      "is_deleted": false
+      "is_deleted": false,
+      "wow_num": 15
     },
     {
       "appmsgid": 2247000012,
@@ -265,7 +277,8 @@
       "moment_like_num": 23,
       "reprint_num": 1,
       "reward_money": "0.00",
-      "is_deleted": false
+      "is_deleted": false,
+      "wow_num": 238
     },
     {
       "appmsgid": 2247000013,
@@ -286,7 +299,8 @@
       "reward_money": "0.00",
       "is_deleted": false,
       "content_id": "content/2026/01/10/codex-agent-flow",
-      "article_dir": "content/2026/01/10/codex-agent-flow"
+      "article_dir": "content/2026/01/10/codex-agent-flow",
+      "wow_num": 26
     },
     {
       "appmsgid": 2247000014,
@@ -307,7 +321,8 @@
       "reward_money": "0.00",
       "is_deleted": false,
       "content_id": "content/2026/01/09/cursor-case",
-      "article_dir": "content/2026/01/09/cursor-case"
+      "article_dir": "content/2026/01/09/cursor-case",
+      "wow_num": 24
     },
     {
       "appmsgid": 2247000015,
@@ -326,7 +341,8 @@
       "moment_like_num": 1,
       "reprint_num": 1,
       "reward_money": "0.00",
-      "is_deleted": false
+      "is_deleted": false,
+      "wow_num": 12
     },
     {
       "appmsgid": 2247000016,
@@ -345,7 +361,8 @@
       "moment_like_num": 12,
       "reprint_num": 1,
       "reward_money": "0.00",
-      "is_deleted": false
+      "is_deleted": false,
+      "wow_num": 118
     },
     {
       "appmsgid": 2247000017,
@@ -366,7 +383,8 @@
       "reward_money": "0.00",
       "is_deleted": false,
       "content_id": "content/2026/01/11/side-product",
-      "article_dir": "content/2026/01/11/side-product"
+      "article_dir": "content/2026/01/11/side-product",
+      "wow_num": 10
     },
     {
       "appmsgid": 2247000018,
@@ -385,7 +403,8 @@
       "moment_like_num": 2,
       "reprint_num": 1,
       "reward_money": "0.00",
-      "is_deleted": false
+      "is_deleted": false,
+      "wow_num": 13
     },
     {
       "appmsgid": 2247000019,
@@ -404,7 +423,8 @@
       "moment_like_num": 1,
       "reprint_num": 1,
       "reward_money": "0.00",
-      "is_deleted": false
+      "is_deleted": false,
+      "wow_num": 16
     },
     {
       "appmsgid": 2247000020,
@@ -423,7 +443,8 @@
       "moment_like_num": 1,
       "reprint_num": 1,
       "reward_money": "0.00",
-      "is_deleted": false
+      "is_deleted": false,
+      "wow_num": 9
     },
     {
       "appmsgid": 2247000021,
@@ -442,7 +463,8 @@
       "moment_like_num": 1,
       "reprint_num": 1,
       "reward_money": "0.00",
-      "is_deleted": false
+      "is_deleted": false,
+      "wow_num": 7
     }
   ]
 }
