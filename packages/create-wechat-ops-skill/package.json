@@ -1,0 +1,44 @@
+{
+  "name": "create-wechat-ops-skill",
+  "version": "1.0.0",
+  "description": "一键安装「公众号运营复盘」Claude Code 技能：抓取公众号后台数据，生成运营复盘报告与交互看板。",
+  "type": "module",
+  "bin": {
+    "create-wechat-ops-skill": "index.js"
+  },
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "giget": "^3.0.0"
+  },
+  "keywords": [
+    "wechat",
+    "公众号",
+    "claude-code",
+    "skill",
+    "运营复盘",
+    "dashboard",
+    "wechat-ops",
+    "performance-review"
+  ],
+  "author": {
+    "name": "麦总玩AI",
+    "url": "https://github.com/DwDestiny"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/DwDestiny/my_skill/tree/main/packages/create-wechat-ops-skill#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DwDestiny/my_skill.git",
+    "directory": "packages/create-wechat-ops-skill"
+  },
+  "bugs": {
+    "url": "https://github.com/DwDestiny/my_skill/issues"
+  }
+}
