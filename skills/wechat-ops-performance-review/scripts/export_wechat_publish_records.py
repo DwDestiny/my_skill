@@ -21,7 +21,7 @@ from typing import Any
 from playwright.sync_api import Page, sync_playwright
 
 
-CDP_URL = os.environ.get("LAOLIANG_CDP_URL", "http://127.0.0.1:9333")
+CDP_URL = os.environ.get("WXOPS_CDP_URL", "http://127.0.0.1:9333")
 
 
 def safe_int(value: Any) -> int:
@@ -125,10 +125,18 @@ def _fetch_publish_payload(page: Page, token: str) -> dict[str, Any]:
     return page.evaluate(
         """async (token) => {
             const count = 10;
+            const maxPages = 100;  // 最多抓 100 页，防止无界抓取
             const groups = [];
             let totals = {};
             let lastBaseResp = { ret: 0, err_msg: "ok" };
-            for (let begin = 0; begin < 1000; begin += count) {
+            let pageIndex = 0;
+            for (let begin = 0; begin < maxPages * count; begin += count) {
+                // 第二页起每页随机等待 2~5 秒，避免频繁请求触发风控
+                if (pageIndex > 0) {
+                    const delay = Math.floor(Math.random() * 3000) + 2000;
+                    await new Promise(r => setTimeout(r, delay));
+                }
+                pageIndex++;
                 const url = `/cgi-bin/appmsgpublish?sub=list&begin=${begin}&count=${count}&token=${token}&lang=zh_CN&f=json&ajax=1`;
                 const response = await fetch(url, { credentials: "include" });
                 const data = await response.json();

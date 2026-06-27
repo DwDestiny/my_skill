@@ -175,7 +175,7 @@
   "main_axis": "AI 工具测评",
   "traffic_artery": { "topic": "风险/账号/额度焦虑", "sample_count": 4, "reliable": true },
   "monetization_maturity": "空白",   // 空白 | 早期 | 成长 | 成熟
-  "uncertainty_note": "人味/厚度为正则近似;爆款锚点基于 4 篇样本,属可用但非高置信。"
+  "uncertainty_note": "人味/厚度为正则近似;爆款锚点基于 4 篇样本,样本有限,结论可用但不宜过度外推。"
 }
 ```
 
