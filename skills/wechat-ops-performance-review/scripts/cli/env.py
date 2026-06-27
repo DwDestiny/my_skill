@@ -68,6 +68,20 @@ def get_fixtures_dir() -> Path:
     return SKILL_DIR / "fixtures"
 
 
+def get_skill_dashboard_dir() -> Path:
+    """只读 dashboard 模板（位于 skill 目录，不可写）。"""
+    return SKILL_DIR / "dashboard"
+
+
+def get_workspace_dashboard_dir(workspace: Path) -> Path:
+    """工作区内的 dashboard 运行态副本（可写：node_modules / dist / 注入数据）。"""
+    return workspace / "dashboard"
+
+
+def get_workspace_output_dir(workspace: Path) -> Path:
+    return workspace / "output"
+
+
 # 依赖探测（不强制崩溃，只返回状态）
 
 def check_python_version() -> tuple[bool, str]:

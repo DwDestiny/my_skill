@@ -46,6 +46,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_analyze = subparsers.add_parser("analyze", parents=[common], help="抓取/使用数据 → 构建报告 → 启动看板")
     p_analyze.add_argument("--demo", action="store_true", help="使用 skill 内 fixtures 演示数据（无需登录/抓取）")
     p_analyze.add_argument("--build", action="store_true", help="仅构建 dashboard（pnpm build），不启动 dev 服务器")
+    p_analyze.add_argument(
+        "--data-only",
+        action="store_true",
+        help="只产出数据（report.json/MD），不复制 dashboard、不跑 pnpm（CI / 只读冒烟用）",
+    )
     p_analyze.add_argument("--account-name", default=None, help="覆盖配置中的公众号名称")
 
     return parser
@@ -68,12 +73,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "analyze":
         demo = getattr(args, "demo", False)
         do_build_only = getattr(args, "build", False)
+        data_only = getattr(args, "data_only", False)
         account_override = getattr(args, "account_name", None)
         return analyze_cmd.run(
             workspace=workspace,
             demo=demo,
             build_only=do_build_only,
             account_name_override=account_override,
+            data_only=data_only,
         )
 
     print("未知命令")

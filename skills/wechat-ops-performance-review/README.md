@@ -115,7 +115,7 @@
 
 ```bash
 pip install -r requirements.txt && playwright install chromium   # Python 抓取
-pnpm -C dashboard install                                        # 看板
+# 看板依赖无需手动装:analyze 会把 dashboard 复制到 ~/.wxops/dashboard 后自动 pnpm install
 ```
 
 **三步上手**(向导式 CLI):
@@ -131,6 +131,8 @@ scripts/wxops analyze   # 抓取 → 构建报告 → 启动看板
 ```bash
 scripts/wxops analyze --demo   # 用内置脱敏样本跑通全链路
 ```
+
+> **运行契约**:skill 目录是只读模板,所有运行态产物落工作区(默认 `~/.wxops`)。报告与看板数据写入 `~/.wxops/output/report.json`,看板源码复制到 `~/.wxops/dashboard/` 后在工作区里构建。skill 可放在只读路径(plugin / npx 分发)正常运行。
 
 ---
 

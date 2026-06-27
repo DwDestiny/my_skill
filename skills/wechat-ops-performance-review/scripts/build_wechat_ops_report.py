@@ -1244,17 +1244,43 @@ last_updated_by_agent: codex
 """
 
 
+def _is_under(path: Path, base: Path) -> bool:
+    """True if *path* resolves inside *base* (the writable workspace)."""
+    try:
+        path.resolve().relative_to(base.resolve())
+        return True
+    except (ValueError, OSError):
+        return False
+
+
+def _safe_write(path: Path, content: str, *, workspace: Path, label: str) -> None:
+    """Write *content* to *path*.
+
+    Artefacts inside the workspace are core products: a write failure (e.g. the
+    skill directory accidentally being the target, or a read-only mount) aborts
+    the build. Targets outside the workspace are treated as optional (e.g. an
+    explicit injection into a possibly read-only area) and a failure only warns
+    so the read-only-skill contract (rc=0 + workspace output) still holds.
+    """
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+    except (OSError, PermissionError) as exc:
+        if _is_under(path, workspace):
+            raise SystemExit(f"错误: 无法写入工作区产物 {label} ({path}): {exc}")
+        print(f"⚠ 跳过可选产物 {label} ({path}): {exc}")
+
+
 def write_outputs(dataset: dict[str, Any], paths: Paths) -> None:
-    paths.dataset_path.parent.mkdir(parents=True, exist_ok=True)
-    paths.report_path.parent.mkdir(parents=True, exist_ok=True)
-    paths.dashboard_data_path.parent.mkdir(parents=True, exist_ok=True)
-    paths.dataset_path.write_text(
-        json.dumps(dataset, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    payload = json.dumps(dataset, ensure_ascii=False, indent=2) + "\n"
+    _safe_write(paths.dataset_path, payload, workspace=paths.root, label="dataset")
+    _safe_write(paths.dashboard_data_path, payload, workspace=paths.root, label="dashboard-data")
+    _safe_write(
+        paths.report_path,
+        render_report(dataset, to_rel(paths.dataset_path, paths.root)),
+        workspace=paths.root,
+        label="report",
     )
-    paths.dashboard_data_path.write_text(
-        json.dumps(dataset, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-    paths.report_path.write_text(render_report(dataset, to_rel(paths.dataset_path, paths.root)), encoding="utf-8")
 
 
 def update_social_ops_index(paths: Paths) -> None:
@@ -1437,15 +1463,26 @@ def validate_dataset(dataset: dict[str, Any]) -> list[str]:
     return errors
 
 
-def build_paths(workspace: Path, wiki_repo: Path | None, report_date: str) -> Paths:
+def build_paths(
+    workspace: Path,
+    wiki_repo: Path | None,
+    report_date: str,
+    dashboard_data_path: Path | None = None,
+) -> Paths:
+    out_dir = workspace / "output"
     if wiki_repo is None:
-        out_dir = workspace / "output"
         report_path = out_dir / f"wechat-ops-report-{report_date}.md"
         dataset_path = out_dir / f"wechat-ops-report-{report_date}.json"
     else:
         report_path = wiki_repo / f"wiki/operations/social-ops/wechat-ops-report-{report_date}.md"
         dataset_path = wiki_repo / f"wiki/operations/social-ops/datasets/wechat-ops-report-{report_date}.json"
-    dashboard_data_path = Path(__file__).resolve().parents[1] / "dashboard" / "src" / "data" / "report.json"
+    # Runtime contract: code dir (skill) is read-only; all artefacts land in the
+    # writable workspace. The dashboard data file therefore defaults to the
+    # workspace output dir (same place as dataset/md), not the skill source tree.
+    # Callers (e.g. analyze_cmd) may override to inject into a workspace
+    # dashboard copy. Never default to the skill directory.
+    if dashboard_data_path is None:
+        dashboard_data_path = out_dir / "report.json"
     return Paths(
         root=workspace,
         wiki_repo=wiki_repo,
@@ -1470,6 +1507,11 @@ def main() -> int:
     parser.add_argument("--wiki-root", default=None, help="wiki 仓库根（不传则不写入外部 wiki，只输出到 workspace/output/）")
     parser.add_argument("--account-name", default="麦总玩 AI", help="公众号账号名")
     parser.add_argument("--since", default=None, help="运营期起始日，ISO 日期如 2026-04-18（不传则取数据中最早发布时间当天或回退到 2026-04-18）")
+    parser.add_argument(
+        "--dashboard-data",
+        default=None,
+        help="覆盖 dashboard 数据文件落点（默认 <workspace>/output/report.json，skill 目录始终只读）",
+    )
     parser.add_argument("--check", action="store_true", help="validate generated dataset only")
     args = parser.parse_args()
 
@@ -1478,8 +1520,9 @@ def main() -> int:
         return 1
     workspace = Path(args.workspace).resolve()
     wiki_repo = Path(args.wiki_root).resolve() if args.wiki_root else None
+    dashboard_data = Path(args.dashboard_data).expanduser().resolve() if args.dashboard_data else None
     report_date = derive_report_date(workspace)
-    paths = build_paths(workspace, wiki_repo, report_date)
+    paths = build_paths(workspace, wiki_repo, report_date, dashboard_data)
     dataset = build_dataset(workspace, account_name=args.account_name, since=args.since)
     errors = validate_dataset(dataset)
     if args.check:
