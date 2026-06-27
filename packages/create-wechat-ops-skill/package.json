@@ -9,13 +9,14 @@
   "main": "index.js",
   "files": [
     "index.js",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "giget": "^3.0.0"
+    "giget": "^3.3.0"
   },
   "keywords": [
     "wechat",

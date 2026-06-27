@@ -1,0 +1,15 @@
+{
+  "name": "visual-ppt-deck-builder",
+  "version": "1.0.0",
+  "description": "Visual PPT Deck Builder skill — 根据 deck_spec.json 生成可编辑 PPTX",
+  "private": true,
+  "scripts": {
+    "check": "node --check scripts/build_visual_pptx.js && node --check scripts/build_style_candidates.js && node --check scripts/build_deck_preview.js && node --check scripts/design_director_qa.js && node --check scripts/validate_deck_quality.js"
+  },
+  "dependencies": {
+    "pptxgenjs": "^4.0.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

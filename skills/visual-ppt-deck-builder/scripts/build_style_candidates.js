@@ -5,22 +5,22 @@
 // Output: behavior defined by skills/visual-ppt-deck-builder/scripts/build_style_candidates.js
 // Pos: skills/visual-ppt-deck-builder/scripts/build_style_candidates.js
 const fs = require("fs");
-const os = require("os");
 const path = require("path");
 const { spawnSync } = require("child_process");
 
-let pptxgen_module;
+// 依赖 pptxgenjs；若报 MODULE_NOT_FOUND，请在本 skill 目录执行: npm install
+let PptxGenJS;
 try {
-  pptxgen_module = require("pptxgenjs");
-} catch (_error) {
-  const bundled_module_path = path.join(
-    os.homedir(),
-    ".cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/pptxgenjs"
+  const m = require("pptxgenjs");
+  PptxGenJS = m.default || m;
+} catch (_err) {
+  console.error(
+    "[build_style_candidates] 找不到 pptxgenjs。请在 skills/visual-ppt-deck-builder 目录执行:\n" +
+    "  npm install\n" +
+    "或全局安装: npm install -g pptxgenjs"
   );
-  pptxgen_module = require(bundled_module_path);
+  process.exit(1);
 }
-
-const PptxGenJS = pptxgen_module.default || pptxgen_module;
 const slide_width = 13.333;
 const slide_height = 7.5;
 

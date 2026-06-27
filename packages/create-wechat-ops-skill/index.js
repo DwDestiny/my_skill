@@ -15,6 +15,7 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import fs from "node:fs";
+import readline from "node:readline";
 import { downloadTemplate } from "giget";
 
 const REPO = "DwDestiny/my_skill";
@@ -37,12 +38,14 @@ function printHelp() {
     "选项:",
     "  --dir <path>       指定安装目录(等价于位置参数;同时给出时以 --dir 为准)",
     "  --ref <ref>        拉取的 Git 分支/标签/commit(默认: main)",
-    "  --force            目标目录已存在时覆盖(会先清空再写入)",
+    "  --force            目标目录已存在时允许写入(合并:覆盖同名文件,保留其它内容)",
+    "  --force-clean      先递归清空目标目录再写入(破坏性,需交互确认)",
     "  -h, --help         显示本帮助",
     "",
     "示例:",
     "  npx create-wechat-ops-skill",
     "  npx create-wechat-ops-skill ./my-skill --force",
+    "  npx create-wechat-ops-skill ./my-skill --force-clean",
     "  npx create-wechat-ops-skill --dir ~/skills/wxops --ref main",
     "",
     "私有仓库:",
@@ -53,13 +56,14 @@ function printHelp() {
 }
 
 /**
- * 极简 argv 解析:位置参数(目标目录) + --dir/--ref/--force/--help。
+ * 极简 argv 解析:位置参数(目标目录) + --dir/--ref/--force/--force-clean/--help。
  */
 function parseArgs(argv) {
   const opts = {
     dir: null,
     ref: DEFAULT_REF,
     force: false,
+    forceClean: false,
     help: false,
     positional: null,
   };
@@ -73,6 +77,9 @@ function parseArgs(argv) {
         break;
       case "--force":
         opts.force = true;
+        break;
+      case "--force-clean":
+        opts.forceClean = true;
         break;
       case "--dir":
         opts.dir = argv[++i] ?? null;
@@ -125,8 +132,8 @@ function printNextSteps(dir) {
     "   pip install -r requirements.txt",
     "   playwright install chromium",
     "",
-    "② 跑通 demo(内置脱敏样本,无需登录,验证全链路):",
-    `   python3 "${path.join(dir, "scripts", "wxops")}" analyze --demo`,
+    "② 跑通 demo(内置脱敏样本,无需登录、无需 pnpm,验证分析链路):",
+    `   python3 "${path.join(dir, "scripts", "wxops")}" analyze --demo --data-only`,
     "",
     "③ 正式使用(抓取真实公众号数据):",
     "   wxops init      # 初始化工作区 ~/.wxops",
@@ -137,6 +144,46 @@ function printNextSteps(dir) {
     "",
   ];
   console.log(lines.join("\n"));
+}
+
+/**
+ * 若 --force-clean 为 true,在执行破坏性操作前向用户确认。
+ * - 非 TTY 环境(管道/CI):直接拒绝并退出(exit 1)。
+ * - TTY 环境:要求用户原样输入 "yes" 才继续,否则取消(exit 0)。
+ */
+async function confirmForceClean(dir) {
+  console.error("");
+  console.error("⚠️  警告:--force-clean 将递归删除以下目录的全部内容后再写入:");
+  console.error(`   ${dir}`);
+  console.error("   此操作不可逆,请确认目录中没有重要文件。");
+  console.error("");
+
+  if (!process.stdin.isTTY) {
+    console.error("❌ 非交互式环境下拒绝执行 --force-clean(会递归删除目录),请在交互终端手动确认。");
+    console.error("");
+    process.exit(1);
+  }
+
+  // TTY 环境:要求用户原样输入 yes
+  const answer = await new Promise((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stderr,
+    });
+    rl.question('   请输入 "yes" 确认继续,其他任意输入取消: ', (ans) => {
+      rl.close();
+      resolve(ans.trim());
+    });
+  });
+
+  if (answer !== "yes") {
+    console.error("");
+    console.error("已取消。");
+    console.error("");
+    process.exit(0);
+  }
+
+  console.error("");
 }
 
 async function main() {
@@ -156,11 +203,16 @@ async function main() {
   console.log(`   目标: ${dir}`);
   console.log("");
 
+  // --force-clean 破坏性操作:需通过确认门才能继续
+  if (opts.forceClean) {
+    await confirmForceClean(dir);
+  }
+
   try {
     await downloadTemplate(source, {
       dir,
-      force: opts.force,
-      forceClean: opts.force,
+      force: opts.force || opts.forceClean,   // 允许写入非空目录
+      forceClean: opts.forceClean,             // 仅 --force-clean 触发递归清空
     });
 
     // 下载结果非空校验: giget 对子目录不存在时静默产出空目录,需在此显式检测
@@ -187,8 +239,11 @@ async function main() {
 
     // 目标目录已存在的典型提示
     if (/exists|EEXIST|not empty|already/i.test(msg)) {
-      console.error("   目标目录可能已存在内容。如需覆盖,请加 --force 重试:");
-      console.error(`     npx create-wechat-ops-skill "${dir}" --force`);
+      console.error("   目标目录可能已存在内容。可选两种覆盖方式:");
+      console.error(`     --force      合并写入,保留原有文件:`);
+      console.error(`       npx create-wechat-ops-skill "${dir}" --force`);
+      console.error(`     --force-clean  先清空再写,会删除目录原有内容(需交互确认):`);
+      console.error(`       npx create-wechat-ops-skill "${dir}" --force-clean`);
       console.error("");
     }
 

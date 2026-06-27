@@ -180,7 +180,7 @@ def build_action_items(dataset: dict[str, Any]) -> list[dict[str, Any]]:
             "title": "把 AI 编程/Agent 工作流继续做成 IP 主线",
             "why": f"稳定样本 {stable_count} 篇里,工作流类样本最多,但中位阅读仍偏低;问题不是不该写,而是标题和首屏还不够用户收益化。",
             "action": "下一批工作流文章标题先写少踩什么坑、少花多少 token、少翻多少文件,不要用项目名当主角。",
-            "owner": "老梁",
+            "owner": "运营负责人",
             "due": "下一轮 7 天",
         },
         {
@@ -188,7 +188,7 @@ def build_action_items(dataset: dict[str, Any]) -> list[dict[str, Any]]:
             "title": "保留风险/账号/额度题材作为推荐流入口",
             "why": "风险类能打穿推荐流,但不能让账号变成焦虑广播站。",
             "action": "每天最多 1 篇强风险入口文;每篇都要给检查清单或解决路径。",
-            "owner": "老梁",
+            "owner": "运营负责人",
             "due": "本周持续",
         },
         {
@@ -196,7 +196,7 @@ def build_action_items(dataset: dict[str, Any]) -> list[dict[str, Any]]:
             "title": "羊毛/价格文必须补齐领取路径和风险边界",
             "why": "价格/额度类均值容易被爆款拉高,普通稿波动大。",
             "action": "所有羊毛文首屏写清免费额度、适用人群、入口路径、到期或限制。",
-            "owner": "老梁",
+            "owner": "运营负责人",
             "due": "下一篇开始",
         },
         {
@@ -204,7 +204,7 @@ def build_action_items(dataset: dict[str, Any]) -> list[dict[str, Any]]:
             "title": "模型发布文绑定可用性和替代关系",
             "why": "单纯讲模型变强不能稳定转化阅读。",
             "action": "模型文固定回答:谁能用、哪里免费、替代谁、现在该不该切。",
-            "owner": "老梁",
+            "owner": "运营负责人",
             "due": "下一篇模型文",
         },
         {
@@ -212,7 +212,7 @@ def build_action_items(dataset: dict[str, Any]) -> list[dict[str, Any]]:
             "title": "用题材匹配发布时间窗口做 2 周验证",
             "why": f"当前稳定中位阅读 {overall['median']},多个高均值时段有爆款拉高,需要验证题材窗口而不是机械定点。",
             "action": "风险/福利放午间或晚间短窗口,工作流和深度判断放夜间深读窗口,每周复盘中位数和 P75。",
-            "owner": "老梁",
+            "owner": "运营负责人",
             "due": "连续 2 周",
         },
     ]
@@ -523,8 +523,8 @@ def build_compat_conclusions(sections: list[dict[str, Any]]) -> list[dict[str, s
 
 def build_account_profile(dataset: dict[str, Any]) -> dict[str, Any]:
     quality = dataset["data_quality"]
-    account_name = dataset["meta"].get("account_name", "麦总玩 AI")
-    avatar_text = account_name[0] if account_name else "麦"
+    account_name = dataset["meta"].get("account_name", "我的公众号")
+    avatar_text = account_name[0] if account_name else "我"
     articles = dataset.get("articles", {}).get("all_period", [])
     reads = [int(a.get("reads", 0) or 0) for a in articles]
     total_reads = sum(reads)
@@ -567,7 +567,7 @@ def build_account_profile(dataset: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_brand_signature() -> dict[str, Any]:
-    author = os.environ.get("WXOPS_AUTHOR", "麦总玩 AI")
+    author = os.environ.get("WXOPS_AUTHOR", "运营者")
     return {
         "author_name": author,
         "role": "公众号运营分析 Skill 作者",
@@ -608,7 +608,7 @@ def build_report_meta(dataset: dict[str, Any]) -> dict[str, Any]:
     return {
         "template_version": "wechat-ops-template-v2.1",
         "title": "公众号运营诊断报告",
-        "account_name": meta.get("account_name", "麦总玩 AI"),
+        "account_name": meta.get("account_name", "我的公众号"),
         "platform": "wechat",
         "platform_scope": "wechat_only",
         "period_label": f"{meta['period_start'][:10]} 至 {meta['period_end'][:10]}",
@@ -811,7 +811,7 @@ def load_ledger_quality(root: Path) -> dict[str, Any]:
     }
 
 
-def build_dataset(root: Path, *, account_name: str = "麦总玩 AI", since: str | None = None) -> dict[str, Any]:
+def build_dataset(root: Path, *, account_name: str = "我的公众号", since: str | None = None) -> dict[str, Any]:
     raw_path = latest_publish_export(root)
     raw = read_json(raw_path, {})
     captured_at = parse_dt(raw.get("captured_at")) or datetime.now(timezone.utc).astimezone(CN_TZ)
@@ -1272,7 +1272,10 @@ def _safe_write(path: Path, content: str, *, workspace: Path, label: str) -> Non
 
 
 def write_outputs(dataset: dict[str, Any], paths: Paths) -> None:
-    payload = json.dumps(dataset, ensure_ascii=False, indent=2) + "\n"
+    # 写出前剥离纯内部调试字段，不影响内存 dataset 对象（校验已完成）
+    _INTERNAL_KEYS = ("_internal", "confidence_model")
+    export_dataset = {k: v for k, v in dataset.items() if k not in _INTERNAL_KEYS}
+    payload = json.dumps(export_dataset, ensure_ascii=False, indent=2) + "\n"
     _safe_write(paths.dataset_path, payload, workspace=paths.root, label="dataset")
     _safe_write(paths.dashboard_data_path, payload, workspace=paths.root, label="dashboard-data")
     _safe_write(
@@ -1505,7 +1508,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workspace", default=None, help="数据与产物工作区")
     parser.add_argument("--wiki-root", default=None, help="wiki 仓库根（不传则不写入外部 wiki，只输出到 workspace/output/）")
-    parser.add_argument("--account-name", default="麦总玩 AI", help="公众号账号名")
+    parser.add_argument("--account-name", default="我的公众号", help="公众号账号名")
     parser.add_argument("--since", default=None, help="运营期起始日，ISO 日期如 2026-04-18（不传则取数据中最早发布时间当天或回退到 2026-04-18）")
     parser.add_argument(
         "--dashboard-data",

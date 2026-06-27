@@ -21,6 +21,9 @@ SNIPPET_BODY = """## GEB 项目文档规范
 
 仓库工作默认遵守 GEB 项目文档规范。读文件前按 L1 根文档 -> L2 目录文档 -> L3 文件头渐进披露；写文件时也按 GEB 记录：新项目创建/更新 L1，新目录或模块创建/更新 L2，新源文件、测试、重要配置或长期脚本补短 L3。结构变更后按 L3 -> L2 -> L1 同步更新。初始化、审计、迁移或发现项目文档缺口时，使用 `geb-project-doc-system` Skill。"""
 
+# install_hook 写入的标记行，用于幂等检测
+GEB_HOOK_MARKER = "# GEB-HOOK-MANAGED"
+
 EXCLUDED_SCAN_DIRS = {
     ".cache",
     ".git",
@@ -138,11 +141,32 @@ def upsert_snippet(path: Path) -> None:
 
 
 def link_skill(skill_source: Path, skill_dir: Path, skill_name: str) -> str:
+    """将 skill 链接到 agent skill 目录，幂等处理已有 symlink/目录。
+
+    - 非 symlink 的已有条目：跳过，不动用户文件。
+    - 已是 symlink 且指向正确目标：跳过（幂等）。
+    - 已是 symlink 但指向其他地方：备份为 .bak，然后重新链接。
+    - 不存在：直接创建 symlink。
+    """
     skill_dir.mkdir(parents=True, exist_ok=True)
     target = skill_dir / skill_name
+
     if target.exists() and not target.is_symlink():
+        # 普通目录或文件，跳过，不覆盖用户已有内容
         return "skipped_existing_non_symlink"
-    target.unlink(missing_ok=True)
+
+    if target.is_symlink():
+        current_dest = target.resolve()
+        expected_dest = skill_source.resolve()
+        if current_dest == expected_dest:
+            # 已指向正确目标，幂等跳过
+            return "already_linked"
+        # 指向不同目标，备份后重新链接
+        bak = Path(str(target) + ".bak")
+        bak.unlink(missing_ok=True)
+        target.rename(bak)
+        print(f"  ⚠ symlink 原指向 {current_dest}，已备份至 {bak}，重新链接到 {skill_source}", file=sys.stderr)
+
     target.symlink_to(skill_source)
     return "linked"
 
@@ -178,19 +202,56 @@ def classify_project(path: Path) -> dict[str, object]:
     }
 
 
+def _hook_is_managed(hook_path: Path) -> bool:
+    """检测 hook 文件是否由本工具生成（含 GEB_HOOK_MARKER 标记行）。"""
+    try:
+        return GEB_HOOK_MARKER in hook_path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return False
+
+
 def install_hook(project_dir: Path, skill_source: Path) -> bool:
+    """在项目安装 GEB pre-commit hook，幂等且不破坏用户已有 hook。
+
+    - hook 不存在：直接写入。
+    - hook 存在且含本工具标记：更新（幂等）。
+    - hook 存在但非本工具生成：备份为 .bak，打印警告，跳过写入，返回 False。
+    """
     git_dir = project_dir / ".git"
     if not git_dir.is_dir():
         return False
     hook_path = git_dir / "hooks" / "pre-commit"
     hook_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if hook_path.exists():
+        if not _hook_is_managed(hook_path):
+            # 用户自有 hook，备份后拒绝覆盖
+            bak_path = Path(str(hook_path) + ".bak")
+            try:
+                import shutil
+                shutil.copy2(str(hook_path), str(bak_path))
+            except OSError as exc:
+                print(
+                    f"  ✗ 无法备份已有 hook {hook_path}: {exc}，跳过安装。",
+                    file=sys.stderr,
+                )
+                return False
+            print(
+                f"  ⚠ {hook_path} 已存在且非本工具生成，已备份至 {bak_path}。\n"
+                f"    请手动将 GEB 审计逻辑合并，或删除后重新运行。",
+                file=sys.stderr,
+            )
+            return False
+        # 本工具已管理，允许更新（幂等）
+
     audit_script = skill_source / "scripts" / "audit_geb_docs.py"
     hook_path.write_text(
         "\n".join(
             [
                 "#!/usr/bin/env bash",
+                GEB_HOOK_MARKER,
                 "set -euo pipefail",
-                f'python3 "{audit_script}" "{project_dir}"',
+                f'python3 "{audit_script}" "$(git rev-parse --show-toplevel)"',
                 "",
             ]
         ),
@@ -234,11 +295,15 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
     if args.apply and args.install_hooks:
         for candidate in project_candidates:
             project_path = Path(str(candidate["path"]))
-            if install_hook(project_path, skill_source):
+            ok = install_hook(project_path, skill_source)
+            if ok:
                 configured_hooks.append(str(project_path))
                 hook_actions.append({"path": str(project_path), "status": "installed"})
             else:
-                hook_actions.append({"path": str(project_path), "status": "missing_git_dir"})
+                # 区分 missing_git_dir 与 existing_hook_skipped
+                git_present = (project_path / ".git").is_dir()
+                status = "existing_hook_skipped" if git_present else "missing_git_dir"
+                hook_actions.append({"path": str(project_path), "status": status})
 
     next_steps: list[str] = []
     if project_candidates:

@@ -114,8 +114,9 @@
 **装依赖**(首次):
 
 ```bash
-pip install -r requirements.txt && playwright install chromium   # Python 抓取
-# 看板依赖无需手动装:analyze 会把 dashboard 复制到 ~/.wxops/dashboard 后自动 pnpm install
+pip install -r requirements.txt && playwright install chromium   # Python 抓取(必需)
+# 看板为可选:构建需 Node >= 18 + pnpm。analyze 会把 dashboard 复制到 ~/.wxops/dashboard 并自动 pnpm install;
+# 本机无 pnpm 或只想看数据时,用 analyze --data-only 跳过看板构建。
 ```
 
 **三步上手**(向导式 CLI):
@@ -126,10 +127,10 @@ scripts/wxops login     # 扫码登录公众号后台
 scripts/wxops analyze   # 抓取 → 构建报告 → 启动看板
 ```
 
-不想登录、先看效果:
+不想登录、先看效果(首跑推荐 `--data-only`,无需 pnpm):
 
 ```bash
-scripts/wxops analyze --demo   # 用内置脱敏样本跑通全链路
+scripts/wxops analyze --demo --data-only   # 用内置脱敏样本跑通分析链路(跳过看板构建)
 ```
 
 > **运行契约**:skill 目录是只读模板,所有运行态产物落工作区(默认 `~/.wxops`)。报告与看板数据写入 `~/.wxops/output/report.json`,看板源码复制到 `~/.wxops/dashboard/` 后在工作区里构建。skill 可放在只读路径(plugin / npx 分发)正常运行。
@@ -137,6 +138,8 @@ scripts/wxops analyze --demo   # 用内置脱敏样本跑通全链路
 ---
 
 > **关于截图数据**:以上全部基于**脱敏模拟样本**。账号名与头像经本人授权公开,运营数据(阅读量 / 粉丝 / 画像 / 趋势)均为合成,**不含任何真实后台数据或可追溯链接**。
+
+> **正当使用与合规**:本工具仅用于抓取**你本人拥有管理权限**的公众号后台数据,服务于自有账号的运营复盘。使用即表示你将遵守微信公众平台服务协议及所在地法律法规;抓取频率、账号风控等风险由使用者自行承担。**请勿用于抓取无授权的第三方账号,亦不得用于商业爬取或数据转售。** 工具复用你本机的真实登录态、主动限频、不伪造指纹、不绕过平台机制(详见 [`references/data-sources.md`](references/data-sources.md))。
 
 <div align="center">
 
