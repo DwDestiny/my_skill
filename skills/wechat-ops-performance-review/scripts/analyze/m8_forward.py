@@ -618,15 +618,19 @@ def build_mirror(signals: list[dict[str, Any]], dataset: dict[str, Any]) -> dict
     # statement：中立陈述，带样本量和不确定性
     orient_word = "信任取向偏强" if orientation_level == "强" else "流量倾向中等"
     focus_word = "主轴清晰" if focus_level == "强" else ("聚焦中等" if focus_level == "中" else "题材偏散")
-    depth_word = "厚度中上" if depth_level in ("强", "中") else "篇幅轻薄"
+    if depth_level == "强":
+        depth_word = "厚度扎实"
+    elif depth_level == "中":
+        depth_word = "厚度中上"
+    else:
+        depth_word = "篇幅轻薄"
     humanity_word = f"人味{humanity_level}"
     mono_word = f"变现链路{monetization_maturity}"
     traffic_reliability_word = "" if traffic_reliable else "（样本偏少，仅作线索）"
 
     statement = (
         f"你现在是一个{focus_word}、{orient_word}、{depth_word}、{humanity_word}的号，"
-        f"主轴是{main_axis}，"
-        f"流量命脉来自{traffic_topic}{traffic_reliability_word}（基于 {sample_n} 篇样本），"
+        f"流量命脉来自爆款锚点{traffic_reliability_word}（基于 {sample_n} 篇样本），"
         f"{mono_word}。"
     )
 

@@ -10,18 +10,65 @@ def build_action_plan_v2(
     audience_mod: dict[str, Any],
     growth_funnel: dict[str, Any],
 ) -> dict[str, Any]:
+    """构建 v2 行动计划三栏。
+
+    红线：
+    - 键名固定为 now/experiment/hold（dashboard 硬依赖：现在就做/小步验证/暂不拍板）
+    - 置信度只内化，不外显；lane 是行动时间/试探档位
+    - 确定性：使用位置角色 + 显式处理顺序，不依赖 set/dict 迭代
+
+    lane 分配规则（按模块角色定基准，置信度只能下调至更试探方向，不能上调）：
+    - checkup（健康度/风险，即时行动）：基准 "now"；低置信 → "experiment"
+    - content_engine（内容配比）：高置信 → "now"，否则 "experiment"
+    - audience_mod（标题/封面/搜索词，可测试微调）：基准 "experiment"；低置信 → "hold"
+    - growth_funnel（多周计划，长周期）：基准 "hold"
+    置信档从模块的 action_basket 反推：now=高 / experiment=中 / hold=低。
+    因此全高置信时也必然跨 ≥2 条 lane（growth 恒 hold、audience 基准 experiment）。
+    """
     now: list[str] = []
     experiment: list[str] = []
     hold: list[str] = []
 
-    for mod in (checkup, content_engine, audience_mod, growth_funnel):
-        basket = mod.get("action_basket", "experiment")
+    def _infer_conf_tier(mod: dict[str, Any]) -> str:
+        """从模块保留的 action_basket 反推置信档（不改变模块自身数据）。"""
+        b = mod.get("action_basket", "experiment")
+        if b == "now":
+            return "high"
+        if b == "hold":
+            return "low"
+        return "medium"
+
+    def _decide_lane(role: str, mod: dict[str, Any]) -> str:
+        tier = _infer_conf_tier(mod)
+        if role == "checkup":
+            # 即时 → 基准 now，低才下调
+            return "experiment" if tier == "low" else "now"
+        if role == "content_engine":
+            # 配比 → 高才 now，否则 experiment
+            return "now" if tier == "high" else "experiment"
+        if role == "audience_mod":
+            # 可微调测试 → 基准 experiment，低才 hold
+            return "hold" if tier == "low" else "experiment"
+        if role == "growth_funnel":
+            # 长周期 → 恒 hold
+            return "hold"
+        return "experiment"
+
+    # 显式按角色顺序处理（位置已知角色），保证确定性与跨 lane
+    role_mod_pairs: list[tuple[str, dict[str, Any]]] = [
+        ("checkup", checkup),
+        ("content_engine", content_engine),
+        ("audience_mod", audience_mod),
+        ("growth_funnel", growth_funnel),
+    ]
+    for role, mod in role_mod_pairs:
         act = (mod.get("action") or "")[:25]
         if not act:
             continue
-        if basket == "now":
+        lane = _decide_lane(role, mod)
+        if lane == "now":
             now.append(act)
-        elif basket == "experiment":
+        elif lane == "experiment":
             experiment.append(act)
         else:
             hold.append(act)
