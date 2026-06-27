@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+// GEB-L3
+// Input: caller, project conventions, and local dependencies
+// Output: behavior defined by skills/visual-ppt-deck-builder/scripts/build_deck_preview.js
+// Pos: skills/visual-ppt-deck-builder/scripts/build_deck_preview.js
 const fs = require("fs");
 const path = require("path");
 
