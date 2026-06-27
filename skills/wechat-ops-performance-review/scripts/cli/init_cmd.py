@@ -78,7 +78,7 @@ def run(workspace: Path, account_name_override: str | None = None) -> int:
     account_name = account_name_override
     if not account_name:
         try:
-            account_name = input("请输入你的公众号名称（例如：麦总玩 AI）：").strip()
+            account_name = input("请输入你的公众号名称（例如：我的公众号）：").strip()
         except (EOFError, KeyboardInterrupt):
             print_error("未输入公众号名称，初始化中止。")
             return 1

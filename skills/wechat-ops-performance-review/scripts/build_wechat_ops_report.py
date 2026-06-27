@@ -524,7 +524,7 @@ def build_compat_conclusions(sections: list[dict[str, Any]]) -> list[dict[str, s
 def build_account_profile(dataset: dict[str, Any]) -> dict[str, Any]:
     quality = dataset["data_quality"]
     account_name = dataset["meta"].get("account_name", "我的公众号")
-    avatar_text = account_name[0] if account_name else "麦"
+    avatar_text = account_name[0] if account_name else "我"
     articles = dataset.get("articles", {}).get("all_period", [])
     reads = [int(a.get("reads", 0) or 0) for a in articles]
     total_reads = sum(reads)
