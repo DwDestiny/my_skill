@@ -18,6 +18,7 @@
 |---|---|---|---|
 | product-expert | `skills/product-expert/` | 已入库 | 从一个产品想法出发，完成需求探知、产品定位、MVP 规划、评分和推荐 |
 | visual-ppt-deck-builder | `skills/visual-ppt-deck-builder/` | 已入库 | 从主题、大纲和风格样张出发，生成高视觉质量且可编辑的 PPTX |
+| wechat-ops-performance-review | `skills/wechat-ops-performance-review/` | 已入库 · 可 plugin / npx 安装 | 公众号运营复盘：量化诊断 + 爆款基因反推 + 向前看方向引擎 + 本地叙事看板（详见该目录 `README.md`） |
 | geb-project-doc-system | `skills/geb-project-doc-system/` | v0.2 | 为大中型代码仓库建立 L1/L2/L3 AI 项目文档体系，减少 Agent 盲读和上下文浪费 |
 
 ## 重点：GEB Project Doc System
@@ -132,13 +133,63 @@ python3 tests/test_geb_project_doc_system.py
 tests/smoke_visual_ppt_deck_builder.sh
 ```
 
+## 一键安装（wechat-ops-performance-review）
+
+该 skill 提供两条**等价**的安装通道，最终都把只读模板落到 `~/.claude/skills`，按习惯任选其一。
+
+**通道 A · Claude Code plugin marketplace**（图形化、托管式更新）
+
+本仓库根的 `.claude-plugin/marketplace.json` 把仓库声明为一个 plugin marketplace。在 Claude Code 里：
+
+```
+/plugin marketplace add DwDestiny/my_skill
+/plugin install wechat-ops-performance-review@maizong-skills
+```
+
+- `@` 后是 marketplace 名（`maizong-skills`），不是仓库名。
+- 安装后 skill 自动被发现，按任务上下文调用。
+
+**通道 B · npx 一键安装**（命令行、可脚本化，见 `packages/create-wechat-ops-skill/`）
+
+```bash
+npx create-wechat-ops-skill
+```
+
+默认装到 `~/.claude/skills/wechat-ops-performance-review/`；支持 `[目标目录] --ref --force`，私有仓需 `GIGET_AUTH`。
+
+**安装后首次使用**（两条通道一致）：装依赖后即可跑 demo 验证全链路——
+
+```bash
+cd ~/.claude/skills/wechat-ops-performance-review
+pip install -r requirements.txt && playwright install chromium
+python3 scripts/wxops analyze --demo
+```
+
+skill 目录为只读模板，所有运行态数据写入工作区 `~/.wxops`，看板由 `analyze` 自动构建，无需手动 `pnpm install`。
+
 ## 仓库结构
 
 ```text
+.claude-plugin/
+  marketplace.json          # 把本仓声明为 plugin marketplace
 skills/
   product-expert/
   visual-ppt-deck-builder/
+    SKILL.md
+    agents/openai.yaml
+    references/
+    scripts/
+  wechat-ops-performance-review/
+    .claude-plugin/plugin.json   # 单 skill plugin 清单
+    SKILL.md
+    README.md                    # 产品门面 + 看板截图画廊
+    DESIGN.md / DATA_CONTRACT.md
+    scripts/                     # wxops CLI + 抓取/分析/构建
+    dashboard/                   # 本地叙事看板(Vite + React)
+    references/ fixtures/ tests/ docs/
   geb-project-doc-system/
+packages/
+  create-wechat-ops-skill/       # npx 一键安装包(create-* 约定)
 docs/
   repository-architecture.md
   skill-intake-checklist.md
@@ -186,6 +237,7 @@ Instead of growing one giant global prompt, each workflow becomes a focused Skil
 |---|---|---|---|
 | product-expert | `skills/product-expert/` | Available | Product discovery, positioning, MVP planning, scoring, and recommendation |
 | visual-ppt-deck-builder | `skills/visual-ppt-deck-builder/` | Available | Build high-quality editable PPTX decks from a topic, outline, and visual direction |
+| wechat-ops-performance-review | `skills/wechat-ops-performance-review/` | Available · plugin / npx | WeChat Official Account ops review: quantified diagnosis, viral-DNA reverse-engineering, forward-looking direction engine, and a local narrative dashboard |
 | geb-project-doc-system | `skills/geb-project-doc-system/` | v0.2 | Maintain L1/L2/L3 AI-facing project documentation for medium and large code repositories |
 
 ## GEB Project Doc System

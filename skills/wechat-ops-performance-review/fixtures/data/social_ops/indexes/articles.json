@@ -1,0 +1,81 @@
+{
+  "items": [
+    {
+      "content_id": "content/2026/01/03/risk-account-limit",
+      "article_dir": "content/2026/01/03/risk-account-limit",
+      "article_slug": "risk-account-limit",
+      "title": "风险提示：部分功能即将因验证失效",
+      "platforms": {
+        "wechat": {
+          "public_url": "https://mp.weixin.qq.com/s/fake-risk01"
+        }
+      }
+    },
+    {
+      "content_id": "content/2026/01/05/risk-validate",
+      "article_dir": "content/2026/01/05/risk-validate",
+      "article_slug": "risk-validate",
+      "title": "使用卡顿？官方新规可能影响你的权限",
+      "platforms": {
+        "wechat": {
+          "public_url": "https://mp.weixin.qq.com/s/fake-risk05"
+        }
+      }
+    },
+    {
+      "content_id": "content/2026/01/07/alloc-sheep-wool",
+      "article_dir": "content/2026/01/07/alloc-sheep-wool",
+      "article_slug": "alloc-sheep-wool",
+      "title": "某会员套餐价格调整，羊毛情报速览",
+      "platforms": {
+        "wechat": {
+          "public_url": "https://mp.weixin.qq.com/s/fake-price07"
+        }
+      }
+    },
+    {
+      "content_id": "content/2026/01/08/price-member",
+      "article_dir": "content/2026/01/08/price-member",
+      "article_slug": "price-member",
+      "title": "零成本获取高阶模型额度实测",
+      "platforms": {
+        "wechat": {
+          "public_url": "https://mp.weixin.qq.com/s/fake-price08"
+        }
+      }
+    },
+    {
+      "content_id": "content/2026/01/12/deepseek-bench",
+      "article_dir": "content/2026/01/12/deepseek-bench",
+      "article_slug": "deepseek-bench",
+      "title": "GPT 系列更新上线，能力变化解读",
+      "platforms": {
+        "wechat": {
+          "public_url": "https://mp.weixin.qq.com/s/fake-model12"
+        }
+      }
+    },
+    {
+      "content_id": "content/2026/01/10/codex-agent-flow",
+      "article_dir": "content/2026/01/10/codex-agent-flow",
+      "article_slug": "codex-agent-flow",
+      "title": "用 Skill 构建自动化编程助手全流程",
+      "platforms": {
+        "wechat": {
+          "public_url": "https://mp.weixin.qq.com/s/fake-agent10"
+        }
+      }
+    },
+    {
+      "content_id": "content/2026/01/11/side-product",
+      "article_dir": "content/2026/01/11/side-product",
+      "article_slug": "side-product",
+      "title": "独立开发者产品商业化经验分享",
+      "platforms": {
+        "wechat": {
+          "public_url": "https://mp.weixin.qq.com/s/fake-biz11"
+        }
+      }
+    }
+  ]
+}

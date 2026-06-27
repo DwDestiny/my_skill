@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "maizong-skills",
+  "owner": {
+    "name": "麦总玩AI"
+  },
+  "description": "麦总玩AI 的 Claude Code 技能集合",
+  "plugins": [
+    {
+      "name": "wechat-ops-performance-review",
+      "source": "./skills/wechat-ops-performance-review",
+      "description": "公众号运营复盘:量化诊断 + 爆款基因反推 + 向前看方向引擎 + 本地叙事看板",
+      "author": { "name": "麦总玩AI" },
+      "category": "analytics",
+      "tags": ["wechat", "公众号", "运营复盘", "数据分析", "dashboard"]
+    }
+  ]
+}

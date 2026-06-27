@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "wechat-ops-performance-review",
+  "displayName": "公众号运营复盘",
+  "version": "1.0.0",
+  "description": "把公众号后台数据变成可执行的运营决策报告:量化诊断(均值/中位数/P75)、反推爆款基因、向前看给出下一步该写什么,产出本地叙事看板。",
+  "author": { "name": "麦总玩AI", "url": "https://github.com/DwDestiny" },
+  "homepage": "https://github.com/DwDestiny/my_skill",
+  "repository": "https://github.com/DwDestiny/my_skill",
+  "license": "MIT",
+  "keywords": ["wechat", "公众号", "运营复盘", "数据分析", "dashboard"]
+}

@@ -1,0 +1,10 @@
+# 构建产物(每次 analyze 重新生成,不进仓)
+fixtures/output/
+
+# wxops 运行态(阶段三引入:用户私有登录态/数据工作区)
+.wxops-workspace/
+**/browser-profile/
+
+# Python 缓存
+__pycache__/
+*.pyc
