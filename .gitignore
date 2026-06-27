@@ -10,6 +10,9 @@ __pycache__/
 dist/
 build/
 
+# 作者本地协作规则(含私有路径,移出公开仓但保留本地)
+/AGENTS.md
+
 # 工具 / IDE / 会话产物(非项目代码)
 .claude/
 .serena/
