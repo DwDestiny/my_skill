@@ -1098,7 +1098,8 @@ def build_content_matrix(
     cap_detail = by_sig["capacity_funnel"]["detail"]
     posts_per_week = cap_detail.get("posts_per_week", 0) or 2.0
     by_ct = dataset.get("analysis", {}).get("by_content_type", [])
-    active_types = {r["key"] for r in by_ct if r.get("count", 0) > 0}
+    active_types_ordered = [r["key"] for r in by_ct if r.get("count", 0) > 0]  # 保序，by_ct 已按某字段排序
+    active_types = set(active_types_ordered)  # 仅用于 in 判断，不迭代
 
     # 分享率最高类型（适合拉新）
     share_leader_rows = sorted(
@@ -1136,7 +1137,7 @@ def build_content_matrix(
         # 根据 mode 动态配比
         if mode == "顺势放大":
             # 拉新为主，快节奏
-            pull_topics = list({share_leader, main_axis})[:2]
+            pull_topics = list(dict.fromkeys([share_leader, main_axis]))[:2]
             buckets = [
                 {
                     "role": "拉新",
@@ -1161,7 +1162,7 @@ def build_content_matrix(
                 },
                 {
                     "role": "留存",
-                    "topics": list(active_types - {main_axis, share_leader})[:1] or [main_axis],
+                    "topics": [t for t in active_types_ordered if t not in {main_axis, share_leader}][:1] or [main_axis],
                     "weight": 0.05,
                     "horizon": "需积累",
                     "rhythm": "互动引导，引发评论",
@@ -1279,7 +1280,7 @@ def build_content_matrix(
             ]
         else:
             # 混合演进：均衡分配
-            all_active = list(active_types)[:4]
+            all_active = active_types_ordered[:4]
             if not all_active:
                 all_active = [main_axis]
             buckets = [

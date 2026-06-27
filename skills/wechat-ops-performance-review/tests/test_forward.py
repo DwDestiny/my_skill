@@ -1,6 +1,10 @@
 """Tests for forward-looking engine (m8_forward) per DATA_CONTRACT.md §10."""
 
 import copy
+import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 from build_wechat_ops_report import build_dataset
@@ -156,3 +160,42 @@ def test_does_not_break_existing_top_level_fields():
         assert k in ds, f"missing original top level key: {k}"
     # forward_looking is new appended
     assert "forward_looking" in ds
+
+
+def test_content_matrix_deterministic_across_hashseeds():
+    """9. content_matrix 确定性回归：不同 PYTHONHASHSEED 下跨进程完全一致（锁死防 set 迭代顺序回退）"""
+    cwd = Path(__file__).resolve().parents[1]
+    seeds = ["0", "1", "2"]
+    outputs: list[bytes] = []
+
+    child_code = (
+        "import sys\n"
+        'sys.path.insert(0, "scripts")\n'
+        "import json\n"
+        "from pathlib import Path\n"
+        "from build_wechat_ops_report import build_dataset\n"
+        "from analyze.m8_forward import build_forward_looking\n"
+        "\n"
+        'dataset = build_dataset(Path("fixtures"))\n'
+        "fl = build_forward_looking(dataset)\n"
+        'cm = fl.get("content_matrix", {})\n'
+        's = json.dumps(cm, sort_keys=True, ensure_ascii=False)\n'
+        "print(s)\n"
+    )
+
+    for seed in seeds:
+        env = os.environ.copy()
+        env["PYTHONHASHSEED"] = seed
+        result = subprocess.run(
+            [sys.executable, "-c", child_code],
+            cwd=str(cwd),
+            env=env,
+            capture_output=True,
+        )
+        assert result.returncode == 0, f"seed {seed} subprocess failed: {result.stderr.decode('utf-8', errors='replace')}"
+        outputs.append(result.stdout.rstrip(b"\n\r"))
+
+    # 完全 byte-identical 断言，失败时指出具体哪两个 seed 不一致
+    assert outputs[0] == outputs[1], f"seed {seeds[0]} and {seeds[1]} content_matrix json not byte-identical"
+    assert outputs[1] == outputs[2], f"seed {seeds[1]} and {seeds[2]} content_matrix json not byte-identical"
+    assert outputs[0] == outputs[2], f"seed {seeds[0]} and {seeds[2]} content_matrix json not byte-identical"

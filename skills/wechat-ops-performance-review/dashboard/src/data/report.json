@@ -5,7 +5,7 @@
     "generated_at": "2026-01-15T18:00:00+08:00",
     "period_start": "2025-11-15T00:00:00+08:00",
     "period_end": "2026-01-15T18:00:00+08:00",
-    "source_export": "/Users/dw/Desktop/my_skill/skills/wechat-ops-performance-review/fixtures/reports/wechat/publish-records-20260115-180000.json",
+    "source_export": "reports/wechat/publish-records-20260115-180000.json",
     "source_captured_at": "2026-01-15T18:00:00+08:00",
     "platform_scope": "wechat_only"
   },
@@ -324,7 +324,7 @@
         "title_primary_pattern": "工作流案例型",
         "title_length_bucket": "17-24字",
         "article_length_chars": 2880,
-        "article_length_source": "/Users/dw/Desktop/my_skill/skills/wechat-ops-performance-review/fixtures/content/2026/01/10/codex-agent-flow/article.wechat.source.md",
+        "article_length_source": "content/2026/01/10/codex-agent-flow/article.wechat.source.md",
         "length_bucket": "2200-3500字",
         "length_status": "matched_local_article"
       },
@@ -442,7 +442,7 @@
         "title_primary_pattern": "风险损失型",
         "title_length_bucket": "16字内",
         "article_length_chars": 960,
-        "article_length_source": "/Users/dw/Desktop/my_skill/skills/wechat-ops-performance-review/fixtures/content/2026/01/03/risk-account-limit/article.wechat.source.md",
+        "article_length_source": "content/2026/01/03/risk-account-limit/article.wechat.source.md",
         "length_bucket": "1200字内",
         "length_status": "matched_local_article"
       },
@@ -561,7 +561,7 @@
         "title_primary_pattern": "价格福利型",
         "title_length_bucket": "16字内",
         "article_length_chars": 2160,
-        "article_length_source": "/Users/dw/Desktop/my_skill/skills/wechat-ops-performance-review/fixtures/content/2026/01/07/alloc-sheep-wool/article.wechat.source.md",
+        "article_length_source": "content/2026/01/07/alloc-sheep-wool/article.wechat.source.md",
         "length_bucket": "1200-2200字",
         "length_status": "matched_local_article"
       },
@@ -799,7 +799,7 @@
         "title_primary_pattern": "模型发布型",
         "title_length_bucket": "17-24字",
         "article_length_chars": 4320,
-        "article_length_source": "/Users/dw/Desktop/my_skill/skills/wechat-ops-performance-review/fixtures/content/2026/01/12/deepseek-bench/article.wechat.source.md",
+        "article_length_source": "content/2026/01/12/deepseek-bench/article.wechat.source.md",
         "length_bucket": "3500字以上",
         "length_status": "matched_local_article"
       },
@@ -1393,7 +1393,7 @@
         "title_primary_pattern": "工作流案例型",
         "title_length_bucket": "17-24字",
         "article_length_chars": 2880,
-        "article_length_source": "/Users/dw/Desktop/my_skill/skills/wechat-ops-performance-review/fixtures/content/2026/01/10/codex-agent-flow/article.wechat.source.md",
+        "article_length_source": "content/2026/01/10/codex-agent-flow/article.wechat.source.md",
         "length_bucket": "2200-3500字",
         "length_status": "matched_local_article"
       },
@@ -1511,7 +1511,7 @@
         "title_primary_pattern": "风险损失型",
         "title_length_bucket": "16字内",
         "article_length_chars": 960,
-        "article_length_source": "/Users/dw/Desktop/my_skill/skills/wechat-ops-performance-review/fixtures/content/2026/01/03/risk-account-limit/article.wechat.source.md",
+        "article_length_source": "content/2026/01/03/risk-account-limit/article.wechat.source.md",
         "length_bucket": "1200字内",
         "length_status": "matched_local_article"
       },
@@ -1630,7 +1630,7 @@
         "title_primary_pattern": "价格福利型",
         "title_length_bucket": "16字内",
         "article_length_chars": 2160,
-        "article_length_source": "/Users/dw/Desktop/my_skill/skills/wechat-ops-performance-review/fixtures/content/2026/01/07/alloc-sheep-wool/article.wechat.source.md",
+        "article_length_source": "content/2026/01/07/alloc-sheep-wool/article.wechat.source.md",
         "length_bucket": "1200-2200字",
         "length_status": "matched_local_article"
       },
@@ -1868,7 +1868,7 @@
         "title_primary_pattern": "模型发布型",
         "title_length_bucket": "17-24字",
         "article_length_chars": 4320,
-        "article_length_source": "/Users/dw/Desktop/my_skill/skills/wechat-ops-performance-review/fixtures/content/2026/01/12/deepseek-bench/article.wechat.source.md",
+        "article_length_source": "content/2026/01/12/deepseek-bench/article.wechat.source.md",
         "length_bucket": "3500字以上",
         "length_status": "matched_local_article"
       },
@@ -6012,7 +6012,7 @@
         "title_primary_pattern": "价格福利型",
         "title_length_bucket": "16字内",
         "article_length_chars": 2160,
-        "article_length_source": "/Users/dw/Desktop/my_skill/skills/wechat-ops-performance-review/fixtures/content/2026/01/07/alloc-sheep-wool/article.wechat.source.md",
+        "article_length_source": "content/2026/01/07/alloc-sheep-wool/article.wechat.source.md",
         "length_bucket": "1200-2200字",
         "length_status": "matched_local_article"
       },
@@ -6191,7 +6191,7 @@
         "title_primary_pattern": "风险损失型",
         "title_length_bucket": "16字内",
         "article_length_chars": 960,
-        "article_length_source": "/Users/dw/Desktop/my_skill/skills/wechat-ops-performance-review/fixtures/content/2026/01/03/risk-account-limit/article.wechat.source.md",
+        "article_length_source": "content/2026/01/03/risk-account-limit/article.wechat.source.md",
         "length_bucket": "1200字内",
         "length_status": "matched_local_article"
       },
@@ -11018,7 +11018,7 @@
     "platform_scope": "wechat_only",
     "period_label": "2025-11-15 至 2026-01-15",
     "generated_at": "2026-01-15T18:00:00+08:00",
-    "source_export": "/Users/dw/Desktop/my_skill/skills/wechat-ops-performance-review/fixtures/reports/wechat/publish-records-20260115-180000.json",
+    "source_export": "reports/wechat/publish-records-20260115-180000.json",
     "source_captured_at": "2026-01-15T18:00:00+08:00",
     "data_quality_summary": {
       "raw_record_count": 22,
@@ -11871,7 +11871,7 @@
             {
               "role": "留存",
               "topics": [
-                "模型发布/能力解读"
+                "价格/额度/羊毛情报"
               ],
               "weight": 0.05,
               "horizon": "需积累",

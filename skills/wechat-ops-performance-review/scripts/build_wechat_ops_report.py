@@ -47,6 +47,23 @@ class Paths:
     report_date: str
 
 
+def to_rel(p: Path | str, base: Path) -> str:
+    """Convert an absolute path inside *base* to a POSIX relative path string.
+
+    If *p* is empty, not absolute, or not under *base*, return str(p) unchanged.
+    This is used solely when writing paths into output artefacts (JSON / MD) so
+    that fixtures and wiki reports contain no machine-specific absolute paths.
+    Internal file IO continues to use absolute paths.
+    """
+    if not p:
+        return str(p)
+    try:
+        rel = Path(p).relative_to(base)
+        return rel.as_posix()
+    except (ValueError, TypeError):
+        return str(p)
+
+
 
 
 
@@ -821,6 +838,11 @@ def build_dataset(root: Path, *, account_name: str = "麦总玩 AI", since: str 
     articles = [build_article(record, captured_at) for record in raw_records]
     for article in articles:
         enrich_article(article, root, by_url, by_title)
+    # Normalise any absolute paths that enrich wrote into article fields so
+    # output artefacts (JSON / MD) contain only SKILL_ROOT-relative paths.
+    for article in articles:
+        if article.get("article_length_source"):
+            article["article_length_source"] = to_rel(article["article_length_source"], root)
     period_articles = [
         article
         for article in articles
@@ -847,7 +869,7 @@ def build_dataset(root: Path, *, account_name: str = "麦总玩 AI", since: str 
             "generated_at": captured_at.isoformat(),
             "period_start": ops_start.isoformat(),
             "period_end": captured_at.isoformat(),
-            "source_export": str(raw_path),
+            "source_export": to_rel(raw_path, root),
             "source_captured_at": raw.get("captured_at"),
             "platform_scope": "wechat_only",
         },
@@ -982,7 +1004,7 @@ def markdown_table(headers: list[str], rows: list[list[Any]]) -> str:
     return "\n".join(out)
 
 
-def render_report(dataset: dict[str, Any], dataset_path: Path) -> str:
+def render_report(dataset: dict[str, Any], dataset_path: Path | str) -> str:
     quality = dataset["data_quality"]
     overall = dataset["analysis"]["overall"]
     sections = {section["id"]: section for section in dataset["analysis_sections"]}
@@ -1232,7 +1254,7 @@ def write_outputs(dataset: dict[str, Any], paths: Paths) -> None:
     paths.dashboard_data_path.write_text(
         json.dumps(dataset, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
-    paths.report_path.write_text(render_report(dataset, paths.dataset_path), encoding="utf-8")
+    paths.report_path.write_text(render_report(dataset, to_rel(paths.dataset_path, paths.root)), encoding="utf-8")
 
 
 def update_social_ops_index(paths: Paths) -> None:
