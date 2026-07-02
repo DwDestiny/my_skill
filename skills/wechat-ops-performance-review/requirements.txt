@@ -7,5 +7,5 @@ playwright>=1.40
 # 装完 playwright 后还需下载浏览器内核(一次性):
 #   playwright install chromium
 
-# 仅跑测试时需要(运行/抓取不需要):
-# pytest>=7.0
+# 仅跑测试时需要(运行/抓取不需要),见 requirements-dev.txt:
+#   pip install -r requirements-dev.txt
