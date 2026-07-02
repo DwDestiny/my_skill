@@ -10,7 +10,7 @@ from pathlib import Path
 from build_wechat_ops_report import build_dataset
 from analyze.m8_forward import build_forward_looking
 
-FIXTURES = Path("fixtures")
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
 
 def _load_good_dataset():
