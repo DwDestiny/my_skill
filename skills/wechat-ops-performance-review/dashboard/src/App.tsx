@@ -121,35 +121,39 @@ function useInView<T extends HTMLElement>() {
   return { ref, seen };
 }
 
-/* ===================== 导航(三组:概览 / 向前看 / 诊断依据) ===================== */
+/* ===================== 导航(叙事三段:结论 / 为什么 / 怎么办) ===================== */
 type NavItem = { id: string; no?: string; label: string; icon: any; star?: boolean };
 type NavGroup = { group: string; items: NavItem[] };
 
-const OVERVIEW_ITEM: NavItem = { id: "overview", label: "概览", icon: Gauge };
+const OVERVIEW_ITEM: NavItem = { id: "overview", label: "体检结论", icon: Gauge };
 
-// 向前看三屏(闸门通过时);未通过则塌缩为单个"向前看"入口
+// 为什么:六份证据,编号 01-06 编码诊断逻辑顺序
+const EVIDENCE_ITEMS: NavItem[] = [
+  { id: "checkup", no: "01", label: "账号体检", icon: Activity },
+  { id: "viral", no: "02", label: "爆款基因", icon: Dna },
+  { id: "content", no: "03", label: "内容引擎", icon: Layers3 },
+  { id: "audience", no: "04", label: "读者画像", icon: Users },
+  { id: "growth", no: "05", label: "涨粉漏斗", icon: TrendingUp },
+  { id: "standards", no: "06", label: "量化标准", icon: Target },
+];
+
+// 怎么办:向前看三屏 + 本周行动;闸门未过时向前看塌缩为单入口
 const FORWARD_ITEMS: NavItem[] = [
   { id: "mirror", label: "照镜子", icon: Aperture },
   { id: "paths", label: "找方向", icon: Signpost, star: true },
   { id: "matrix", label: "规划矩阵", icon: LayoutGrid },
 ];
 const FORWARD_BLOCKED_ITEMS: NavItem[] = [{ id: "mirror", label: "向前看", icon: Aperture }];
-
-const DIAGNOSIS_ITEMS: NavItem[] = [
-  { id: "checkup", no: "01", label: "账号体检", icon: Activity },
-  { id: "viral", no: "02", label: "爆款基因", icon: Dna },
-  { id: "content", no: "03", label: "内容引擎", icon: Layers3 },
-  { id: "audience", no: "04", label: "读者画像", icon: Users },
-  { id: "growth", no: "05", label: "涨粉漏斗", icon: TrendingUp },
-  { id: "action", no: "06", label: "行动计划", icon: ListChecks },
-  { id: "standards", no: "07", label: "量化标准", icon: Target },
-];
+const WEEKLY_ITEM: NavItem = { id: "action", label: "本周行动", icon: ListChecks };
 
 function buildNavGroups(passed: boolean): NavGroup[] {
   return [
     { group: "", items: [OVERVIEW_ITEM] },
-    { group: "向前看", items: passed ? FORWARD_ITEMS : FORWARD_BLOCKED_ITEMS },
-    { group: "诊断依据", items: DIAGNOSIS_ITEMS },
+    { group: "为什么", items: EVIDENCE_ITEMS },
+    {
+      group: "怎么办",
+      items: [...(passed ? FORWARD_ITEMS : FORWARD_BLOCKED_ITEMS), WEEKLY_ITEM],
+    },
   ];
 }
 
@@ -202,7 +206,7 @@ function SideNav({ groups, active }: { groups: NavGroup[]; active: string }) {
         运营诊断
       </div>
 
-      <nav className="sn-nav" aria-label="诊断与方向导航">
+      <nav className="sn-nav" aria-label="诊断叙事导航">
         {groups.map((g) => (
           <div key={g.group || "_top"} className="sn-group">
             {g.group ? <p className="sn-group-label">{g.group}</p> : null}
@@ -236,7 +240,17 @@ function SideNav({ groups, active }: { groups: NavGroup[]; active: string }) {
   );
 }
 
-/* ===================== 概览 bento(健康分主块 + 阶段结论) ===================== */
+/* ===================== 幕间屏(默会转场:一句提问 + 留白) ===================== */
+function ActDivider({ eyebrow, line, sub }: { eyebrow: string; line: string; sub?: string }) {
+  const { ref, seen } = useInView<HTMLElement>();
+  return (
+    <section className={`act-divider${seen ? " in" : ""}`} ref={ref as any}>
+      <p className="ad-eyebrow">{eyebrow}</p>
+      <h2 className="ad-line">{line}</h2>
+      {sub ? <p className="ad-sub">{sub}</p> : null}
+    </section>
+  );
+}
 
 /* ===================== 爆款基因卡(signature) ===================== */
 function ViralGeneCard() {
@@ -277,7 +291,7 @@ function ViralGeneCard() {
   );
 }
 
-/* ===================== 概览首屏 ===================== */
+/* ===================== 概览首屏(F1 判断 → F2 数字带 → F3 基因卡) ===================== */
 function Overview() {
   const acc = data.account ?? {};
   const bm = data.benchmark ?? {};
@@ -290,11 +304,35 @@ function Overview() {
     .reduce((s: number, r: any) => s + (r.netgain ?? 0), 0);
   const score = useCountUp(checkup.health_score ?? 0);
   const fans = useCountUp(acc.cumulate_user ?? 0);
-  const selRate = useCountUp((bm.topic_select_rate ?? 0) * 100);
+  const median = useCountUp(bm.read_median ?? 0);
+
+  const digits: { label: string; hint: string; value?: string; node?: React.ReactNode }[] = [
+    {
+      label: "健康分",
+      node: (
+        <div
+          className="ovd-ring"
+          style={{
+            background: `conic-gradient(${MACARON.mint} ${Math.min(100, checkup.health_score ?? 0)}%, #ECE7DF 0)`,
+          }}
+        >
+          <b>{Math.round(score)}</b>
+        </div>
+      ),
+      hint: "0-100 综合体检",
+    },
+    { label: "累计粉丝", value: fmtNum(Math.round(fans)), hint: "公众号后台口径" },
+    { label: "中位阅读", value: fmtNum(Math.round(median)), hint: "稳定样本中位数" },
+    {
+      label: "近 7 天净增",
+      value: `${recentNet >= 0 ? "+" : ""}${fmtNum(recentNet)}`,
+      hint: "关注减取关",
+    },
+  ];
 
   return (
     <section id="overview" className="screen overview">
-      {/* ① 账号信息条 */}
+      {/* 账号身份行(安静) */}
       <header className="ov-id">
         <div className="ov-avatar">
           {acc.avatar_local ? (
@@ -306,71 +344,57 @@ function Overview() {
         <div>
           <h1>{acc.name ?? "公众号"}</h1>
           <p>
-            微信公众号 · {String(meta.period_start ?? "").slice(0, 10)} 起 · 累计{" "}
-            {fmtNum(acc.cumulate_user)} 粉
+            微信公众号 · {String(meta.period_start ?? "").slice(0, 10)} 起 · 稳定样本{" "}
+            {fmtNum(data.data_quality?.stable_article_count)} 篇
           </p>
         </div>
       </header>
 
-      {/* ②③ bento:健康分主块(大) + 阶段结论(次) */}
-      <div className="ov-bento">
-        <div className="ov-health">
-          <div
-            className="ovh-ring"
-            style={{ background: `conic-gradient(${MACARON.mint} ${Math.min(100, checkup.health_score ?? 0)}%, #ece7df 0)` }}
-          >
-            <div className="ovh-core">
-              <strong>{Math.round(score)}</strong>
-              <span>健康分</span>
-            </div>
-          </div>
-          <div className="ovh-stats">
-            <div>
-              <b>{fmtNum(Math.round(fans))}</b>
-              <span>累计粉丝</span>
-            </div>
-            <div>
-              <b>{Math.round(selRate)}%</b>
-              <span>选题有效率</span>
-            </div>
-            <div>
-              <b>+{recentNet}</b>
-              <span>近 7 天净增</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="ov-stage">
-          <span className="ovs-label">当前阶段</span>
-          <h2>{top.verdict ?? checkup.verdict ?? "数据分析中"}</h2>
-          <p>{top.support ?? checkup.action ?? ""}</p>
-        </div>
+      {/* F1:总判断(全站唯一 hero 级衬线大字) */}
+      <div className="ov-verdict">
+        <p className="ovv-eyebrow">体检结论</p>
+        <h2 className="ovv-line">{top.verdict ?? checkup.verdict ?? "数据分析中"}</h2>
+        {top.next_action ? (
+          <p className="ovv-next">{String(top.next_action).replace(/^→\s*/, "→ ")}</p>
+        ) : null}
       </div>
 
-      {/* ④ 爆款密码(signature,全宽收尾) */}
+      {/* F2:关键数字带(判断的第一层依据) */}
+      <div className="ov-digits">
+        {digits.map((d) => (
+          <div key={d.label} className="ovd">
+            {d.node ?? <b className="ovd-val">{d.value}</b>}
+            <span className="ovd-label">{d.label}</span>
+            <small className="ovd-hint">{d.hint}</small>
+          </div>
+        ))}
+      </div>
+
+      {/* F3:爆款密码(signature,钩住继续下滑) */}
       <ViralGeneCard />
     </section>
   );
 }
 
 /* ===================== 模块屏壳:垂直流 =====================
-   kicker(栏目号·模块名) → deck(结论大字,第一落点) → 留白
-   → stage(单一主视觉) → note(下一步,屏底 → 单行)
-   结论上提为导语、下一步降到屏底,不再用「结论 / 下一步」标签块。 */
+   kicker(编号·模块名·本屏问题) → deck(结论,衬线) → evidence(数据依据一行)
+   → stage(单一主视觉) → note(下一步,屏底单行) */
 function FlowScreen({
   id,
   no,
   title,
   question,
   conclusion,
+  evidence,
   action,
   children,
 }: {
   id: string;
-  no: string;
+  no?: string;
   title: string;
   question?: string;
   conclusion?: string;
+  evidence?: string;
   action?: string;
   children: React.ReactNode;
 }) {
@@ -378,9 +402,12 @@ function FlowScreen({
   return (
     <section id={id} className="screen flow">
       <header className="flow-head">
-        <p className="flow-kicker">{no ? `${no} · ${title}` : title}</p>
+        <p className="flow-kicker">
+          <span className="fk-id">{no ? `${no} · ${title}` : title}</span>
+          {question ? <span className="fk-q">{question}</span> : null}
+        </p>
         <h2 className="flow-deck">{conclusion || title}</h2>
-        {question ? <p className="flow-sub">{question}</p> : null}
+        {evidence ? <p className="flow-evidence">{evidence}</p> : null}
       </header>
       <div className={`flow-stage${seen ? " in" : ""}`} ref={ref as any}>
         {children}
@@ -413,7 +440,15 @@ function CheckupScreen() {
     { label: "评论率", value: pct(inter.comment_rate, 1), color: MACARON.butter },
   ];
   return (
-    <FlowScreen id="checkup" no="01" title="账号体检" question="账号现在什么状态？" conclusion={c.verdict} action={c.action}>
+    <FlowScreen
+      id="checkup"
+      no="01"
+      title="账号体检"
+      question="账号现在什么状态？"
+      conclusion={c.verdict}
+      evidence={c.analysis}
+      action={c.action}
+    >
       <div className="checkup-grid">
         <div
           className="health-ring big"
@@ -491,7 +526,7 @@ function ViralScreen() {
     >
       <div className="viral-wrap">
         <div className="quadrant-chart">
-          <ResponsiveContainer width="100%" height={360}>
+          <ResponsiveContainer width="100%" height={380}>
             <ScatterChart margin={{ top: 16, right: 24, bottom: 28, left: 8 }}>
               <CartesianGrid stroke="#EEE9E0" />
               <XAxis
@@ -620,13 +655,22 @@ function ContentScreen() {
   const rows = topics.map((t: any) => ({ label: t.key, value: t.median ?? 0 }));
   const ratio = ce.recommended_ratio ?? [];
   return (
-    <FlowScreen id="content" no="03" title="内容引擎" question="哪些题材拉新，哪些建心智？" conclusion={ce.conclusion} action={ce.action}>
+    <FlowScreen
+      id="content"
+      no="03"
+      title="内容引擎"
+      question="哪些题材拉新，哪些建心智？"
+      conclusion={ce.conclusion}
+      evidence={ce.analysis}
+      action={ce.action}
+    >
       <div className="content-wrap">
-        <RankBars rows={rows} max={max} unit=" 中位阅读" />
+        <p className="stage-cap">题材战力 · 按中位阅读排序</p>
+        <RankBars rows={rows} max={max} unit="" />
         <div className="ratio-stack-wrap">
-          <h4 className="ratio-stack-head">发文配比</h4>
+          <h4 className="ratio-stack-head">推荐发文配比</h4>
           <div className="ratio-stack">
-            {ratio.slice(0, 5).map((r: any, i: number) => (
+            {ratio.slice(0, 6).map((r: any, i: number) => (
               <span
                 key={r.topic}
                 className="ratio-seg"
@@ -636,7 +680,7 @@ function ContentScreen() {
             ))}
           </div>
           <div className="ratio-legend">
-            {ratio.slice(0, 5).map((r: any, i: number) => (
+            {ratio.slice(0, 6).map((r: any, i: number) => (
               <span key={r.topic} className="rl-item">
                 <i style={{ background: SERIES[i % SERIES.length] }} />
                 <span className="rl-topic">{r.topic}</span>
@@ -659,7 +703,15 @@ function AudienceScreen() {
   const age = au.age ?? [];
   const src = au.user_source ?? [];
   return (
-    <FlowScreen id="audience" no="04" title="读者画像" question="你的读者到底是谁？" conclusion={au.conclusion} action={au.action}>
+    <FlowScreen
+      id="audience"
+      no="04"
+      title="读者画像"
+      question="你的读者到底是谁？"
+      conclusion={au.conclusion}
+      evidence={au.analysis}
+      action={au.action}
+    >
       {available ? (
         <div className="audience-wrap">
           <div className="aud-city">
@@ -709,11 +761,18 @@ function GrowthScreen() {
   }));
   const plan = g.startup_plan ?? [];
   return (
-    <FlowScreen id="growth" no="05" title="涨粉漏斗" question="怎么涨粉、怎么起号？" conclusion={g.conclusion} action={g.action}>
+    <FlowScreen
+      id="growth"
+      no="05"
+      title="涨粉漏斗"
+      question="怎么涨粉、怎么起号？"
+      conclusion={g.conclusion}
+      action={g.action}
+    >
       <div className="growth-wrap">
         <div className="growth-chart">
           <h4>粉丝净增趋势</h4>
-          <ResponsiveContainer width="100%" height={320}>
+          <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={trend} margin={{ top: 8, right: 16, bottom: 4, left: -10 }}>
               <defs>
                 <linearGradient id="netg" x1="0" y1="0" x2="0" y2="1">
@@ -739,60 +798,67 @@ function GrowthScreen() {
             </AreaChart>
           </ResponsiveContainer>
         </div>
-        <div className="startup-plan">
-          <h4>起号计划表 · 4 周</h4>
-          <ol className="timeline">
-            {plan.map((w: any, i: number) => (
-              <li key={i} style={{ ["--c" as any]: SERIES[i % SERIES.length] }}>
-                <span className="tl-node" />
-                <span className="tl-wk">W{w.week ?? i + 1}</span>
-                <strong className="tl-focus">{w.focus}</strong>
-                <small className="tl-topics">{Array.isArray(w.topics) ? w.topics.join("、") : w.topics}</small>
-              </li>
-            ))}
-          </ol>
-        </div>
+        {plan.length ? (
+          <div className="startup-plan">
+            <h4>起号计划表 · {plan.length} 周</h4>
+            <ol className="timeline">
+              {plan.map((w: any, i: number) => (
+                <li key={i} style={{ ["--c" as any]: SERIES[i % SERIES.length] }}>
+                  <span className="tl-node" />
+                  <span className="tl-wk">W{w.week ?? i + 1}</span>
+                  <strong className="tl-focus">{w.focus}</strong>
+                  <small className="tl-topics">{Array.isArray(w.topics) ? w.topics.join("、") : w.topics}</small>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ) : null}
       </div>
     </FlowScreen>
   );
 }
 
-/* ===================== 06 行动计划 ===================== */
-function ActionScreen() {
-  const a = data.modules?.action_plan ?? {};
-  const cols = [
-    { key: "now", title: "现在就做", items: a.now ?? [], tone: MACARON.mint },
-    { key: "experiment", title: "小步验证", items: a.experiment ?? [], tone: MACARON.butter },
-    { key: "hold", title: "暂不拍板", items: a.hold ?? [], tone: MACARON.lavender },
+/* ===================== 06 量化标准(巨数 + 三小注 定义表) ===================== */
+function StandardsScreen() {
+  const bm = data.benchmark ?? {};
+  const hero = {
+    label: "爆款阅读门槛",
+    value: fmtNum(bm.viral_read_threshold),
+    hint: "≥ 本号均值 1.5 倍，达到即记爆款",
+  };
+  const notes = [
+    { label: "爆款分享率门槛", value: pct(bm.viral_share_threshold, 1), hint: "≥ 中位 2 倍" },
+    { label: "在看率门槛", value: pct(bm.viral_zaikan_threshold, 0), hint: "优质传播线" },
+    { label: "选题有效率", value: pct(bm.topic_select_rate, 0), hint: "超本号均值文章占比" },
   ];
   return (
     <FlowScreen
-      id="action"
+      id="standards"
       no="06"
-      title="行动计划"
-      question="下周具体做什么？"
-      conclusion={a.analysis}
-      action={Array.isArray(a.next_topics) ? `下周选题：${a.next_topics.slice(0, 2).join("；")}` : undefined}
+      title="量化标准"
+      question="怎么算爆款？"
+      conclusion="爆款不是绝对阅读量，是相对你自己的倍数"
+      action="每月追踪选题有效率是否上行，反映选题能力进步。"
     >
-      <div className="action-list">
-        {cols.map((c) => (
-          <div key={c.key} className="act-tier" style={{ ["--c" as any]: c.tone }}>
-            <div className="act-lane">
-              <i />
-              <span>{c.title}</span>
-              <b>{c.items.length}</b>
-            </div>
-            <ul className="act-items">
-              {c.items.length ? (
-                c.items.map((it: any, i: number) => (
-                  <li key={i}>{typeof it === "string" ? it : it.title ?? it.text ?? JSON.stringify(it)}</li>
-                ))
-              ) : (
-                <li className="empty">暂无</li>
-              )}
-            </ul>
+      <div className="standards-def">
+        <div className="sd-hero">
+          <b className="sd-hero-val">{hero.value}</b>
+          <div className="sd-hero-cap">
+            <strong>{hero.label}</strong>
+            <small>{hero.hint}</small>
           </div>
-        ))}
+        </div>
+        <dl className="sd-notes">
+          {notes.map((n) => (
+            <div key={n.label} className="sd-note">
+              <dt>
+                <strong>{n.label}</strong>
+                <small>{n.hint}</small>
+              </dt>
+              <dd>{n.value}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </FlowScreen>
   );
@@ -819,7 +885,7 @@ const ROLE_COLOR: Record<string, string> = {
   留存: MACARON.sky,
 };
 
-/* ===================== 向前看 · 照镜子 ===================== */
+/* ===================== 怎么办 · 照镜子 ===================== */
 function MirrorScreen() {
   const fl = data.forward_looking ?? {};
   const mirror = fl.mirror ?? {};
@@ -827,7 +893,7 @@ function MirrorScreen() {
   return (
     <FlowScreen
       id="mirror"
-      no="向前看"
+      no="怎么办"
       title="照镜子"
       question="先看清你现在是一个什么样的号"
       conclusion={mirror.statement}
@@ -859,7 +925,7 @@ function MirrorScreen() {
   );
 }
 
-/* ===================== 向前看 · 找方向(选方向) ===================== */
+/* ===================== 怎么办 · 找方向(选方向) ===================== */
 function PathScreen({
   selectedPathId,
   onSelect,
@@ -873,7 +939,7 @@ function PathScreen({
   return (
     <FlowScreen
       id="paths"
-      no="向前看"
+      no="怎么办"
       title="找方向"
       question="这些方向不是通用模板，是从你的文章里长出来的"
       conclusion={`从你${n ? ` ${n} ` : ""}篇文章里，长出了 ${paths.length} 个可走的方向`}
@@ -928,7 +994,7 @@ function PathScreen({
   );
 }
 
-/* ===================== 向前看 · 规划矩阵(读 selectedPathId) ===================== */
+/* ===================== 怎么办 · 规划矩阵(读 selectedPathId) ===================== */
 function MatrixScreen({
   selectedPathId,
   onSelect,
@@ -948,7 +1014,7 @@ function MatrixScreen({
   return (
     <FlowScreen
       id="matrix"
-      no="向前看"
+      no="怎么办"
       title="规划矩阵"
       question="选定方向后，内容按 5 个角色分桶配比"
       conclusion={selName ? `「${selName}」的内容配比与排期` : "选一个方向，看它的内容配比"}
@@ -1012,7 +1078,7 @@ function MatrixScreen({
   );
 }
 
-/* ===================== 向前看 · 数据不足屏(闸门未过) ===================== */
+/* ===================== 怎么办 · 数据不足屏(闸门未过) ===================== */
 function InsufficientScreen() {
   const fl = data.forward_looking ?? {};
   const ds = fl.data_sufficiency ?? {};
@@ -1020,7 +1086,7 @@ function InsufficientScreen() {
   return (
     <FlowScreen
       id="mirror"
-      no="向前看"
+      no="怎么办"
       title="向前看"
       question="方向推导需要足够的样本厚度"
       conclusion={ds.statement || "样本还不够，方向推导暂未解锁"}
@@ -1044,47 +1110,62 @@ function InsufficientScreen() {
   );
 }
 
-/* ===================== 07 量化标准(巨数 + 三小注 定义表) ===================== */
-function StandardsScreen() {
-  const bm = data.benchmark ?? {};
-  const hero = {
-    label: "爆款阅读门槛",
-    value: fmtNum(bm.viral_read_threshold),
-    hint: "≥ 本号均值 1.5 倍，达到即记爆款",
-  };
-  const notes = [
-    { label: "爆款分享率门槛", value: pct(bm.viral_share_threshold, 1), hint: "≥ 中位 2 倍" },
-    { label: "在看率门槛", value: pct(bm.viral_zaikan_threshold, 0), hint: "优质传播线" },
-    { label: "选题有效率", value: pct(bm.topic_select_rate, 0), hint: "超本号均值文章占比" },
-  ];
+/* ===================== 怎么办 · 本周行动(三篮子,置信内化为版面重量) ===================== */
+function ActionScreen() {
+  const a = data.modules?.action_plan ?? {};
+  const asText = (it: any) => (typeof it === "string" ? it : it.title ?? it.text ?? "");
+  const now: any[] = a.now ?? [];
+  const experiment: any[] = a.experiment ?? [];
+  const hold: any[] = a.hold ?? [];
+  const nextTopics = Array.isArray(a.next_topics) ? a.next_topics : [];
   return (
     <FlowScreen
-      id="standards"
-      no="07"
-      title="量化标准"
-      question="怎么算爆款？"
-      conclusion="爆款不是绝对阅读量，是相对你自己的倍数"
-      action="每月追踪选题有效率是否上行，反映选题能力进步。"
+      id="action"
+      no="怎么办"
+      title="本周行动"
+      question="落到下周，具体做什么？"
+      conclusion={a.analysis}
+      action={nextTopics.length ? `下周选题：${nextTopics.slice(0, 2).join("；")}` : undefined}
     >
-      <div className="standards-def">
-        <div className="sd-hero">
-          <b className="sd-hero-val">{hero.value}</b>
-          <div className="sd-hero-cap">
-            <strong>{hero.label}</strong>
-            <small>{hero.hint}</small>
+      <div className="weekly">
+        <div className="wk-now">
+          <p className="wk-cap" style={{ ["--c" as any]: MACARON.mint }}>
+            现在就做
+          </p>
+          <ul className="wk-now-list">
+            {now.length ? (
+              now.map((it, i) => <li key={i}>{asText(it)}</li>)
+            ) : (
+              <li className="empty">暂无</li>
+            )}
+          </ul>
+        </div>
+        <div className="wk-rest">
+          <div className="wk-col">
+            <p className="wk-cap" style={{ ["--c" as any]: MACARON.butter }}>
+              小步验证
+            </p>
+            <ul className="wk-list">
+              {experiment.length ? (
+                experiment.map((it, i) => <li key={i}>{asText(it)}</li>)
+              ) : (
+                <li className="empty">暂无</li>
+              )}
+            </ul>
+          </div>
+          <div className="wk-col hold">
+            <p className="wk-cap" style={{ ["--c" as any]: MACARON.lavender }}>
+              暂不拍板
+            </p>
+            <ul className="wk-list">
+              {hold.length ? (
+                hold.map((it, i) => <li key={i}>{asText(it)}</li>)
+              ) : (
+                <li className="empty">暂无</li>
+              )}
+            </ul>
           </div>
         </div>
-        <dl className="sd-notes">
-          {notes.map((n) => (
-            <div key={n.label} className="sd-note">
-              <dt>
-                <strong>{n.label}</strong>
-                <small>{n.hint}</small>
-              </dt>
-              <dd>{n.value}</dd>
-            </div>
-          ))}
-        </dl>
       </div>
     </FlowScreen>
   );
@@ -1103,7 +1184,20 @@ export default function App() {
     <div className="page">
       <SideNav groups={groups} active={active} />
       <main className="main-scroll" aria-label="公众号运营诊断">
+        {/* 第一幕:体检结论 */}
         <Overview />
+
+        {/* 第二幕:为什么 —— 六份证据 */}
+        <ActDivider eyebrow="为什么" line="这个判断从哪来？" sub="六份证据，按诊断顺序展开" />
+        <CheckupScreen />
+        <ViralScreen />
+        <ContentScreen />
+        <AudienceScreen />
+        <GrowthScreen />
+        <StandardsScreen />
+
+        {/* 第三幕:怎么办 —— 照镜子 → 找方向 → 规划矩阵 → 本周行动 */}
+        <ActDivider eyebrow="怎么办" line="看清现状，才谈得上选方向。" sub="方向从你的文章里长出来，不是通用菜单" />
         {passed ? (
           <>
             <MirrorScreen />
@@ -1113,13 +1207,8 @@ export default function App() {
         ) : (
           <InsufficientScreen />
         )}
-        <CheckupScreen />
-        <ViralScreen />
-        <ContentScreen />
-        <AudienceScreen />
-        <GrowthScreen />
         <ActionScreen />
-        <StandardsScreen />
+
         <footer className="dash-footer">
           <span>Markdown 报告 · wiki 数据集 · 本看板共用同一份结构化数据</span>
         </footer>
