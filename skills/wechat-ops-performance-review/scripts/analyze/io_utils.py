@@ -87,8 +87,25 @@ def compact_match_key(value: str | None) -> str:
     return re.sub(r"[\s\W_]+", "", value.lower())
 
 
+def is_nonempty_struct(v: Any) -> bool:
+    """画像字段"有数据"的统一口径：仅非空 list/dict 算数,字符串/None/标量一律不算。"""
+    return isinstance(v, (list, dict)) and len(v) > 0
+
+
+# 与 fetch/fetch_audience.py 的 available 判定保持同一字段口径
+_AUDIENCE_DATA_KEYS = (
+    "cumulate_user", "new_user", "cancel_user", "netgain",
+    "city", "province", "age", "gender", "user_source",
+)
+
+
 def load_raw_audience(root: Path) -> dict[str, Any]:
-    """读取 root/raw/audience.json，不存在或异常返回 {"available": False}。"""
+    """读取 root/raw/audience.json，不存在或异常返回 {"available": False}。
+
+    读取层不信任文件内嵌的 available 标志（#26）：历史脏 JSON 可能 available=true
+    但字段全是 None/垃圾字符串。这里用 is_nonempty_struct 重算，只降不升——
+    文件显式 available=false 时保持 False。
+    """
     p = root / "raw" / "audience.json"
     if not p.exists():
         return {"available": False}
@@ -97,9 +114,9 @@ def load_raw_audience(root: Path) -> dict[str, Any]:
         if not isinstance(data, dict):
             return {"available": False}
         d = dict(data)
-        # ensure flag
-        if "available" not in d:
-            d["available"] = True
+        has_data = any(is_nonempty_struct(d.get(k)) for k in _AUDIENCE_DATA_KEYS)
+        claimed = bool(d.get("available", True))
+        d["available"] = claimed and has_data
         return d
     except Exception:
         return {"available": False}

@@ -1,4 +1,5 @@
 """Tests for new raw sources and 5 methodology modules (m1/m3/m4/m5/m6)."""
+import json
 from pathlib import Path
 
 import pytest
@@ -10,7 +11,7 @@ from analyze.m3_content_engine import build_content_engine
 from analyze.m4_audience import build_audience
 from analyze.m5_growth_funnel import build_growth_funnel
 from analyze.m6_action_plan import build_action_plan_v2
-from fetch.fetch_audience import _extract_js_var, _is_nonempty_struct
+from fetch.fetch_audience import _extract_js_var, _is_nonempty_struct, parse_audience_html
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
@@ -148,8 +149,8 @@ def test_build_audience_does_not_crash_on_malformed_age():
     }
     # 必须不抛异常
     result = build_audience(stable, audience_raw, by_pain, by_persona)
-    # analysis 文案 age 维度必须降级为'未知'，不能包含 JS 代码片段
-    assert "未知" in result["analysis"]
+    # #27 语义:全部维度过滤后为空 → 视为无画像,走降级文案,不能包含 JS 代码片段
+    assert result["fans_portrait_available"] is False
     assert "function" not in result["analysis"]
     assert "reload" not in result["analysis"]
     # 返回的 age 必须是 list（畸形时规整为 []）
@@ -168,6 +169,89 @@ def test_extract_js_var_rejects_js_function():
     # 正常数据仍应解析
     city_val = _extract_js_var(html, "city")
     assert city_val == [{"name": "北京"}]
+
+
+def test_load_raw_audience_revalidates_available_on_dirty_json(tmp_path: Path):
+    """#26:历史脏 JSON available=true 但无任何非空 list/dict 画像字段时,load_raw_audience 必须重算为 False。"""
+    raw_dir = tmp_path / "raw"
+    raw_dir.mkdir(parents=True)
+    dirty = {
+        "cumulate_user": None,
+        "new_user": None,
+        "cancel_user": None,
+        "netgain": None,
+        "city": None,
+        "province": None,
+        "age": "function(force) {\n    window.location.reload(force)",
+        "user_source": "",
+        "available": True,
+    }
+    (raw_dir / "audience.json").write_text(json.dumps(dirty), encoding="utf-8")
+    aud = load_raw_audience(tmp_path)
+    assert aud["available"] is False
+
+
+def test_load_raw_audience_keeps_available_with_valid_data(tmp_path: Path):
+    """#26:有真实非空画像字段时 available 保持 True;文件显式 available=false 时只降不升。"""
+    raw_dir = tmp_path / "raw"
+    raw_dir.mkdir(parents=True)
+    good = {"city": [{"name": "北京", "value": 30}], "available": True}
+    (raw_dir / "audience.json").write_text(json.dumps(good), encoding="utf-8")
+    assert load_raw_audience(tmp_path)["available"] is True
+
+    explicit_false = {"city": [{"name": "北京", "value": 30}], "available": False}
+    (raw_dir / "audience.json").write_text(json.dumps(explicit_false), encoding="utf-8")
+    assert load_raw_audience(tmp_path)["available"] is False
+
+
+def test_fans_portrait_available_false_when_all_dims_filtered_empty():
+    """#27:available=true 但 city/age/gender/user_source 过滤后全空 → fans_portrait_available 必须为 False,文案走降级口径。"""
+    audience_raw = {
+        "city": [],
+        "age": ["not-a-dict"],
+        "gender": {},
+        "user_source": None,
+        "available": True,
+    }
+    result = build_audience([], audience_raw, [], [])
+    assert result["fans_portrait_available"] is False
+    assert result["chart_payload"]["fans_portrait_available"] is False
+    # 文案不应出现"主要城市未知，年龄段未知占比高"这种无意义拼接
+    assert "未知" not in result["analysis"] or "补充" in result["action"]
+
+
+def test_fans_portrait_available_true_when_any_dim_present():
+    """#27:任一维度过滤后非空(如仅 age)→ 仍视为有画像。"""
+    audience_raw = {
+        "city": [],
+        "age": [{"range": "26-35", "value": 40}],
+        "gender": {},
+        "user_source": None,
+        "available": True,
+    }
+    result = build_audience([], audience_raw, [], [])
+    assert result["fans_portrait_available"] is True
+    assert result["age"] == [{"range": "26-35", "value": 40}]
+
+
+def test_parse_audience_html_extracts_gender():
+    """#30:HTML 内联 JS 中存在 gender 变量时,解析结果必须包含 gender 且计入 available 判定。"""
+    html = (
+        '<script>var gender = {"male": 61.5, "female": 38.5};'
+        'var city = [{"name":"北京","value":30}];</script>'
+    )
+    data = parse_audience_html(html)
+    assert data["gender"] == {"male": 61.5, "female": 38.5}
+    assert data["city"] == [{"name": "北京", "value": 30}]
+    assert data["available"] is True
+
+
+def test_parse_audience_html_gender_absent_or_garbage():
+    """#30:页面无 gender 或 gender 是 JS 代码时,gender 为 None 且不影响 available 判定。"""
+    html = "<script>var gender = function(){return 1};</script>"
+    data = parse_audience_html(html)
+    assert data["gender"] is None
+    assert data["available"] is False
 
 
 def test_audience_available_ignores_garbage_string():

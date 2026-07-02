@@ -41,7 +41,20 @@ def build_audience(
     emphasis = emphasis_for_confidence(voice)
     basket = action_basket_for_confidence(voice)
 
-    if not available:
+    # 先做类型规整：畸形数据（JS 代码字符串、非 dict 条目）一律过滤掉
+    raw_city = audience_raw.get("city")
+    raw_age = audience_raw.get("age")
+    raw_user_source = audience_raw.get("user_source")
+    city = [c for c in (raw_city if isinstance(raw_city, list) else []) if isinstance(c, dict)][:10]
+    age = [a for a in (raw_age if isinstance(raw_age, list) else []) if isinstance(a, dict)]
+    gender = audience_raw.get("gender") if isinstance(audience_raw.get("gender"), dict) else {}
+    user_source = [u for u in (raw_user_source if isinstance(raw_user_source, list) else []) if isinstance(u, dict)]
+
+    # #27: "有画像"定义为过滤后至少一个维度非空,而非信任原始 available 标志
+    has_renderable_dim = bool(city or age or gender or user_source)
+    fans_portrait_available = available and has_renderable_dim
+
+    if not fans_portrait_available:
         # degrade, use article side only
         if voice != "low":
             emphasis = "secondary"
@@ -52,15 +65,7 @@ def build_audience(
         analysis = "粉丝后台数据不可得，仅用文章标签推断人群。"
         conclusion = "以文章标签人群为主，补充粉丝来源数据后可细化。"
         action = "通过登录后台补充 audience 抓取，复盘真实画像。"
-        fans_portrait_available = False
     else:
-        raw_city = audience_raw.get("city")
-        raw_age = audience_raw.get("age")
-        raw_user_source = audience_raw.get("user_source")
-        city = [c for c in (raw_city if isinstance(raw_city, list) else []) if isinstance(c, dict)][:10]
-        age = [a for a in (raw_age if isinstance(raw_age, list) else []) if isinstance(a, dict)]
-        gender = audience_raw.get("gender") if isinstance(audience_raw.get("gender"), dict) else {}
-        user_source = [u for u in (raw_user_source if isinstance(raw_user_source, list) else []) if isinstance(u, dict)]
         c0 = _first_name(city)
         a0 = _first_range(age)
         analysis = f"粉丝主要城市{c0 if c0 else '未知'}，年龄段{a0 if a0 else '未知'}占比高。"
@@ -69,7 +74,6 @@ def build_audience(
         else:
             conclusion = "画像以中青年搜索用户为主，内容匹配搜索意图。"
         action = "标题与封面强化搜索词与本地化标签。"
-        fans_portrait_available = True
 
     # article side always
     pain_points = [{"key": r.get("key"), "count": r.get("count"), "median": r.get("median"), "share_rate_avg": r.get("share_rate_avg")} for r in (by_pain or [])]

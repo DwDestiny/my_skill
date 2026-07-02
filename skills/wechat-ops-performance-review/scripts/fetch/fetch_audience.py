@@ -81,6 +81,34 @@ def _extract_js_var(html: str, var_name: str) -> Any | None:
     return None
 
 
+def parse_audience_html(html: str) -> dict[str, Any]:
+    """Pure parsing step: extract known audience vars from useranalysis HTML.
+
+    gender (#30) is extracted defensively: the field name is based on the historical
+    useranalysis inline-JS convention and has NOT been re-verified against the live
+    backend; garbage (JS code) degrades to None just like other fields.
+    """
+    data: dict[str, Any] = {
+        "cumulate_user": _extract_js_var(html, "cumulate_user"),
+        "new_user": _extract_js_var(html, "new_user"),
+        "cancel_user": _extract_js_var(html, "cancel_user"),
+        "netgain": _extract_js_var(html, "netgain"),
+        "city": _extract_js_var(html, "city"),
+        "province": _extract_js_var(html, "province"),
+        "age": _extract_js_var(html, "age"),
+        "gender": _extract_js_var(html, "gender"),
+        "user_source": _extract_js_var(html, "user_source"),
+    }
+
+    # "almost empty" -> available: false
+    # Only non-empty list/dict count as "has data"; garbage strings (e.g. JS code) are ignored.
+    core = ["cumulate_user", "new_user", "cancel_user", "netgain"]
+    has_core = any(_is_nonempty_struct(data.get(k)) for k in core)
+    has_demo = any(_is_nonempty_struct(data.get(k)) for k in ["city", "province", "age", "gender", "user_source"])
+    data["available"] = bool(has_core or has_demo)
+    return data
+
+
 def fetch_audience(page: Page, workspace: Path) -> dict[str, Any]:
     """Goto useranalysis, extract known vars via regex from full HTML, write raw/audience.json with available flag."""
     raw_dir = workspace / "raw"
@@ -97,29 +125,7 @@ def fetch_audience(page: Page, workspace: Path) -> dict[str, Any]:
     page.goto(url, wait_until="domcontentloaded", timeout=30000)
 
     html = page.evaluate("() => document.documentElement.innerHTML") or ""
-
-    data: dict[str, Any] = {
-        "cumulate_user": _extract_js_var(html, "cumulate_user"),
-        "new_user": _extract_js_var(html, "new_user"),
-        "cancel_user": _extract_js_var(html, "cancel_user"),
-        "netgain": _extract_js_var(html, "netgain"),
-        "city": _extract_js_var(html, "city"),
-        "province": _extract_js_var(html, "province"),
-        "age": _extract_js_var(html, "age"),
-        "user_source": _extract_js_var(html, "user_source"),
-    }
-
-    # "almost empty" -> available: false
-    # Only non-empty list/dict count as "has data"; garbage strings (e.g. JS code) are ignored.
-    core = ["cumulate_user", "new_user", "cancel_user", "netgain"]
-    has_core = any(_is_nonempty_struct(data.get(k)) for k in core)
-    has_demo = any(_is_nonempty_struct(data.get(k)) for k in ["city", "province", "age", "user_source"])
-    data["available"] = bool(has_core or has_demo)
-
-    # ensure all listed fields present even if None (for contract)
-    for k in list(data.keys()):
-        if data[k] is None and k != "available":
-            pass  # already None
+    data = parse_audience_html(html)
 
     (raw_dir / "audience.json").write_text(
         json.dumps(data, ensure_ascii=False, indent=2) + "\n",
