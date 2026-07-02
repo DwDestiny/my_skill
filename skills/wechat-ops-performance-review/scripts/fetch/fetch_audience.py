@@ -14,6 +14,11 @@ from typing import Any
 from playwright.sync_api import Page
 
 
+def _is_nonempty_struct(v: Any) -> bool:
+    """Return True only for non-empty list or non-empty dict. Strings/None/other never count as data."""
+    return isinstance(v, (list, dict)) and len(v) > 0
+
+
 def _ensure_scripts_on_path() -> None:
     here = Path(__file__).resolve().parent
     scripts_dir = here.parent
@@ -70,11 +75,8 @@ def _extract_js_var(html: str, var_name: str) -> Any | None:
                 return json.loads(raw)
             except json.JSONDecodeError:
                 return None
-        # primitive fallback (rare)
-        try:
-            return json.loads(raw)
-        except Exception:
-            return raw or None
+        # Never leak non-JSON (e.g. JS function code or primitives); only dict/list or None
+        return None
 
     return None
 
@@ -108,9 +110,10 @@ def fetch_audience(page: Page, workspace: Path) -> dict[str, Any]:
     }
 
     # "almost empty" -> available: false
+    # Only non-empty list/dict count as "has data"; garbage strings (e.g. JS code) are ignored.
     core = ["cumulate_user", "new_user", "cancel_user", "netgain"]
-    has_core = any(data.get(k) not in (None, {}, [], "") for k in core)
-    has_demo = any(data.get(k) not in (None, {}, [], "") for k in ["city", "province", "age", "user_source"])
+    has_core = any(_is_nonempty_struct(data.get(k)) for k in core)
+    has_demo = any(_is_nonempty_struct(data.get(k)) for k in ["city", "province", "age", "user_source"])
     data["available"] = bool(has_core or has_demo)
 
     # ensure all listed fields present even if None (for contract)

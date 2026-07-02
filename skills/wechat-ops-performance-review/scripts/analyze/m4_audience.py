@@ -10,6 +10,24 @@ from analyze.confidence import (
 )
 
 
+def _first_name(items: Any) -> str | None:
+    """Return items[0]['name'] only if items is non-empty list of dicts with str name, else None."""
+    if isinstance(items, list) and len(items) > 0 and isinstance(items[0], dict):
+        name = items[0].get("name")
+        if isinstance(name, str):
+            return name
+    return None
+
+
+def _first_range(items: Any) -> str | None:
+    """Return items[0]['range'] only if items is non-empty list of dicts with str range, else None."""
+    if isinstance(items, list) and len(items) > 0 and isinstance(items[0], dict):
+        rng = items[0].get("range")
+        if isinstance(rng, str):
+            return rng
+    return None
+
+
 def build_audience(
     stable: list[dict[str, Any]],
     audience_raw: dict[str, Any],
@@ -36,11 +54,16 @@ def build_audience(
         action = "通过登录后台补充 audience 抓取，复盘真实画像。"
         fans_portrait_available = False
     else:
-        city = (audience_raw.get("city") or [])[:10]
-        age = audience_raw.get("age") or []
-        gender = audience_raw.get("gender") or {}
-        user_source = audience_raw.get("user_source") or []
-        analysis = f"粉丝主要城市{city[0]['name'] if city else '未知'}，年龄段{age[0]['range'] if age else '未知'}占比高。"
+        raw_city = audience_raw.get("city")
+        raw_age = audience_raw.get("age")
+        raw_user_source = audience_raw.get("user_source")
+        city = [c for c in (raw_city if isinstance(raw_city, list) else []) if isinstance(c, dict)][:10]
+        age = [a for a in (raw_age if isinstance(raw_age, list) else []) if isinstance(a, dict)]
+        gender = audience_raw.get("gender") if isinstance(audience_raw.get("gender"), dict) else {}
+        user_source = [u for u in (raw_user_source if isinstance(raw_user_source, list) else []) if isinstance(u, dict)]
+        c0 = _first_name(city)
+        a0 = _first_range(age)
+        analysis = f"粉丝主要城市{c0 if c0 else '未知'}，年龄段{a0 if a0 else '未知'}占比高。"
         if voice == "high":
             conclusion = "画像集中高线城市与中青年，来源搜索与分享为主。"
         else:

@@ -10,6 +10,7 @@ from analyze.m3_content_engine import build_content_engine
 from analyze.m4_audience import build_audience
 from analyze.m5_growth_funnel import build_growth_funnel
 from analyze.m6_action_plan import build_action_plan_v2
+from fetch.fetch_audience import _extract_js_var, _is_nonempty_struct
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
@@ -126,3 +127,66 @@ def test_build_dataset_mounts_modules_five_keys_and_account():
     assert "benchmark" in dataset
     assert "analysis" in dataset
     assert "analysis_sections" in dataset
+
+
+def test_build_audience_does_not_crash_on_malformed_age():
+    """防御：audience_raw 中 age 是 JS 函数字符串（真实崩溃 case），build 不得抛 TypeError，必须优雅降级为 '未知' 且 age 字段规整为 []。"""
+    stable: list[dict] = []
+    by_pain: list[dict] = []
+    by_persona: list[dict] = []
+    # 真实导致崩溃的 malformed 形状（来自 fetch 误匹配 JS 代码）
+    audience_raw = {
+        "cumulate_user": None,
+        "new_user": None,
+        "cancel_user": None,
+        "netgain": None,
+        "city": None,
+        "province": None,
+        "age": "function(force) {\n    window.location.reload(force)",
+        "user_source": None,
+        "available": True,
+    }
+    # 必须不抛异常
+    result = build_audience(stable, audience_raw, by_pain, by_persona)
+    # analysis 文案 age 维度必须降级为'未知'，不能包含 JS 代码片段
+    assert "未知" in result["analysis"]
+    assert "function" not in result["analysis"]
+    assert "reload" not in result["analysis"]
+    # 返回的 age 必须是 list（畸形时规整为 []）
+    assert isinstance(result["age"], list)
+    assert result["age"] == []
+    # city / user_source 也应规整
+    assert isinstance(result["city"], list)
+    assert isinstance(result["user_source"], list)
+
+
+def test_extract_js_var_rejects_js_function():
+    """_extract_js_var 必须只返回可 json 解析的 dict/list 或 None，绝不返回原始 JS 代码字符串。"""
+    html = '<script>var age=function(force){window.location.reload(force)}; var city=[{"name":"北京"}]; </script>'
+    age_val = _extract_js_var(html, "age")
+    assert age_val is None, f"expected None for JS function, got {type(age_val)}: {age_val!r}"
+    # 正常数据仍应解析
+    city_val = _extract_js_var(html, "city")
+    assert city_val == [{"name": "北京"}]
+
+
+def test_audience_available_ignores_garbage_string():
+    """fetch 层 has_demo/has_core 判定只认非空 list/dict，不应因非空字符串垃圾导致 available=True。"""
+    garbage_age = "function(force) {\n    window.location.reload(force)"
+    data = {
+        "cumulate_user": None,
+        "new_user": None,
+        "cancel_user": None,
+        "netgain": None,
+        "city": None,
+        "province": None,
+        "age": garbage_age,
+        "user_source": None,
+    }
+    # 使用 fetch 层的真实判定 helper（只认非空 list/dict）
+    core = ["cumulate_user", "new_user", "cancel_user", "netgain"]
+    has_core = any(_is_nonempty_struct(data.get(k)) for k in core)
+    has_demo = any(_is_nonempty_struct(data.get(k)) for k in ["city", "province", "age", "user_source"])
+    available = bool(has_core or has_demo)
+    # 期望行为：garbage string 不能算有画像，available 必须 False
+    assert available is False, f"garbage string should not set available=True, got available={available}"
