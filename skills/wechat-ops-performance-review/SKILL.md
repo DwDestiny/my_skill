@@ -58,6 +58,17 @@ The JSON must include:
 - `final_synthesis`:do now、test small、do not decide yet。
 - `brand_signature`:small source/author card only;never make it the page hero。
 
+## 账号类型路由(自动差异化链路)
+
+builder 会自动识别账号类型并按类型切换诊断口径,无需手工指定:
+
+- **类型体系**:媒体资讯号 / 内容IP·个人品牌号 / 知识服务·教育号 / 私域转化·带货号 / 企业品牌号 / 本地生活号;信号不足自动回退通用链路,绝不硬判。
+- **识别依据**:发文频率、时效题材占比、人味浓度、方法密度、变现钩子、机构口吻、本地词、互动结构、粉丝城市集中度——全部来自已抓取数据。
+- **差异化落点**:判定结果与依据写入 `report.json` 顶层 `account_type` 节点(含各类型得分、playbook、m1–m8 权重路由);Markdown 报告新增「账号类型与分析路由」一节,给出该类型的解读口径与行动倾斜。
+- **红线**:类型间不判优劣;字段只增不删,dashboard 旧契约不受影响。
+
+每类型的核心指标、诊断重点、模块权重与常见误诊,见 `references/account-type-playbooks.md`。
+
 ## Analysis Rules
 
 - Only analyze WeChat unless the user explicitly expands scope.

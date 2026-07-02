@@ -337,4 +337,35 @@
 
 ---
 
-*Contract v1 · 维护者:Claude(技术总监)· 实现:grok(R4b)· 消费:dashboard(R4d)*
+## 12. account_type — 账号类型识别与路由（追加节点，v1.1）
+
+在 `forward_looking` 之后追加顶层节点 `account_type`（`scripts/analyze/m9_account_type.py`，engine `account-type-router-v1`）。**只增不删**：不修改任何现有字段；dashboard 未消费该节点时可安全忽略。
+
+```jsonc
+"account_type": {
+  "engine_version": "account-type-router-v1",
+  "primary":   { "key": "knowledge_service", "name": "知识服务/教育号", "score": 0.78 },  // general 时 score=null
+  "secondary": { "key": "personal_ip", "name": "内容IP/个人品牌号", "score": 0.65 },      // 次优达阈值才有,否则 null
+  "confidence": "medium",            // high | medium | low(内部档位,不渲染成数字)
+  "fallback_to_general": false,      // 样本<8 或全类型得分<0.45 时 true
+  "decision_note": "类型特征基本成立,建议积累样本后复核",
+  "scores": { "media_news": 0.15, "personal_ip": 0.65, "...": 0.0 },   // 六类型 0-1
+  "evidence": ["方法/教程类内容占 33%,篇幅中位 2520 字"],               // 中文,引用真实特征值
+  "features": { "sample_count": 18, "posts_per_week": 2.6, "...": 0 }, // 识别用原始特征
+  "playbook": {
+    "name": "知识服务/教育号",
+    "north_star": ["..."],           // 该类型核心成功指标
+    "diagnosis_focus": ["..."],      // 诊断重点
+    "module_weights": { "checkup": "中", "viral_genes": "高", "...": "低" },  // m1-m8 权重(高/中/低)
+    "reading_guide": "...",          // 差异化解读口径(可渲染)
+    "action_bias": ["..."]           // 行动建议倾斜(可渲染)
+  },
+  "routing": { "chain": ["viral_genes", "content_engine", "..."], "note": "..." }  // 按权重排的诊断阅读顺序
+}
+```
+
+红线：类型间不判优劣；所有可渲染字符串不含"置信度"等禁词；类型体系与判定细节见 `references/account-type-playbooks.md`。
+
+---
+
+*Contract v1.1 · 维护者:Claude(技术总监)· 实现:grok(R4b) + Fable(account_type)· 消费:dashboard(R4d)*

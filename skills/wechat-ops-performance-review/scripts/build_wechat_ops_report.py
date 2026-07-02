@@ -35,6 +35,7 @@ from analyze.m4_audience import build_audience
 from analyze.m5_growth_funnel import build_growth_funnel
 from analyze.m6_action_plan import build_action_plan_v2
 from analyze.m8_forward import build_forward_looking
+from analyze.m9_account_type import build_account_type
 
 
 @dataclass(frozen=True)
@@ -984,6 +985,8 @@ def build_dataset(root: Path, *, account_name: str = "我的公众号", since: s
     dataset["conclusions"] = build_compat_conclusions(dataset["analysis_sections"])
     # 向前看引擎（只读上述字段，仅追加 forward_looking 顶层节点）
     dataset["forward_looking"] = build_forward_looking(dataset)
+    # 账号类型识别与路由（只读上述字段，仅追加 account_type 顶层节点）
+    dataset["account_type"] = build_account_type(dataset)
     return dataset
 
 
@@ -1157,6 +1160,35 @@ def render_report(dataset: dict[str, Any], dataset_path: Path | str) -> str:
 {section.get('action', '')}
 """
 
+    # 账号类型与分析路由(差异化口径出口;缺失时整段跳过,兼容旧数据集)
+    at = dataset.get("account_type") or {}
+    if at.get("primary"):
+        at_pb = at.get("playbook", {})
+        at_evidence = "\n".join(f"- {e}" for e in at.get("evidence", [])) or "- （无）"
+        at_focus = "\n".join(f"- {x}" for x in at_pb.get("diagnosis_focus", []))
+        at_bias = "\n".join(f"- {x}" for x in at_pb.get("action_bias", []))
+        at_fallback_note = "（类型信号不足，本轮按通用链路解读）" if at.get("fallback_to_general") else ""
+        account_type_block = f"""## 账号类型与分析路由
+
+本轮判定：**{at['primary'].get('name', '')}**{at_fallback_note}
+
+判定依据：
+
+{at_evidence}
+
+解读口径：{at_pb.get('reading_guide', '')}
+
+诊断重点：
+
+{at_focus}
+
+行动倾斜：
+
+{at_bias}
+"""
+    else:
+        account_type_block = ""
+
     top = dataset.get("top_conclusion", {"verdict": "", "next_action": ""})
     # build final baskets text without conf words
     fs = dataset.get("final_synthesis", {})
@@ -1207,6 +1239,7 @@ last_updated_by_agent: codex
 
 {top.get('next_action', '')}
 
+{account_type_block}
 {dim_blocks[0] if dim_blocks else ''}
 
 {dim_blocks[1] if len(dim_blocks)>1 else ''}
