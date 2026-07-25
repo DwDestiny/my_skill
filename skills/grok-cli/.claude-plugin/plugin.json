@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "grok-cli",
+  "displayName": "Grok Build CLI 手册",
+  "version": "1.0.0",
+  "description": "把 xAI 官方 Grok Build CLI 当外部子智能体用的实测手册:headless 调用范式、--json-schema 结构化输出、模型 ID 与 reasoning-effort 的真实可用范围、静默 fallback 等坑,以及成本与权限控制。",
+  "author": { "name": "麦总玩AI", "url": "https://github.com/DwDestiny" },
+  "homepage": "https://github.com/DwDestiny/my_skill",
+  "repository": "https://github.com/DwDestiny/my_skill",
+  "license": "MIT",
+  "keywords": ["grok", "xai", "cli", "subagent", "headless", "structured-output"]
+}

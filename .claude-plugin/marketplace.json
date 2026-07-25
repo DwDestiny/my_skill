@@ -13,6 +13,14 @@
       "author": { "name": "麦总玩AI" },
       "category": "analytics",
       "tags": ["wechat", "公众号", "运营复盘", "数据分析", "dashboard"]
+    },
+    {
+      "name": "grok-cli",
+      "source": "./skills/grok-cli",
+      "description": "把 xAI 官方 Grok Build CLI 当外部子智能体用:headless 调用范式、结构化输出、模型与 effort 避坑、成本与权限控制",
+      "author": { "name": "麦总玩AI" },
+      "category": "productivity",
+      "tags": ["grok", "xai", "cli", "subagent", "headless", "structured-output"]
     }
   ]
 }

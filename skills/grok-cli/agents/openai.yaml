@@ -1,0 +1,7 @@
+interface:
+  display_name: "Grok Build CLI 手册"
+  short_description: "把 grok CLI 当外部子智能体用:headless 调用、结构化输出、模型与 effort 避坑"
+  default_prompt: "Use $grok-cli to delegate this task to the Grok Build CLI and return structured JSON results."
+
+policy:
+  allow_implicit_invocation: true
