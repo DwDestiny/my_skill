@@ -20,6 +20,7 @@
 | visual-ppt-deck-builder | `skills/visual-ppt-deck-builder/` | 已入库 | 从主题、大纲和风格样张出发，生成高视觉质量且可编辑的 PPTX |
 | wechat-ops-performance-review | `skills/wechat-ops-performance-review/` | 已入库 · 可 plugin / npx 安装 | 公众号运营复盘：量化诊断 + 爆款基因反推 + 向前看方向引擎 + 本地叙事看板（详见该目录 `README.md`） |
 | geb-project-doc-system | `skills/geb-project-doc-system/` | v0.2 | 为大中型代码仓库建立 L1/L2/L3 AI 项目文档体系，减少 Agent 盲读和上下文浪费 |
+| grok-cli | `skills/grok-cli/` | 已入库 · 可 plugin 安装 | 把 xAI 官方 Grok Build CLI 当外部子智能体用：headless 调用范式、`--json-schema` 结构化输出、模型 ID 与 reasoning-effort 的真实可用范围、静默 fallback 等实测坑（详见该目录 `README.md`） |
 
 ## 重点：GEB Project Doc System
 
@@ -188,6 +189,12 @@ skills/
     dashboard/                   # 本地叙事看板(Vite + React)
     references/ fixtures/ tests/ docs/
   geb-project-doc-system/
+  grok-cli/
+    .claude-plugin/plugin.json   # 单 skill plugin 清单
+    SKILL.md
+    README.md                    # 手册门面 + 前置条件 + 最小可跑示例
+    agents/openai.yaml
+    references/cookbook.md       # 进阶配方与排障速查
 packages/
   create-wechat-ops-skill/       # npx 一键安装包(create-* 约定)
 docs/
@@ -239,6 +246,7 @@ Instead of growing one giant global prompt, each workflow becomes a focused Skil
 | visual-ppt-deck-builder | `skills/visual-ppt-deck-builder/` | Available | Build high-quality editable PPTX decks from a topic, outline, and visual direction |
 | wechat-ops-performance-review | `skills/wechat-ops-performance-review/` | Available · plugin / npx | WeChat Official Account ops review: quantified diagnosis, viral-DNA reverse-engineering, forward-looking direction engine, and a local narrative dashboard |
 | geb-project-doc-system | `skills/geb-project-doc-system/` | v0.2 | Maintain L1/L2/L3 AI-facing project documentation for medium and large code repositories |
+| grok-cli | `skills/grok-cli/` | Available · plugin | Drive the official xAI Grok Build CLI as an external sub-agent: headless invocation, `--json-schema` structured output, which model IDs and reasoning-effort levels actually work, silent model fallback, cost and permission control |
 
 ## GEB Project Doc System
 
