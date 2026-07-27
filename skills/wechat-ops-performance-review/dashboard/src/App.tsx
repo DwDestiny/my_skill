@@ -1,3 +1,7 @@
+// GEB-L3
+// Input: caller, project conventions, and local dependencies
+// Output: behavior defined by dashboard/src/App.tsx
+// Pos: dashboard/src/App.tsx
 import * as React from "react";
 import {
   Activity,

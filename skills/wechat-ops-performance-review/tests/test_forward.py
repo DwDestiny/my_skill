@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by tests/test_forward.py
+# Pos: tests/test_forward.py
 """Tests for forward-looking engine (m8_forward) per DATA_CONTRACT.md §10."""
 
 import copy

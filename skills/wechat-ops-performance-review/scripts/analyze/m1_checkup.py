@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/analyze/m1_checkup.py
+# Pos: scripts/analyze/m1_checkup.py
 from __future__ import annotations
 
 from typing import Any

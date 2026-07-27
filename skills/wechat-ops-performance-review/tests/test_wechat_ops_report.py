@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by tests/test_wechat_ops_report.py
+# Pos: tests/test_wechat_ops_report.py
 from pathlib import Path
 
 from build_wechat_ops_report import CONTENT_TYPES, build_dataset, render_report, validate_dataset

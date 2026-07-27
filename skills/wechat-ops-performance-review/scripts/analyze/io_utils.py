@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/analyze/io_utils.py
+# Pos: scripts/analyze/io_utils.py
 from __future__ import annotations
 
 import json

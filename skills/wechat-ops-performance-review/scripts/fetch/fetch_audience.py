@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/fetch/fetch_audience.py
+# Pos: scripts/fetch/fetch_audience.py
 """Fetch audience profile (Interface B: /misc/useranalysis).
 
 HTML page with inline <script> data. Parse via regex (tolerant).

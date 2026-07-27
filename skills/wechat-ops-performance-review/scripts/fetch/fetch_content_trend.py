@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/fetch/fetch_content_trend.py
+# Pos: scripts/fetch/fetch_content_trend.py
 """Fetch content trend stats (Interface C: /misc/appmsganalysis?action=report&f=json).
 
 Pure JSON response. Validates base_resp.ret == 0, keeps item arrays + counts.

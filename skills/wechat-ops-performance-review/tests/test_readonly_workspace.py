@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by tests/test_readonly_workspace.py
+# Pos: tests/test_readonly_workspace.py
 """Issue #16 回归：skill 目录只读时也能跑，所有产物落工作区。
 
 安全红线：只读冒烟只在 mktemp 出的 skill 副本上 chmod，绝不碰真实 skill 目录。

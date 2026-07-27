@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/cli/env.py
+# Pos: scripts/cli/env.py
 """环境与配置工具：SKILL_DIR 自定位、workspace 解析、config 读写、依赖探测、友好打印。"""
 
 from __future__ import annotations

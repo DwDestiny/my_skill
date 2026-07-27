@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/analyze/enrich.py
+# Pos: scripts/analyze/enrich.py
 from __future__ import annotations
 
 import re

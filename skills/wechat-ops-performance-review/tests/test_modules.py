@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by tests/test_modules.py
+# Pos: tests/test_modules.py
 """Tests for new raw sources and 5 methodology modules (m1/m3/m4/m5/m6)."""
 import json
 from pathlib import Path

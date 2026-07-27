@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/cli/main.py
+# Pos: scripts/cli/main.py
 """wxops 可执行入口主分发：init / login / analyze 子命令。"""
 
 from __future__ import annotations

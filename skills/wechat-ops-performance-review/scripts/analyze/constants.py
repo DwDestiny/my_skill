@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/analyze/constants.py
+# Pos: scripts/analyze/constants.py
 from __future__ import annotations
 
 from typing import Any

@@ -26,6 +26,8 @@
 ### `docs/`
 存放仓库级规范、入库流程、验收清单和协作说明。这里服务仓库维护者，不作为 Skill 运行时上下文。
 
+另承担**主题索引层**：跨目录的内容线（如公众号运营横跨 `skills/`、`packages/`、`docs/` 与仓库外 wiki）在 `docs/<topic>-map.md` 建唯一索引页，L1 `AGENTS.md` 的「主题索引」一节挂入口。现有索引：`wechat-content-ops-map.md`。
+
 ### `templates/`
 存放新增 Skill 时可复用的小模板，例如 README 目录条目、issue 草稿结构。
 

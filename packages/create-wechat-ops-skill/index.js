@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+// GEB-L3
+// Input: caller, project conventions, and local dependencies
+// Output: behavior defined by index.js
+// Pos: index.js
 /**
  * create-wechat-ops-skill
  *

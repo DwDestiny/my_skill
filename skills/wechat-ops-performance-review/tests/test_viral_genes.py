@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by tests/test_viral_genes.py
+# Pos: tests/test_viral_genes.py
 """Tests for new benchmark and viral_genes modules."""
 from pathlib import Path
 from statistics import mean

@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/analyze/m2_viral_genes.py
+# Pos: scripts/analyze/m2_viral_genes.py
 from __future__ import annotations
 
 from collections import Counter

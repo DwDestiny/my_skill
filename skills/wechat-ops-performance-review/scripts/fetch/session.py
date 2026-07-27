@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/fetch/session.py
+# Pos: scripts/fetch/session.py
 """Session helpers for logged-in MP backend pages.
 
 Reuses token_from_url from export_wechat_publish_records.

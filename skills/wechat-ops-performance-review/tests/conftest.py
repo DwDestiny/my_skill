@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by tests/conftest.py
+# Pos: tests/conftest.py
 """Pytest configuration for wechat ops report tests.
 
 Ensures scripts/ is importable so tests can import the decoupled builder directly.
