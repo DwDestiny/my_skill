@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/analyze/m6_action_plan.py
+# Pos: scripts/analyze/m6_action_plan.py
 from __future__ import annotations
 
 from typing import Any

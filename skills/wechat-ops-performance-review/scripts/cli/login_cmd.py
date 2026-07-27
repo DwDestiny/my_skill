@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/cli/login_cmd.py
+# Pos: scripts/cli/login_cmd.py
 """wxops login：使用 persistent context 打开 mp.weixin.qq.com，引导用户扫码登录，确认后验证 token 并持久化。"""
 
 from __future__ import annotations

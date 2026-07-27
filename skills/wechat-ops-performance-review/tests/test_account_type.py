@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by tests/test_account_type.py
+# Pos: tests/test_account_type.py
 """m9_account_type 账号类型识别与路由引擎测试。
 
 覆盖:各类型合成场景识别、置信不足回退通用链路、playbook 完整性、

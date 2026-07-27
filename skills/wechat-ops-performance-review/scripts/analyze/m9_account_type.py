@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/analyze/m9_account_type.py
+# Pos: scripts/analyze/m9_account_type.py
 """m9_account_type.py — 账号类型识别与分析路由引擎（account-type-router-v1）
 
 从已抓取数据（发文频率、题材时效性、人味浓度、方法密度、变现痕迹、互动结构、

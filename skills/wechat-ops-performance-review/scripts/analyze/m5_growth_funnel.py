@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/analyze/m5_growth_funnel.py
+# Pos: scripts/analyze/m5_growth_funnel.py
 from __future__ import annotations
 
 from typing import Any

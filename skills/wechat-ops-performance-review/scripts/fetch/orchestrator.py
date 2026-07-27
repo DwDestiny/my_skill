@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/fetch/orchestrator.py
+# Pos: scripts/fetch/orchestrator.py
 """Orchestrator: coordinates the 4 interfaces with anti-detection sleeps.
 
 Flow:

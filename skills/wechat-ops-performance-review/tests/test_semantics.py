@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by tests/test_semantics.py
+# Pos: tests/test_semantics.py
 """Regression tests for 3 semantic defects (GitHub #17).
 
 - mirror.statement 不含 main_axis 复读

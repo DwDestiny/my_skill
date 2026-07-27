@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/analyze/classify.py
+# Pos: scripts/analyze/classify.py
 from __future__ import annotations
 
 import re

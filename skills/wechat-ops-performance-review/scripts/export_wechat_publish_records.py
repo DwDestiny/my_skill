@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/export_wechat_publish_records.py
+# Pos: scripts/export_wechat_publish_records.py
 """Export WeChat official account publish records from the logged-in backend.
 
 Refactored for reusability:

@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/analyze/m8_forward.py
+# Pos: scripts/analyze/m8_forward.py
 """m8_forward.py — 向前看引擎（Direction Engine v1）
 
 按 DATA_CONTRACT.md 契约产出 forward_looking 节点。

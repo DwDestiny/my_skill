@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/cli/init_cmd.py
+# Pos: scripts/cli/init_cmd.py
 """wxops init：环境自检 + 依赖自动装 + workspace 初始化 + 配置写入。"""
 
 from __future__ import annotations

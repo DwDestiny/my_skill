@@ -200,11 +200,20 @@ packages/
 docs/
   repository-architecture.md
   skill-intake-checklist.md
+  wechat-content-ops-map.md  # 公众号运营主题的唯一索引页
   assets/
 scripts/
 tests/
 templates/
 ```
+
+`docs/` 除仓库规范外，还承担**主题索引层**：跨目录的内容线在 `docs/<topic>-map.md` 建唯一索引页，便于外部读者和 agent 先定位再展开。
+
+当前已有索引：
+
+- [`docs/wechat-content-ops-map.md`](docs/wechat-content-ops-map.md) — 公众号运营主题的唯一入口，串联 skill 本体、npm 分发包、付费系列大纲、外部 wiki 概念页与治理 issue
+
+接到公众号相关任务时，先读该索引页，再展开具体文件；新增公众号相关资产时须回填本页。
 
 ## 新增 Skill 的标准
 
@@ -247,6 +256,16 @@ Instead of growing one giant global prompt, each workflow becomes a focused Skil
 | wechat-ops-performance-review | `skills/wechat-ops-performance-review/` | Available · plugin / npx | WeChat Official Account ops review: quantified diagnosis, viral-DNA reverse-engineering, forward-looking direction engine, and a local narrative dashboard |
 | geb-project-doc-system | `skills/geb-project-doc-system/` | v0.2 | Maintain L1/L2/L3 AI-facing project documentation for medium and large code repositories |
 | grok-cli | `skills/grok-cli/` | Available · plugin | Drive the official xAI Grok Build CLI as an external sub-agent: headless invocation, `--json-schema` structured output, which model IDs and reasoning-effort levels actually work, silent model fallback, cost and permission control |
+
+## Topic Indexes
+
+Beyond repository standards, `docs/` also serves as a **topic index layer**. Cross-directory content lines get a single index page at `docs/<topic>-map.md`.
+
+Current indexes:
+
+- [`docs/wechat-content-ops-map.md`](docs/wechat-content-ops-map.md) — sole entry point for WeChat Official Account ops, linking the skill, npm package, paid series outline, external wiki concept pages, and governance issues
+
+For WeChat-related tasks, read this index first, then open the concrete files it points to. When adding WeChat-related assets, update the index page.
 
 ## GEB Project Doc System
 

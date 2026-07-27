@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/cli/analyze_cmd.py
+# Pos: scripts/cli/analyze_cmd.py
 """wxops analyze：抓取（或 demo）→ build 报告 → dashboard 预览/构建。
 
 运行契约（issue #16）：skill 目录只读模板，全部运行态产物落工作区

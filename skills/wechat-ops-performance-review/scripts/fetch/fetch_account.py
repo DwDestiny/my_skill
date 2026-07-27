@@ -1,3 +1,7 @@
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/fetch/fetch_account.py
+# Pos: scripts/fetch/fetch_account.py
 """Fetch account profile (Interface A: /cgi-bin/home).
 
 Extracts from window.wx.commonData and downloads avatar using page fetch context.

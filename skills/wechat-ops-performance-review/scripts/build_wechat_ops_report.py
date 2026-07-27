@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# GEB-L3
+# Input: caller, project conventions, and local dependencies
+# Output: behavior defined by scripts/build_wechat_ops_report.py
+# Pos: scripts/build_wechat_ops_report.py
 """Build a WeChat-only operations report for wiki and dashboard use.
 
 This script is intentionally read-only toward external platforms. It reads the
