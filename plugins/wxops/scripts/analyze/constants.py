@@ -10,33 +10,6 @@ from zoneinfo import ZoneInfo
 
 CN_TZ = ZoneInfo("Asia/Shanghai")
 
-CONTENT_TYPES = [
-    "风险/账号/额度焦虑",
-    "价格/额度/羊毛情报",
-    "模型发布/能力解读",
-    "AI 编程/Agent 工作流",
-    "产品/副业/商业化",
-    "泛 AI 热点/效率工具",
-]
-
-PAIN_POINTS = [
-    "账号安全与权限焦虑",
-    "成本、额度与订阅压力",
-    "工具选择与效率落地",
-    "模型能力判断",
-    "副业产品化与变现",
-    "热点信息差与谈资",
-]
-
-PERSONAS = [
-    "Claude/Codex/GPT 重度用户",
-    "AI 编程/Agent 实践者",
-    "省钱党与套餐比较用户",
-    "产品经理/独立开发者",
-    "非技术效率工具用户",
-    "AI 新闻观察者",
-]
-
 WEEKDAY_LABELS = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
 
 SECTION_UI_SLOTS: dict[str, dict[str, str]] = {
@@ -107,16 +80,22 @@ VISUAL_TOKENS: dict[str, Any] = {
     "screen_rule": "one_claim_one_visual_one_action",
 }
 
-TITLE_PATTERN_KEYS = [
-    "风险损失型",
-    "价格福利型",
-    "模型发布型",
-    "对比替代型",
-    "教程清单型",
-    "疑问反常识型",
-    "工作流案例型",
-    "普通资讯型",
-]
+# 引擎固定的通用四型标题套路标签（不进 niche 包，见契约 §3.4）
+TITLE_PATTERN_COMPARISON = "对比替代型"
+TITLE_PATTERN_TUTORIAL = "教程清单型"
+TITLE_PATTERN_QUESTION = "疑问反常识型"
+TITLE_PATTERN_GENERIC = "普通资讯型"
+ENGINE_TITLE_PATTERN_LABELS = frozenset(
+    {
+        TITLE_PATTERN_COMPARISON,
+        TITLE_PATTERN_TUTORIAL,
+        TITLE_PATTERN_QUESTION,
+        TITLE_PATTERN_GENERIC,
+    }
+)
+
+# 覆盖率闸门阈值（契约 §5；v1 不做包级覆写）
+NICHE_COVERAGE_ALERT_THRESHOLD = 0.6
 
 TITLE_LENGTH_BUCKETS = ["16字内", "17-24字", "25-34字", "35字以上"]
 ARTICLE_LENGTH_BUCKETS = ["1200字内", "1200-2200字", "2200-3500字", "3500字以上", "未匹配正文"]

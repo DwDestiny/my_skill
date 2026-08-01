@@ -1,0 +1,57 @@
+{
+  "niche_schema_version": 1,
+  "id": "_generic",
+  "name": "通用兜底",
+  "description": "陌生赛道恒降级兜底：一切题材走 fallback，覆盖率闸门恒触发",
+  "content_types": {
+    "names": ["综合内容"],
+    "rules": [],
+    "fallback": {
+      "type": "综合内容"
+    }
+  },
+  "pain_points": {
+    "names": ["读者关注与谈资"],
+    "by_content_type": {
+      "综合内容": "读者关注与谈资"
+    },
+    "term_rules": [],
+    "default": "读者关注与谈资"
+  },
+  "personas": {
+    "names": ["大盘读者"],
+    "rules": [],
+    "default": "大盘读者"
+  },
+  "title_patterns": {
+    "keys": [
+      "风险损失型",
+      "价格福利型",
+      "模型发布型",
+      "对比替代型",
+      "教程清单型",
+      "疑问反常识型",
+      "工作流案例型",
+      "普通资讯型"
+    ],
+    "slots": {
+      "risk": {
+        "label": "风险损失型",
+        "terms": []
+      },
+      "price": {
+        "label": "价格福利型",
+        "terms": []
+      },
+      "release": {
+        "label": "模型发布型",
+        "subject_terms": [],
+        "action_terms": []
+      },
+      "workflow": {
+        "label": "工作流案例型",
+        "terms": []
+      }
+    }
+  }
+}

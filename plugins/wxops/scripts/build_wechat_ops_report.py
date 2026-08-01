@@ -30,6 +30,7 @@ from analyze.confidence import *
 from analyze.constants import *
 from analyze.enrich import *
 from analyze.io_utils import *  # includes load_raw_audience, load_raw_trend
+from analyze.niche_loader import get_active, load_niche, set_active
 from analyze.stats import *
 from analyze.m7_standards import build_benchmark
 from analyze.m2_viral_genes import build_viral_genes, classify_quadrant, reverse_viral_formula
@@ -78,7 +79,7 @@ def to_rel(p: Path | str, base: Path) -> str:
 
 
 def build_title_analysis(stable: list[dict[str, Any]]) -> dict[str, Any]:
-    pattern_rows = group_stats(stable, "title_primary_pattern", TITLE_PATTERN_KEYS)
+    pattern_rows = group_stats(stable, "title_primary_pattern", get_active().title_pattern_keys)
     length_rows = group_stats(stable, "title_length_bucket", TITLE_LENGTH_BUCKETS)
     feature_rows = []
     for key, label in [
@@ -898,16 +899,16 @@ def build_dataset(root: Path, *, account_name: str = "我的公众号", since: s
         },
         "analysis": {
             "overall": stat_pack(stable),
-            "by_content_type": group_stats(stable, "content_type", CONTENT_TYPES),
-            "by_pain_point": group_stats(stable, "pain_point", PAIN_POINTS),
-            "by_persona": group_stats(stable, "persona", PERSONAS),
+            "by_content_type": group_stats(stable, "content_type", get_active().content_type_names),
+            "by_pain_point": group_stats(stable, "pain_point", get_active().pain_point_names),
+            "by_persona": group_stats(stable, "persona", get_active().persona_names),
             "by_hour": by_hour,
             "by_weekday": by_weekday,
             "by_week": weekly_trend(stable),
             "by_month": group_stats(stable, "month"),
             "time_heatmap": time_heatmap(stable),
             "rankings": build_rankings(stable),
-            "by_title_pattern": group_stats(stable, "title_primary_pattern", TITLE_PATTERN_KEYS),
+            "by_title_pattern": group_stats(stable, "title_primary_pattern", get_active().title_pattern_keys),
             "by_title_length": group_stats(stable, "title_length_bucket", TITLE_LENGTH_BUCKETS),
             "by_article_length": group_stats(stable, "length_bucket", ARTICLE_LENGTH_BUCKETS),
         },
@@ -935,6 +936,12 @@ def build_dataset(root: Path, *, account_name: str = "我的公众号", since: s
     }
     dataset["benchmark"] = build_benchmark(stable)
     dataset["viral_genes"] = build_viral_genes(stable, dataset["benchmark"])
+    # top_viral 原为 stable 文章对象引用，序列化会带上加性字段 content_type_source；
+    # 剥离副本，使 content_type_source 仅出现在 articles.*（与 P3.a 基线归一化路径一致）
+    _tv = dataset["viral_genes"].get("top_viral") or []
+    dataset["viral_genes"]["top_viral"] = [
+        {k: v for k, v in art.items() if k != "content_type_source"} for art in _tv
+    ]
     # 新增 modules 与 account（仅追加，不改旧字段）
     audience_raw = load_raw_audience(root)
     trend_raw = load_raw_trend(root)
@@ -987,6 +994,23 @@ def build_dataset(root: Path, *, account_name: str = "我的公众号", since: s
     dataset["template_slots"] = build_template_slots(dataset)
     dataset["visual_tokens"] = build_visual_tokens()
     dataset["conclusions"] = build_compat_conclusions(dataset["analysis_sections"])
+    # 覆盖率闸门（契约 §5）：与 by_content_type 同口径 stable 集合；须在 m8/m9 之前挂载
+    _stable = dataset["articles"]["stable"]
+    _spec = get_active()
+    _total = len(_stable)
+    _term_hits = sum(1 for a in _stable if a.get("content_type_source") == "terms")
+    _hit_rate = round(_term_hits / _total, 3) if _total else 0.0
+    dataset["niche_coverage"] = {
+        "niche_id": _spec.id,
+        "niche_name": _spec.name,
+        "requested_id": _spec.requested_id,
+        "total": _total,
+        "term_hits": _term_hits,
+        "fallback_count": _total - _term_hits,
+        "hit_rate": _hit_rate,
+        "threshold": NICHE_COVERAGE_ALERT_THRESHOLD,
+        "alert": _total > 0 and _hit_rate < NICHE_COVERAGE_ALERT_THRESHOLD,
+    }
     # 向前看引擎（只读上述字段，仅追加 forward_looking 顶层节点）
     dataset["forward_looking"] = build_forward_looking(dataset)
     # 账号类型识别与路由（只读上述字段，仅追加 account_type 顶层节点）
@@ -1207,6 +1231,30 @@ def render_report(dataset: dict[str, Any], dataset_path: Path | str) -> str:
         if sid in sections:
             dim_blocks.append(render_section_new(sections[sid]))
 
+    # 覆盖率警示块（契约 §5）：alert 时插在 frontmatter 与「本周先做」之间；非 alert 为空
+    coverage = dataset.get("niche_coverage") or {}
+    if coverage.get("alert"):
+        hit_pct = f"{float(coverage.get('hit_rate', 0)) * 100:.1f}"
+        thr_pct = f"{int(float(coverage.get('threshold', 0.6)) * 100)}"
+        niche_name = coverage.get("niche_name") or ""
+        niche_id = coverage.get("niche_id") or ""
+        fallback_line = ""
+        req = coverage.get("requested_id")
+        if req and req != niche_id:
+            fallback_line = f"\n> 请求的赛道包 {req} 未找到，已回落 _generic 通用兜底。"
+        niche_alert_block = f"""> ⚠️ **赛道包覆盖率警示**
+>
+> 当前赛道包「{niche_name}」({niche_id}) 与本账号内容匹配度过低：题材词表命中率 {hit_pct}%，低于阈值 {thr_pct}%。
+> 本报告中【题材 / 痛点 / 人群】三组分布**不可作为决策依据**，方向引擎与账号类型路由已降级为通用链路。{fallback_line}
+>
+> 两条出路：
+> 1. **换包**：在该账号 `account.json` 的 `"niche"` 字段改用合适的赛道包后重跑分析；
+> 2. **建包**：复制插件内 `templates/niche.template.json` 到 `~/.wxops/niches/<你的id>/niche.json`，字段说明见插件内 `references/niche-contract.md`。
+
+"""
+    else:
+        niche_alert_block = ""
+
     return f"""---
 title: "公众号运营分析报告 {report_date}"
 type: report
@@ -1219,7 +1267,7 @@ created_by_agent: codex
 last_updated_by_agent: codex
 ---
 
-## 本周先做这 5 件事
+{niche_alert_block}## 本周先做这 5 件事
 
 {markdown_table(['优先级', '动作', '为什么', '具体执行', '截止'], action_rows)}
 
@@ -1552,12 +1600,14 @@ def main() -> int:
         default=None,
         help="覆盖 dashboard 数据文件落点（默认 <workspace>/output/report.json，skill 目录始终只读）",
     )
+    parser.add_argument("--niche", default="ai-tools", help="赛道包 id（默认 ai-tools）")
     parser.add_argument("--check", action="store_true", help="validate generated dataset only")
     args = parser.parse_args()
 
     if not args.workspace:
         print("错误: 必须通过 --workspace 指定数据与产物工作区路径")
         return 1
+    set_active(load_niche(args.niche))
     workspace = Path(args.workspace).resolve()
     wiki_repo = Path(args.wiki_root).resolve() if args.wiki_root else None
     dashboard_data = Path(args.dashboard_data).expanduser().resolve() if args.dashboard_data else None

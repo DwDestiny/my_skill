@@ -67,6 +67,15 @@ description: Use when 拉取公众号后台数据、运营复盘、生成诊断�
 
 改 schema 或报告体验前，必读插件内 `DATA_CONTRACT.md` 与 `references/report-contract.md`、`references/account-type-playbooks.md`。
 
+## 赛道包（niche）——分类知识与引擎分离
+
+题材/痛点/人群/标题套路四组名单与词表**不在代码里**，住赛道包 `niches/<id>/niche.json`（三层模型的"赛道知识"层，格式真源 `references/niche-contract.md`）：
+
+- **选包**：账号 `account.json` 的 `"niche"` 字段（`accounts add --niche` 写入，缺省 `ai-tools`）；`--demo` / `--workspace` 旧模式固定 `ai-tools`，npm 老用户零行为变更。
+- **换包 / 建包**：包放 `~/.wxops/niches/<id>/niche.json` 即整包覆盖同名内置包；新赛道复制插件内 `templates/niche.template.json` 改词表即可。请求的包不存在会回落 `_generic` 并在报告 `niche_coverage.requested_id` 留痕；**坏包会硬报错**（带路径与校验条目），不静默。
+- **覆盖率警示**：报告顶部出现「⚠️ 赛道包覆盖率警示」= 包与账号内容不匹配（题材词表命中率 < 60%）。此时题材/痛点/人群三组分布**不可作为决策依据**，方向引擎（m8）与账号类型路由（m9）已自动降级为通用链路（输出标 `degraded: true`）。两条出路：换合适的包，或按模板建自己赛道的包。
+- 内置 `_generic` 兜底包**故意恒触发警示**——陌生赛道不装懂，只产结构/长度/时间类通用分析。
+
 ## 红线
 
 - UI 任何位置出现"置信度"数字/百分比/进度条 = 违反契约，必须改

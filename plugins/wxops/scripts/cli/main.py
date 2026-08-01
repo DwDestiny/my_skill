@@ -395,11 +395,15 @@ def main(argv: list[str] | None = None) -> int:
         do_build_only = getattr(args, "build", False)
         data_only = getattr(args, "data_only", False)
         account_override = getattr(args, "account_name", None)
+        # niche：account 模式读 account.json；--workspace 旧模式与 --demo 固定 ai-tools
+        niche = "ai-tools"
         # 非 demo 且用户未显式给 --account-name 时，用 account.json 的显示名
-        if slug and not demo and not account_override:
+        if slug and not demo:
             acct = accounts_store.get_account(root, slug)
-            if acct and acct.get("name"):
+            if not account_override and acct and acct.get("name"):
                 account_override = str(acct["name"])
+            if acct and acct.get("niche"):
+                niche = str(acct["niche"])
 
         profile_lock = None
         if not demo:
@@ -415,6 +419,7 @@ def main(argv: list[str] | None = None) -> int:
                 build_only=do_build_only,
                 account_name_override=account_override,
                 data_only=data_only,
+                niche=niche,
             )
         finally:
             if profile_lock is not None:

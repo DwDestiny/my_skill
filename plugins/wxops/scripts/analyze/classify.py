@@ -7,153 +7,61 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from analyze.constants import (
+    TITLE_PATTERN_COMPARISON,
+    TITLE_PATTERN_GENERIC,
+    TITLE_PATTERN_QUESTION,
+    TITLE_PATTERN_TUTORIAL,
+)
 from analyze.io_utils import has_any, text_blob
+from analyze.niche_loader import get_active
+
+
+def classify_content_with_source(record: dict[str, Any]) -> tuple[str, str]:
+    """题材分类 + 命中来源。source ∈ {"terms", "fallback"}（契约 §3.1 / §5）。"""
+    text = text_blob(record)
+    title = str(record.get("title", "")).lower()
+    ct = get_active().content_types
+
+    for rule in ct.rules:
+        if has_any(text, rule.terms):
+            return rule.type, "terms"
+    # fallback：title_regex 命中与否殊途同归都返回 fallback.type（契约 §3.1 / 现状语义）
+    # 两条路径均计为 fallback（覆盖率分母，契约 §5）
+    if ct.fallback_title_re is not None:
+        ct.fallback_title_re.search(title)
+    return ct.fallback_type, "fallback"
 
 
 def classify_content(record: dict[str, Any]) -> str:
-    text = text_blob(record)
-    title = str(record.get("title", "")).lower()
-
-    risk_terms = [
-        "封号",
-        "废掉",
-        "认证",
-        "kyc",
-        "验证",
-        "卡",
-        "收紧",
-        "缩水",
-        "不够用",
-        "掉",
-        "停用",
-        "叫停",
-        "限制",
-        "翻车",
-        "跳票",
-        "失望",
-        "调查",
-        "风险",
-        "危机",
-        "白名单",
-        "auth",
-        "401",
-    ]
-    price_terms = [
-        "免费",
-        "额度",
-        "价格",
-        "低价",
-        "便宜",
-        "省钱",
-        "羊毛",
-        "优惠",
-        "订阅",
-        "会员",
-        "pro",
-        "plus",
-        "美金",
-        "元",
-        "套餐",
-        "充值",
-        "开源第一",
-        "彻底免费",
-    ]
-    agent_terms = [
-        "codex",
-        "claude code",
-        "agent",
-        "mcp",
-        "skill",
-        "插件",
-        "工作流",
-        "github",
-        "开源",
-        "代码",
-        "编程",
-        "工程师",
-        "cursor",
-        "opencode",
-        "codegraph",
-        "项目",
-        "ide",
-        "cli",
-    ]
-    model_terms = [
-        "glm",
-        "gpt",
-        "claude",
-        "deepseek",
-        "kimi",
-        "minimax",
-        "qwen",
-        "fable",
-        "模型",
-        "benchmark",
-        "跑分",
-        "性能",
-        "发布",
-        "能力",
-        "anthropic",
-        "openai",
-    ]
-    business_terms = [
-        "产品",
-        "副业",
-        "商业化",
-        "闲鱼",
-        "变现",
-        "收入",
-        "增长",
-        "pm",
-        "独立开发",
-        "创业",
-    ]
-
-    if has_any(text, risk_terms):
-        return "风险/账号/额度焦虑"
-    if has_any(text, price_terms):
-        return "价格/额度/羊毛情报"
-    if has_any(text, agent_terms):
-        return "AI 编程/Agent 工作流"
-    if has_any(text, model_terms):
-        return "模型发布/能力解读"
-    if has_any(text, business_terms):
-        return "产品/副业/商业化"
-    if re.search(r"ai|工具|效率|输入法|办公|ppt|浏览器|教程", title):
-        return "泛 AI 热点/效率工具"
-    return "泛 AI 热点/效率工具"
+    """旧签名 wrapper：只返回题材名，行为与 with_source 第一元一致。"""
+    return classify_content_with_source(record)[0]
 
 
 def classify_pain(record: dict[str, Any], content_type: str) -> str:
     text = text_blob(record)
-    if content_type == "风险/账号/额度焦虑":
-        return "账号安全与权限焦虑"
-    if content_type == "价格/额度/羊毛情报":
-        return "成本、额度与订阅压力"
-    if content_type == "AI 编程/Agent 工作流":
-        return "工具选择与效率落地"
-    if content_type == "模型发布/能力解读":
-        return "模型能力判断"
-    if content_type == "产品/副业/商业化":
-        return "副业产品化与变现"
-    if has_any(text, ["免费", "价格", "额度", "订阅"]):
-        return "成本、额度与订阅压力"
-    return "热点信息差与谈资"
+    pp = get_active().pain_points
+    mapped = pp.by_content_type.get(content_type)
+    if mapped is not None:
+        return mapped
+    for rule in pp.term_rules:
+        if has_any(text, rule.terms):
+            return rule.pain
+    return pp.default
 
 
 def classify_persona(record: dict[str, Any], content_type: str, pain: str) -> str:
     text = text_blob(record)
-    if has_any(text, ["codex", "claude", "gpt", "openai", "anthropic", "kimi"]):
-        if content_type == "AI 编程/Agent 工作流":
-            return "AI 编程/Agent 实践者"
-        return "Claude/Codex/GPT 重度用户"
-    if pain == "成本、额度与订阅压力":
-        return "省钱党与套餐比较用户"
-    if content_type == "产品/副业/商业化":
-        return "产品经理/独立开发者"
-    if content_type == "泛 AI 热点/效率工具":
-        return "非技术效率工具用户"
-    return "AI 新闻观察者"
+    pe = get_active().personas
+    for rule in pe.rules:
+        if rule.if_terms_any is not None and not has_any(text, rule.if_terms_any):
+            continue
+        if rule.if_content_type is not None and content_type != rule.if_content_type:
+            continue
+        if rule.if_pain is not None and pain != rule.if_pain:
+            continue
+        return rule.then
+    return pe.default
 
 
 def title_length_bucket(title: str) -> str:
@@ -169,32 +77,36 @@ def title_length_bucket(title: str) -> str:
 
 def title_structure(title: str) -> dict[str, Any]:
     text = title.lower()
+    slots = get_active().title_patterns
+
     has_number = bool(re.search(r"\d|一|二|三|四|五|六|七|八|九|十|百|千|万|亿", title))
-    has_price_word = has_any(text, ["免费", "额度", "价格", "会员", "订阅", "美金", "元", "羊毛"])
-    has_risk_word = has_any(text, ["封号", "废掉", "限制", "卡", "缩水", "失效", "崩", "风险", "截止", "焦虑"])
-    has_model_word = has_any(text, ["glm", "kimi", "deepseek", "claude", "gpt", "minimax", "qwen", "模型"])
+    has_price_word = has_any(text, slots.price.terms)
+    has_risk_word = has_any(text, slots.risk.terms)
+    has_model_word = has_any(text, slots.release.subject_terms)
+    # 通用结构特征留引擎（契约 §3.4）
     has_comparison = bool(re.search(r"vs|比|对比|替代|不如|超过|打败|拿下|第一", text))
     has_question = bool(re.search(r"[?？]|为什么|怎么|能不能|是不是|到底|凭什么", title))
     has_tutorial = has_any(text, ["教程", "指南", "手把手", "完整", "附", "清单", "步骤", "一文"])
-    has_workflow = has_any(text, ["codex", "claude code", "agent", "skill", "工作流", "github", "插件", "项目"])
+    has_workflow = has_any(text, slots.workflow.terms)
 
     patterns: list[str] = []
+    # 求值序：risk → price → release → 对比 → 教程|数字 → 疑问 → workflow → 普通
     if has_risk_word:
-        patterns.append("风险损失型")
+        patterns.append(slots.risk.label)
     if has_price_word:
-        patterns.append("价格福利型")
-    if has_model_word and has_any(text, ["发布", "开源", "上线", "新", "更新", "拿下"]):
-        patterns.append("模型发布型")
+        patterns.append(slots.price.label)
+    if has_model_word and has_any(text, slots.release.action_terms):
+        patterns.append(slots.release.label)
     if has_comparison:
-        patterns.append("对比替代型")
+        patterns.append(TITLE_PATTERN_COMPARISON)
     if has_tutorial or has_number:
-        patterns.append("教程清单型")
+        patterns.append(TITLE_PATTERN_TUTORIAL)
     if has_question:
-        patterns.append("疑问反常识型")
+        patterns.append(TITLE_PATTERN_QUESTION)
     if has_workflow:
-        patterns.append("工作流案例型")
+        patterns.append(slots.workflow.label)
     if not patterns:
-        patterns.append("普通资讯型")
+        patterns.append(TITLE_PATTERN_GENERIC)
 
     return {
         "length": len(title.strip()),

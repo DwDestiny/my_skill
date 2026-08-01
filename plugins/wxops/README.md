@@ -7,7 +7,7 @@
 | 层 | 是什么 | 住哪 |
 |---|---|---|
 | 通用引擎 | 动作：拉数据/分析/发布的代码，一份跑所有号 | 插件 `scripts/`（只读） |
-| 赛道知识 | 题材分类、爆款词表、标题公式 | `niches/` 数据包（P3 解耦） |
+| 赛道知识 | 题材分类、爆款词表、标题公式 | `niches/` 数据包（内置 ai-tools / _generic；用户包放 `~/.wxops/niches/` 整包覆盖） |
 | 账号身份 | 登录态 + 凭证 + 人设 + 数据 | `~/.wxops/accounts/<slug>/`（永不入库） |
 
 判据一句话：通用的是动作，赛道的是知识，账号的是身份。
@@ -32,6 +32,8 @@ plugins/wxops/
 ├── .claude-plugin/plugin.json   # 插件清单
 ├── skills/                      # 八工位 SKILL.md
 ├── scripts/                     # Python 引擎（cli/fetch/analyze，自旧 skill copy-first 迁入）
+├── niches/                      # 内置赛道包（ai-tools / _generic，契约见 references/niche-contract.md）
+├── templates/                   # 用户自定义模板（niche.template.json）
 ├── tests/  fixtures/            # 引擎测试与演示数据
 ├── dashboard/                   # 看板模板（构建时复制到账号目录）
 ├── references/  DATA_CONTRACT.md

@@ -16,6 +16,8 @@
 | `test_readonly_workspace.py` | 只读 workspace 防护 |
 | `test_accounts.py` | 多账号底座:store / resolve_context / migrate / lock / desk / pipeline e2e / legacy 不变性 |
 | `test_health_batch.py` | 登录态体检 check_login/cmd_check + analyze --all 批量编排 + main 互斥 + desk login_alive |
+| `test_niche_loader.py` | 赛道包加载:解析序/用户覆盖/坏包硬报错/懒加载/未知字段警告 |
+| `test_niche_coverage.py` | C4 覆盖率闸门:非 AI fixture 触闸(G2)、_generic 恒触闸、total=0 不告警、m8/m9 降级、MD 警示块、内置 ai-tools 字面量钉死 |
 
 ## 本地规则
 - 运行方式:skill 根目录下 `python3 -m pytest tests -q`(当前基线含多账号新增用例)。

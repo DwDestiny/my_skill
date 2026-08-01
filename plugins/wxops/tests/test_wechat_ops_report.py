@@ -4,7 +4,8 @@
 # Pos: plugins/wxops/tests/test_wechat_ops_report.py
 from pathlib import Path
 
-from build_wechat_ops_report import CONTENT_TYPES, build_dataset, render_report, validate_dataset
+from analyze.niche_loader import get_active
+from build_wechat_ops_report import build_dataset, render_report, validate_dataset
 
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
@@ -93,7 +94,7 @@ def test_content_type_stats_match_stable_articles():
     stable = dataset["articles"]["stable"]
     by_type_count = sum(row["count"] for row in dataset["analysis"]["by_content_type"])
 
-    assert [row["key"] for row in dataset["analysis"]["by_content_type"]] == CONTENT_TYPES
+    assert [row["key"] for row in dataset["analysis"]["by_content_type"]] == get_active().content_type_names
     assert by_type_count == len(stable)
     assert all(not article["is_immature"] for article in stable)
 

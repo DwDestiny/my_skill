@@ -387,8 +387,11 @@ def _originality_signal(dataset: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _timeliness_depth_signal(dataset: dict[str, Any]) -> dict[str, Any]:
-    """4.5 时效结构与篇幅厚度（正则近似）。"""
+def _timeliness_depth_signal(dataset: dict[str, Any], *, degraded: bool = False) -> dict[str, Any]:
+    """4.5 时效结构与篇幅厚度（正则近似）。
+
+    degraded 时不读 content_type（题材分类不可用），仅用标题时效词 + 篇幅/方法密度。
+    """
     stable = dataset.get("articles", {}).get("stable", [])
     with_text = [a for a in stable if (a.get("article_length_chars") or 0) > 0]
 
@@ -414,14 +417,17 @@ def _timeliness_depth_signal(dataset: dict[str, Any]) -> dict[str, Any]:
             return "中（近似）"
         return "低（近似）"
 
-    # 时效：题材近似——标题含时效词 或 content_type 名称含情报/发布/热点类词（不写死具体桶名）
+    # 时效：标题含时效词；非 degraded 时还可参考 content_type 名启发式
     timely_keywords = re.compile(r"发布|更新|情报|速递|最新|限时|本周|今日|今天|即将|已上线|新版")
     timely_ct = re.compile(r"情报|发布|热点|更新|限时|最新|风险|额度")
-    timely_articles = sum(
-        1 for a in stable
-        if timely_keywords.search(a.get("title", "") or "")
-        or timely_ct.search(a.get("content_type", "") or "")
-    )
+    timely_articles = 0
+    for a in stable:
+        title = a.get("title", "") or ""
+        if timely_keywords.search(title):
+            timely_articles += 1
+            continue
+        if not degraded and timely_ct.search(a.get("content_type", "") or ""):
+            timely_articles += 1
     hotspot_ratio = round(timely_articles / len(stable), 2) if stable else 0
 
     # level：厚度≥2000 且方法密度中 → 强；厚度适中 → 中；否则弱
@@ -492,34 +498,56 @@ def _capacity_funnel_signal(dataset: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def build_signals(dataset: dict[str, Any]) -> list[dict[str, Any]]:
-    """组装六类信号，顺序固定。"""
-    return [
-        _topic_distribution_signal(dataset),
-        _viral_type_signal(dataset),
-        _interaction_signal(dataset),
-        _originality_signal(dataset),
-        _timeliness_depth_signal(dataset),
-        _capacity_funnel_signal(dataset),
-    ]
+def build_signals(dataset: dict[str, Any], *, degraded: bool = False) -> list[dict[str, Any]]:
+    """组装六类信号。
+
+    degraded=True 时剔除依赖题材/痛点/人群分类的信号：
+    - topic_distribution（by_content_type）
+    - viral_type（viral_formula.topic = content_type）
+    保留 interaction / originality / timeliness_depth(无 content_type) / capacity_funnel。
+    """
+    signals: list[dict[str, Any]] = []
+    if not degraded:
+        signals.append(_topic_distribution_signal(dataset))
+        signals.append(_viral_type_signal(dataset))
+    signals.extend(
+        [
+            _interaction_signal(dataset),
+            _originality_signal(dataset),
+            _timeliness_depth_signal(dataset, degraded=degraded),
+            _capacity_funnel_signal(dataset),
+        ]
+    )
+    return signals
 
 
 # ───────────────────────── §5 照镜子 ─────────────────────────────────────────
 
-def build_mirror(signals: list[dict[str, Any]], dataset: dict[str, Any]) -> dict[str, Any]:
-    """§5 照镜子：现状画像。"""
+def build_mirror(signals: list[dict[str, Any]], dataset: dict[str, Any], *, degraded: bool = False) -> dict[str, Any]:
+    """§5 照镜子：现状画像。degraded 时不依赖题材信号。"""
     by_sig = {s["key"]: s for s in signals}
     stable = dataset.get("articles", {}).get("stable", [])
     sample_n = len(stable)
 
-    vf = dataset.get("viral_genes", {}).get("viral_formula", {})
-    traffic_topic = vf.get("topic") or "未知"
-    traffic_sample = vf.get("sample_count", 0)
-    traffic_reliable = vf.get("reliable", False)
+    # degraded：题材/爆款 topic 不可用；非 degraded 才读 viral_formula.topic
+    if degraded or "viral_type" not in by_sig:
+        traffic_topic = "（题材信号不可用）" if degraded else "未知"
+        traffic_sample = 0
+        traffic_reliable = False
+    else:
+        vf = dataset.get("viral_genes", {}).get("viral_formula", {})
+        traffic_topic = vf.get("topic") or "未知"
+        traffic_sample = vf.get("sample_count", 0)
+        traffic_reliable = vf.get("reliable", False)
 
-    # 主轴
-    topic_dist = by_sig["topic_distribution"]["detail"]
-    main_axis = topic_dist.get("main_axis", "未知")
+    # 主轴：degraded / 无 topic_distribution 时用通用占位
+    topic_dist = by_sig.get("topic_distribution", {}).get("detail") or {
+        "main_axis": "通用结构信号",
+        "hhi": 0,
+        "top_share": 0,
+        "distribution": [],
+    }
+    main_axis = topic_dist.get("main_axis", "未知") if not degraded else "通用结构信号"
 
     # 变现成熟度
     cap_detail = by_sig["capacity_funnel"]["detail"]
@@ -537,8 +565,8 @@ def build_mirror(signals: list[dict[str, Any]], dataset: dict[str, Any]) -> dict
     avg_share = inter_detail.get("share_rate", 0)
     orientation_level = "强" if avg_share > 0.025 else "中"
 
-    # 聚焦：HHI 大 → 聚焦
-    hhi = topic_dist.get("hhi", 0)
+    # 聚焦：HHI 大 → 聚焦；degraded 时无题材分布，记弱
+    hhi = 0 if degraded else topic_dist.get("hhi", 0)
     focus_level = "强" if hhi > 0.45 else ("中" if hhi > 0.3 else "弱")
 
     # 时效：hotspot_ratio 大 → 偏资讯
@@ -658,11 +686,23 @@ def build_archetype_affinity(
     signals: list[dict[str, Any]],
     mirror: dict[str, Any],
 ) -> list[dict[str, Any]]:
-    """§6 七大类底池亲缘向量。只列 affinity≠无 的原型。"""
+    """§6 七大类底池亲缘向量。只列 affinity≠无 的原型。
+
+    缺失 topic_distribution / viral_type 时用空默认（degraded 路径）。
+    """
     by_sig = {s["key"]: s for s in signals}
 
-    topic_detail = by_sig["topic_distribution"]["detail"]
-    viral_detail = by_sig["viral_type"]["detail"]
+    topic_detail = by_sig.get("topic_distribution", {}).get("detail") or {
+        "hhi": 0,
+        "distribution": [],
+        "main_axis": "",
+        "top_share": 0,
+    }
+    viral_detail = by_sig.get("viral_type", {}).get("detail") or {
+        "reliable": False,
+        "topic": None,
+        "sample_count": 0,
+    }
     inter_detail = by_sig["interaction"]["detail"]
     origin_detail = by_sig["originality"]["detail"]
     cap_detail = by_sig["capacity_funnel"]["detail"]
@@ -814,6 +854,9 @@ def build_archetype_affinity(
 
 def _get_top_types(dataset: dict[str, Any], n: int = 3) -> list[dict[str, Any]]:
     """按中位阅读排序，返回前 n 个有文章的内容类型。"""
+    # degraded 时 analysis.by_content_type 不可信，调用方应改用通用占位
+    if (dataset.get("niche_coverage") or {}).get("alert"):
+        return [{"key": "通用结构信号", "count": 1, "median": 0, "p75": 0}]
     by_ct = dataset.get("analysis", {}).get("by_content_type", [])
     return sorted(
         [row for row in by_ct if row.get("count", 0) > 0],
@@ -824,6 +867,8 @@ def _get_top_types(dataset: dict[str, Any], n: int = 3) -> list[dict[str, Any]]:
 
 def _get_high_share_type(dataset: dict[str, Any]) -> dict[str, Any] | None:
     """分享率最高的内容类型（样本≥2篇）。"""
+    if (dataset.get("niche_coverage") or {}).get("alert"):
+        return None
     by_ct = dataset.get("analysis", {}).get("by_content_type", [])
     candidates = [row for row in by_ct if row.get("count", 0) >= 2]
     if not candidates:
@@ -906,12 +951,25 @@ def _build_one_candidate(
 
     top_types = _get_top_types(dataset, n=3)
     top_type_names = [t["key"] for t in top_types if t.get("count", 0) > 0]
-    active_types = [r["key"] for r in dataset.get("analysis", {}).get("by_content_type", []) if r.get("count", 0) > 0]
+    degraded_paths = bool((dataset.get("niche_coverage") or {}).get("alert"))
+    if degraded_paths:
+        active_types = ["通用结构信号"]
+        main_axis = "通用结构信号"
+        lead_topic = "通用结构信号"
+        viral_topic = "通用结构信号"
+        viral_reliable = False
+        viral_sample = 0
+    else:
+        active_types = [
+            r["key"]
+            for r in dataset.get("analysis", {}).get("by_content_type", [])
+            if r.get("count", 0) > 0
+        ]
+        # 真实题材提取（绝不写死）
+        lead_topic = top_type_names[0] if top_type_names else main_axis
 
     feasibility, feas_note = _compute_feasibility(arch.get("affinity", "低"), mode, weak_base)
 
-    # 真实题材提取（绝不写死）
-    lead_topic = top_type_names[0] if top_type_names else main_axis
     viral_hint = (
         f"爆款锚点可用（{viral_sample} 篇样本）" if viral_reliable else f"流量命脉疑似来自{viral_topic}（样本偏少，仅作线索）"
     )
@@ -999,18 +1057,22 @@ def _build_one_candidate(
         monet = "迁移后按目标原型常见方式变现；早期以内容+私域验证需求。"
         matrix_hint = f"初期保留拉新桶过渡，逐步把养信任/建专业向新方向倾斜。"
     else:  # 混合演进
-        share_l = max(
-            (r for r in dataset.get("analysis", {}).get("by_content_type", []) if r.get("count", 0) >= 1),
-            key=lambda r: r.get("share_rate_avg", 0),
-            default={"key": lead_topic},
-        )["key"]
-        cmt_l = max(
-            (r for r in dataset.get("analysis", {}).get("by_content_type", []) if r.get("count", 0) >= 1),
-            key=lambda r: r.get("comment_rate_avg", 0),
-            default={"key": main_axis},
-        )["key"]
-        if share_l == cmt_l:
-            cmt_l = (top_type_names[1] if len(top_type_names) > 1 else main_axis)
+        if degraded_paths:
+            share_l = lead_topic
+            cmt_l = main_axis
+        else:
+            share_l = max(
+                (r for r in dataset.get("analysis", {}).get("by_content_type", []) if r.get("count", 0) >= 1),
+                key=lambda r: r.get("share_rate_avg", 0),
+                default={"key": lead_topic},
+            )["key"]
+            cmt_l = max(
+                (r for r in dataset.get("analysis", {}).get("by_content_type", []) if r.get("count", 0) >= 1),
+                key=lambda r: r.get("comment_rate_avg", 0),
+                default={"key": main_axis},
+            )["key"]
+            if share_l == cmt_l:
+                cmt_l = (top_type_names[1] if len(top_type_names) > 1 else main_axis)
         path_name = f"按角色分层组合现有内容块"
         rationale = (
             f"现有 {min(3, len(active_types))} 个题材有积累，"
@@ -1097,31 +1159,42 @@ def build_content_matrix(
     paths: list[dict[str, Any]],
     signals: list[dict[str, Any]],
     dataset: dict[str, Any],
+    *,
+    degraded: bool = False,
 ) -> dict[str, Any]:
-    """§8 内容矩阵两层。"""
+    """§8 内容矩阵两层。degraded 时不用题材桶名，改用通用结构占位。"""
     by_sig = {s["key"]: s for s in signals}
-    topic_detail = by_sig["topic_distribution"]["detail"]
-    distribution = topic_detail.get("distribution", [])
-    main_axis = topic_detail.get("main_axis", "")
+    topic_detail = by_sig.get("topic_distribution", {}).get("detail") or {
+        "distribution": [],
+        "main_axis": "通用结构信号",
+    }
+    main_axis = "通用结构信号" if degraded else topic_detail.get("main_axis", "")
     cap_detail = by_sig["capacity_funnel"]["detail"]
     posts_per_week = cap_detail.get("posts_per_week", 0) or 2.0
-    by_ct = dataset.get("analysis", {}).get("by_content_type", [])
-    active_types_ordered = [r["key"] for r in by_ct if r.get("count", 0) > 0]  # 保序，by_ct 已按某字段排序
-    active_types = set(active_types_ordered)  # 仅用于 in 判断，不迭代
+    if degraded:
+        by_ct: list[dict[str, Any]] = []
+        active_types_ordered = [main_axis]
+        active_types = {main_axis}
+        share_leader = main_axis
+        read_leader = main_axis
+    else:
+        by_ct = dataset.get("analysis", {}).get("by_content_type", [])
+        active_types_ordered = [r["key"] for r in by_ct if r.get("count", 0) > 0]  # 保序
+        active_types = set(active_types_ordered)
 
-    # 分享率最高类型（适合拉新）
-    share_leader_rows = sorted(
-        [r for r in by_ct if r.get("count", 0) >= 1],
-        key=lambda r: r.get("share_rate_avg", 0), reverse=True
-    )
-    share_leader = share_leader_rows[0]["key"] if share_leader_rows else main_axis
+        # 分享率最高类型（适合拉新）
+        share_leader_rows = sorted(
+            [r for r in by_ct if r.get("count", 0) >= 1],
+            key=lambda r: r.get("share_rate_avg", 0), reverse=True
+        )
+        share_leader = share_leader_rows[0]["key"] if share_leader_rows else main_axis
 
-    # 阅读量最高类型（适合建专业/传播）
-    read_leader_rows = sorted(
-        [r for r in by_ct if r.get("count", 0) >= 1],
-        key=lambda r: r.get("median", 0), reverse=True
-    )
-    read_leader = read_leader_rows[0]["key"] if read_leader_rows else main_axis
+        # 阅读量最高类型（适合建专业/传播）
+        read_leader_rows = sorted(
+            [r for r in by_ct if r.get("count", 0) >= 1],
+            key=lambda r: r.get("median", 0), reverse=True
+        )
+        read_leader = read_leader_rows[0]["key"] if read_leader_rows else main_axis
 
     def _cadence(ppw: float) -> str:
         if ppw >= 5:
@@ -1361,15 +1434,23 @@ def build_forward_looking(dataset: dict[str, Any]) -> dict[str, Any]:
         data_sufficiency, signals, mirror,
         archetype_affinity, candidate_paths,
         candidate_cap, content_matrix
+
+    niche_coverage.alert 时显式降级：剔除题材依赖信号，输出 degraded 标记。
+    非 alert 时不加任何 degraded 字段（加性最小，P3.a 基线兼容）。
     """
+    coverage = dataset.get("niche_coverage") or {}
+    degraded = bool(coverage.get("alert"))
+
     data_sufficiency = build_data_sufficiency(dataset)
-    signals = build_signals(dataset)
-    mirror = build_mirror(signals, dataset)
+    signals = build_signals(dataset, degraded=degraded)
+    mirror = build_mirror(signals, dataset, degraded=degraded)
 
     if data_sufficiency["passed"]:
         archetype_affinity = build_archetype_affinity(signals, mirror)
         candidate_paths = build_candidate_paths(signals, mirror, archetype_affinity, dataset)
-        by_direction = build_content_matrix(candidate_paths, signals, dataset)["by_direction"]
+        by_direction = build_content_matrix(
+            candidate_paths, signals, dataset, degraded=degraded
+        )["by_direction"]
     else:
         archetype_affinity = []
         candidate_paths = []
@@ -1381,7 +1462,7 @@ def build_forward_looking(dataset: dict[str, Any]) -> dict[str, Any]:
         "by_direction": by_direction,
     }
 
-    return {
+    result: dict[str, Any] = {
         "engine_version": ENGINE_VERSION,
         "model_name": ENGINE_MODEL_NAME,
         "data_sufficiency": data_sufficiency,
@@ -1396,3 +1477,9 @@ def build_forward_looking(dataset: dict[str, Any]) -> dict[str, Any]:
         },
         "content_matrix": content_matrix,
     }
+    if degraded:
+        result["degraded"] = True
+        result["degraded_reason"] = (
+            "赛道包覆盖率低于阈值，题材信号不可用，已回退通用链路"
+        )
+    return result

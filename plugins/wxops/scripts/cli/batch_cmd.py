@@ -32,14 +32,18 @@ def _default_runner(root: Path, slug: str, workspace: Path) -> int:
     try:
         acct = accounts_store.get_account(root, slug)
         name = None
+        niche = "ai-tools"
         if acct and acct.get("name"):
             name = str(acct["name"])
+        if acct and acct.get("niche"):
+            niche = str(acct["niche"])
         rc = analyze_cmd.run(
             workspace=workspace,
             demo=False,
             build_only=False,
             account_name_override=name,
             data_only=True,
+            niche=niche,
         )
     finally:
         profile_lock.release()

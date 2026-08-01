@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from analyze.classify import (
-    classify_content,
+    classify_content_with_source,
     classify_pain,
     classify_persona,
     count_article_chars,
@@ -87,7 +87,7 @@ def enrich_article(article: dict[str, Any], root: Path, by_url: dict[str, dict[s
 
 def build_article(record: dict[str, Any], captured_at: datetime) -> dict[str, Any]:
     published_at = parse_dt(record.get("published_at"))
-    content_type = classify_content(record)
+    content_type, content_type_source = classify_content_with_source(record)
     pain = classify_pain(record, content_type)
     persona = classify_persona(record, content_type, pain)
     reads = normalize_number(record.get("read_num"))
@@ -147,6 +147,7 @@ def build_article(record: dict[str, Any], captured_at: datetime) -> dict[str, An
         "like_rate": rate(likes + old_likes + moment_likes, reads),
         "zaikan_rate": rate(zaikan, reads),
         "content_type": content_type,
+        "content_type_source": content_type_source,
         "pain_point": pain,
         "persona": persona,
     }
