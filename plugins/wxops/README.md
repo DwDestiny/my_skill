@@ -6,9 +6,9 @@
 
 | 层 | 是什么 | 住哪 |
 |---|---|---|
-| 通用引擎 | 动作：拉数据/分析/发布的代码，一份跑所有号 | 插件 `scripts/`（只读） |
-| 赛道知识 | 题材分类、爆款词表、标题公式 | `niches/` 数据包（内置 ai-tools / _generic；用户包放 `~/.wxops/niches/` 整包覆盖） |
-| 账号身份 | 登录态 + 凭证 + 人设 + 数据 | `~/.wxops/accounts/<slug>/`（永不入库） |
+| 通用引擎 | 动作：拉数据/分析/写作/发布的代码与 agents 提示词，一份跑所有号 | 插件 `scripts/` + `agents/`（只读） |
+| 赛道知识 | 题材分类、爆款词表、标题公式（`niche.json`）+ 文体结构契约（`structure.md`） | `niches/` 数据包（内置 ai-tools / _generic；用户包放 `~/.wxops/niches/` 覆盖） |
+| 账号身份 | 登录态 + 凭证 + 人设 persona + 数据 | `~/.wxops/accounts/<slug>/`（永不入库） |
 
 判据一句话：通用的是动作，赛道的是知识，账号的是身份。
 
@@ -18,12 +18,16 @@
 
 | 工位 | 状态 | 职责 |
 |---|---|---|
-| desk 总控台 | ✅ P1 | 跨账号流水线状态 + 下一步建议 |
+| desk 总控台 | ✅ P1 | 跨账号流水线状态 + 在途内容 + 下一步建议 |
 | accounts | ✅ P1 | 加号/列表/切换/退休/迁移/按号登录 |
 | analyze | ✅ P1 | 拉数据 → 诊断报告 → 叙事看板 |
-| topics / write / illustrate | 🚧 P4 | 选题卡 / 三件套写作流 / 配图 |
+| topics | ✅ P4 | 报告信号 + 赛道矩阵 +（可选）niche-scout 调研 → 选题卡 |
+| write | ✅ P4 | 三件套开工制（`wxops kit` 门禁）→ 初稿 → 审计 → 标题 → 人终审 |
+| illustrate | ✅ P4 | 封面 900×383 + 正文图；通路可插拔（AI 生成/人工供图） |
 | publish | 🚧 P5 | 渲染 → 网关 → **草稿箱止步** |
 | review | 🚧 P5 | 发布后对照选题卡复盘，回灌人设建议 |
+
+写作产线四 agents（`agents/`）：niche-scout 情报侦察 / draft-writer 初稿执笔 / style-auditor 人设审计（对抗镜头）/ title-smith 标题候选。提示词零账号零赛道知识——身份与知识按三层模型在运行时喂入。派单契约与写权限表见 `references/agents-guide.md`（`agents/` 下所有 .md 都会被插件校验器当 agent 扫描，L2 文档只能住 references）。
 
 ## 目录结构
 
@@ -31,9 +35,10 @@
 plugins/wxops/
 ├── .claude-plugin/plugin.json   # 插件清单
 ├── skills/                      # 八工位 SKILL.md
+├── agents/                      # 写作产线四 agents（niche-scout/draft-writer/style-auditor/title-smith）
 ├── scripts/                     # Python 引擎（cli/fetch/analyze，自旧 skill copy-first 迁入）
-├── niches/                      # 内置赛道包（ai-tools / _generic，契约见 references/niche-contract.md）
-├── templates/                   # 用户自定义模板（niche.template.json）
+├── niches/                      # 内置赛道包（niche.json 词表 + structure.md 结构契约；ai-tools / _generic）
+├── templates/                   # 用户侧模板（persona / evidence-pack / topic-card / niche 词表包）
 ├── tests/  fixtures/            # 引擎测试与演示数据
 ├── dashboard/                   # 看板模板（构建时复制到账号目录）
 ├── references/  DATA_CONTRACT.md
