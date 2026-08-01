@@ -7,6 +7,14 @@
   "description": "麦总玩AI 的 Claude Code 技能集合",
   "plugins": [
     {
+      "name": "wxops",
+      "source": "./plugins/wxops",
+      "description": "公众号多账号编辑部:账号 / 数据分析 / 选题 / 写作 / 配图 / 发布(草稿箱止步) / 复盘 全环节多账号管理",
+      "author": { "name": "麦总玩AI" },
+      "category": "productivity",
+      "tags": ["wechat", "公众号", "多账号", "编辑部", "选题", "写作", "发布", "复盘"]
+    },
+    {
       "name": "wechat-ops-performance-review",
       "source": "./skills/wechat-ops-performance-review",
       "description": "公众号运营复盘:量化诊断 + 爆款基因反推 + 向前看方向引擎 + 本地叙事看板",
