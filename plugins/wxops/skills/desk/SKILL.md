@@ -29,12 +29,14 @@ description: Use when 开工先看全局、查看所有公众号账号的流水�
 
 ## 怎么读、怎么答
 
-用户问"我现在该干嘛"时：跑 desk，按「下一步」列给出具体命令，**一次只推一步**，别把全流程倒给用户。建议规则：
+用户问"我现在该干嘛"时：跑 desk，按「下一步」列给出具体命令，**一次只推一步**，别把全流程倒给用户。建议规则（从高到低）：
 
 - 体检结果掉线（`login_alive: false`）/ 从未登录 → 先 `wxops login --account <slug>`
+- 有稿在途（drafts 有 draft.md）→ 推进完稿：`/wxops:write` 终审或 `/wxops:illustrate` 配图——内容线在途优先于拉新数据
+- 有题无稿（topics 有选题卡）→ `/wxops:write` 开工写稿（开工前 `wxops kit` 门禁会自动把关三件套）
 - 在线、无数据或数据 > 7 天 → `wxops analyze --account <slug>`
 - 多个号同时要拉数 → 推一条 `wxops analyze --all`（顺序 + 间隔 + 失败隔离，别逐号手跑）
-- 数据较新 → 可直接看报告 / 看板，或进入内容工位
+- 数据较新、无在途 → `/wxops:topics` 选题
 
 登录列优先引用 `accounts check` 的真探测结果（`● 在线` / `○ 掉线`）；没体检过的号回落到按最近登录时间推断。状态存疑先推一次 `wxops accounts check`。
 
@@ -44,6 +46,8 @@ description: Use when 开工先看全局、查看所有公众号账号的流水�
 
 ## 工位地图
 
-编辑部共八个工位。当前版本已入驻：**accounts**（账号）、**analyze**（数据分析）、**desk**（总控台）。选题 topics、写作 write、配图 illustrate、发布 publish（草稿箱止步）、复盘 review 将按版本陆续入驻——desk 的「下一步」建议会随工位开放自动变聪明。
+编辑部共八个工位。当前版本已入驻：**accounts**（账号）、**analyze**（数据分析）、**desk**（总控台）、**topics**（选题）、**write**（写作，三件套开工制）、**illustrate**（配图）。发布 publish（草稿箱止步）、复盘 review 将按版本陆续入驻——desk 的「下一步」建议会随工位开放自动变聪明。
+
+内容产线状态看「在途」列（N 题 M 稿 = topics 下选题卡数与 drafts 下稿件数，实时扫目录，不依赖游标）。
 
 产品铁律：自动化推进到"最后负责时刻"为止——草稿入箱人点发布，人设改动人来确认。desk 永远只**建议**下一步，不代替人拍板。

@@ -3,7 +3,7 @@
 # Input: caller, project conventions, and local dependencies
 # Output: behavior defined by scripts/cli/main.py
 # Pos: plugins/wxops/scripts/cli/main.py
-"""wxops 可执行入口主分发：init / login / analyze / accounts / migrate / desk。"""
+"""wxops 可执行入口主分发：init / login / analyze / accounts / migrate / desk / kit。"""
 
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ from . import desk_cmd
 from . import env
 from . import health
 from . import init_cmd
+from . import kit_cmd
 from . import lock as lock_mod
 from . import login_cmd
 from . import migrate_cmd
@@ -127,11 +128,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="编辑部总控台：各账号流水线状态与下一步建议",
     )
 
+    # kit（写作三件套门禁；复用 common 的 --account，另加 --topic）
+    p_kit = subparsers.add_parser(
+        "kit",
+        parents=[common],
+        help="写作三件套门禁：人设 + 结构契约（+ 选题卡/证据包）",
+    )
+    p_kit.add_argument(
+        "--topic",
+        default=None,
+        help="选题 slug；给出则做开工体检（四项），否则仅账号级体检（两项）",
+    )
+
     return parser
 
 
 def _root_from_args(args: argparse.Namespace) -> Path:
-    """accounts / migrate / desk 用：--workspace 优先，否则 WXOPS_HOME。"""
+    """accounts / migrate / desk / kit 用：--workspace 优先，否则 WXOPS_HOME。"""
     if getattr(args, "workspace", None):
         return Path(args.workspace).expanduser().resolve()
     return env.get_wxops_root()
@@ -321,6 +334,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "desk":
         root = _root_from_args(args)
         return desk_cmd.run(root)
+
+    if args.command == "kit":
+        root = _root_from_args(args)
+        return kit_cmd.run(
+            root,
+            account=getattr(args, "account", None),
+            topic=getattr(args, "topic", None),
+        )
 
     # analyze --all / login --all：必须在 resolve_context 之前（互斥返回 2）
     if args.command == "analyze" and getattr(args, "all", False):

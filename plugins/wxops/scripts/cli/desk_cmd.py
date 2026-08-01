@@ -3,7 +3,7 @@
 # Input: caller, project conventions, and local dependencies
 # Output: behavior defined by scripts/cli/desk_cmd.py
 # Pos: plugins/wxops/scripts/cli/desk_cmd.py
-"""desk 编辑部总控台 v0：只读展示各账号流水线状态与下一步建议。"""
+"""desk 编辑部总控台：只读展示各账号流水线状态、在途内容与下一步建议。"""
 
 from __future__ import annotations
 
@@ -76,12 +76,34 @@ def _col_report(account: dict[str, Any], pipe: dict[str, Any]) -> str:
     return accounts_store.humanize_ts(str(ts))
 
 
-def _suggest_next(account: dict[str, Any], pipe: dict[str, Any]) -> str:
+def _count_in_flight(root: Path, slug: str) -> tuple[int, int]:
+    """扫 topics/*/card.md 与 drafts/*/draft.md 个数。只读。"""
+    try:
+        acct_dir = accounts_store.get_account_dir(root, slug)
+    except ValueError:
+        return 0, 0
+    n = len(list(acct_dir.glob("topics/*/card.md")))
+    m = len(list(acct_dir.glob("drafts/*/draft.md")))
+    return n, m
+
+
+def _col_in_flight(n: int, m: int) -> str:
+    if n == 0 and m == 0:
+        return "—"
+    return f"{n} 题 {m} 稿"
+
+
+def _suggest_next(
+    account: dict[str, Any],
+    pipe: dict[str, Any],
+    n_topics: int = 0,
+    m_drafts: int = 0,
+) -> str:
     slug = str(account.get("slug") or "")
     if account.get("status") == "retired":
         return "(已退休)"
 
-    # 真探测掉线优先于数据新鲜度（仍在 retired 之后）
+    # 真探测掉线优先于在途/数据新鲜度（仍在 retired 之后）
     if account.get("login_alive") is False:
         return f"wxops login --account {slug}"
 
@@ -97,9 +119,16 @@ def _suggest_next(account: dict[str, Any], pipe: dict[str, Any]) -> str:
 
     if not last_login:
         return f"wxops login --account {slug}"
+
+    # 在途内容优先于数据陈旧建议
+    if m_drafts > 0:
+        return "稿件在途：/wxops:write 终审或 /wxops:illustrate 配图"
+    if n_topics > 0:
+        return "/wxops:write 开工写稿"
+
     if last_fetch is None or _is_stale(str(last_fetch), days=7):
         return f"wxops analyze --account {slug}"
-    return "数据尚新，可直接复盘"
+    return "数据尚新：/wxops:topics 选题"
 
 
 def run(root: Path) -> int:
@@ -123,11 +152,12 @@ def run(root: Path) -> int:
     retired.sort(key=lambda a: str(a.get("slug", "")))
     ordered = active + retired
 
-    headers = ["账号", "登录", "数据", "报告", "下一步"]
+    headers = ["账号", "登录", "数据", "报告", "在途", "下一步"]
     rows: list[list[str]] = []
     for acct in ordered:
         slug = str(acct.get("slug") or "")
         pipe = accounts_store.load_pipeline(root, slug)
+        n_topics, m_drafts = _count_in_flight(root, slug)
         mark = "●" if slug == current and acct.get("status") != "retired" else "○"
         # retired 即使是 current 也用 ○（规格：行首用 ○）
         if acct.get("status") == "retired":
@@ -138,7 +168,8 @@ def run(root: Path) -> int:
                 _col_login(acct, pipe),
                 _col_data(acct, pipe),
                 _col_report(acct, pipe),
-                _suggest_next(acct, pipe),
+                _col_in_flight(n_topics, m_drafts),
+                _suggest_next(acct, pipe, n_topics, m_drafts),
             ]
         )
 

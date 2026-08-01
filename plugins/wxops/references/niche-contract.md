@@ -21,12 +21,18 @@ niche 包回答一个问题：**这个赛道的读者按什么维度看内容**�
 
 ## 2. 包的位置与解析顺序
 
-一个 niche 包 = 一个目录，目录名即 niche id，内含单文件 `niche.json`：
+一个 niche 包 = 一个目录，目录名即 niche id，内含两个文件（P4/#42 起）：
 
 ```
-<插件根>/niches/<id>/niche.json        # 内置包（入库，随插件分发）
-~/.wxops/niches/<id>/niche.json        # 用户包（运行态，永不入库）
+<插件根>/niches/<id>/niche.json        # 词表包：四组分类知识，给引擎机器消费（本契约 §3 schema）
+<插件根>/niches/<id>/structure.md      # 结构契约：文体骨架/必备模块，给写作 agents 直读（写作三件套之二）
+~/.wxops/niches/<id>/...               # 用户包（运行态，永不入库），文件同名同义
 ```
+
+两个文件的覆盖语义**不同**：
+
+- `niche.json` — **整包覆盖**（下方解析序）：用户包目录存在即以用户包为准，坏包硬报错。
+- `structure.md` — **文件级三层回落**：`$WXOPS_HOME/niches/<id>/structure.md` → `<插件根>/niches/<id>/structure.md` → `<插件根>/niches/_generic/structure.md`（恒存在兜底）。用户只建词表没写结构契约时回落内置而非报错；解析到 `_generic` 时按"通用兜底"提示建议建包。`structure.md` 是给 LLM 读的散文契约，**不经 loader、无 schema 校验**；其消费方为 write 站门禁（`wxops kit`，负责解析回落链并报告命中层级）与写作 agents。
 
 loader（`scripts/analyze/niche_loader.py`）按以下顺序解析 id：
 
