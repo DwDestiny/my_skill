@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin.json",
   "name": "wxops",
   "displayName": "公众号多账号编辑部",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "一个人的编辑部：公众号多账号运营全环节——账号管理、数据分析、选题、写作、配图、发布到草稿箱、复盘。自动化推进到最后负责时刻为止：草稿入箱，发布键永远留给人。",
   "author": { "name": "麦总玩AI", "url": "https://github.com/DwDestiny" },
   "homepage": "https://github.com/DwDestiny/my_skill",

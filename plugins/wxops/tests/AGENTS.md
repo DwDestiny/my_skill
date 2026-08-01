@@ -15,6 +15,7 @@
 | `test_semantics.py` | 语义与文案输出 |
 | `test_readonly_workspace.py` | 只读 workspace 防护 |
 | `test_accounts.py` | 多账号底座:store / resolve_context / migrate / lock / desk / pipeline e2e / legacy 不变性 |
+| `test_health_batch.py` | 登录态体检 check_login/cmd_check + analyze --all 批量编排 + main 互斥 + desk login_alive |
 
 ## 本地规则
 - 运行方式:skill 根目录下 `python3 -m pytest tests -q`(当前基线含多账号新增用例)。

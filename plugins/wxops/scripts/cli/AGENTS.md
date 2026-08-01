@@ -16,6 +16,8 @@
 | `migrate_cmd.py` | 旧单账号工作区 → accounts/<slug>/ 的 copy-first 迁移 |
 | `lock.py` | 同号 browser-profile 并发锁(fcntl flock;Windows no-op 降级) |
 | `desk_cmd.py` | 编辑部总控台 v0:只读展示各账号流水线状态与下一步建议 |
+| `health.py` | 登录态健康探测：headless 打开 browser-profile 查 token，写回前由调用方持锁 |
+| `batch_cmd.py` | analyze --all 批量编排：前置体检 + 顺序拉数 + 防风控间隔 + 失败隔离 + 批次报告 |
 
 ## 本地规则
 - 所有路径解析走 `env.py`,不得在子命令内自拼 workspace 路径。
