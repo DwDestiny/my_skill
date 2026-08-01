@@ -70,6 +70,10 @@ def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
     os.replace(tmp, path)
 
 
+# 公共别名：batch 报告等复用，保留私有名不动
+atomic_write_json = _atomic_write_json
+
+
 def load_registry(root: Path) -> dict[str, Any]:
     path = get_registry_path(root)
     if not path.exists():
@@ -268,6 +272,24 @@ def touch(
     if account is None:
         return
     account[field] = when or now_iso()
+    try:
+        save_account(root, slug, account)
+    except Exception:
+        pass
+
+
+def set_login_health(
+    root: Path,
+    slug: str,
+    alive: bool,
+    when: str | None = None,
+) -> None:
+    """写回 login_alive + last_check_at；账号不存在或写失败静默返回（与 touch 同风格）。"""
+    account = load_account(root, slug)
+    if account is None:
+        return
+    account["login_alive"] = bool(alive)
+    account["last_check_at"] = when or now_iso()
     try:
         save_account(root, slug, account)
     except Exception:

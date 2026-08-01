@@ -20,12 +20,34 @@ description: Use when 拉取公众号后台数据、运营复盘、生成诊断�
 ```bash
 <插件根>/scripts/wxops analyze --account <slug>          # 抓数据 → 建报告 → 起看板
 <插件根>/scripts/wxops analyze --account <slug> --build  # 只构建看板不起 dev 服务器
+<插件根>/scripts/wxops analyze --all                     # 全部在册账号批量拉数出报告（见下）
 <插件根>/scripts/wxops analyze --demo --data-only        # 演示数据只产报告，零登录零 Node 依赖
 ```
 
 - 不给 `--account` 用当前账号；`--workspace <dir>` 为旧模式直通（与 `--account` 互斥）。
 - 首次真实分析前该账号需已 `login`（登录态过期会明确报错，**绝不拿旧数据硬分析**）。
 - 看板构建需要 Node ≥ 18 + pnpm；只要数据用 `--data-only`。
+
+## 批量模式（analyze --all）
+
+「严禁并行抓取」这条铁律的官方实现——多号复盘不要手写循环，用 `--all`：
+
+1. **顺序执行**：按 slug 排序逐号跑，永不并行
+2. **前置体检**：每号先探测登录态，掉线号直接跳过（不硬拉、不烧重试），给出补登录命令
+3. **防风控间隔**：相邻两次真实拉数之间随机等 30-90 秒，等待在日志明确可见
+4. **失败隔离**：单号失败记录原因后继续下一号，绝不中断批次
+5. **批次报告**：汇总落 `~/.wxops/runs/analyze-all-<时间戳>.json`，终端同步输出汇总表
+
+```
+=== 批次汇总 ===
+✓ maizong   报告已更新    accounts/maizong/output/report.json
+○ backup    已跳过        登录态掉线 → wxops login --account backup
+✗ oldnum    拉取失败      token 失效（其余账号未受影响）
+
+1 成功 · 1 失败 · 1 跳过 · 批次报告：runs/analyze-all-20260801-153000.json
+```
+
+批量模式只产数据不起看板（要看某号看板：`analyze --account <slug> --build`）。`--all` 与 `--account` / `--workspace` / `--demo` / `--build` 互斥。retired 账号不进批次。
 
 ## 运行契约（代码只读，数据可写）
 

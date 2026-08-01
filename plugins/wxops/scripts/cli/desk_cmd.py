@@ -36,6 +36,11 @@ def _is_stale(iso: str | None, days: int = 7) -> bool:
 
 
 def _col_login(account: dict[str, Any], pipe: dict[str, Any]) -> str:
+    # 优先引用 accounts check 真探测结果
+    if account.get("login_alive") is True:
+        return "● 在线"
+    if account.get("login_alive") is False:
+        return "○ 掉线"
     ts = None
     login_st = (pipe.get("stations") or {}).get("login") or {}
     if login_st.get("at"):
@@ -75,6 +80,10 @@ def _suggest_next(account: dict[str, Any], pipe: dict[str, Any]) -> str:
     slug = str(account.get("slug") or "")
     if account.get("status") == "retired":
         return "(已退休)"
+
+    # 真探测掉线优先于数据新鲜度（仍在 retired 之后）
+    if account.get("login_alive") is False:
+        return f"wxops login --account {slug}"
 
     last_login = account.get("last_login_at")
     login_st = (pipe.get("stations") or {}).get("login") or {}

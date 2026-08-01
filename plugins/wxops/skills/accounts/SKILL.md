@@ -31,8 +31,10 @@ description: Use when 添加公众号账号、管理多账号、切换当前账�
 | `wxops accounts list` | 列出全部账号（● 标当前），含最近登录/拉数时间 |
 | `wxops accounts use <slug>` | 切换当前账号 |
 | `wxops accounts remove <slug>` | 退休账号：**只改状态标记，数据一个字节不删**，打印目录路径由人处置 |
+| `wxops accounts check [<slug>]` | 登录态体检：headless 逐号真探测 token 是否活着（3-5s/号，不打业务接口），● 在线 / ○ 掉线 |
 | `wxops migrate [--slug default] [--name <显示名>]` | 旧单账号工作区 → `accounts/<slug>/`（copy-first，源文件原样保留） |
 | `wxops login --account <slug>` | 给指定账号扫码登录（扫码前打印账号名，防扫错号） |
+| `wxops login --all` | 批量补登录：先体检全部在册账号，掉线的逐个开浏览器等扫码，全在线则直接收工 |
 | `wxops init / analyze --account <slug>` | 各工位命令按账号执行 |
 
 slug 规则：小写字母/数字/连字符，≤32 字符（如 `maizong`、`foodie-01`）。
@@ -50,8 +52,10 @@ slug 规则：小写字母/数字/连字符，≤32 字符（如 `maizong`、`fo
 ```
 ~/.wxops/
 ├── accounts.json                # 薄指针：version + current（账号事实以各自 account.json 为准）
+├── runs/                        # 迁移清单、批次报告（analyze --all 的汇总落这里）
 └── accounts/<slug>/
     ├── account.json             # slug/name/niche/created_at/last_login_at/last_fetch_at/status
+    │                            # + login_alive/last_check_at（accounts check 的体检结果）
     ├── credentials/             # 0700；发布凭证后续版本落这里（0600）
     ├── browser-profile/         # 该号专属登录态（Playwright persistent context）
     ├── raw/  reports/  data/  output/     # 数据链（与旧版工作区同构，引擎无感）
@@ -77,9 +81,27 @@ migrate 是复制不是搬家：只读盘点 → 复制进 `accounts/maizong/` �
 <插件根>/scripts/wxops analyze --account foodie
 ```
 
+**晨间体检 + 补登录**（多号日常）：
+
+```bash
+<插件根>/scripts/wxops accounts check      # 逐号探测，输出形如：
+```
+
+```
+=== 登录态体检 ===
+账号        名称          登录态    最近登录     耗时
+maizong     麦总玩AI      ● 在线    今天         3.2s
+backup      备用号        ○ 掉线    8 天前       4.1s
+
+掉线号补登录：wxops login --account backup   （一次补齐：wxops login --all）
+```
+
+体检是真探测（headless 打开该号 browser-profile 看 token），结果写回 `account.json` 的 `login_alive` + `last_check_at`，desk 总控台的登录列直接引用。探测不打任何业务接口，逐号顺序进行。
+
 ## 安全红线
 
 - **remove 永不删数据**：退休只是标记。真要删，人自己动手。
 - **凭证与登录态永不入库**：`~/.wxops` 整棵树都不进 git；`credentials/` 目录 0700、凭证文件 0600。
-- **同号并发锁**：同一账号的 `browser-profile/` 同时只允许一个进程打开（login 与拉数互斥），撞锁会明确报错带对方 PID。不同账号互不影响，但拉数仍应逐号顺序跑。
-- **扫码前核对**：login 会先打印目标账号名，扫码前看一眼，别把 A 号的码扫进 B 号的办公室。
+- **同号并发锁**：同一账号的 `browser-profile/` 同时只允许一个进程打开（login、拉数、体检三方互斥），撞锁会明确报错带对方 PID。不同账号互不影响，但拉数仍应逐号顺序跑。
+- **扫码前核对**：login 会先打印目标账号名，扫码前看一眼，别把 A 号的码扫进 B 号的办公室。`login --all` 每换一个号都重新打印重新核对。
+- **扫码永远留给人**：体检、批量补登录都不会也不能绕过扫码本身——自动化到"浏览器已打开、二维码已就位"为止。

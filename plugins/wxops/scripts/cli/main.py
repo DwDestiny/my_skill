@@ -8,14 +8,19 @@
 from __future__ import annotations
 
 import argparse
+import random
 import sys
+import time
 from pathlib import Path
+from typing import Any, Callable
 
 from . import accounts_cmd
 from . import accounts_store
 from . import analyze_cmd
+from . import batch_cmd
 from . import desk_cmd
 from . import env
+from . import health
 from . import init_cmd
 from . import lock as lock_mod
 from . import login_cmd
@@ -60,6 +65,11 @@ def build_parser() -> argparse.ArgumentParser:
     # login
     p_login = subparsers.add_parser("login", parents=[common], help="引导使用微信扫码登录公众号后台，持久化登录态")
     p_login.add_argument("--headless", action="store_true", help="无头模式（默认交互需可视化扫码）")
+    p_login.add_argument(
+        "--all",
+        action="store_true",
+        help="批量补登录：先体检后逐号扫码",
+    )
 
     # analyze
     p_analyze = subparsers.add_parser("analyze", parents=[common], help="抓取/使用数据 → 构建报告 → 启动看板")
@@ -71,12 +81,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="只产出数据（report.json/MD），不复制 dashboard、不跑 pnpm（CI / 只读冒烟用）",
     )
     p_analyze.add_argument("--account-name", default=None, help="覆盖配置中的公众号名称")
+    p_analyze.add_argument(
+        "--all",
+        action="store_true",
+        help="全部在册账号批量拉数出报告（顺序 + 间隔 + 失败隔离）",
+    )
 
     # accounts（leaf 也挂 common，以便 `accounts list --workspace X` 可用）
     p_accounts = subparsers.add_parser(
         "accounts",
         parents=[common],
-        help="多账号管理：add / list / use / remove",
+        help="多账号管理：add / list / use / remove / check",
     )
     acc_sub = p_accounts.add_subparsers(dest="accounts_command", required=True)
 
@@ -92,6 +107,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_remove = acc_sub.add_parser("remove", parents=[common], help="退休账号（不删数据）")
     p_remove.add_argument("slug", help="账号 slug")
+
+    p_check = acc_sub.add_parser("check", parents=[common], help="登录态体检")
+    p_check.add_argument("slug", nargs="?", default=None, help="可选：只体检指定账号")
 
     # migrate
     p_migrate = subparsers.add_parser(
@@ -174,6 +192,98 @@ def resolve_context(args: argparse.Namespace) -> tuple[Path, str | None]:
     return root, None
 
 
+def _login_all(
+    root: Path,
+    *,
+    checker: Callable[[Path], dict[str, Any]] | None = None,
+    sleeper: Callable[[float], None] | None = None,
+    login_runner: Callable[[Path], int] | None = None,
+) -> int:
+    """login --all：先体检，掉线号逐个扫码补登录。"""
+    check_fn = checker or health.check_login
+    sleep_fn = sleeper or time.sleep
+    do_login = login_runner or (
+        lambda ws: login_cmd.run(workspace=ws, headless=False)
+    )
+
+    accounts = [
+        a
+        for a in accounts_store.list_accounts(root)
+        if a.get("status") == "active"
+    ]
+    accounts.sort(key=lambda a: str(a.get("slug", "")))
+    if not accounts:
+        env.print_warn("还没有任何账号。")
+        env.print_guide_next('wxops accounts add <slug> --name "<显示名>"')
+        return 1
+
+    offline: list[dict[str, Any]] = []
+    for i, acct in enumerate(accounts):
+        slug = str(acct.get("slug") or "")
+        workspace = accounts_store.get_account_dir(root, slug)
+        alive = False
+        try:
+            result = check_fn(workspace)
+            alive = bool(result.get("alive"))
+            accounts_store.set_login_health(root, slug, alive)
+        except lock_mod.ProfileLockError as e:
+            env.print_error(str(e))
+            alive = False
+            # 撞锁记为掉线待处理
+            offline.append(acct)
+            if i < len(accounts) - 1:
+                sleep_fn(random.uniform(1, 3))
+            continue
+
+        if not alive:
+            offline.append(acct)
+        if i < len(accounts) - 1:
+            sleep_fn(random.uniform(1, 3))
+
+    n = len(accounts)
+    if not offline:
+        env.print_success(f"全部 {n} 个账号在线，无需补登录")
+        return 0
+
+    ok_count = 0
+    still_offline: list[str] = []
+    try:
+        for acct in offline:
+            slug = str(acct.get("slug") or "")
+            name = str(acct.get("name") or slug)
+            workspace = accounts_store.get_account_dir(root, slug)
+            env.print_header(f"即将登录账号：{name}（{slug}）")
+            env.print_step("请核对账号", "扫码前确认目标公众号无误，避免扫错号")
+            try:
+                profile_lock = lock_mod.acquire_profile_lock(workspace)
+            except lock_mod.ProfileLockError as e:
+                env.print_error(str(e))
+                still_offline.append(slug)
+                continue
+            with profile_lock:
+                rc = do_login(workspace)
+            if rc == 0:
+                accounts_store.touch(root, slug, "last_login_at")
+                ok = accounts_store.touch_pipeline(root, slug, "login", ok=True)
+                if not ok:
+                    env.print_warn("pipeline.json 写入失败（不影响本次登录）")
+                accounts_store.set_login_health(root, slug, True)
+                ok_count += 1
+            else:
+                still_offline.append(slug)
+    except KeyboardInterrupt:
+        env.print_warn("用户中断批量补登录（已完成的保留）")
+        return 1
+
+    print()
+    print(f"{ok_count} 补登录成功 · {len(still_offline)} 仍掉线")
+    if still_offline:
+        for s in still_offline:
+            env.print_info(f"仍掉线：wxops login --account {s}")
+        return 1
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -195,6 +305,8 @@ def main(argv: list[str] | None = None) -> int:
             return accounts_cmd.cmd_use(root, slug=args.slug)
         if sub == "remove":
             return accounts_cmd.cmd_remove(root, slug=args.slug)
+        if sub == "check":
+            return accounts_cmd.cmd_check(root, getattr(args, "slug", None))
         env.print_error("未知 accounts 子命令")
         return 1
 
@@ -209,6 +321,29 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "desk":
         root = _root_from_args(args)
         return desk_cmd.run(root)
+
+    # analyze --all / login --all：必须在 resolve_context 之前（互斥返回 2）
+    if args.command == "analyze" and getattr(args, "all", False):
+        if (
+            getattr(args, "account", None)
+            or getattr(args, "workspace", None)
+            or getattr(args, "demo", False)
+            or getattr(args, "build", False)
+        ):
+            env.print_error(
+                "--all 与 --account / --workspace / --demo / --build 互斥；"
+                "批量模式只产数据，看板请对单号跑 analyze --account <slug> --build。"
+            )
+            return 2
+        return batch_cmd.run_all(env.get_wxops_root())
+
+    if args.command == "login" and getattr(args, "all", False):
+        if getattr(args, "account", None) or getattr(args, "workspace", None):
+            env.print_error(
+                "--all 与 --account / --workspace 互斥，请只给 --all。"
+            )
+            return 2
+        return _login_all(env.get_wxops_root())
 
     # init / login / analyze
     try:
@@ -252,6 +387,7 @@ def main(argv: list[str] | None = None) -> int:
             ok = accounts_store.touch_pipeline(root, slug, "login", ok=True)
             if not ok:
                 env.print_warn("pipeline.json 写入失败（不影响本次登录）")
+            accounts_store.set_login_health(root, slug, True)
         return rc
 
     if args.command == "analyze":
