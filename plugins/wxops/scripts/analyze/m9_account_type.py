@@ -362,7 +362,13 @@ HIGH_GAP = 0.15
 
 
 def build_account_type(dataset: dict[str, Any]) -> dict[str, Any]:
-    """主入口:识别账号类型并给出诊断路由。挂 dataset["account_type"]。"""
+    """主入口:识别账号类型并给出诊断路由。挂 dataset["account_type"]。
+
+    niche_coverage.alert 时强制 general 回退并标 degraded；非 alert 不加 degraded 字段。
+    """
+    coverage = dataset.get("niche_coverage") or {}
+    niche_alert = bool(coverage.get("alert"))
+
     f = _extract_features(dataset)
     scores = _score_types(f)
 
@@ -370,7 +376,11 @@ def build_account_type(dataset: dict[str, Any]) -> dict[str, Any]:
     top_key, top_score = ranked[0]
     second_key, second_score = ranked[1]
 
-    if f["sample_count"] < MIN_SAMPLE_FOR_TYPING:
+    if niche_alert:
+        # 题材信号不可用 → 强制走既有 general 回退分支
+        primary_key, confidence, fallback = "general", "low", True
+        reason = "赛道包覆盖率低于阈值，题材信号不可用，已回退通用链路"
+    elif f["sample_count"] < MIN_SAMPLE_FOR_TYPING:
         primary_key, confidence, fallback = "general", "low", True
         reason = f"稳定样本仅 {f['sample_count']} 篇,不足 {MIN_SAMPLE_FOR_TYPING} 篇,类型判定暂不启用"
     elif top_score < PRIMARY_THRESHOLD:
@@ -394,7 +404,7 @@ def build_account_type(dataset: dict[str, Any]) -> dict[str, Any]:
 
     evidence = _build_evidence(primary_key, f)
 
-    return {
+    result: dict[str, Any] = {
         "engine_version": ENGINE_VERSION,
         "primary": {
             "key": primary_key,
@@ -435,3 +445,9 @@ def build_account_type(dataset: dict[str, Any]) -> dict[str, Any]:
             ),
         },
     }
+    if niche_alert:
+        result["degraded"] = True
+        result["degraded_reason"] = (
+            "赛道包覆盖率低于阈值，题材信号不可用，已回退通用链路"
+        )
+    return result

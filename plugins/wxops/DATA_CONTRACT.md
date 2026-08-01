@@ -56,7 +56,7 @@
 | 时效/厚度 | `content_type` + `article_length_chars` | 厚度=字数中位;时效=题材近似 |
 | 产能/变现 | `account_profile.publish_frequency`、断更、`account.cumulate_user`;正文私域关键词 | 见 §4.6 |
 
-> **已知约束**:`constants.CONTENT_TYPES` 当前是为 fixtures(麦总号)配置的 AI 题材分类。引擎在「实际命中项」之上工作即可,**不要**在引擎里再写死任何题材名。题材分类通用化属于 R5,不在本次范围。
+> **R5 已收口(P3 / issue #41)**:题材/痛点/人群/标题套路四组名单与词表已全部数据驱动——引擎不写死任何题材名,分类知识住 `niches/<id>/niche.json` 赛道包(格式真源 `references/niche-contract.md`)。旧 `constants.CONTENT_TYPES` 等四名单已删除;覆盖率闸门与降级语义见 §13。
 
 ---
 
@@ -369,4 +369,32 @@
 
 ---
 
-*Contract v1.1 · 维护者:Claude(技术总监)· 实现:grok(R4b) + Fable(account_type)· 消费:dashboard(R4d)*
+## 13. niche_coverage — 赛道包覆盖率闸门（追加节点，v1.2 / R5 收口）
+
+赛道知识自 v1.2 起全部来自 niche 包（`niches/<id>/niche.json`，格式真源 `references/niche-contract.md`），引擎零写死。为专治「包用错号仍产出像样的错误结论」，`build_dataset()` 在 m8/m9 调用**之前**追加顶层节点 `niche_coverage`（**只增不删**，dashboard 未消费前可安全忽略，警示渲染留 P6）：
+
+```jsonc
+"niche_coverage": {
+  "niche_id": "ai-tools",          // 实际生效的包
+  "niche_name": "AI 工具与编程",
+  "requested_id": "ai-tools",      // 请求的包;≠ niche_id 即发生过 _generic 回落
+  "total": 18,                     // stable 口径,与 analysis.by_content_type 相同
+  "term_hits": 18,                 // classify 经 rules 词表命中的篇数
+  "fallback_count": 0,             // 走 fallback 的篇数(无论 title_regex 中否)
+  "hit_rate": 1.0,                 // term_hits/total,round 3 位;total=0 时记 0.0
+  "threshold": 0.6,                // constants.NICHE_COVERAGE_ALERT_THRESHOLD
+  "alert": false                   // total>0 且 hit_rate<threshold;total=0 恒 false
+}
+```
+
+配套加性字段与降级语义（`alert == false` 时 m8/m9 **不加任何字段**，与 v1.1 输出逐字节兼容）：
+
+- `articles.*[].content_type_source`：每篇 `"terms" | "fallback"`，题材命中来源可审计。该字段**只出现在 `articles.*`**——`viral_genes.top_viral` 序列化前已剥离副本。
+- `alert == true` 时：① MD 报告 frontmatter 后插入覆盖率警示块（换包/建包两条出路）；② `forward_looking` 剔除题材依赖信号（`topic_distribution` / `viral_type`），下游用「通用结构信号」占位，节点标 `degraded: true` + `degraded_reason`；③ `account_type` 强制走 general 回退链路，同标 `degraded: true`。
+- `_generic` 兜底包 `rules: []` → hit_rate 恒 0 → 恒触闸恒降级（陌生赛道不装懂）；结构/长度/时间类分析（m1-m7 大部分）照常产出。
+
+红线：任何降级路径禁止静默——数据层（本节点）、节点层（degraded 标记）、MD 层（警示块）三处同时留痕。
+
+---
+
+*Contract v1.2 · 维护者:Claude(技术总监)· 实现:grok(R4b/R5) + Fable(account_type)· 消费:dashboard(R4d)*

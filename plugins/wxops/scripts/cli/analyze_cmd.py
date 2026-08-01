@@ -78,7 +78,7 @@ def _seed_demo_workspace(workspace: Path) -> None:
     shutil.copytree(src, workspace, dirs_exist_ok=True, ignore=_FIXTURES_IGNORE)
 
 
-def _run_build(workspace: Path, account_name: str) -> int:
+def _run_build(workspace: Path, account_name: str, niche: str = "ai-tools") -> int:
     """调用 build_wechat_ops_report.py（子进程）。产物落工作区，skill 只读。"""
     cmd = [
         sys.executable,
@@ -87,6 +87,8 @@ def _run_build(workspace: Path, account_name: str) -> int:
         str(workspace),
         "--account-name",
         account_name,
+        "--niche",
+        niche,
     ]
     print(f"→ 正在构建报告: {' '.join(cmd)}")
     proc = subprocess.run(cmd, capture_output=False)
@@ -179,6 +181,7 @@ def run(
     build_only: bool = False,
     account_name_override: str | None = None,
     data_only: bool = False,
+    niche: str = "ai-tools",
 ) -> int:
     print_header = env.print_header
     print_step = env.print_step
@@ -200,7 +203,7 @@ def run(
         # fixtures = 只读输入；产物落工作区
         _seed_demo_workspace(workspace)
 
-        rc = _run_build(workspace, account_name)
+        rc = _run_build(workspace, account_name, niche=niche)
         if rc != 0:
             print_error("build 失败")
             return rc
@@ -239,7 +242,7 @@ def run(
     print_success(f"抓取完成: publish={result.get('publish_export')}, raw={result.get('raw_dir')}")
 
     # 构建
-    rc = _run_build(workspace, account_name)
+    rc = _run_build(workspace, account_name, niche=niche)
     if rc != 0:
         print_error("报告构建失败")
         return rc
