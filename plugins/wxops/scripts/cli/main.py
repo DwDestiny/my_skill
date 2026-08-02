@@ -3,7 +3,7 @@
 # Input: sys.argv → argparse（init/login/analyze/accounts/migrate/desk/kit/publish/review 及 --workspace/--account/--all 等）
 # Output: 分发子命令 + 账号/workspace 解析 + login/analyze 持锁与 registry 游标更新；本身不做抓取/分析业务；exit 码透传
 # Pos: plugins/wxops/scripts/cli/main.py
-"""wxops 可执行入口主分发：init / login / analyze / accounts / migrate / desk / kit。"""
+"""wxops 可执行入口主分发：init / login / analyze / accounts / migrate / desk / kit / publish / review。"""
 
 from __future__ import annotations
 
