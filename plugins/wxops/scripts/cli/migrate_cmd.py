@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/cli/migrate_cmd.py
+# Input: wxops root + slug/name；盘点根下 config.json/raw/reports/data/output/browser-profile
+# Output: copy-first 到 accounts/<slug>/ + 数量/大小/sha256 校验；写 runs/migrate-*.json；成功则注册账号并 set_current；源不动；exit 0/1
 # Pos: plugins/wxops/scripts/cli/migrate_cmd.py
 """旧单账号工作区 → accounts/<slug>/ 的 copy-first 迁移。"""
 

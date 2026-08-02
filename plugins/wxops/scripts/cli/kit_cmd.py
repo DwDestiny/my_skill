@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/cli/kit_cmd.py
+# Input: wxops root、可选 account slug / topic；读 accounts 注册表 + persona.md / structure.md（三层回落）+ 选题 card/evidence
+# Output: 只读体检终端汇总（缺件引导模板路径）；齐备 exit 0，缺件 exit 1；不写任何文件
 # Pos: plugins/wxops/scripts/cli/kit_cmd.py
 """kit 写作三件套门禁：只读体检 persona + 结构契约（+ 选题卡/证据包）。"""
 

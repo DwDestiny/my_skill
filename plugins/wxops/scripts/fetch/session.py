@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/fetch/session.py
+# Input: Playwright BrowserContext（持久化 profile 的 cookie 会话）
+# Output: 已落在 mp.weixin.qq.com 且 URL 含 token 的 (page, token)；无 token 则抛 login_required
 # Pos: plugins/wxops/scripts/fetch/session.py
 """Session helpers for logged-in MP backend pages.
 

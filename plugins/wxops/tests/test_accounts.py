@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by tests/test_accounts.py
+# Input: WXOPS_HOME=tmp_path + 构造账号树/legacy 源树/subprocess 撞锁 + capsys
+# Output: accounts_store 增删退役 + resolve_context 解析互斥 + migrate 先拷校验 + profile 锁 + desk 建议 + pipeline/legacy e2e
 # Pos: plugins/wxops/tests/test_accounts.py
 """多账号底座 + desk v0 + migrate + lock 单测。
 

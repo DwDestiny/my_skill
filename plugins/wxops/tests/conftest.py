@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by tests/conftest.py
+# Input: pytest 自动加载本 conftest；无额外 fixture / 假数据
+# Output: 将 plugins/wxops/scripts 插入 sys.path，供全套测试 import build_wechat_ops_report
 # Pos: plugins/wxops/tests/conftest.py
 """Pytest configuration for wechat ops report tests.
 

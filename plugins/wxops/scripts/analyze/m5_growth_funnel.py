@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/analyze/m5_growth_funnel.py
+# Input: stable 文章列表 + audience_raw + trend_raw + viral_formula
+# Output: 分享→粉转化/打开率近似、netgain_trend、4 周 startup_plan 与 action 篮
 # Pos: plugins/wxops/scripts/analyze/m5_growth_funnel.py
 from __future__ import annotations
 

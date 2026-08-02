@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/cli/analyze_cmd.py
+# Input: workspace + demo/build_only/data_only/niche/root/slug；config.json、browser-profile 或 fixtures
+# Output: output/report.json + workspace/dashboard 注入与 pnpm build|dev；终端进度；exit 0/1
 # Pos: plugins/wxops/scripts/cli/analyze_cmd.py
 """wxops analyze：抓取（或 demo）→ build 报告 → dashboard 预览/构建。
 
 运行契约（issue #16）：skill 目录只读模板，全部运行态产物落工作区
-（默认 ~/.wxops）。dashboard 被复制到 <workspace>/dashboard 后再注入数据、
-跑 pnpm，dist 落 <workspace>/dashboard/dist。
+（默认 ~/.wxops）。dashboard 被复制到 <workspace>/dashboard 后，把各账号
+report 注入到 public/data/（accounts.json + <slug>.json），再跑 pnpm；
+dist 落 <workspace>/dashboard/dist。
 """
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
+from typing import Any
 
+from . import accounts_store
 from . import env
 
 # 复制 skill dashboard 模板到工作区时忽略的运行态/构建产物
@@ -52,19 +57,156 @@ def _sync_dashboard_to_workspace(workspace: Path) -> Path:
     return dst
 
 
-def _inject_report_data(workspace: Path, dashboard_dir: Path) -> bool:
-    """把 builder 产出的 <workspace>/output/report.json 注入 dashboard 副本。
+def _try_load_report(report_path: Path) -> dict[str, Any] | None:
+    """读取 report.json；不存在、非法 JSON 或非 dict 时返回 None 并告警。"""
+    if not report_path.is_file():
+        return None
+    try:
+        data = json.loads(report_path.read_text(encoding="utf-8"))
+    except Exception as e:
+        env.print_warn(f"report 无法解析，已跳过：{report_path}（{e}）")
+        return None
+    if not isinstance(data, dict):
+        env.print_warn(f"report 顶层不是对象，已跳过：{report_path}")
+        return None
+    return data
 
-    App.tsx 用编译期静态 import "./data/report.json"，故数据必须落到
-    <workspace>/dashboard/src/data/report.json。
+
+def _nonempty_str(value: Any) -> str | None:
+    if isinstance(value, str) and value:
+        return value
+    return None
+
+
+def _legacy_display_name(report: dict[str, Any] | None) -> str:
+    """legacy 单租户：account_profile.name → meta.account_name → account.name → 本账号。"""
+    if not report:
+        return "本账号"
+    profile = report.get("account_profile")
+    if isinstance(profile, dict):
+        name = _nonempty_str(profile.get("name"))
+        if name is not None:
+            return name
+    meta = report.get("meta")
+    if isinstance(meta, dict):
+        name = _nonempty_str(meta.get("account_name"))
+        if name is not None:
+            return name
+    account = report.get("account")
+    if isinstance(account, dict):
+        name = _nonempty_str(account.get("name"))
+        if name is not None:
+            return name
+    return "本账号"
+
+
+def _report_meta_fields(report: dict[str, Any] | None) -> tuple[Any, Any]:
+    """从 report 提取 (generated_at, article_count)，取不到给 null。"""
+    if not report:
+        return None, None
+    generated_at = None
+    meta = report.get("meta")
+    if isinstance(meta, dict):
+        generated_at = meta.get("generated_at")
+    article_count = None
+    dq = report.get("data_quality")
+    if isinstance(dq, dict):
+        article_count = dq.get("stable_article_count")
+    return generated_at, article_count
+
+
+def _inject_accounts_data(
+    workspace: Path,
+    dashboard_dir: Path,
+    *,
+    root: Path | None = None,
+    slug: str | None = None,
+) -> bool:
+    """把各账号 report 注入 dashboard 副本的 public/data/。
+
+    多账号模式（slug 非 None）：扫描 root 下全部非 retired 账号，写 accounts.json
+    + 各 <slug>.json；current 为本次 analyze 的 slug。
+
+    legacy 单租户（slug 为 None）：生成 _legacy 单条目 + 可选 _legacy.json，
+    结构与多账号一致，前端无需降级分支。
+
+    返回 True 表示至少有一个账号成功注入了 report。
     """
-    out_report = env.get_workspace_output_dir(workspace) / "report.json"
-    if not out_report.exists():
-        return False
-    target = dashboard_dir / "src" / "data" / "report.json"
-    target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(out_report, target)
-    return True
+    data_dir = dashboard_dir / "public" / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    # 只清上一轮残留的 *.json，不碰目录本身、不递归、不删非 json
+    for stale in data_dir.glob("*.json"):
+        if stale.is_file():
+            stale.unlink()
+
+    generated_at = datetime.now().astimezone().replace(microsecond=0).isoformat()
+    accounts_out: list[dict[str, Any]] = []
+    any_report = False
+
+    if slug is None:
+        # --- legacy 单租户 ---
+        report_src = env.get_workspace_output_dir(workspace) / "report.json"
+        report = _try_load_report(report_src)
+        has_report = report is not None
+        if has_report:
+            shutil.copy2(report_src, data_dir / "_legacy.json")
+            any_report = True
+        gen_at, art_count = _report_meta_fields(report)
+        accounts_out.append(
+            {
+                "slug": "_legacy",
+                "name": _legacy_display_name(report),
+                "has_report": has_report,
+                "report_url": "data/_legacy.json" if has_report else None,
+                "generated_at": gen_at,
+                "article_count": art_count,
+            }
+        )
+        current = "_legacy"
+    else:
+        # --- 多账号 ---
+        if root is None:
+            root = env.get_wxops_root()
+        current = slug
+        for acct in accounts_store.list_accounts(root):
+            acct_slug = acct.get("slug")
+            if not isinstance(acct_slug, str) or not acct_slug:
+                continue
+            if acct.get("status") == "retired":
+                continue
+            raw_name = acct.get("name")
+            name = raw_name if isinstance(raw_name, str) and raw_name else acct_slug
+
+            report_src = accounts_store.get_account_dir(root, acct_slug) / "output" / "report.json"
+            report = _try_load_report(report_src)
+            has_report = report is not None
+            if has_report:
+                dest = data_dir / f"{acct_slug}.json"
+                shutil.copy2(report_src, dest)
+                any_report = True
+            gen_at, art_count = _report_meta_fields(report) if has_report else (None, None)
+            accounts_out.append(
+                {
+                    "slug": acct_slug,
+                    "name": name,
+                    "has_report": has_report,
+                    "report_url": f"data/{acct_slug}.json" if has_report else None,
+                    "generated_at": gen_at,
+                    "article_count": art_count,
+                }
+            )
+
+    payload = {
+        "generated_at": generated_at,
+        "current": current,
+        "accounts": accounts_out,
+    }
+    (data_dir / "accounts.json").write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return any_report
 
 
 def _seed_demo_workspace(workspace: Path) -> None:
@@ -161,13 +303,17 @@ def _start_dashboard(dashboard_dir: Path, build_only: bool) -> None:
         env.print_error(f"启动 dev 失败: {e}")
 
 
-def _build_dashboard(workspace: Path, build_only: bool) -> None:
-    """同步 dashboard 副本 → 注入数据 → install → build/dev。全部在工作区内进行。"""
+def _build_dashboard(
+    workspace: Path,
+    build_only: bool,
+    *,
+    root: Path | None = None,
+    slug: str | None = None,
+) -> None:
+    """同步 dashboard 副本 → 注入多账号数据 → install → build/dev。全部在工作区内进行。"""
     dashboard_dir = _sync_dashboard_to_workspace(workspace)
-    if not _inject_report_data(workspace, dashboard_dir):
-        env.print_warn(
-            f"未找到 {env.get_workspace_output_dir(workspace) / 'report.json'}，看板将使用上次注入的数据"
-        )
+    if not _inject_accounts_data(workspace, dashboard_dir, root=root, slug=slug):
+        env.print_warn("未找到可用的 report.json，看板将无法加载账号数据")
     if not _ensure_dashboard_deps(dashboard_dir):
         env.print_warn(
             f"dashboard 依赖安装可能未完成，请手动 cd {dashboard_dir} && pnpm install"
@@ -182,6 +328,8 @@ def run(
     account_name_override: str | None = None,
     data_only: bool = False,
     niche: str = "ai-tools",
+    root: Path | None = None,
+    slug: str | None = None,
 ) -> int:
     print_header = env.print_header
     print_step = env.print_step
@@ -189,6 +337,10 @@ def run(
     print_warn = env.print_warn
     print_error = env.print_error
     print_info = env.print_info
+
+    # slug 有值但 root 未传时兜底，避免多账号注入扫不到注册表
+    if slug is not None and root is None:
+        root = env.get_wxops_root()
 
     print_header("分析并生成叙事看板 (wxops analyze)")
 
@@ -212,7 +364,7 @@ def run(
         if data_only:
             print_success("已跳过 dashboard 构建（--data-only）。")
             return 0
-        _build_dashboard(workspace, build_only)
+        _build_dashboard(workspace, build_only, root=root, slug=slug)
         return 0
 
     # === 正常模式：需要 playwright + 已登录态 ===
@@ -254,7 +406,7 @@ def run(
         return 0
 
     # dashboard（工作区副本）
-    _build_dashboard(workspace, build_only)
+    _build_dashboard(workspace, build_only, root=root, slug=slug)
 
     # 额外提示
     print_success("分析流程结束。")

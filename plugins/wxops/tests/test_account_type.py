@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by tests/test_account_type.py
+# Input: fixtures 样例号 + 合成文章矩阵（媒体/IP/知识/转化 + 小样本/弱信号）
+# Output: m9_account_type 类型识别/置信回退 general + playbook 完整 + 路由权重序 + report 只增不删/禁「置信度」字样
 # Pos: plugins/wxops/tests/test_account_type.py
 """m9_account_type 账号类型识别与路由引擎测试。
 

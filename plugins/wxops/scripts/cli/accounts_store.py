@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/cli/accounts_store.py
+# Input: wxops root Path + slug/name/niche/station 等；读写 accounts.json 与 accounts/<slug>/{account,pipeline}.json
+# Output: 注册表/账号 dict|list、路径与时间格式化；原子写 json；纯逻辑零终端交互
 # Pos: plugins/wxops/scripts/cli/accounts_store.py
 """多账号注册表：accounts.json 薄指针 + 各账号 account.json / pipeline.json 单一真源。"""
 

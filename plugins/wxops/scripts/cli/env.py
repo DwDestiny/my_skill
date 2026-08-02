@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/cli/env.py
+# Input: WXOPS_HOME/workspace 覆盖路径；workspace/config.json；PATH 上的 node/pnpm/playwright
+# Output: 路径解析、config 读写、目录创建、依赖探测 (ok,msg)、print_* 中文终端样式
 # Pos: plugins/wxops/scripts/cli/env.py
 """环境与配置工具：SKILL_DIR 自定位、workspace 解析、config 读写、依赖探测、友好打印。"""
 

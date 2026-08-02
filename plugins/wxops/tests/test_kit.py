@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by tests/test_kit.py
+# Input: autouse 隔离 WXOPS_HOME=tmp_path + 构造 persona/card/evidence + niches structure.md + capsys
+# Output: kit_cmd 四件套门禁（齐备/空壳/占位符/缺件）+ structure 三层回落 + topic 非法 slug + desk 在途列与写稿建议
 # Pos: plugins/wxops/tests/test_kit.py
 """kit 写作三件套门禁 + desk 在途列单测。
 

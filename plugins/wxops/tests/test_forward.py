@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by tests/test_forward.py
+# Input: fixtures 全量 dataset + deepcopy 截断 stable；subprocess 多 PYTHONHASHSEED
+# Output: m8_forward 契约 — 闸门阻断、signals 序/枚举、候选卡与矩阵、中立禁词、旧键兼容、hashseed 确定性
 # Pos: plugins/wxops/tests/test_forward.py
 """Tests for forward-looking engine (m8_forward) per DATA_CONTRACT.md §10."""
 

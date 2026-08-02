@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/analyze/m3_content_engine.py
+# Input: stable 文章列表 + by_content_type 分组统计 + benchmark
+# Output: pull/mind 题材、recommended_ratio 配比、analysis/conclusion/action 与 voice 篮
 # Pos: plugins/wxops/scripts/analyze/m3_content_engine.py
 from __future__ import annotations
 

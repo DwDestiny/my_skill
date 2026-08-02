@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by tests/test_wechat_ops_report.py
+# Input: fixtures 目录 + build_dataset(account=样例运营号)；render 用 fixtures/output/dataset.json 路径
+# Output: 端到端 dataset 契约（分区叙事/模板槽/内容类型/标签指标）与 render_report 周动作+禁词红线
 # Pos: plugins/wxops/tests/test_wechat_ops_report.py
 from pathlib import Path
 

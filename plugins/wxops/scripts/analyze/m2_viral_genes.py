@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/analyze/m2_viral_genes.py
+# Input: stable 文章列表 + benchmark（read_median/share_rate_median）
+# Output: 四象限 quadrant 与计数、viral_formula 爆款公式、top_viral、diagnosis_signal
 # Pos: plugins/wxops/scripts/analyze/m2_viral_genes.py
 from __future__ import annotations
 

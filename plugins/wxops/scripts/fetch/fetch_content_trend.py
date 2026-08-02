@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/fetch/fetch_content_trend.py
+# Input: 已登录 Page + workspace；token 后页内 fetch /misc/appmsganalysis?action=report&f=json
+# Output: 校验 base_resp.ret==0，写 raw/content-trend.json（读写赞在看评论序列 + counts）
 # Pos: plugins/wxops/scripts/fetch/fetch_content_trend.py
 """Fetch content trend stats (Interface C: /misc/appmsganalysis?action=report&f=json).
 

@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by tests/test_modules.py
+# Input: plugins/wxops/fixtures + tmp_path 脏 JSON/畸形 age + 内联 HTML 片段
+# Output: load_raw_audience/trend 降级与 #26 重算 available + m1/m3–m6 结构 + #27 画像空维 + #30 gender + JS 函数拒收
 # Pos: plugins/wxops/tests/test_modules.py
 """Tests for new raw sources and 5 methodology modules (m1/m3/m4/m5/m6)."""
 import json

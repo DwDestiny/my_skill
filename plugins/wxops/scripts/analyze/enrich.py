@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/analyze/enrich.py
+# Input: 后台发文 raw record + 工作区 root Path；enrich 另吃 by_url/by_title 索引与本地 article_dir
+# Output: 规范化 article dict（指标/题材标签/时间维）；就地补正文匹配、字数、标题结构字段
 # Pos: plugins/wxops/scripts/analyze/enrich.py
 from __future__ import annotations
 

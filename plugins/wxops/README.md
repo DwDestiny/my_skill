@@ -20,7 +20,7 @@
 |---|---|---|
 | desk 总控台 | ✅ P1 | 跨账号流水线状态 + 在途内容 + 下一步建议 |
 | accounts | ✅ P1 | 加号/列表/切换/退休/迁移/按号登录 |
-| analyze | ✅ P1 | 拉数据 → 诊断报告 → 叙事看板 |
+| analyze | ✅ P1 | 拉数据 → 诊断报告 → 叙事看板（P6 起看板运行时加载，可在多个号之间切换） |
 | topics | ✅ P4 | 报告信号 + 赛道矩阵 +（可选）niche-scout 调研 → 选题卡 |
 | write | ✅ P4 | 三件套开工制（`wxops kit` 门禁）→ 初稿 → 审计 → 标题 → 人终审 |
 | illustrate | ✅ P4 | 封面 900×383 + 正文图；通路可插拔（AI 生成/人工供图） |
@@ -42,8 +42,11 @@ plugins/wxops/
 ├── tests/  fixtures/            # 引擎测试与演示数据
 ├── dashboard/                   # 看板模板（构建时复制到账号目录）
 ├── references/  DATA_CONTRACT.md
-└── README.md                    # 本文件（L1）
+├── README.md                    # 本文件：产品是什么（面向用户的 L1）
+└── AGENTS.md                    # 怎么在这棵子树里干活、什么不能碰（面向 agent 的 L1）
 ```
+
+各目录有自己的 `AGENTS.md`（L2），每个源文件顶部有 `# GEB-L3` 头——按 L1 → L2 → L3 逐级展开，不必全仓扫描。
 
 运行态一律在 `~/.wxops/`（可用 `WXOPS_HOME` 覆盖），布局见 `skills/accounts/SKILL.md`。
 
@@ -57,6 +60,8 @@ scripts/wxops desk                                     # 随时看全局
 ```
 
 零依赖试跑：`scripts/wxops analyze --demo --data-only`。
+
+从 npm 包 `create-wechat-ops-skill` 装过单账号老技能的，升级路径见 [packages/create-wechat-ops-skill/MIGRATION.md](../../packages/create-wechat-ops-skill/MIGRATION.md)——`wxops migrate` 是 copy-first 的，源目录一个字节不动。
 
 ## 红线
 

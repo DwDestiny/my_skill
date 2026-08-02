@@ -82,6 +82,8 @@ a {
 .sidenav {
   position: sticky;
   top: 0;
+  /* 高于主区:账号弹层要能溢出侧栏盖在正文上(DOM 里主区在后) */
+  z-index: 5;
   height: 100vh;
   padding: 40px 18px 28px;
   display: flex;
@@ -183,13 +185,6 @@ a {
   font-size: 12px;
   color: var(--ink-faint);
 }
-.sn-author-name .av {
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  object-fit: cover;
-  background: var(--subtle);
-}
 .sn-star-btn {
   display: flex;
   align-items: center;
@@ -209,6 +204,148 @@ a {
 }
 .sn-star-btn .star {
   color: var(--butter);
+}
+
+/* ===================== 账号切换器 =====================
+   长在侧栏底部账号区。单账号时 React 侧退化为 .sn-author-name,
+   下面这套结构根本不渲染 —— 只有一个号时,界面上没有任何切换痕迹。 */
+.acct-av {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border-radius: 999px;
+  color: #fff;
+  font-weight: 700;
+  font-family: var(--sans);
+  line-height: 1;
+}
+.acct-switch {
+  position: relative;
+}
+.acct-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* 负 margin 抵消内边距,静默态与原来的作者行逐像素对齐 */
+  padding: 6px 8px;
+  margin: -6px -8px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink-faint);
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.16s, color 0.16s;
+}
+.acct-trigger:hover,
+.acct-trigger.open {
+  background: var(--subtle);
+  color: var(--ink-muted);
+}
+.acct-trigger-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.acct-chev {
+  flex: none;
+  color: var(--ink-faint);
+}
+.acct-spin {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1.6px solid var(--hair);
+  border-top-color: var(--mint);
+  animation: acctSpin 0.7s linear infinite;
+}
+@keyframes acctSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 弹层向上开 —— 触发器待在侧栏底部 */
+.acct-pop {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: -6px;
+  width: 232px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgba(35, 35, 40, 0.13);
+  animation: acctPop 0.16s ease;
+}
+@keyframes acctPop {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.acct-opt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 9px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.14s;
+}
+.acct-opt:hover:not(:disabled) {
+  background: var(--subtle);
+}
+.acct-opt.me {
+  background: rgba(95, 201, 163, 0.1);
+}
+.acct-opt.void {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.acct-opt-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.acct-opt-name {
+  font-size: 13px;
+  color: var(--ink);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.acct-opt.me .acct-opt-name {
+  font-weight: 600;
+}
+.acct-opt-sub {
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+/* 超过 7 天没分析:用桃色提醒该重跑了,而不是红色报错 */
+.acct-opt-sub.stale {
+  color: var(--peach);
+}
+.acct-opt-tick {
+  flex: none;
+  color: var(--mint);
 }
 
 /* ===================== 主区 ===================== */
@@ -1711,6 +1848,112 @@ a {
   background: var(--subtle);
 }
 
+/* ===================== 赛道包命中率警示 =====================
+   出现在正文最前面，先于所有结论被读到 —— 它说的是「下面这些数字要打折看」，
+   属于元信息，理应挡在叙事之前。用桃色而非红色：这是降级提示，不是系统故障。 */
+.cov-wrap {
+  /* 必须自己是吸附点：main-scroll 是 proximity 吸附容器，任何插在首屏之前
+     又不声明 scroll-snap-align 的块，都会被吸到下一个吸附点、静默滚出视口。 */
+  scroll-snap-align: start;
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: 26px clamp(28px, 4.5vw, 64px) 0;
+}
+.cov-alert {
+  display: flex;
+  gap: 11px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border-left: 3px solid var(--peach);
+  background: rgba(255, 158, 122, 0.07);
+}
+.cov-ico {
+  flex: none;
+  margin-top: 1px;
+  color: var(--peach);
+}
+.cov-body {
+  min-width: 0;
+}
+.cov-head {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.cov-sub {
+  margin: 5px 0 0;
+  font-size: var(--t-label);
+  line-height: 1.75;
+  color: var(--ink-muted);
+}
+
+/* ===================== 加载 / 加载失败 ===================== */
+.boot {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px;
+  text-align: center;
+  background: var(--canvas);
+  /* 延迟 200ms 才淡入：本地 fetch 通常更快，避免加载态一闪而过 */
+  animation: bootIn 0.3s ease 0.2s both;
+}
+@keyframes bootIn {
+  from {
+    opacity: 0;
+  }
+}
+.boot-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--mint), var(--sky));
+  animation: bootPulse 1.3s ease-in-out infinite;
+}
+@keyframes bootPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.86);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.boot-line {
+  margin: 0;
+  font-size: var(--t-body);
+  color: var(--ink-muted);
+}
+.boot-hint {
+  margin: 0;
+  max-width: 440px;
+  font-size: var(--t-label);
+  line-height: 1.75;
+  color: var(--ink-faint);
+}
+.boot-hint code {
+  font-family: var(--num);
+  font-size: 12px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--subtle);
+  color: var(--ink-muted);
+}
+.boot-err-ico {
+  color: var(--peach);
+}
+.boot-err .boot-line {
+  color: var(--ink);
+  font-weight: 600;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1765,6 +2008,37 @@ a {
     flex-direction: row;
     align-items: center;
     margin-left: auto;
+  }
+  /* 侧栏此时是顶栏：弹层改为向下开，并把定位基准从触发器换到 .sn-author。
+     触发器在顶栏里只有几十像素宽且位置随内容浮动，以它为基准时 232px 的弹层
+     无论左锚右锚都会擦到屏幕边；.sn-author 有 margin-left:auto，右沿恒等于
+     顶栏右内边距，靠它右对齐，任何视口宽度下都稳定留出同样的边距。 */
+  .acct-switch {
+    position: static;
+  }
+  .sn-author {
+    position: relative;
+  }
+  .acct-pop {
+    top: calc(100% + 8px);
+    bottom: auto;
+    left: auto;
+    right: 0;
+    animation-name: acctPopDown;
+  }
+  /* 顶栏里触发器只剩约 99px，账号名会被截成一个字 —— 与头像首字重复，
+     不如不留。身份由头像承担，名字点开就有。 */
+  .acct-trigger-name {
+    display: none;
+  }
+  .acct-trigger {
+    width: auto;
+  }
+  @keyframes acctPopDown {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
   }
   .screen,
   .screen.flow,

@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/analyze/classify.py
+# Input: 文章 record/title/正文 str + get_active() 赛道包（content_types/pain_points/personas/title_patterns）
+# Output: 题材（含 terms|fallback 来源）、痛点、人设；标题结构 dict；正文去 MD 后字数与 length_bucket
 # Pos: plugins/wxops/scripts/analyze/classify.py
 from __future__ import annotations
 

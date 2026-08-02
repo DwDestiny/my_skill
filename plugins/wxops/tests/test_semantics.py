@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by tests/test_semantics.py
+# Input: fixtures 目录 + build_dataset 生成的完整 dataset
+# Output: issue #17 语义回归 — mirror 不复读 main_axis、厚度 level↔word 三档、action_plan 跨 ≥2 lane
 # Pos: plugins/wxops/tests/test_semantics.py
 """Regression tests for 3 semantic defects (GitHub #17).
 
