@@ -26,6 +26,8 @@ from . import kit_cmd
 from . import lock as lock_mod
 from . import login_cmd
 from . import migrate_cmd
+from . import publish_cmd
+from . import review_cmd
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -139,6 +141,47 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="选题 slug；给出则做开工体检（四项），否则仅账号级体检（两项）",
     )
+
+    # publish（发布主链；草稿箱止步）
+    p_publish = subparsers.add_parser(
+        "publish",
+        parents=[common],
+        help="发布主链：渲染公众号 HTML → 上传素材 → 建草稿（草稿箱止步）",
+    )
+    p_publish.add_argument("--topic", required=True, help="选题 slug")
+    p_publish.add_argument(
+        "--go",
+        action="store_true",
+        help="执行真实建草稿（默认 dry-run 预演）",
+    )
+    p_publish.add_argument(
+        "--title",
+        default=None,
+        help="标题；默认取 draft.md 首个一级标题",
+    )
+    p_publish.add_argument(
+        "--author",
+        default=None,
+        help="作者；默认取账号 name",
+    )
+    p_publish.add_argument(
+        "--digest",
+        default=None,
+        help="摘要；留空则微信自动摘取",
+    )
+    p_publish.add_argument(
+        "--source-url",
+        default=None,
+        help="原文链接",
+    )
+
+    # review（复盘：对照选题卡预期出结论）
+    p_review = subparsers.add_parser(
+        "review",
+        parents=[common],
+        help="复盘：对照选题卡预期出结论（先跑 analyze 更新数据）",
+    )
+    p_review.add_argument("--topic", required=True, help="选题 slug")
 
     return parser
 
@@ -342,6 +385,12 @@ def main(argv: list[str] | None = None) -> int:
             account=getattr(args, "account", None),
             topic=getattr(args, "topic", None),
         )
+
+    if args.command == "publish":
+        return publish_cmd.run_publish(args)
+
+    if args.command == "review":
+        return review_cmd.run_review(args)
 
     # analyze --all / login --all：必须在 resolve_context 之前（互斥返回 2）
     if args.command == "analyze" and getattr(args, "all", False):

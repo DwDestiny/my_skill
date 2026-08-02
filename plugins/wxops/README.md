@@ -24,8 +24,8 @@
 | topics | ✅ P4 | 报告信号 + 赛道矩阵 +（可选）niche-scout 调研 → 选题卡 |
 | write | ✅ P4 | 三件套开工制（`wxops kit` 门禁）→ 初稿 → 审计 → 标题 → 人终审 |
 | illustrate | ✅ P4 | 封面 900×383 + 正文图；通路可插拔（AI 生成/人工供图） |
-| publish | 🚧 P5 | 渲染 → 网关 → **草稿箱止步** |
-| review | 🚧 P5 | 发布后对照选题卡复盘，回灌人设建议 |
+| publish | ✅ P5 | dry-run 先行 → 渲染 → 网关上传 + 建草稿 → **草稿箱止步**；凭证按账号隔离 |
+| review | ✅ P5 | 发布后对照选题卡预期出达成/偏差结论 → persona/niche 修订**建议**（人拍板） |
 
 写作产线四 agents（`agents/`）：niche-scout 情报侦察 / draft-writer 初稿执笔 / style-auditor 人设审计（对抗镜头）/ title-smith 标题候选。提示词零账号零赛道知识——身份与知识按三层模型在运行时喂入。派单契约与写权限表见 `references/agents-guide.md`（`agents/` 下所有 .md 都会被插件校验器当 agent 扫描，L2 文档只能住 references）。
 
@@ -36,7 +36,7 @@ plugins/wxops/
 ├── .claude-plugin/plugin.json   # 插件清单
 ├── skills/                      # 八工位 SKILL.md
 ├── agents/                      # 写作产线四 agents（niche-scout/draft-writer/style-auditor/title-smith）
-├── scripts/                     # Python 引擎（cli/fetch/analyze，自旧 skill copy-first 迁入）
+├── scripts/                     # Python 引擎（cli/fetch/analyze 自旧 skill 迁入；publish/ 复制自 hermes 带来源头注）
 ├── niches/                      # 内置赛道包（niche.json 词表 + structure.md 结构契约；ai-tools / _generic）
 ├── templates/                   # 用户侧模板（persona / evidence-pack / topic-card / niche 词表包）
 ├── tests/  fixtures/            # 引擎测试与演示数据
