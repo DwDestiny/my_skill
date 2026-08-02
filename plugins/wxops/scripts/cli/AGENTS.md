@@ -6,7 +6,7 @@
 ## 文件清单
 | 文件 | 职责 |
 |---|---|
-| `main.py` | 可执行入口主分发:init / login / analyze / accounts / migrate / desk / kit；账号解析与锁在此层包一层 |
+| `main.py` | 可执行入口主分发:init / login / analyze / accounts / migrate / desk / kit / publish / review；账号解析与锁在此层包一层 |
 | `init_cmd.py` | 环境自检 + 依赖自动装 + workspace 初始化 + 配置写入 |
 | `login_cmd.py` | 扫码登录持久化浏览器 profile;登录态判定依赖 URL token(已知缺口:即时读取会误报未登录,见 issue #24 关联诊断) |
 | `analyze_cmd.py` | 抓取(或 demo)→ build 报告 → dashboard 预览/构建 |
@@ -19,9 +19,18 @@
 | `kit_cmd.py` | 写作三件套只读门禁:persona + 结构契约(+ 选题卡/证据包);缺一 exit 1 |
 | `health.py` | 登录态健康探测：headless 打开 browser-profile 查 token，写回前由调用方持锁 |
 | `batch_cmd.py` | analyze --all 批量编排：前置体检 + 顺序拉数 + 防风控间隔 + 失败隔离 + 批次报告 |
+| `publish_cmd.py` | 发布主链编排：预检七项 → 渲染 → （`--go`）上传素材 + 建草稿 → 发布台账；引擎在 `../publish/` |
+| `review_cmd.py` | 复盘：台账 + 选题卡预期 + analyze 数据 → `reports/review-<topic>.md`；全程只读，唯一写动作是落报告 |
 
 ## 本地规则
 - 所有路径解析走 `env.py`,不得在子命令内自拼 workspace 路径。
 - 用户可见文案一律中文,用 `env.py` 的 print_* 工具保持样式一致。
 - 子命令只编排、不实现:网络逻辑进 `fetch/`,计算逻辑进 `analyze/`。
 - 真实 `~/.wxops` 禁触;测试与冒烟一律 `WXOPS_HOME` 指向临时目录。
+
+## 发布与复盘的额外纪律(P5)
+- **草稿箱止步**:`publish_cmd.py` 不得出现任何发布/群发调用点;网关能力面积由 `../publish/wechat_gateway_client.py` 兜底(仅上传素材 + 建草稿两方法)。
+- **dry-run 是默认态**:触网引擎只在 `--go` 分支内惰性 import,使"默认跑法零网络"成为结构性保证而非约定。
+- **凭证按账号隔离**:凭证路径由账号 slug 推导(`accounts/<slug>/credentials/wechat.json`),隔离责任在本层;凭证值不打印、不入台账、不写日志。
+- **复盘不代人落笔**:`review_cmd.py` 绝不写 `persona.md` 与 niche 包——修订建议止步于报告文本,落笔要主编点头。
+- **不编数**:analyze 数据里没有的指标(如单篇完读率)在报告中标"人工核对",绝不推算填充;选题卡未填的占位符行不参与机器判定。
