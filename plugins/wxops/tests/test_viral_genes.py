@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by tests/test_viral_genes.py
+# Input: fixtures 稳定样本 + 手造 article/benchmark 字典（四象限、≥3/＜3 爆款）
+# Output: m2_viral_genes + m7_standards — 四象限边界、viral 阈值、formula reliable、象限长度与诊断信号
 # Pos: plugins/wxops/tests/test_viral_genes.py
 """Tests for new benchmark and viral_genes modules."""
 from pathlib import Path

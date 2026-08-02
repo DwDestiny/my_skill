@@ -18,6 +18,8 @@ import {
   Github,
   Star,
   Check,
+  ChevronsUpDown,
+  AlertTriangle,
 } from "lucide-react";
 import {
   ScatterChart,
@@ -33,9 +35,30 @@ import {
   Area,
   Cell,
 } from "recharts";
-import report from "./data/report.json";
 
-const data: any = report;
+/* ===================== 数据层(运行时加载,多账号) =====================
+   原先是编译期 `import report from "./data/report.json"` + 模块级 const data。
+   改为 fetch `data/accounts.json` 拿账号索引,再按账号取报告,经 Context 下发。
+   各屏组件仍以 `const data = useReport()` 取到同名局部变量,内部读法不变。 */
+type AccountEntry = {
+  slug: string;
+  name: string;
+  has_report: boolean;
+  /** 相对路径(不带前导斜杠),未分析的账号为 null */
+  report_url: string | null;
+  generated_at: string | null;
+  article_count: number | null;
+};
+type AccountsIndex = {
+  generated_at: string;
+  current: string;
+  accounts: AccountEntry[];
+};
+
+const ReportCtx = React.createContext<any>(null);
+function useReport(): any {
+  return React.useContext(ReportCtx);
+}
 
 /* ===================== Tokens(马卡龙) ===================== */
 const MACARON = {
@@ -184,8 +207,168 @@ function useActiveSection(ids: string[]) {
   return active;
 }
 
+/* ===================== 账号切换器 =====================
+   位置在侧栏底部账号区 —— 那里本来就写着「当前是谁」，切换能力长在原地。
+   单账号时退化为纯展示：没有 chevron、没有 hover、不可点。
+   能力从数据里长出来，而不是常驻一个提示你「只有一个号」的控件。 */
+
+/** slug 稳定哈希取色 + 名字首字，免去头像文件同步 */
+function AcctAvatar({ name, slug, size = 22 }: { name: string; slug: string; size?: number }) {
+  const ch = ((name || slug || "?").trim()[0] || "?").toUpperCase();
+  let h = 0;
+  for (let i = 0; i < slug.length; i += 1) h = (h * 31 + slug.charCodeAt(i)) >>> 0;
+  return (
+    <span
+      className="acct-av"
+      style={{
+        width: size,
+        height: size,
+        background: SERIES[h % SERIES.length],
+        fontSize: Math.round(size * 0.46),
+      }}
+      aria-hidden
+    >
+      {ch}
+    </span>
+  );
+}
+
+/** 「3 天前分析」；超 7 天视为陈旧，用于提示该重跑 analyze 了 */
+function relAnalyzed(iso: string | null): { text: string; stale: boolean } {
+  if (!iso) return { text: "未分析", stale: true };
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return { text: "未分析", stale: true };
+  const days = Math.floor((Date.now() - t) / 86400000);
+  if (days <= 0) return { text: "今天分析", stale: false };
+  if (days === 1) return { text: "昨天分析", stale: false };
+  if (days < 30) return { text: `${days} 天前分析`, stale: days > 7 };
+  return { text: `${Math.floor(days / 30)} 个月前分析`, stale: true };
+}
+
+function AccountSwitcher({
+  index,
+  current,
+  fallbackName,
+  switching,
+  onSwitch,
+}: {
+  index: AccountsIndex | null;
+  current: string;
+  fallbackName: string;
+  switching: boolean;
+  onSwitch: (slug: string) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const boxRef = React.useRef<HTMLDivElement>(null);
+  const list = index?.accounts ?? [];
+  const me = list.find((a) => a.slug === current);
+  const name = me?.name ?? fallbackName;
+
+  React.useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!boxRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  // 单账号：与改造前同一副样子，不留任何切换痕迹
+  if (list.length <= 1) {
+    return (
+      <div className="sn-author-name">
+        <AcctAvatar name={name} slug={current || "_"} />
+        {name}
+      </div>
+    );
+  }
+
+  return (
+    <div className="acct-switch" ref={boxRef}>
+      {open ? (
+        <div className="acct-pop" role="listbox" aria-label="切换账号">
+          {list.map((a) => {
+            const rel = relAnalyzed(a.generated_at);
+            const isMe = a.slug === current;
+            return (
+              <button
+                key={a.slug}
+                type="button"
+                role="option"
+                aria-selected={isMe}
+                disabled={!a.has_report}
+                className={`acct-opt${isMe ? " me" : ""}${a.has_report ? "" : " void"}`}
+                title={
+                  a.has_report
+                    ? undefined
+                    : `该账号还没有分析数据：先跑 wxops analyze --account ${a.slug}`
+                }
+                onClick={() => {
+                  if (a.has_report && !isMe) onSwitch(a.slug);
+                  setOpen(false);
+                }}
+              >
+                <AcctAvatar name={a.name} slug={a.slug} size={26} />
+                <span className="acct-opt-text">
+                  <span className="acct-opt-name">{a.name}</span>
+                  <span className={`acct-opt-sub${rel.stale ? " stale" : ""}`}>
+                    {a.has_report
+                      ? `${a.article_count ?? "—"} 篇 · ${rel.text}`
+                      : "未分析"}
+                  </span>
+                </span>
+                {isMe ? <Check className="acct-opt-tick" size={14} /> : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+      <button
+        type="button"
+        className={`acct-trigger${open ? " open" : ""}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        /* 窄屏只剩头像和 chevron，可见文字不足以说明这是切换器，名字挂在这里 */
+        aria-label={`当前账号：${name}，点击切换`}
+        title={name}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <AcctAvatar name={name} slug={current || "_"} />
+        <span className="acct-trigger-name">{name}</span>
+        {switching ? (
+          <span className="acct-spin" aria-label="加载中" />
+        ) : (
+          <ChevronsUpDown className="acct-chev" size={13} />
+        )}
+      </button>
+    </div>
+  );
+}
+
 /* ===================== 左栏 ===================== */
-function SideNav({ groups, active }: { groups: NavGroup[]; active: string }) {
+function SideNav({
+  groups,
+  active,
+  index,
+  current,
+  switching,
+  onSwitch,
+}: {
+  groups: NavGroup[];
+  active: string;
+  index: AccountsIndex | null;
+  current: string;
+  switching: boolean;
+  onSwitch: (slug: string) => void;
+}) {
+  const data = useReport();
   const sig = data.brand_signature ?? {};
   const repo = sig.skill_repo || sig.star_url || "https://github.com";
   return (
@@ -230,10 +413,13 @@ function SideNav({ groups, active }: { groups: NavGroup[]; active: string }) {
       </nav>
 
       <div className="sn-author">
-        <div className="sn-author-name">
-          <img className="av" src="/avatar-demo.png" alt="" />
-          {sig.author_name ?? "麦总玩AI"}
-        </div>
+        <AccountSwitcher
+          index={index}
+          current={current}
+          fallbackName={sig.author_name ?? "本账号"}
+          switching={switching}
+          onSwitch={onSwitch}
+        />
         <a className="sn-star-btn" href={repo} target="_blank" rel="noreferrer">
           <Github size={14} />
           <span>Star on GitHub</span>
@@ -258,6 +444,7 @@ function ActDivider({ eyebrow, line, sub }: { eyebrow: string; line: string; sub
 
 /* ===================== 爆款基因卡(signature) ===================== */
 function ViralGeneCard() {
+  const data = useReport();
   const f = data.viral_genes?.viral_formula ?? {};
   const counts = data.viral_genes?.quadrant_counts ?? {};
   const factors = [
@@ -297,6 +484,7 @@ function ViralGeneCard() {
 
 /* ===================== 概览首屏(F1 判断 → F2 数字带 → F3 基因卡) ===================== */
 function Overview() {
+  const data = useReport();
   const acc = data.account ?? {};
   const bm = data.benchmark ?? {};
   const checkup = data.modules?.checkup ?? {};
@@ -428,6 +616,7 @@ function FlowScreen({
 
 /* ===================== 01 账号体检 ===================== */
 function CheckupScreen() {
+  const data = useReport();
   const c = data.modules?.checkup ?? {};
   const bm = data.benchmark ?? {};
   const inter = c.interaction ?? {};
@@ -495,6 +684,7 @@ const QUADRANT_DESC: Record<string, string> = {
 };
 
 function ViralScreen() {
+  const data = useReport();
   const vg = data.viral_genes ?? {};
   const bm = data.benchmark ?? {};
   const all = vg.quadrant ?? [];
@@ -651,6 +841,7 @@ function RankBars({ rows, max, unit }: { rows: { label: string; value: number }[
 
 /* ===================== 03 内容引擎 ===================== */
 function ContentScreen() {
+  const data = useReport();
   const ce = data.modules?.content_engine ?? {};
   const topics = (ce.by_topic ?? [])
     .filter((t: any) => (t.count ?? 0) > 0)
@@ -700,6 +891,7 @@ function ContentScreen() {
 
 /* ===================== 04 读者画像 ===================== */
 function AudienceScreen() {
+  const data = useReport();
   const au = data.modules?.audience ?? {};
   const available = au.fans_portrait_available;
   const city = (au.city ?? []).slice(0, 8);
@@ -758,6 +950,7 @@ function AudienceScreen() {
 
 /* ===================== 05 涨粉漏斗 ===================== */
 function GrowthScreen() {
+  const data = useReport();
   const g = data.modules?.growth_funnel ?? {};
   const trend = (g.netgain_trend ?? []).map((r: any) => ({
     date: String(r.date ?? "").slice(5),
@@ -824,6 +1017,7 @@ function GrowthScreen() {
 
 /* ===================== 06 量化标准(巨数 + 三小注 定义表) ===================== */
 function StandardsScreen() {
+  const data = useReport();
   const bm = data.benchmark ?? {};
   const hero = {
     label: "爆款阅读门槛",
@@ -891,6 +1085,7 @@ const ROLE_COLOR: Record<string, string> = {
 
 /* ===================== 怎么办 · 照镜子 ===================== */
 function MirrorScreen() {
+  const data = useReport();
   const fl = data.forward_looking ?? {};
   const mirror = fl.mirror ?? {};
   const axes = mirror.axes ?? [];
@@ -937,6 +1132,7 @@ function PathScreen({
   selectedPathId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const data = useReport();
   const fl = data.forward_looking ?? {};
   const paths = fl.candidate_paths ?? [];
   const n = fl.data_sufficiency?.article_count;
@@ -1006,6 +1202,7 @@ function MatrixScreen({
   selectedPathId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const data = useReport();
   const fl = data.forward_looking ?? {};
   const paths = fl.candidate_paths ?? [];
   const byDir = fl.content_matrix?.by_direction ?? {};
@@ -1084,6 +1281,7 @@ function MatrixScreen({
 
 /* ===================== 怎么办 · 数据不足屏(闸门未过) ===================== */
 function InsufficientScreen() {
+  const data = useReport();
   const fl = data.forward_looking ?? {};
   const ds = fl.data_sufficiency ?? {};
   const reasons = ds.reasons ?? [];
@@ -1116,6 +1314,7 @@ function InsufficientScreen() {
 
 /* ===================== 怎么办 · 本周行动(三篮子,置信内化为版面重量) ===================== */
 function ActionScreen() {
+  const data = useReport();
   const a = data.modules?.action_plan ?? {};
   const asText = (it: any) => (typeof it === "string" ? it : it.title ?? it.text ?? "");
   const now: any[] = a.now ?? [];
@@ -1175,8 +1374,166 @@ function ActionScreen() {
   );
 }
 
+/* ===================== 覆盖率警示(C4 闸门在看板的落点) =====================
+   与 Markdown 报告同口径：题材/痛点/人群三组分布不可作决策依据，
+   方向引擎与账号类型路由已降级为通用链路。
+   不用刺目红色 —— 这是「结论要打折看」，不是「系统坏了」。 */
+function CoverageAlert() {
+  const data = useReport();
+  const cov = data.niche_coverage ?? {};
+  if (cov.alert !== true) return null;
+  const name = cov.niche_name || cov.niche_id || "当前赛道包";
+  const hit = pct(cov.hit_rate, 1);
+  const thr = pct(cov.threshold, 0);
+  const req = cov.requested_id;
+  const fellBack = req && cov.niche_id && req !== cov.niche_id;
+  return (
+    <div className="cov-wrap">
+      <div className="cov-alert" role="status">
+        <AlertTriangle className="cov-ico" size={16} aria-hidden />
+        <div className="cov-body">
+          <p className="cov-head">
+            赛道包「{name}」与本号内容匹配度过低 —— 题材词表命中率 {hit}，低于阈值 {thr}
+          </p>
+          <p className="cov-sub">
+            {fellBack ? `你指定的赛道包 ${req} 未找到，已回落通用兜底包。` : ""}
+            下文【题材 / 痛点 / 人群】三组分布不可作为决策依据，方向引擎与账号类型路由都已降级为通用链路。
+            出路有两条：换用更贴合的赛道包，或给现有包补词表，然后重跑 analyze。
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===================== 加载 / 失败屏 ===================== */
+function BootScreen() {
+  // 延迟 200ms 才淡入：本地 fetch 通常更快，避免加载态一闪而过
+  return (
+    <div className="boot">
+      <span className="boot-dot" aria-hidden />
+      <p className="boot-line">正在加载账号数据…</p>
+    </div>
+  );
+}
+
+function LoadError({ message }: { message: string }) {
+  return (
+    <div className="boot boot-err">
+      <AlertTriangle className="boot-err-ico" size={22} aria-hidden />
+      <p className="boot-line">看板数据没能加载</p>
+      <p className="boot-hint">{message}</p>
+      <p className="boot-hint dim">
+        先确认这个账号跑过 <code>wxops analyze</code>；如果刚跑完，刷新页面重试。
+      </p>
+    </div>
+  );
+}
+
+/* ===================== 数据编排 =====================
+   先取 data/accounts.json 账号索引，再按当前账号取报告。
+   换号命中缓存则零延迟切换；未命中才 fetch，期间保留当前内容不白屏。 */
+function useDashboardData() {
+  const [index, setIndex] = React.useState<AccountsIndex | null>(null);
+  const [slug, setSlug] = React.useState("");
+  const [report, setReport] = React.useState<any>(null);
+  const [error, setError] = React.useState("");
+  const [switching, setSwitching] = React.useState(false);
+  const cache = React.useRef(new Map<string, any>());
+
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const r = await fetch("data/accounts.json", { cache: "no-store" });
+        if (!r.ok) throw new Error(`读取账号索引失败（HTTP ${r.status}）`);
+        const idx: AccountsIndex = await r.json();
+        if (!alive) return;
+        setIndex(idx);
+        const list = idx.accounts ?? [];
+        const pick =
+          list.find((a) => a.slug === idx.current && a.has_report) ??
+          list.find((a) => a.has_report);
+        if (!pick?.report_url) {
+          setError("还没有任何账号的分析数据。先跑一次 wxops analyze 生成报告。");
+          return;
+        }
+        const rr = await fetch(pick.report_url, { cache: "no-store" });
+        if (!rr.ok) throw new Error(`读取报告失败（HTTP ${rr.status}）`);
+        const rep = await rr.json();
+        if (!alive) return;
+        cache.current.set(pick.slug, rep);
+        setSlug(pick.slug);
+        setReport(rep);
+      } catch (e: any) {
+        if (alive) setError(String(e?.message ?? e));
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const switchTo = React.useCallback(
+    async (next: string) => {
+      if (!next || next === slug) return;
+      const hit = cache.current.get(next);
+      if (hit) {
+        setSlug(next);
+        setReport(hit);
+        return;
+      }
+      const entry = (index?.accounts ?? []).find((a) => a.slug === next);
+      if (!entry?.report_url) return;
+      setSwitching(true);
+      try {
+        const r = await fetch(entry.report_url, { cache: "no-store" });
+        if (!r.ok) throw new Error(`读取报告失败（HTTP ${r.status}）`);
+        const rep = await r.json();
+        cache.current.set(next, rep);
+        setSlug(next);
+        setReport(rep);
+      } catch (e: any) {
+        setError(String(e?.message ?? e));
+      } finally {
+        setSwitching(false);
+      }
+    },
+    [slug, index],
+  );
+
+  return { index, slug, report, error, switching, switchTo };
+}
+
 /* ===================== App ===================== */
 export default function App() {
+  const { index, slug, report, error, switching, switchTo } = useDashboardData();
+  if (error) return <LoadError message={error} />;
+  if (!report) return <BootScreen />;
+  return (
+    <ReportCtx.Provider value={report}>
+      <Dashboard
+        index={index}
+        slug={slug}
+        switching={switching}
+        onSwitch={switchTo}
+      />
+    </ReportCtx.Provider>
+  );
+}
+
+function Dashboard({
+  index,
+  slug,
+  switching,
+  onSwitch,
+}: {
+  index: AccountsIndex | null;
+  slug: string;
+  switching: boolean;
+  onSwitch: (slug: string) => void;
+}) {
+  const data = useReport();
   const fl = data.forward_looking ?? {};
   const passed = Boolean(fl.data_sufficiency?.passed);
   const paths: any[] = fl.candidate_paths ?? [];
@@ -1184,10 +1541,37 @@ export default function App() {
   const ids = groups.flatMap((g) => g.items.map((m) => m.id));
   const active = useActiveSection(ids);
   const [selectedPathId, setSelectedPathId] = React.useState<string | null>(paths[0]?.id ?? null);
+
+  // 换号 = 换了一份报告：重置路径选择并回到开头，让叙事重新讲一遍
+  const first = React.useRef(true);
+  React.useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    setSelectedPathId(paths[0]?.id ?? null);
+    document.querySelector(".main-scroll")?.scrollTo({
+      top: 0,
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    });
+    // paths 随 data 一同更新，此处只由 slug 驱动
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]);
+
   return (
     <div className="page">
-      <SideNav groups={groups} active={active} />
+      <SideNav
+        groups={groups}
+        active={active}
+        index={index}
+        current={slug}
+        switching={switching}
+        onSwitch={onSwitch}
+      />
       <main className="main-scroll" aria-label="公众号运营诊断">
+        {/* 赛道包命中率过低时的降级警示(C4) */}
+        <CoverageAlert />
+
         {/* 第一幕:体检结论 */}
         <Overview />
 

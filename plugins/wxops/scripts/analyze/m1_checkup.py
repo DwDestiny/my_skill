@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/analyze/m1_checkup.py
+# Input: stable 文章列表 + benchmark（m7）+ audience raw（粉丝/净增/取关）
+# Output: health_score/dependency/interaction/fans + verdict/action/voice 体检 dict（含 chart_payload）
 # Pos: plugins/wxops/scripts/analyze/m1_checkup.py
 from __future__ import annotations
 

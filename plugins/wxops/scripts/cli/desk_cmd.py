@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/cli/desk_cmd.py
+# Input: wxops root；只读 accounts/pipeline 与 topics/*/card.md、drafts/*/draft.md 在途计数
+# Output: 终端六列表格（登录/数据/报告/在途/下一步建议）；零写盘；exit 0
 # Pos: plugins/wxops/scripts/cli/desk_cmd.py
 """desk 编辑部总控台：只读展示各账号流水线状态、在途内容与下一步建议。"""
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/cli/login_cmd.py
+# Input: workspace 路径 + headless 标志；读写 browser-profile 持久化目录
+# Output: 打开 mp.weixin.qq.com 引导扫码；URL 含 token 则 exit 0（登录态落 profile），否则 exit 1；终端中文引导
 # Pos: plugins/wxops/scripts/cli/login_cmd.py
 """wxops login：使用 persistent context 打开 mp.weixin.qq.com，引导用户扫码登录，确认后验证 token 并持久化。"""
 

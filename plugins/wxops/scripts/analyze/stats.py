@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/analyze/stats.py
+# Input: 文章 records 列表 + 可选分组 key/排序 field/百分位 pct
+# Output: stat_pack/group_stats、time_heatmap/weekly_trend、top_n 与 rankings、rate 比值
 # Pos: plugins/wxops/scripts/analyze/stats.py
 from __future__ import annotations
 

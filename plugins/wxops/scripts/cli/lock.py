@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/cli/lock.py
+# Input: 调用方传入 workspace 账号办公室路径（acquire_profile_lock / profile_lock）
+# Output: 返回 ProfileLock（flock 互斥，browser-profile.lock 写当前 pid）；撞锁抛 ProfileLockError；无 fcntl 平台 no-op 降级
 # Pos: plugins/wxops/scripts/cli/lock.py
 """同号 browser-profile 并发锁：login 与拉数互斥。"""
 

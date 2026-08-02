@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/fetch/fetch_account.py
+# Input: 已登录 Page + workspace；从 URL 取 token，goto /cgi-bin/home，读 window.wx.commonData
+# Output: 写 raw/account.json（昵称/头像 URL/user_name/本地路径）；头像 best-effort 落 raw/avatar.png
 # Pos: plugins/wxops/scripts/fetch/fetch_account.py
 """Fetch account profile (Interface A: /cgi-bin/home).
 

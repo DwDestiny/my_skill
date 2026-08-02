@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-01-15T18:00:00+08:00",
+  "current": "demo",
+  "accounts": [
+    {
+      "slug": "demo",
+      "name": "麦总玩 AI",
+      "has_report": true,
+      "report_url": "data/demo.json",
+      "generated_at": "2026-01-15T18:00:00+08:00",
+      "article_count": 18
+    }
+  ]
+}

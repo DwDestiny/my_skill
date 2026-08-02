@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/fetch/fetch_audience.py
+# Input: 已登录 Page + workspace；token 后 goto /misc/useranalysis，取整页 HTML
+# Output: 正则解析粉丝画像 JS 变量 → raw/audience.json；空/脏数据 available=false，不抛
 # Pos: plugins/wxops/scripts/fetch/fetch_audience.py
 """Fetch audience profile (Interface B: /misc/useranalysis).
 

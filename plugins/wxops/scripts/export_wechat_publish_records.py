@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/export_wechat_publish_records.py
+# Input: --workspace 工作区 + --cdp-url/WXOPS_CDP_URL 已登录 CDP；库调用可传 Page 或 profile_dir
+# Output: reports/wechat/publish-records-*.json + .summary.json；stdout 状态 JSON；exit 0/1
 # Pos: plugins/wxops/scripts/export_wechat_publish_records.py
 """Export WeChat official account publish records from the logged-in backend.
 

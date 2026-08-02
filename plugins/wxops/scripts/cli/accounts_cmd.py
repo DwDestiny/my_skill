@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/cli/accounts_cmd.py
+# Input: wxops root + add/list/use/remove/check 参数（slug/name/niche）；可选 health checker/sleeper
+# Output: 中文向导式终端表与下一步提示；经 store 建号/切换/退休/写 login_alive；exit 0/1
 # Pos: plugins/wxops/scripts/cli/accounts_cmd.py
 """accounts 子命令：add / list / use / remove / check 的中文向导式输出。"""
 

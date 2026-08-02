@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/analyze/m8_forward.py
+# Input: 完整 report dataset（articles/analysis/viral_genes/account_profile/meta/niche_coverage 等）
+# Output: forward_looking 节点（充分性闸门、六信号、照镜子、亲缘、2–4 方向卡、内容矩阵；alert 时 degraded）
 # Pos: plugins/wxops/scripts/analyze/m8_forward.py
 """m8_forward.py — 向前看引擎（Direction Engine v1）
 

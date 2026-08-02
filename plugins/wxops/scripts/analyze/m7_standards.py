@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/analyze/m7_standards.py
+# Input: stable 文章列表（reads/share_rate/zaikan_rate）
+# Output: 本号相对论 benchmark（中位/p75/爆款阈值/topic_select_rate/sample_size）
 # Pos: plugins/wxops/scripts/analyze/m7_standards.py
 from __future__ import annotations
 

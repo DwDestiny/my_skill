@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/analyze/io_utils.py
+# Input: 工作区 root Path（json/jsonl/raw/*）或标量/record 字段
+# Output: JSON/JSONL/datetime 解析；数字归一化；raw audience/trend/account 载荷（audience.available 就地重算）
 # Pos: plugins/wxops/scripts/analyze/io_utils.py
 from __future__ import annotations
 

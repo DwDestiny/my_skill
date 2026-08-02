@@ -12,13 +12,19 @@
 
 这个仓库的目标更直接：把高价值工作流做成 Skill。Skill 本体保持轻，细节放 references，重复动作放 scripts，最后用测试和真实项目狗粮验证。
 
+## Plugin 目录
+
+| Plugin | 路径 | 状态 | 适用场景 |
+|---|---|---|---|
+| wxops | `plugins/wxops/` | v0.6.0 · 可 plugin 安装 | 公众号**多账号编辑部**：账号 / 数据分析 / 选题 / 写作 / 配图 / 发布（草稿箱止步）/ 复盘 八个工位全环节（详见该目录 [`README.md`](plugins/wxops/README.md)） |
+
 ## Skill 目录
 
 | Skill | 路径 | 状态 | 适用场景 |
 |---|---|---|---|
 | product-expert | `skills/product-expert/` | 已入库 | 从一个产品想法出发，完成需求探知、产品定位、MVP 规划、评分和推荐 |
 | visual-ppt-deck-builder | `skills/visual-ppt-deck-builder/` | 已入库 | 从主题、大纲和风格样张出发，生成高视觉质量且可编辑的 PPTX |
-| wechat-ops-performance-review | `skills/wechat-ops-performance-review/` | 已入库 · 可 plugin / npx 安装 | 公众号运营复盘：量化诊断 + 爆款基因反推 + 向前看方向引擎 + 本地叙事看板（详见该目录 `README.md`） |
+| wechat-ops-performance-review | `skills/wechat-ops-performance-review/` | **冻结只读** · 可 plugin / npx 安装 | 公众号运营复盘（单账号）：量化诊断 + 爆款基因反推 + 向前看方向引擎 + 本地叙事看板。已被 `plugins/wxops/` 取代，保留供 npx 老用户继续使用，升级路径见 [MIGRATION.md](packages/create-wechat-ops-skill/MIGRATION.md) |
 | geb-project-doc-system | `skills/geb-project-doc-system/` | v0.2 | 为大中型代码仓库建立 L1/L2/L3 AI 项目文档体系，减少 Agent 盲读和上下文浪费 |
 | grok-cli | `skills/grok-cli/` | 已入库 · 可 plugin 安装 | 把 xAI 官方 Grok Build CLI 当外部子智能体用：headless 调用范式、`--json-schema` 结构化输出、模型 ID 与 reasoning-effort 的真实可用范围、静默 fallback 等实测坑（详见该目录 `README.md`） |
 
@@ -134,45 +140,54 @@ python3 tests/test_geb_project_doc_system.py
 tests/smoke_visual_ppt_deck_builder.sh
 ```
 
-## 一键安装（wechat-ops-performance-review）
+## 一键安装（公众号运营）
 
-该 skill 提供两条**等价**的安装通道，最终都把只读模板落到 `~/.claude/skills`，按习惯任选其一。
-
-**通道 A · Claude Code plugin marketplace**（图形化、托管式更新）
-
-本仓库根的 `.claude-plugin/marketplace.json` 把仓库声明为一个 plugin marketplace。在 Claude Code 里：
+本仓库根的 `.claude-plugin/marketplace.json` 把仓库声明为一个 plugin marketplace。在 Claude Code 里先加市场：
 
 ```
 /plugin marketplace add DwDestiny/my_skill
-/plugin install wechat-ops-performance-review@maizong-skills
 ```
 
-- `@` 后是 marketplace 名（`maizong-skills`），不是仓库名。
-- 安装后 skill 自动被发现，按任务上下文调用。
+`@` 后是 marketplace 名（`maizong-skills`），不是仓库名。
 
-**通道 B · npx 一键安装**（命令行、可脚本化，见 `packages/create-wechat-ops-skill/`）
+**装哪个？** 要多账号、要写作发布全环节就装 `wxops`；只做单账号数据复盘，老技能够用。
+
+```
+/plugin install wxops@maizong-skills                            # 多账号编辑部（主力）
+/plugin install wechat-ops-performance-review@maizong-skills    # 单账号复盘（冻结）
+```
+
+老技能另有 npx 通道（命令行、可脚本化，见 `packages/create-wechat-ops-skill/`）：
 
 ```bash
 npx create-wechat-ops-skill
 ```
 
-默认装到 `~/.claude/skills/wechat-ops-performance-review/`；支持 `[目标目录] --ref --force`，私有仓需 `GIGET_AUTH`。
+默认装到 `~/.claude/skills/wechat-ops-performance-review/`；支持 `[目标目录] --ref --force`，私有仓需 `GIGET_AUTH`。已经在用它的，升级到插件的路径见 [MIGRATION.md](packages/create-wechat-ops-skill/MIGRATION.md)。
 
-**安装后首次使用**（两条通道一致）：装依赖后即可跑 demo 验证全链路——
+**首次使用**：装依赖后跑 demo 验证全链路，无需登录、零网络——
 
 ```bash
-cd ~/.claude/skills/wechat-ops-performance-review
 pip install -r requirements.txt && playwright install chromium
 python3 scripts/wxops analyze --demo
 ```
 
-skill 目录为只读模板，所有运行态数据写入工作区 `~/.wxops`，看板由 `analyze` 自动构建，无需手动 `pnpm install`。
+插件与 skill 目录都是只读模板，所有运行态数据写入工作区 `~/.wxops`（插件按 `accounts/<slug>/` 分账号），看板由 `analyze` 自动构建，无需手动 `pnpm install`。
 
 ## 仓库结构
 
 ```text
 .claude-plugin/
   marketplace.json          # 把本仓声明为 plugin marketplace
+plugins/
+  wxops/                         # 公众号多账号编辑部插件
+    .claude-plugin/plugin.json
+    README.md / AGENTS.md        # 产品 L1 / agent L1
+    skills/                      # 八个工位 SKILL.md
+    agents/                      # 写作产线四 agents
+    scripts/                     # Python 引擎(cli/fetch/analyze/publish)
+    niches/                      # 赛道数据包(知识层)
+    templates/ dashboard/ tests/ fixtures/ references/
 skills/
   product-expert/
   visual-ppt-deck-builder/
@@ -247,13 +262,19 @@ MIT. See [LICENSE](LICENSE).
 
 Instead of growing one giant global prompt, each workflow becomes a focused Skill: light `SKILL.md`, deeper `references/`, deterministic `scripts/`, and real validation.
 
+## Plugins
+
+| Plugin | Path | Status | Use case |
+|---|---|---|---|
+| wxops | `plugins/wxops/` | v0.6.0 · plugin | WeChat Official Account **multi-account editorial desk**: accounts, analytics, topic selection, writing, illustration, publishing (stops at the draft box), and post-publish review — eight stations covering the full pipeline |
+
 ## Skills
 
 | Skill | Path | Status | Use case |
 |---|---|---|---|
 | product-expert | `skills/product-expert/` | Available | Product discovery, positioning, MVP planning, scoring, and recommendation |
 | visual-ppt-deck-builder | `skills/visual-ppt-deck-builder/` | Available | Build high-quality editable PPTX decks from a topic, outline, and visual direction |
-| wechat-ops-performance-review | `skills/wechat-ops-performance-review/` | Available · plugin / npx | WeChat Official Account ops review: quantified diagnosis, viral-DNA reverse-engineering, forward-looking direction engine, and a local narrative dashboard |
+| wechat-ops-performance-review | `skills/wechat-ops-performance-review/` | **Frozen** · plugin / npx | Single-account WeChat ops review: quantified diagnosis, viral-DNA reverse-engineering, forward-looking direction engine, and a local narrative dashboard. Superseded by `plugins/wxops/`; kept for existing npx users — see [MIGRATION.md](packages/create-wechat-ops-skill/MIGRATION.md) |
 | geb-project-doc-system | `skills/geb-project-doc-system/` | v0.2 | Maintain L1/L2/L3 AI-facing project documentation for medium and large code repositories |
 | grok-cli | `skills/grok-cli/` | Available · plugin | Drive the official xAI Grok Build CLI as an external sub-agent: headless invocation, `--json-schema` structured output, which model IDs and reasoning-effort levels actually work, silent model fallback, cost and permission control |
 

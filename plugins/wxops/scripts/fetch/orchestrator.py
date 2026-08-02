@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/fetch/orchestrator.py
+# Input: workspace + Chromium profile_dir（+ headless）；持久化上下文打开登录页
+# Output: 串行发布列表/账号/粉丝/趋势抓取，接口间 3~8s sleep；成功 status=ok，失败立即 failed 不重试
 # Pos: plugins/wxops/scripts/fetch/orchestrator.py
 """Orchestrator: coordinates the 4 interfaces with anti-detection sleeps.
 

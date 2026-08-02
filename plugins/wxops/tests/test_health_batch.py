@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by tests/test_health_batch.py
+# Input: WXOPS_HOME=tmp_path + 非空 browser-profile + mock _probe/checker/runner/sleeper + ProfileLockError
+# Output: check_login 短路与三态 + cmd_check 写回 + run_all 批次 ok/fail/skip/撞锁 + main 互斥 + desk 登录列
 # Pos: plugins/wxops/tests/test_health_batch.py
 """登录态生命周期（B1/B2）+ 批量编排（D1-D5）单测。
 

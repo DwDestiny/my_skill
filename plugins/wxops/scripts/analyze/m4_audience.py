@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/analyze/m4_audience.py
+# Input: stable 文章列表 + audience_raw + by_pain/by_persona 分组统计
+# Output: 粉丝画像（city/age/gender/user_source）+ 文章侧痛点/人设表现 + action 与 chart_payload
 # Pos: plugins/wxops/scripts/analyze/m4_audience.py
 from __future__ import annotations
 

@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by tests/test_readonly_workspace.py
+# Input: tmp_path 工作区（拷 fixtures 输入）+ skill 只读副本（chmod，不碰真目录）
+# Output: issue #16 — 产物落 workspace、skill dashboard 未动、跨工作区确定性、只读副本冒烟
 # Pos: plugins/wxops/tests/test_readonly_workspace.py
 """Issue #16 回归：skill 目录只读时也能跑，所有产物落工作区。
 

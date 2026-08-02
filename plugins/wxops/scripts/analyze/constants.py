@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/analyze/constants.py
+# Input: 无运行时入参（纯常量模块）
+# Output: CN_TZ/星期标签、SECTION_UI_SLOTS 与 VISUAL_TOKENS、引擎四型标题标签、覆盖率阈值、标题/正文字数分桶
 # Pos: plugins/wxops/scripts/analyze/constants.py
 from __future__ import annotations
 

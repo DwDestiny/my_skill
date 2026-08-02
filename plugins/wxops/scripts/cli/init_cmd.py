@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/cli/init_cmd.py
+# Input: workspace 路径 + 可选 account_name_override（不传则终端交互输入）；env 探测 Python/playwright/node/pnpm
+# Output: 建目录 + 写 config.json（account_name/workspace/created_at）；缺依赖时自动装 playwright+Chromium；exit 0/1
 # Pos: plugins/wxops/scripts/cli/init_cmd.py
 """wxops init：环境自检 + 依赖自动装 + workspace 初始化 + 配置写入。"""
 

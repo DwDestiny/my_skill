@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/analyze/m6_action_plan.py
+# Input: viral_genes + checkup + content_engine + audience_mod + growth_funnel 五模块 dict
+# Output: now/experiment/hold 三栏行动 + next_topics（爆款公式反推）+ chart_payload
 # Pos: plugins/wxops/scripts/analyze/m6_action_plan.py
 from __future__ import annotations
 

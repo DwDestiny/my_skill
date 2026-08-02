@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/build_wechat_ops_report.py
+# Input: --workspace 最新 publish-records 导出 + social_ops 索引；--wiki-root/--account-name/--since/--niche/--dashboard-data/--check
+# Output: wechat-ops-report-*.md/.json + output/report.json（可选写 wiki 索引/log）；--check 仅校验；exit 0/1
 # Pos: plugins/wxops/scripts/build_wechat_ops_report.py
 """Build a WeChat-only operations report for wiki and dashboard use.
 

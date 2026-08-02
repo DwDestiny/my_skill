@@ -1,0 +1,7 @@
+# vite 依赖 esbuild，其安装脚本负责下载对应平台的原生二进制。
+# pnpm 10+ 默认拦截安装脚本，不显式放行的话 esbuild 装不全，`pnpm build` 必失败。
+# 两个键并存是为了兼容 pnpm 版本差异：11 读 allowBuilds，10 读 onlyBuiltDependencies。
+allowBuilds:
+  esbuild: true
+onlyBuiltDependencies:
+  - esbuild

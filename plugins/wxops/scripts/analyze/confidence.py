@@ -1,6 +1,6 @@
 # GEB-L3
-# Input: caller, project conventions, and local dependencies
-# Output: behavior defined by scripts/analyze/confidence.py
+# Input: 文章 records（默认看 reads）+ 可选 completeness/target_sample/note；或 confidence dict/level 串
+# Output: level/score/reasons 置信包；voice/emphasis/action_basket 映射；build_confidence_model 全局置信模型
 # Pos: plugins/wxops/scripts/analyze/confidence.py
 from __future__ import annotations
 
