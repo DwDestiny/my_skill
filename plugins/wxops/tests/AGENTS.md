@@ -20,6 +20,7 @@
 | `test_niche_loader.py` | 赛道包加载:解析序/用户覆盖/坏包硬报错/懒加载/未知字段警告 |
 | `test_niche_coverage.py` | C4 覆盖率闸门:非 AI fixture 触闸(G2)、_generic 恒触闸、total=0 不告警、m8/m9 降级、MD 警示块、内置 ai-tools 字面量钉死 |
 | `test_kit.py` | kit 写作三件套门禁:空壳三态/结构三层回落/账号级与开工级/未知账号 + desk 在途列与建议 |
+| `test_quality_portrait_disclosure.py` | issue #54：数据质量章双覆盖维度（文章指标 + 粉丝画像）文案分支、长度契约、markdown 数据口径披露 |
 
 ## 本地规则
 - 运行方式:skill 根目录下 `python3 -m pytest tests -q`(当前基线含多账号新增用例)。

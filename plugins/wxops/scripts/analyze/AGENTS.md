@@ -9,7 +9,7 @@
 | `m1_checkup.py` | 账号体检:基础指标概览 |
 | `m2_viral_genes.py` | 爆款基因:四象限定位(x=阅读 vs 中位数,y=分享率 vs 中位数) |
 | `m3_content_engine.py` | 内容引擎:题材/栏目产出结构 |
-| `m4_audience.py` | 受众画像:容忍缺失数据,画像不可用时降级(`age=[]` → "年龄段未知") |
+| `m4_audience.py` | 受众画像:容忍缺失数据,画像不可用时降级(`age=[]` → "年龄段未知")；`fans_portrait_available` 供上层质量章双覆盖披露（issue #54，质量章文案在 `build_wechat_ops_report.py`，不改 completeness） |
 | `m5_growth_funnel.py` | 增长漏斗:阅读→互动→转化链路 |
 | `m6_action_plan.py` | 行动计划三栏(v2) |
 | `m7_standards.py` | 全局相对论基准:只看本号相对值,不看绝对值 |
