@@ -1,22 +1,62 @@
 #!/usr/bin/env python3
 # GEB-L3
 # Input: workspace 路径 + headless 标志；读写 browser-profile 持久化目录
-# Output: 打开 mp.weixin.qq.com 引导扫码；URL 含 token 则 exit 0（登录态落 profile），否则 exit 1；终端中文引导
+# Output: 打开 mp.weixin.qq.com 引导扫码；按回车后经 _confirm_token（快路径读 URL + 最多 3 轮主动 goto 探 token）确认登录态：有 token 则 exit 0，否则 exit 1 并提示用 accounts check 复核
 # Pos: plugins/wxops/scripts/cli/login_cmd.py
 """wxops login：使用 persistent context 打开 mp.weixin.qq.com，引导用户扫码登录，确认后验证 token 并持久化。"""
 
 from __future__ import annotations
 
 import sys
+import time
 from pathlib import Path
+from typing import Any
 
 from . import env
+
+# 登录态确认：快路径无 token 时的主动 goto 重探参数（与 health._probe 同原理，就地复用当前 page）
+_TOKEN_RETRY_ROUNDS = 3
+_TOKEN_RETRY_INTERVAL_S = 1.5
+_TOKEN_PROBE_TIMEOUT_MS = 8000
+_MP_HOME_URL = "https://mp.weixin.qq.com/"
 
 
 def _ensure_in_path(skill_dir: Path) -> None:
     s = str(skill_dir)
     if s not in sys.path:
         sys.path.insert(0, s)
+
+
+def _confirm_token(page: Any) -> str | None:
+    """在已打开的 page 上确认登录 token（模块级，供测试 monkeypatch）。
+
+    1. 快路径：当前 URL 已有 token 则直接返回（不 goto）。
+    2. 兜底：最多 _TOKEN_RETRY_ROUNDS 轮主动 goto 后台首页再读 URL；
+       goto 异常当作本轮无 token，不向上抛。
+    """
+    _ensure_in_path(env.get_skill_dir())
+    from scripts.export_wechat_publish_records import token_from_url  # 复用
+
+    token = token_from_url(page.url or "")
+    if token:
+        return token
+
+    for i in range(_TOKEN_RETRY_ROUNDS):
+        try:
+            page.goto(
+                _MP_HOME_URL,
+                wait_until="domcontentloaded",
+                timeout=_TOKEN_PROBE_TIMEOUT_MS,
+            )
+        except Exception:
+            # 超时/网络等：本轮视为无 token，继续后续轮次
+            pass
+        token = token_from_url(page.url or "")
+        if token:
+            return token
+        if i < _TOKEN_RETRY_ROUNDS - 1:
+            time.sleep(_TOKEN_RETRY_INTERVAL_S)
+    return None
 
 
 def run(workspace: Path, headless: bool = False) -> int:
@@ -68,20 +108,24 @@ def run(workspace: Path, headless: bool = False) -> int:
                 print_warn("用户中断")
                 return 1
 
-            # 读取当前页 URL，检测 token
-            current_url = page.url or ""
-            from scripts.export_wechat_publish_records import token_from_url  # 复用
-
-            token = token_from_url(current_url)
+            # 就地确认 token（快路径 + 主动 goto 重探）；禁止调用 health.check_login（会与已持 profile 锁冲突）
+            token = _confirm_token(page)
             if token:
                 print_success("登录成功，登录态已保存")
                 print_info("（persistent context 会自动把 cookies 等保存到 browser-profile/）")
                 print_guide_next("wxops analyze   （抓取最新数据并生成看板）")
                 return 0
             else:
-                print_warn("未检测到登录态（URL 中没有 token）。")
-                print_info("可能原因：未完成扫码、页面还在登录中、或使用了个人订阅号而非服务号/公众号后台。")
-                print_info("请重新运行 wxops login 再试。")
+                print_warn("未能在页面 URL 中确认到登录 token。")
+                print_info(
+                    "若你确认已扫码成功，可运行 `wxops accounts check` 复核真实登录态；"
+                    "本次未能在页面 URL 捕获到 token，登录态可能已保存但未被确认。"
+                )
+                print_info(
+                    "可能原因：未完成扫码、页面还在登录中、网络延迟，"
+                    "或使用了个人订阅号而非服务号/公众号后台。"
+                )
+                print_info("请重新运行 wxops login 再试，或先用 accounts check 确认状态。")
                 return 1
         finally:
             context.close()
