@@ -1,7 +1,8 @@
 {
   "name": "create-wechat-ops-skill",
   "version": "1.0.0",
-  "description": "一键安装「公众号运营复盘」Claude Code 技能：抓取公众号后台数据，生成运营复盘报告与交互看板。",
+  "private": true,
+  "description": "【已退役】原用于一键安装「公众号运营复盘」Claude Code 技能；该技能已于 2026-08-05 退役（#56），本包未发布、去向待定。",
   "type": "module",
   "bin": {
     "create-wechat-ops-skill": "index.js"

@@ -1,4 +1,4 @@
-<!-- copied from skills/wechat-ops-performance-review/DATA_CONTRACT.md @ 2026-08-01，随插件引擎演进，旧 skill 副本冻结 -->
+<!-- 源自 skills/wechat-ops-performance-review/DATA_CONTRACT.md @ 2026-08-01 copy-first；该源已于 2026-08-05 退役删除(#56)，本文件是唯一版本 -->
 # DATA_CONTRACT.md — 向前看引擎数据契约
 
 > 本文件是「分析层(Python)」与「看板前端(dashboard)」之间的**唯一接口契约**。

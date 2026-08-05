@@ -1,18 +1,17 @@
 # 公众号运营内容线总索引(wechat-content-ops-map)
 
 > 这是"公众号"主题在本仓库及关联资产中的唯一索引页。任何 agent 接到公众号相关任务,先读这一页再展开;新增公众号相关资产必须回填本页。
-> 更新时间 2026-08-02 · 关联 issue:[#38](https://github.com/DwDestiny/my_skill/issues/38)(epic)、[#36](https://github.com/DwDestiny/my_skill/issues/36)(索引建立)
+> 更新时间 2026-08-05 · 关联 issue:[#38](https://github.com/DwDestiny/my_skill/issues/38)(epic)、[#36](https://github.com/DwDestiny/my_skill/issues/36)(索引建立)、[#56](https://github.com/DwDestiny/my_skill/issues/56)(老技能退役)
 
-**现在的主力是 `plugins/wxops/` 插件,不是 `skills/wechat-ops-performance-review/`。** 后者是插件的来源,已冻结只读,仅供 npm 老用户继续使用;所有演进都在插件里做。改错地方是这个主题最容易犯的错。
+**公众号工具线只有一个产物:`plugins/wxops/` 插件。** 早期单账号技能 `skills/wechat-ops-performance-review/` 是它的 copy-first 来源,已于 2026-08-05 退役删除([#56](https://github.com/DwDestiny/my_skill/issues/56)),历史版本从 git 历史取回。此后本主题不存在"新旧两份"的问题。
 
 ## 资产地图
 
 ```text
 公众号运营
 ├── 工具线(全环节:账号/数据/选题/写作/配图/发布/复盘)
-│   ├── plugins/wxops/                          ← ★ 主力:多账号编辑部插件,八个工位
-│   ├── skills/wechat-ops-performance-review/   ← 冻结只读:单账号老技能,npm 老用户在用
-│   └── packages/create-wechat-ops-skill/       ← npm 分发包(npx 安装上面那个老技能)
+│   ├── plugins/wxops/                          ← ★ 唯一产物:多账号编辑部插件,八个工位
+│   └── packages/create-wechat-ops-skill/       ← npm 分发包(未发布;来源已随老技能退役,待定去向)
 ├── 内容线(写什么、怎么卖)
 │   └── docs/ai-workflow-series-outline.md      ← 付费系列《一个人的 Agent 工程》十篇大纲
 ├── 知识线(沉淀在仓库外)
@@ -34,13 +33,15 @@
 | agents 派单契约 | [references/agents-guide.md](../plugins/wxops/references/agents-guide.md) | 四个写作 agents 的派单与写权限表 |
 | L2 层文档 | [cli](../plugins/wxops/scripts/cli/AGENTS.md) · [analyze](../plugins/wxops/scripts/analyze/AGENTS.md) · [fetch](../plugins/wxops/scripts/fetch/AGENTS.md) · [publish](../plugins/wxops/scripts/publish/AGENTS.md) · [dashboard](../plugins/wxops/dashboard/AGENTS.md) · [niches](../plugins/wxops/niches/AGENTS.md) · [templates](../plugins/wxops/templates/AGENTS.md) · [tests](../plugins/wxops/tests/AGENTS.md) | 各模块边界与本地规则 |
 
-## 工具线 · 冻结源与分发
+## 工具线 · 分发
 
 | 资产 | 路径 | 说明 |
 |---|---|---|
-| 老技能(冻结) | [skills/wechat-ops-performance-review/](../skills/wechat-ops-performance-review/SKILL.md) | 单账号:init/login/analyze;插件的来源,**只读,不许双向同步** |
-| npm 分发包 | [packages/create-wechat-ops-skill/](../packages/create-wechat-ops-skill/README.md) | `npx create-wechat-ops-skill` 装的是上面那个老技能;发布凭证在 `~/.npmrc`(2026-09-25 到期) |
+| marketplace | [.claude-plugin/marketplace.json](../.claude-plugin/marketplace.json) | 唯一对外通道:`/plugin install wxops@maizong-skills` |
+| npm 分发包 | [packages/create-wechat-ops-skill/](../packages/create-wechat-ops-skill/README.md) | **未发布到 npm,零外部用户**;原投放目标(老技能)已退役,包处于待定状态,老党未决定改投 wxops 还是一并退役。发布凭证在 `~/.npmrc`(2026-09-25 到期) |
 | 升级指引 | [MIGRATION.md](../packages/create-wechat-ops-skill/MIGRATION.md) | 老用户 `~/.wxops/` 单账号 → 插件 accounts 模型;`wxops migrate` copy-first,源不动 |
+
+**老技能 `skills/wechat-ops-performance-review/` 已于 2026-08-05 退役删除**([#56](https://github.com/DwDestiny/my_skill/issues/56))。它是 2026-08-01 P1 期 copy-first 迁入时保留的兜底源,P1-P6 六期跑完后新版早已接管,但没有任何一期把"退役源"写进验收标准,于是兜底期永久化,还被补写了一套"供 npm 老用户使用"的冻结契约——而那个 npm 包从未发布,老用户是零。取回历史版本:`git log --all -- skills/wechat-ops-performance-review`。
 
 ## 内容线
 
@@ -80,4 +81,5 @@
 - 真实发布记录(含阅读/点赞数据)属账号隐私,fixtures 一律用构造数据。
 - 爬虫只抓自己有管理权的账号;多账号拉数逐号顺序执行,严禁并行(风控)。
 - 迁移/清理一律 copy-first,源文件保留由人处置,不许 `mv`、不许直接删。
+- **copy-first 必须同时定义结束条件**:立兜底副本时就要写清"谁、在什么条件下、删掉源",并把它挂进某一期的验收标准。只定义开始不定义结束,兜底期会永久化成僵尸副本,还会倒逼编造存在理由(#56 的教训)。
 - 看板任何位置不渲染置信度数字(置信度内化契约)。

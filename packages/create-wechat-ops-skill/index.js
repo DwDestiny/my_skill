@@ -1,10 +1,15 @@
 #!/usr/bin/env node
 // GEB-L3
-// Input: caller, project conventions, and local dependencies
-// Output: behavior defined by index.js
-// Pos: index.js
+// Input: CLI argv（目标目录 / --dir / --ref / --force / --force-clean / --help）
+// Output: 2026-08-05 起一律 exit 1 并打印退役说明（#56）；下载与安装逻辑保留但不可达
+// Pos: packages/create-wechat-ops-skill/index.js — 本包 CLI 入口
 /**
  * create-wechat-ops-skill
+ *
+ * 【已退役 · 2026-08-05 · #56】
+ * 投放源 skills/wechat-ops-performance-review/ 已于 2026-08-05 退役删除
+ * （https://github.com/DwDestiny/my_skill/issues/56）。本包从未发布到 npm，
+ * 去向待定（改投 wxops 或一并退役均未决定）。main() 入口无条件拒绝执行。
  *
  * 一键安装「公众号运营复盘」Claude Code 技能。
  * 从 GitHub 仓库 DwDestiny/my_skill 的子目录拉取只读模板，投放到
@@ -20,7 +25,8 @@ import path from "node:path";
 import process from "node:process";
 import fs from "node:fs";
 import readline from "node:readline";
-import { downloadTemplate } from "giget";
+// giget 改为动态 import：退役守卫必须在任何网络/依赖解析之前生效。
+// 恢复投放时 refuseRetired 删除后，下方 main() 内 await import("giget") 仍会拉起原逻辑。
 
 const REPO = "DwDestiny/my_skill";
 const SUBDIR = "skills/wechat-ops-performance-review";
@@ -30,7 +36,7 @@ const SKILL_DIRNAME = "wechat-ops-performance-review";
 function printHelp() {
   const lines = [
     "",
-    "create-wechat-ops-skill — 一键安装「公众号运营复盘」Claude Code 技能",
+    "create-wechat-ops-skill — 一键安装「公众号运营复盘」Claude Code 技能（已停止投放 · #56）",
     "",
     "用法:",
     "  npx create-wechat-ops-skill [目标目录] [选项]",
@@ -190,7 +196,40 @@ async function confirmForceClean(dir) {
   console.error("");
 }
 
+/**
+ * 退役守卫（2026-08-05 · #56）
+ *
+ * 为什么停：投放源 skills/wechat-ops-performance-review/ 已于 2026-08-05 退役删除
+ * （https://github.com/DwDestiny/my_skill/issues/56）。本包从未发布到 npm，去向待定。
+ *
+ * 为什么必须无条件拦截：源目录只在 main 上被删，历史分支/标签仍可拉到。
+ * 若仅改失败文案、仍允许 --ref 走到 downloadTemplate，会把已退役技能重新装进
+ * ~/.claude/skills/。因此 main() 入口无条件调用本函数，含 --help / --ref / --force。
+ *
+ * 将来怎么恢复：确定新投放源后，改 SUBDIR 指向新路径，并删掉本函数及其在 main() 中的调用。
+ */
+function refuseRetired() {
+  console.error("");
+  console.error("❌ create-wechat-ops-skill 已停止投放。");
+  console.error("");
+  console.error("   本包投放的「公众号运营复盘」单账号技能已于 2026-08-05 退役删除");
+  console.error("   （见 https://github.com/DwDestiny/my_skill/issues/56）。");
+  console.error("   公众号运营能力已全部并入 wxops 插件，改用：");
+  console.error("");
+  console.error("     /plugin marketplace add DwDestiny/my_skill");
+  console.error("     /plugin install wxops@maizong-skills");
+  console.error("");
+  console.error("   本包未发布到 npm，去向待定（改投 wxops 或一并退役均未决定）。");
+  console.error("   需要老技能历史版本时从 git 历史取回：");
+  console.error("     git log --all -- skills/wechat-ops-performance-review");
+  console.error("");
+  process.exit(1);
+}
+
 async function main() {
+  // 无条件退役守卫：任意参数（含 --help / --ref）一律拒绝，见 refuseRetired 注释。
+  refuseRetired();
+
   const opts = parseArgs(process.argv.slice(2));
 
   if (opts.help) {
@@ -213,6 +252,7 @@ async function main() {
   }
 
   try {
+    const { downloadTemplate } = await import("giget");
     await downloadTemplate(source, {
       dir,
       force: opts.force || opts.forceClean,   // 允许写入非空目录
@@ -256,7 +296,7 @@ async function main() {
     console.error("   - 若仓库为私有,请设置环境变量后重试: GIGET_AUTH=<GitHub token>");
     console.error("   - 检查网络是否能访问 github.com / 代理设置是否正确。");
     console.error(`   - 确认分支/标签存在: --ref ${opts.ref}`);
-    console.error("   - 若使用默认分支仍拉到空,可能是技能内容尚未合并进该分支,可尝试用 --ref 指定包含该技能的分支重试。");
+    console.error("   - 投放源 skills/wechat-ops-performance-review/ 已于 2026-08-05 退役删除（#56），不是「分支未合并」；不要再换 --ref 重试。");
     console.error("");
     process.exit(1);
   }
