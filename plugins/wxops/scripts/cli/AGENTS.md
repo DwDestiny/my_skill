@@ -8,7 +8,7 @@
 |---|---|
 | `main.py` | 可执行入口主分发:init / login / analyze / accounts / migrate / desk / kit / publish / review；账号解析与锁在此层包一层 |
 | `init_cmd.py` | 环境自检 + 依赖自动装 + workspace 初始化 + 配置写入 |
-| `login_cmd.py` | 扫码登录持久化浏览器 profile;登录态判定依赖 URL token(已知缺口:即时读取会误报未登录,见 issue #24 关联诊断) |
+| `login_cmd.py` | 扫码登录持久化浏览器 profile;按回车后 `_confirm_token` 就地判定(快路径读 URL + 最多 3 轮主动 goto 探 token,与 health._probe 同原理;禁调 check_login 以免锁重入) |
 | `analyze_cmd.py` | 抓取(或 demo)→ build 报告 → dashboard 预览/构建 |
 | `env.py` | SKILL_DIR 自定位、`WXOPS_HOME`/workspace 解析、账号目录树、config 读写、依赖探测、中文打印工具 |
 | `accounts_store.py` | 多账号注册表核心:accounts.json 薄指针 + account.json/pipeline.json 单一真源(纯逻辑,零交互) |

@@ -3,6 +3,8 @@
 # Input: --workspace 最新 publish-records 导出 + social_ops 索引；--wiki-root/--account-name/--since/--niche/--dashboard-data/--check
 # Output: wechat-ops-report-*.md/.json + output/report.json（可选写 wiki 索引/log）；--check 仅校验；exit 0/1
 # Pos: plugins/wxops/scripts/build_wechat_ops_report.py
+# Notes: 数据质量章（id=quality）双覆盖维度——文章指标缺口 + 粉丝画像可得；画像缺失时 conclusion/action/analysis
+#   与 markdown「数据口径」必须明说不可得，不得写未限定的「核心指标齐全」（issue #54）。不改 completeness/confidence。
 """Build a WeChat-only operations report for wiki and dashboard use.
 
 This script is intentionally read-only toward external platforms. It reads the
@@ -282,6 +284,10 @@ def build_analysis_sections(dataset: dict[str, Any]) -> list[dict[str, Any]]:
     title_length_rows = dataset["title_analysis"]["by_title_length"]
     length_rows = dataset["length_analysis"]["by_length_bucket"]
     confidence_model = dataset["confidence_model"]
+    # 第二覆盖维度：粉丝画像是否可得（与文章指标缺口独立；issue #54）
+    fans_portrait_available = bool(
+        dataset.get("modules", {}).get("audience", {}).get("fans_portrait_available", False)
+    )
     best_hours = sorted(
         [row for row in dataset["analysis"]["by_hour"] if row["count"] >= 3],
         key=lambda row: (row["median"], row["p75"], row["avg"]),
@@ -367,8 +373,16 @@ def build_analysis_sections(dataset: dict[str, Any]) -> list[dict[str, Any]]:
     evidence_act = _tone_action("拆爆款触发词，沉淀高分享为选题模板。", evidence_voice)
 
     quality_voice = voice_for_confidence(conf_quality)
-    quality_conc = _tone_conclusion("核心指标齐全，仍需保留导出时间和待补动作。", quality_voice)
-    quality_act = _tone_action("每次复盘先刷新后台导出，登录失效先补数据。", quality_voice)
+    # 数据质量章双覆盖维度分支：文章指标齐全 ≠ 粉丝画像齐全（issue #54）
+    if fans_portrait_available:
+        quality_conc = _tone_conclusion("核心指标齐全，仍需保留导出时间和待补动作。", quality_voice)
+        quality_act = _tone_action("每次复盘先刷新后台导出，登录失效先补数据。", quality_voice)
+    else:
+        quality_conc = _tone_conclusion(
+            "文章指标齐全，粉丝画像缺失，人群结论只能靠标签推断。", quality_voice
+        )
+        quality_act = _tone_action("先登录后台补抓画像，再复盘人群结论。", quality_voice)
+    portrait_status = "粉丝画像可用" if fans_portrait_available else "粉丝画像不可得"
 
     final_voice = voice_for_confidence(conf_final)
     final_conc = _tone_conclusion("先把可复制的动作执行到位，不盲目追加新图表。", final_voice)
@@ -485,7 +499,7 @@ def build_analysis_sections(dataset: dict[str, Any]) -> list[dict[str, Any]]:
             "id": "quality",
             "title": "数据质量",
             "question": "这份报告的数据能不能支撑运营判断?",
-            "analysis": f"非删{quality['period_non_deleted_count']}篇，稳定{quality['stable_article_count']}篇，缺口{quality['metric_pending_count']}，正文匹配{length_completeness*100:.0f}%。",
+            "analysis": f"非删{quality['period_non_deleted_count']}篇，稳定{quality['stable_article_count']}篇，缺口{quality['metric_pending_count']}，正文匹配{length_completeness*100:.0f}%，{portrait_status}。",
             "conclusion": quality_conc,
             "action": quality_act,
             "chart_payload": {"kind": "data_quality", "quality": quality},
@@ -1037,6 +1051,9 @@ def markdown_table(headers: list[str], rows: list[list[Any]]) -> str:
 
 def render_report(dataset: dict[str, Any], dataset_path: Path | str) -> str:
     quality = dataset["data_quality"]
+    fans_portrait_available = bool(
+        dataset.get("modules", {}).get("audience", {}).get("fans_portrait_available", False)
+    )
     overall = dataset["analysis"]["overall"]
     sections = {section["id"]: section for section in dataset["analysis_sections"]}
     source_name = Path(dataset["meta"]["source_export"]).name
@@ -1284,6 +1301,7 @@ last_updated_by_agent: codex
 - 当前周期后台记录 {quality['period_record_count']} 篇，其中非删除 {quality['period_non_deleted_count']} 篇、删除 {quality['period_deleted_count']} 篇。
 - 稳定表现样本 {quality['stable_article_count']} 篇；最近 48 小时内的新文章 {quality['immature_article_count']} 篇，只进“新文章观察”，不进稳定均值。
 - 核心指标缺口：{quality['metric_pending_count']}。这里的缺口指阅读、分享、评论、点赞字段缺失，不把真实 0 误判为缺失。
+- {"粉丝画像：后台画像可得，可与文章标签交叉看人群。" if fans_portrait_available else "粉丝画像：后台画像不可得；人群结论只能靠文章标签推断，需登录后台补抓画像后再复盘。"}
 
 ## 核心判断
 
