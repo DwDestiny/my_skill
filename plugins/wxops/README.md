@@ -76,5 +76,5 @@ scripts/wxops desk                                     # 随时看全局
 - 测试：插件根 `python3 -m pytest tests/ -q`
 - 校验：`claude plugin validate ./plugins/wxops --strict`
 - 本地热加载：`~/.claude/skills/` 下软链本目录，`/reload-plugins` 生效
-- 上游冻结源：`skills/wechat-ops-performance-review/`（npm 老用户继续用，只读；演进都在本插件）
+- 上游来源：`skills/wechat-ops-performance-review/`（2026-08-01 copy-first 迁入，已于 2026-08-05 退役删除，见 [#56](https://github.com/DwDestiny/my_skill/issues/56)）
 - 台账：epic #38，分期 #39-#44

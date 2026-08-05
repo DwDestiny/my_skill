@@ -47,9 +47,9 @@ tests/       引擎测试
 fixtures/    只读演示输入（产物落工作区，不回写 fixtures）
 ```
 
-## 上游冻结源
+## 上游来源（已退役）
 
-`skills/wechat-ops-performance-review/` 是本插件的来源，供 npm 老用户继续使用，**只读冻结**：所有演进都在本插件里做，不许双向同步、不许"顺手改一下旧的"。两边出现同名函数不同实现是预期状态。
+本插件由 `skills/wechat-ops-performance-review/` 于 2026-08-01 copy-first 迁入。该源已于 2026-08-05 **退役删除**（[#56](https://github.com/DwDestiny/my_skill/issues/56)），公众号工具线只剩本插件一个产物，不再有"新旧两份"。需要考古时从 git 历史取：`git log --all -- skills/wechat-ops-performance-review`。
 
 ## 改完必须做
 

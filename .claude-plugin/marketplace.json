@@ -15,14 +15,6 @@
       "tags": ["wechat", "公众号", "多账号", "编辑部", "选题", "写作", "发布", "复盘"]
     },
     {
-      "name": "wechat-ops-performance-review",
-      "source": "./skills/wechat-ops-performance-review",
-      "description": "公众号运营复盘:量化诊断 + 爆款基因反推 + 向前看方向引擎 + 本地叙事看板",
-      "author": { "name": "麦总玩AI" },
-      "category": "analytics",
-      "tags": ["wechat", "公众号", "运营复盘", "数据分析", "dashboard"]
-    },
-    {
       "name": "grok-cli",
       "source": "./skills/grok-cli",
       "description": "把 xAI 官方 Grok Build CLI 当外部子智能体用:headless 调用范式、结构化输出、模型与 effort 避坑、成本与权限控制",

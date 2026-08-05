@@ -1,10 +1,25 @@
 # create-wechat-ops-skill
 
+> **已停止投放（2026-08-05，[#56](https://github.com/DwDestiny/my_skill/issues/56)）**。本包**从未发布到 npm**。
+>
+> 投放源 `skills/wechat-ops-performance-review/` 已退役删除。现在运行本包会直接报错退出（任意参数，含 `--help` / `--ref`）。
+>
+> 公众号运营请改用 **wxops 插件**：
+>
+> ```
+> /plugin marketplace add DwDestiny/my_skill
+> /plugin install wxops@maizong-skills
+> ```
+>
+> 本包去向待定（改投 wxops 或一并退役均未决定）。需要老技能历史版本时：`git log --all -- skills/wechat-ops-performance-review`。
+
 一键安装「**公众号运营复盘**」Claude Code 技能：扫码登录公众号后台、抓取发布数据，自动生成运营复盘报告与交互式数据看板。
 
 一条命令把技能投放到 `~/.claude/skills`，Claude Code 即可自动发现并使用。
 
 ## 快速开始
+
+> 以下命令为历史记录。当前会被退役守卫拒绝，不会真正安装。
 
 ```bash
 npx create-wechat-ops-skill
@@ -64,20 +79,18 @@ wxops analyze   # 抓取 → 生成报告 → 渲染看板
 
 ## 本技能与 wxops 插件的关系
 
-本包安装的是**单账号复盘技能**。它的后续演进已经转移到 **wxops 插件**——同一个仓库里的多账号编辑部，除复盘外还包含选题、写作、配图、发布（草稿箱止步）与复盘闭环。
+本包曾安装的是**单账号复盘技能**。该技能已于 2026-08-05 退役删除（[#56](https://github.com/DwDestiny/my_skill/issues/56)），公众号运营能力已全部并入 **wxops 插件**——同一个仓库里的多账号编辑部，除复盘外还包含选题、写作、配图、发布（草稿箱止步）与复盘闭环。
 
-注意别混：marketplace 里的 `wechat-ops-performance-review` 条目和本 npx 包投放的是同一份技能，两条通道等价。`wxops` 是另一个插件，不是本包的新版本：
+marketplace 里的 `wechat-ops-performance-review` 条目已随退役一并移除；marketplace 现在只有 `wxops`。本 npx 包停止投放，去向待定（改投 wxops 或一并退役均未决定）。
 
 | | 本包（老技能） | wxops 插件 |
 | --- | --- | --- |
 | 账号模型 | 单账号，`~/.wxops/` 直接放数据 | 多账号，`~/.wxops/accounts/<slug>/` |
 | 能力 | 登录 → 拉数 → 复盘报告 → 看板 | 上述全部 + 选题 / 写作 / 配图 / 发布 / 复盘闭环 |
 | 赛道知识 | 硬编码（AI 工具赛道） | 可替换的赛道数据包 |
-| 演进 | **冻结**，只修阻断性问题 | 活跃开发 |
+| 演进 | **已退役删除**（2026-08-05，#56） | 活跃开发 |
 
-**本技能不会被停掉，现有工作流一行都不用改。** 只做数据复盘、只有一个号，留在原地完全够用。
-
-要升级或想了解怎么把已有 `~/.wxops` 数据搬过去，见 [MIGRATION.md](./MIGRATION.md)。迁移是 copy-first 的，源文件一个字节不动。
+老技能源目录与 marketplace 条目均已删除；能力全部并入 wxops。已迁移用户的数据搬迁说明见 [MIGRATION.md](./MIGRATION.md)（`wxops migrate` 仍可用，迁移是 copy-first 的，源文件一个字节不动）。
 
 ## 私有仓库
 
