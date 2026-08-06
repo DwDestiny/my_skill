@@ -2,7 +2,17 @@
 # Input: maizong/health 锚点题材统计 fixture + niche 包；assign_topic_roles / build_analysis_sections / build_action_items
 # Output: 角色归属、零样本守卫、无 AI 字样、recommendations 可选与 ai-tools 等值断言
 # Pos: plugins/wxops/tests/test_topic_roles.py
-"""issue #60：题材角色驱动结论层 + 赛道叙事解耦。"""
+"""issue #60：题材角色驱动结论层 + 赛道叙事解耦。
+
+share_rate_avg 锚点均为 #59 ratio-of-means（ROM）真值，非 mean-of-ratios 旧报告抄值。
+
+两个账号各缺一个不同角色，互为对照，证明四角色均可缺席、判据按数据走：
+- maizong：loyalty_base 缺席（分享率最高的两个题材恰为产能主力与高波动，无独立「养老粉」题材）
+- health：reach_entry 缺席（冷启动账号本无推荐流入口）
+
+maizong 前三角色与原硬编码论断一一对应（工作流样本最多 / 价格情报能爆但波动大 /
+风险是最强推荐流入口），证明数据驱动能重现当年人工观察——零行为变更锚点不受影响。
+"""
 from __future__ import annotations
 
 import json
@@ -37,6 +47,8 @@ LEGACY_AI_TOOLS_RECOMMENDATIONS = {
     ],
 }
 
+# share_rate_avg 为 #59 ratio-of-means 真值（非 mean-of-ratios 旧报告抄值）
+# MAIZONG_ACCOUNT_SHARE 当初即用 aggregate_rate 算得，本就是 ROM，与真实产物一致
 MAIZONG = [
     {
         "key": "风险/账号/额度焦虑",
@@ -46,7 +58,7 @@ MAIZONG = [
         "p75": 1727.25,
         "max": 18403,
         "total_reads": 52858,
-        "share_rate_avg": 0.0461,
+        "share_rate_avg": 0.02,
         "comment_rate_avg": 0.0059,
     },
     {
@@ -57,7 +69,7 @@ MAIZONG = [
         "p75": 160.0,
         "max": 22603,
         "total_reads": 30857,
-        "share_rate_avg": 0.0522,
+        "share_rate_avg": 0.082,
         "comment_rate_avg": 0.002,
     },
     {
@@ -68,7 +80,7 @@ MAIZONG = [
         "p75": 688.75,
         "max": 6691,
         "total_reads": 16125,
-        "share_rate_avg": 0.0453,
+        "share_rate_avg": 0.0143,
         "comment_rate_avg": 0.0008,
     },
     {
@@ -79,7 +91,7 @@ MAIZONG = [
         "p75": 153.0,
         "max": 4980,
         "total_reads": 17204,
-        "share_rate_avg": 0.0589,
+        "share_rate_avg": 0.0941,
         "comment_rate_avg": 0.0034,
     },
     {
@@ -90,7 +102,7 @@ MAIZONG = [
         "p75": 103.25,
         "max": 254,
         "total_reads": 343,
-        "share_rate_avg": 0.0476,
+        "share_rate_avg": 0.0262,
         "comment_rate_avg": 0.0057,
     },
     {
@@ -101,7 +113,7 @@ MAIZONG = [
         "p75": 28.5,
         "max": 1064,
         "total_reads": 2232,
-        "share_rate_avg": 0.0472,
+        "share_rate_avg": 0.0417,
         "comment_rate_avg": 0.0006,
     },
 ]
@@ -261,12 +273,13 @@ def _content_engine_section(dataset: dict) -> dict:
 
 
 def test_maizong_role_assignment():
+    """ROM 真值下 loyalty_base 缺席：share>账号均线的只有价格情报与工作流，已分别被 volatile/workhorse 认领。"""
     roles = _roles_map(MAIZONG, MAIZONG_ACCOUNT_SHARE)
     assert roles["workhorse"] == "AI 编程/Agent 工作流"
     assert roles["volatile"] == "价格/额度/羊毛情报"
     assert roles["reach_entry"] == "风险/账号/额度焦虑"
-    assert roles["loyalty_base"] == "产品/副业/商业化"
-    assert set(roles) == {"workhorse", "volatile", "reach_entry", "loyalty_base"}
+    assert "loyalty_base" not in roles
+    assert set(roles) == {"workhorse", "volatile", "reach_entry"}
 
 
 def test_health_role_assignment_reach_entry_absent():
