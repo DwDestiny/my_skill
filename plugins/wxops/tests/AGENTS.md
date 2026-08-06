@@ -25,6 +25,7 @@
 | `test_quality_portrait_disclosure.py` | issue #54：数据质量章双覆盖维度（文章指标 + 粉丝画像）文案分支、长度契约、markdown 数据口径披露 |
 | `test_rates.py` | issue #59：`aggregate_rate` ratio-of-means / 多字段分子 / 分母 0 / 空列表；`median_rate` min_reads 过滤与样本不足回落 |
 | `test_topic_roles.py` | issue #60：题材角色 maizong/health 锚点、零样本守卫、content-engine 角色叙事、无 AI 字样、recommendations 可选与 ai-tools 等值 |
+| `test_metric_availability.py` | issue #61：指标可得性四态 / 真零 / 部分覆盖 / core pending / m1 权重重分配 / m7 阈值短路 / 防回归闸门 |
 
 ## 本地规则
 - 运行方式:skill 根目录下 `python3 -m pytest tests -q`(当前基线含多账号新增用例)。

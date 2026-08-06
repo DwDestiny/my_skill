@@ -5,6 +5,7 @@
 # Pos: plugins/wxops/scripts/build_wechat_ops_report.py
 # Notes: 数据质量章（id=quality）双覆盖维度——文章指标缺口 + 粉丝画像可得；画像缺失时 conclusion/action/analysis
 #   与 markdown「数据口径」必须明说不可得，不得写未限定的「核心指标齐全」（issue #54）。不改 completeness/confidence。
+#   issue #61：metric_availability 全维度申报；metric_pending_count=核心维度缺口；粉丝画像文案改读注册表 status。
 """Build a WeChat-only operations report for wiki and dashboard use.
 
 This script is intentionally read-only toward external platforms. It reads the
@@ -45,6 +46,12 @@ from analyze.m5_growth_funnel import build_growth_funnel
 from analyze.m6_action_plan import build_action_plan_v2
 from analyze.m8_forward import build_forward_looking
 from analyze.m9_account_type import build_account_type
+from analyze.metric_registry import (
+    core_pending_count,
+    derived_article_length,
+    derived_fans_portrait,
+    probe_availability,
+)
 
 
 def _recommendations_from_niche() -> dict[str, Any]:
@@ -331,10 +338,12 @@ def build_analysis_sections(dataset: dict[str, Any]) -> list[dict[str, Any]]:
     title_length_rows = dataset["title_analysis"]["by_title_length"]
     length_rows = dataset["length_analysis"]["by_length_bucket"]
     confidence_model = dataset["confidence_model"]
-    # 第二覆盖维度：粉丝画像是否可得（与文章指标缺口独立；issue #54）
-    fans_portrait_available = bool(
-        dataset.get("modules", {}).get("audience", {}).get("fans_portrait_available", False)
+    # 第二覆盖维度：粉丝画像是否可得（与文章指标缺口独立；issue #54/#61 统一读 metric_availability）
+    metric_availability = dataset.get("metric_availability") or {}
+    fans_portrait_status = str(
+        (metric_availability.get("fans_portrait") or {}).get("status") or "fetch_missing"
     )
+    fans_portrait_available = fans_portrait_status == "available"
     best_hours = sorted(
         [row for row in dataset["analysis"]["by_hour"] if row["count"] >= 3],
         key=lambda row: (row["median"], row["p75"], row["avg"]),
@@ -566,16 +575,60 @@ def build_analysis_sections(dataset: dict[str, Any]) -> list[dict[str, Any]]:
     timing_act = _voiced_action("短通知放午晚短窗，深度文放夜间深读窗。", timing_voice)
 
     quality_voice = voice_for_confidence(conf_quality)
-    # 数据质量章双覆盖维度分支：文章指标齐全 ≠ 粉丝画像齐全（issue #54）
-    if fans_portrait_available:
-        quality_conc = _voiced_conclusion("核心指标齐全，仍需保留导出时间和待补动作。", quality_voice)
-        quality_act = _voiced_action("每次复盘先刷新后台导出，登录失效先补数据。", quality_voice)
-    else:
+    # 数据质量章：画像不可得走 #54 原文；否则按全维度可得性说话（issue #61）
+    portrait_status = "粉丝画像可用" if fans_portrait_available else "粉丝画像不可得"
+    # fetch_missing 不单独成支（与 #61 原 missing_core_metrics 死判据同类，已核实不可达）：
+    # 1) raw_field 维（reads/shares/…）：仅 raw_records 全空时才 fetch_missing，
+    #    此时四 core 全缺 → metric_pending_count==4 → validate_dataset 拦死，报告不生成。
+    # 2) article_length_chars：正文缺口由 analysis「正文匹配X%」+ 独立「文章长度」章披露；
+    #    补救是补本地文章库，不是「登录后台补采」，故不并入本处 action。
+    # 3) fans_portrait：与 fans_portrait_available 同布尔两面，已由上一分支截走。
+    platform_missing = [
+        str(v.get("label") or k)
+        for k, v in metric_availability.items()
+        if (v or {}).get("status") == "platform_not_provided"
+    ]
+    if not fans_portrait_available:
         quality_conc = _voiced_conclusion(
             "文章指标齐全，粉丝画像缺失，人群结论只能靠标签推断。", quality_voice
         )
         quality_act = _voiced_action("先登录后台补抓画像，再复盘人群结论。", quality_voice)
-    portrait_status = "粉丝画像可用" if fans_portrait_available else "粉丝画像不可得"
+    elif platform_missing:
+        names = "、".join(platform_missing[:2])
+        quality_conc = _voiced_conclusion(
+            f"{names}平台不提供，改用分享/评论等替代。", quality_voice
+        )
+        quality_act = _voiced_action("不必再等平台字段，用可得指标决策。", quality_voice)
+    else:
+        quality_conc = _voiced_conclusion(
+            "核心指标齐全，仍需保留导出时间和待补动作。", quality_voice
+        )
+        quality_act = _voiced_action(
+            "每次复盘先刷新后台导出，登录失效先补数据。", quality_voice
+        )
+
+    base_q = (
+        f"非删{quality['period_non_deleted_count']}篇，"
+        f"稳定{quality['stable_article_count']}篇，"
+        f"缺口{quality['metric_pending_count']}"
+    )
+    length_bit = f"，正文匹配{length_completeness * 100:.0f}%"
+    portrait_bit = f"，{portrait_status}"
+    pnp_bit = f"；{'、'.join(platform_missing)}平台未提供" if platform_missing else ""
+    quality_analysis = f"{base_q}。"
+    for cand in (
+        f"{base_q}{length_bit}{portrait_bit}{pnp_bit}。",
+        f"{base_q}{portrait_bit}{pnp_bit}。",
+        f"{base_q}{pnp_bit}，{portrait_status}。",
+        f"{base_q}{pnp_bit}。",
+        f"{base_q}，{portrait_status}。",
+        f"{base_q}。",
+    ):
+        if len(cand) <= 60:
+            quality_analysis = cand
+            break
+    if len(quality_analysis) > 60:
+        quality_analysis = quality_analysis[:60]
 
     final_voice = voice_for_confidence(conf_final)
     final_conc = _voiced_conclusion("先把可复制的动作执行到位，不盲目追加新图表。", final_voice)
@@ -733,10 +786,14 @@ def build_analysis_sections(dataset: dict[str, Any]) -> list[dict[str, Any]]:
             "id": "quality",
             "title": "数据质量",
             "question": "这份报告的数据能不能支撑运营判断?",
-            "analysis": f"非删{quality['period_non_deleted_count']}篇，稳定{quality['stable_article_count']}篇，缺口{quality['metric_pending_count']}，正文匹配{length_completeness*100:.0f}%，{portrait_status}。",
+            "analysis": quality_analysis,
             "conclusion": quality_conc,
             "action": quality_act,
-            "chart_payload": {"kind": "data_quality", "quality": quality},
+            "chart_payload": {
+                "kind": "data_quality",
+                "quality": quality,
+                "metric_availability": metric_availability,
+            },
             "voice": quality_voice,
             "emphasis": emphasis_for_confidence(conf_quality),
             "action_basket": action_basket_for_confidence(conf_quality),
@@ -1107,11 +1164,6 @@ def build_dataset(root: Path, *, account_name: str = "我的公众号", since: s
     deleted = [article for article in period_articles if article["is_deleted"]]
     immature = [article for article in non_deleted if article["is_immature"]]
     stable = [article for article in non_deleted if not article["is_immature"]]
-    missing_core_metrics = [
-        article
-        for article in non_deleted
-        if any(article.get(field) is None for field in ["reads", "shares", "comments", "likes"])
-    ]
 
     by_hour = group_stats(stable, "hour")
     by_weekday = group_stats(stable, "weekday", list(range(1, 8)))
@@ -1135,7 +1187,8 @@ def build_dataset(root: Path, *, account_name: str = "我的公众号", since: s
             "period_deleted_count": len(deleted),
             "stable_article_count": len(stable),
             "immature_article_count": len(immature),
-            "metric_pending_count": len(missing_core_metrics),
+            # metric_pending_count 稍后由 metric_availability 的 core 维度回填（issue #61）
+            "metric_pending_count": 0,
             "backend_totals": raw.get("totals", {}),
             "match_stats": raw.get("match_stats", {}),
             **load_ledger_quality(root),
@@ -1163,7 +1216,29 @@ def build_dataset(root: Path, *, account_name: str = "我的公众号", since: s
         },
         "recommendations": _recommendations_from_niche(),
     }
-    dataset["benchmark"] = build_benchmark(stable)
+    # 先建 audience 探测器，再统一申报 metric_availability（issue #61）
+    audience_raw = load_raw_audience(root)
+    trend_raw = load_raw_trend(root)
+    account_raw = load_raw_account(root)
+    audience_mod = build_audience(
+        stable,
+        audience_raw,
+        dataset["analysis"]["by_pain_point"],
+        dataset["analysis"]["by_persona"],
+    )
+    metric_availability = probe_availability(
+        raw_records if isinstance(raw_records, list) else [],
+        derived={
+            "article_length_chars": derived_article_length(stable),
+            "fans_portrait": derived_fans_portrait(
+                bool(audience_mod.get("fans_portrait_available"))
+            ),
+        },
+    )
+    dataset["metric_availability"] = metric_availability
+    dataset["data_quality"]["metric_pending_count"] = core_pending_count(metric_availability)
+
+    dataset["benchmark"] = build_benchmark(stable, metric_availability=metric_availability)
     dataset["viral_genes"] = build_viral_genes(stable, dataset["benchmark"])
     # top_viral 原为 stable 文章对象引用，序列化会带上加性字段 content_type_source；
     # 剥离副本，使 content_type_source 仅出现在 articles.*（与 P3.a 基线归一化路径一致）
@@ -1171,15 +1246,10 @@ def build_dataset(root: Path, *, account_name: str = "我的公众号", since: s
     dataset["viral_genes"]["top_viral"] = [
         {k: v for k, v in art.items() if k != "content_type_source"} for art in _tv
     ]
-    # 新增 modules 与 account（仅追加，不改旧字段）
-    audience_raw = load_raw_audience(root)
-    trend_raw = load_raw_trend(root)
-    account_raw = load_raw_account(root)
     bm = dataset["benchmark"]
     vg = dataset["viral_genes"]
-    checkup = build_checkup(stable, bm, audience_raw)
+    checkup = build_checkup(stable, bm, audience_raw, metric_availability=metric_availability)
     content_engine = build_content_engine(stable, dataset["analysis"]["by_content_type"], bm)
-    audience_mod = build_audience(stable, audience_raw, dataset["analysis"]["by_pain_point"], dataset["analysis"]["by_persona"])
     growth_funnel = build_growth_funnel(stable, audience_raw, trend_raw, vg["viral_formula"])
     action_plan_v2 = build_action_plan_v2(vg, checkup, content_engine, audience_mod, growth_funnel)
     dataset["modules"] = {
@@ -1266,9 +1336,12 @@ def markdown_table(headers: list[str], rows: list[list[Any]]) -> str:
 
 def render_report(dataset: dict[str, Any], dataset_path: Path | str) -> str:
     quality = dataset["data_quality"]
-    fans_portrait_available = bool(
-        dataset.get("modules", {}).get("audience", {}).get("fans_portrait_available", False)
+    # issue #61：粉丝画像披露统一读 metric_availability，不再单独中转 fans_portrait_available
+    _fp_status = str(
+        ((dataset.get("metric_availability") or {}).get("fans_portrait") or {}).get("status")
+        or "fetch_missing"
     )
+    fans_portrait_available = _fp_status == "available"
     overall = dataset["analysis"]["overall"]
     sections = {section["id"]: section for section in dataset["analysis_sections"]}
     source_name = Path(dataset["meta"]["source_export"]).name

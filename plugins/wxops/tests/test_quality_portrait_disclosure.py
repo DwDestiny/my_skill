@@ -35,6 +35,15 @@ def _rebuild_quality_sections(dataset: dict) -> dict:
 def test_quality_section_discloses_portrait_unavailable():
     dataset = build_dataset(FIXTURES, account_name="样例运营号")
     dataset["modules"]["audience"]["fans_portrait_available"] = False
+    # issue #61：质量章读 metric_availability，突变须同步注册表
+    dataset.setdefault("metric_availability", {})
+    dataset["metric_availability"]["fans_portrait"] = {
+        "label": "粉丝画像",
+        "status": "fetch_missing",
+        "coverage": 0.0,
+        "all_zero": None,
+        "detail": "后台粉丝画像不可得，需登录补抓",
+    }
     _rebuild_quality_sections(dataset)
 
     quality = _quality_section(dataset)
@@ -73,6 +82,14 @@ def test_quality_section_portrait_available_regression():
 def test_render_report_discloses_portrait_unavailable_in_data_scope():
     dataset = build_dataset(FIXTURES, account_name="样例运营号")
     dataset["modules"]["audience"]["fans_portrait_available"] = False
+    dataset.setdefault("metric_availability", {})
+    dataset["metric_availability"]["fans_portrait"] = {
+        "label": "粉丝画像",
+        "status": "fetch_missing",
+        "coverage": 0.0,
+        "all_zero": None,
+        "detail": "后台粉丝画像不可得，需登录补抓",
+    }
     _rebuild_quality_sections(dataset)
 
     report = render_report(dataset, DATASET_PATH)

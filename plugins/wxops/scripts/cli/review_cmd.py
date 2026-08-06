@@ -267,6 +267,7 @@ def _write_report(
     expected_rows: list[dict[str, Any]] | None,
     expected_note: str | None,
     skip_expected_table: bool,
+    zaikan_status: str | None = None,
 ) -> None:
     lines: list[str] = []
     lines.append(f"# 复盘 · {title}")
@@ -296,7 +297,11 @@ def _write_report(
         lines.append("|---|---|")
         lines.append(f"| 阅读 | {int(article.get('reads') or 0)} |")
         lines.append(f"| 点赞 | {int(article.get('likes') or 0)} |")
-        lines.append(f"| 在看 | {int(article.get('zaikan') or 0)} |")
+        # issue #61：仅改显示层；阈值判定逻辑不动
+        if zaikan_status and zaikan_status != "available":
+            lines.append("| 在看 | 不可得（平台未提供） |")
+        else:
+            lines.append(f"| 在看 | {int(article.get('zaikan') or 0)} |")
         lines.append(f"| 转发 | {int(article.get('shares') or 0)} |")
         lines.append(f"| 转发率 | {_format_share_rate(article)} |")
         lines.append("")
@@ -448,6 +453,7 @@ def run_review(args: Any) -> int:
     # --- 3. report.json ---
     data_not_ready_reason: str | None = None
     article: dict[str, Any] | None = None
+    zaikan_status: str | None = None
 
     if not report_json.is_file():
         data_not_ready_reason = (
@@ -463,6 +469,12 @@ def run_review(args: Any) -> int:
             )
             data = None
         if data is not None:
+            # issue #61：显示层读 metric_availability.zaikan
+            _z = ((data.get("metric_availability") or {}).get("zaikan") or {}).get(
+                "status"
+            )
+            if isinstance(_z, str):
+                zaikan_status = _z
             articles_obj = data.get("articles") if isinstance(data, dict) else None
             all_period: list[Any] = []
             if isinstance(articles_obj, dict):
@@ -513,6 +525,7 @@ def run_review(args: Any) -> int:
         expected_rows=expected_rows,
         expected_note=expected_note,
         skip_expected_table=skip_expected_table,
+        zaikan_status=zaikan_status,
     )
 
     if data_not_ready_reason:
