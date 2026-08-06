@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # GEB-L3
 # Input: wxops root + slug/name；盘点根下 config.json/raw/reports/data/output/browser-profile
-# Output: copy-first 到 accounts/<slug>/ + 数量/大小/sha256 校验；写 runs/migrate-*.json；成功则注册账号并 set_current；源不动；exit 0/1
+# Output: copy-first 到 accounts/<slug>/ + 数量/大小/sha256 校验；写 runs/migrate-*.json（含 excluded/unhandled 差集）；成功则注册账号并 set_current；源不动；exit 0/1
 # Pos: plugins/wxops/scripts/cli/migrate_cmd.py
 """旧单账号工作区 → accounts/<slug>/ 的 copy-first 迁移。"""
 
@@ -27,12 +27,22 @@ MIGRATE_ITEMS: list[tuple[str, str]] = [
     ("browser-profile", "dir"),
 ]
 
+# EXCLUDED_META 与 MIGRATE_ITEMS 是两份互斥清单：名字不许重叠。
+# 源目录第一层条目的去向只有三种——搬运（在 present/inventory）、已知排除（excluded）、
+# 未识别（unhandled）。不在 MIGRATE_ITEMS 与 EXCLUDED_META 里的东西会进 unhandled
+# 被显式报告。将来新增工作区级设施若忘了登记进 EXCLUDED_META，差集就是演进的哨兵。
 EXCLUDED_META = [
     {"name": "dashboard", "reason": "构建产物，可再生"},
     {"name": "accounts", "reason": "多账号结构本身，不迁"},
     {"name": "runs", "reason": "运行清单目录，不迁"},
     {"name": "accounts.json", "reason": "注册表，不迁"},
     {"name": ".DS_Store", "reason": "系统垃圾文件"},
+    # 以下为工作区级设施：属于整个工作区而非某个账号，搬进账号目录即是错放
+    {"name": "bin", "reason": "工作区级可执行入口，跨账号共享，不迁"},
+    {"name": "venv", "reason": "Python 虚拟环境，可再生，不迁"},
+    {"name": "niches", "reason": "用户侧赛道包，跨账号共享，不迁"},
+    {"name": "content", "reason": "内容产线目录，跨账号共享，不迁"},
+    {"name": "gateway.json", "reason": "网关凭证，工作区级共享，绝不复制"},
 ]
 
 HASH_LIMIT = 10 * 1024 * 1024  # 10MB
@@ -93,6 +103,59 @@ def inventory_item(root: Path, name: str, kind: str) -> dict[str, Any] | None:
         "files": len(files),
         "bytes": total,
     }
+
+
+def _scan_root(
+    root: Path, present: list[tuple[str, str]]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """扫描源目录第一层，把非搬运条目分成「已知排除」与「未识别」两段。
+
+    返回 (excluded, unhandled)，两段都只登记实际存在的条目——
+    excluded 不再是 EXCLUDED_META 常量的原样拷贝，而是本次运行的实际结果。
+
+    不递归展开子目录：目录只记第一层子项数，软链不展开。未识别目录可能是
+    用户随手放的软链或巨大目录，递归统计会踩循环、也没必要。
+
+    inventory ∪ excluded ∪ unhandled 恒等于源目录第一层全集——这是「清单
+    交代全部去向」的不变量，有测试守着。将来新增工作区级设施若忘了登记进
+    EXCLUDED_META，会自动出现在 unhandled 里，差集就是演进的哨兵。
+    """
+    handled = {name for name, _ in present}
+    excluded_reasons = {e["name"]: e["reason"] for e in EXCLUDED_META}
+    excluded: list[dict[str, Any]] = []
+    unhandled: list[dict[str, Any]] = []
+
+    try:
+        entries = sorted(root.iterdir(), key=lambda p: p.name)
+    except OSError:
+        return [], []
+
+    for p in entries:
+        if p.name in handled:
+            continue
+
+        if p.is_symlink():
+            item: dict[str, Any] = {"name": p.name, "kind": "symlink"}
+        elif p.is_dir():
+            item = {"name": p.name, "kind": "dir"}
+            try:
+                item["entries"] = len(list(p.iterdir()))
+            except OSError:
+                item["entries"] = -1
+        else:
+            item = {"name": p.name, "kind": "file"}
+            try:
+                item["bytes"] = p.stat().st_size
+            except OSError:
+                item["bytes"] = -1
+
+        if p.name in excluded_reasons:
+            item["reason"] = excluded_reasons[p.name]
+            excluded.append(item)
+        else:
+            unhandled.append(item)
+
+    return excluded, unhandled
 
 
 def snapshot_hashes(root: Path, names: list[str]) -> dict[str, str]:
@@ -238,6 +301,21 @@ def run(root: Path, slug: str = "default", name: str | None = None) -> int:
                 f"{inv['name']:<18} {inv['kind']:<4}  files={inv['files']:<6} bytes={inv['bytes']}"
             )
 
+    excluded_meta, unhandled = _scan_root(root, present)
+    if unhandled:
+        env.print_warn(
+            f"未识别条目 {len(unhandled)} 个：既不在迁移清单，也不在已知排除清单"
+        )
+        for u in unhandled:
+            if u["kind"] == "dir":
+                detail = f"entries={u.get('entries')}"
+            elif u["kind"] == "symlink":
+                detail = "软链，未解引用"
+            else:
+                detail = f"bytes={u.get('bytes')}"
+            env.print_info(f"  {u['name']:<18} {u['kind']:<8}  {detail}")
+        env.print_info("  这些条目原地保留，未复制到账号目录。工具不替你决定去向。")
+
     # 3. 复制
     env.print_step("复制到账号办公室", str(target))
     env.ensure_account_dirs(target)
@@ -281,7 +359,8 @@ def run(root: Path, slug: str = "default", name: str | None = None) -> int:
         "inventory": inventory,
         "copied": copied,
         "verify": verify,
-        "excluded": EXCLUDED_META,
+        "excluded": excluded_meta,  # 运行时实际结果，不再是 EXCLUDED_META 静态拷贝
+        "unhandled": unhandled,
         "errors": errors,
     }
     try:
@@ -333,6 +412,10 @@ def run(root: Path, slug: str = "default", name: str | None = None) -> int:
     env.print_success("迁移完成")
     env.print_info(f"目标：{target.resolve()}")
     env.print_info("源文件原位保留，一个字节未动；确认无误后可自行归档。")
+    if unhandled:
+        env.print_info(
+            f"未识别条目 {len(unhandled)} 个未搬运，原地保留，详见清单 unhandled 段。"
+        )
     env.print_info(f"清单：{manifest_path}")
     env.print_guide_next("wxops desk")
     return 0
