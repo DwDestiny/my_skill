@@ -18,3 +18,4 @@
 - Markdown 模板的必填位一律用 `{{...}}` 占位符。**`wxops kit` 以"文件含 `{{` 子串"判定为空壳拒绝开工**——改模板不许引入非占位符用途的 `{{`,也不许换占位符记号(要换先改 kit 与本文)
 - 模板头部 HTML 注释写明落点路径与填写约定;`> 填写指引` 引用块建议用户填完删除
 - 新增模板:头注释 + `{{}}` 占位符 + 本表登记,三件一起做
+- `niche.template.json` **不收录可选段**(`recommendations` / `scoring`)。模板是直接复制成 live 包的,带一段生效的 `scoring.interaction_thresholds` 等于每个新赛道默认偏离平台标定值——正是 issue #74 要治的静默漂移。可选段的字段表与示例在 `../references/niche-contract.md` §3.5/§3.6

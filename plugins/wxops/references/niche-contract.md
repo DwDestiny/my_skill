@@ -58,7 +58,9 @@ loader（`scripts/analyze/niche_loader.py`）按以下顺序解析 id：
   "content_types": { … },           // §3.1
   "pain_points": { … },             // §3.2
   "personas": { … },                // §3.3
-  "title_patterns": { … }           // §3.4
+  "title_patterns": { … },          // §3.4
+  "recommendations": { … },         // 可选，§3.5
+  "scoring": { … }                  // 可选，§3.6 赛道级打分覆写（issue #74）
 }
 ```
 
@@ -167,6 +169,73 @@ if has_any(text, 品牌词):
 - **输出字段名不变**：`title_structure` 返回的 `has_price_word / has_risk_word / has_model_word / has_comparison / has_question / has_tutorial / has_number` 等布尔字段名是 report.json 既有 schema（DATA_CONTRACT），槽词表换内容不换字段名。
 - 校验：`keys` 必须恰好等于 4 个槽 label ∪ 4 个引擎固定标签（集合相等，顺序由包定）。槽可留空词表（`terms: []`），对应套路恒不触发，但 label 仍须在 `keys` 里。
 
+### 3.5 `recommendations` — 静态运营建议（可选）
+
+可选段。**缺失 → 报告层不回落任何硬编码文案**（空列表 + status 提示）。**一旦写出 `recommendations` 对象，则三个子字段全部必填**（与 §3.6 `scoring` 的「内部字段全可选」相反）。
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `topic_ratio` | 对象数组 | 每项 `{label, ratio, role}` |
+| `publish_windows` | 对象数组 | 每项 `{window, best_for}` |
+| `headline_rules` | 字符串数组 | 标题规则列表 |
+
+```jsonc
+{
+  "recommendations": {
+    "topic_ratio": [
+      { "label": "风险/账号/额度焦虑", "ratio": 0.25, "role": "忠诚底座" }
+    ],
+    "publish_windows": [
+      { "window": "周二/四 20:00–21:30", "best_for": "方法长文" }
+    ],
+    "headline_rules": [
+      "标题优先点出读者可感知的损失或收益"
+    ]
+  }
+}
+```
+
+### 3.6 `scoring` — 赛道级打分覆写（可选，issue #74）
+
+可选段。**命名空间** `scoring` 预留给将来其他打分配置；当前仅支持 `interaction_thresholds`。
+
+**与 `recommendations` 的关键差异**：`recommendations` 写出后三个子字段必填；**`scoring` 内部所有字段（以及 `interaction_thresholds` 内的七个阈值键）全部可选**——赛道只想覆写一个 `like_high` 时，不必写全七个。
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `interaction_thresholds` | 对象 | 否 | 键 ⊆ 平台级七字段；值见下表 |
+
+`interaction_thresholds` 已知键与取值约束：
+
+| 键 | 语义 | 取值 |
+|---|---|---|
+| `like_high` | 点赞率高线 | `(0, 1)` |
+| `comment_high` | 评论率高线 | `(0, 1)` |
+| `share_high_ip` | personal_ip 转发高线 | `(0, 1)` |
+| `share_high_ks` | knowledge_service 转发高线 | `(0, 1)` |
+| `brand_quiet_share` | 机构号冷清转发上界 | `(0, 1)` |
+| `brand_quiet_comment` | 机构号冷清评论上界 | `(0, 1)` |
+| `share_dominance_ratio` | 转发相对 max(comment, like) 的倍数 | `>= 1` |
+
+```jsonc
+{
+  "scoring": {
+    "interaction_thresholds": {
+      "like_high": 0.012,           // 只覆写想改的字段；其余走平台默认
+      "share_dominance_ratio": 2.5
+    }
+  }
+}
+```
+
+缺省行为：
+
+- 无 `scoring` 段，或 `interaction_thresholds` 缺失/空 → **全走** `scripts/analyze/scoring_thresholds.py` 里的平台级 `DEFAULT_INTERACTION_THRESHOLDS`。
+- 平台级缺省值的标定依据见 issue #74（health / maizong 实测量级）。**赛道覆写是二阶手段：没有本赛道实测数据支撑就不要覆写**；内置 `ai-tools` / `_generic` 故意不写本段，避免与平台标定打架。
+- 未知字段名（拼错键）→ **警告后忽略**（契约 §8），包仍可加载但该键不生效；改完请看 stderr。
+- 非法值（率不在 `(0,1)`、倍数 `<1`、字符串/布尔/NaN 等）→ **加载时硬报错**（`NicheLoadError`），不是跑分时才炸。
+- 编排层 merge 后注入 m9；`account_type.scoring_source` 留痕被覆写的字段名（按值比对，非「传没传参」）。
+
 ## 4. niche 的选择与传导
 
 ```
@@ -237,7 +306,8 @@ loader 读入后必须逐条校验，任一不过即报错退出（带路径与�
 
 - schema 演进走 `niche_schema_version` 递增 + 本契约同步修订；loader 对不认识的版本硬报错（不猜）。
 - 顶层未知字段：警告后忽略（给未来版本留余地）；组内未知字段同理。
-- **v1 非目标**：字段级包合并、包级阈值覆写、多包混用、正则型题材规则（词表 `has_any` 之外的匹配）、看板层警示渲染（P6）。
+- **v1 非目标**：字段级包合并、覆盖率闸门阈值包级覆写、多包混用、正则型题材规则（词表 `has_any` 之外的匹配）、看板层警示渲染（P6）。
+- **已支持的二阶覆写（issue #74）**：`scoring.interaction_thresholds` 可部分覆写 m9 互动率阈值；见 §3.6。覆盖率阈值（§5）仍不包级覆写。
 
 ## 9. 内置 ai-tools 包的导出纪律（C2）
 
