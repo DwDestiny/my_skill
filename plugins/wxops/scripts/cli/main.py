@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # GEB-L3
-# Input: sys.argv → argparse（init/login/analyze/accounts/migrate/desk/kit/publish/review 及 --workspace/--account/--all 等）
+# Input: sys.argv → argparse（init/login/analyze/accounts/migrate/desk/kit/publish/review/lint/dedup 及 --workspace/--account/--all 等）
 # Output: 分发子命令 + 账号/workspace 解析 + login/analyze 持锁与 registry 游标更新；本身不做抓取/分析业务；exit 码透传
 # Pos: plugins/wxops/scripts/cli/main.py
-"""wxops 可执行入口主分发：init / login / analyze / accounts / migrate / desk / kit / publish / review。"""
+"""wxops 可执行入口主分发：init / login / analyze / accounts / migrate / desk / kit / publish / review / lint / dedup。"""
 
 from __future__ import annotations
 
@@ -18,11 +18,13 @@ from . import accounts_cmd
 from . import accounts_store
 from . import analyze_cmd
 from . import batch_cmd
+from . import dedup_cmd
 from . import desk_cmd
 from . import env
 from . import health
 from . import init_cmd
 from . import kit_cmd
+from . import lint_cmd
 from . import lock as lock_mod
 from . import login_cmd
 from . import migrate_cmd
@@ -182,6 +184,52 @@ def build_parser() -> argparse.ArgumentParser:
         help="复盘：对照选题卡预期出结论（先跑 analyze 更新数据）",
     )
     p_review.add_argument("--topic", required=True, help="选题 slug")
+
+    # lint（稿件合规闸）
+    p_lint = subparsers.add_parser(
+        "lint",
+        parents=[common],
+        help="稿件合规闸：按赛道 compliance.json 扫正文（BLOCK/WARN）",
+    )
+    p_lint.add_argument(
+        "draft",
+        nargs="?",
+        default=None,
+        help="草稿 Markdown 路径；与 --text 二选一",
+    )
+    p_lint.add_argument(
+        "--text",
+        default=None,
+        help="快速检查一句话/标题（与 draft 二选一）",
+    )
+    p_lint.add_argument(
+        "--json",
+        action="store_true",
+        help="机器可读 JSON 输出",
+    )
+
+    # dedup（选题去重闸）
+    p_dedup = subparsers.add_parser(
+        "dedup",
+        parents=[common],
+        help="选题去重闸：对照已发布 stable 标题做相似度/对象撞车判定",
+    )
+    p_dedup.add_argument(
+        "--title",
+        required=True,
+        help="待查标题",
+    )
+    p_dedup.add_argument(
+        "--object",
+        default=None,
+        dest="object",
+        help="核心对象（可选；不给则从 title 抽中文片段）",
+    )
+    p_dedup.add_argument(
+        "--json",
+        action="store_true",
+        help="机器可读 JSON 输出",
+    )
 
     return parser
 
@@ -385,6 +433,12 @@ def main(argv: list[str] | None = None) -> int:
             account=getattr(args, "account", None),
             topic=getattr(args, "topic", None),
         )
+
+    if args.command == "lint":
+        return lint_cmd.run_from_args(args)
+
+    if args.command == "dedup":
+        return dedup_cmd.run_from_args(args)
 
     if args.command == "publish":
         return publish_cmd.run_publish(args)
