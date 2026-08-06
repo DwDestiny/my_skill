@@ -52,10 +52,6 @@ def _now_iso() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
 
 
-def _stamp() -> str:
-    return datetime.now().astimezone().strftime("%Y%m%d-%H%M%S")
-
-
 def _sha256_file(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as f:
@@ -345,9 +341,7 @@ def run(root: Path, slug: str = "default", name: str | None = None) -> int:
     finished_at = _now_iso()
 
     # 5. 清单落盘
-    runs_dir = root / "runs"
-    runs_dir.mkdir(parents=True, exist_ok=True)
-    manifest_path = runs_dir / f"migrate-{_stamp()}.json"
+    manifest_path = env.new_run_manifest_path(root, "migrate")
     manifest: dict[str, Any] = {
         "version": 1,
         "started_at": started_at,
