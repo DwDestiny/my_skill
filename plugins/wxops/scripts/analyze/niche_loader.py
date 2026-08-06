@@ -533,7 +533,8 @@ def _validate_and_build(path: Path, data: dict[str, Any], *, requested_id: str, 
             try:
                 validated = validate_threshold_overrides(thr_raw)
             except ValueError as exc:
-                _fail(path, f"scoring.interaction_thresholds 合法（{exc}）")
+                # 异常原文进 detail 而非折进 item（照 "title_regex 可 re.compile" 那条先例）
+                _fail(path, "scoring.interaction_thresholds 合法", str(exc))
             scoring = ScoringSpec(interaction_thresholds=validated if validated else None)
 
     return NicheSpec(
