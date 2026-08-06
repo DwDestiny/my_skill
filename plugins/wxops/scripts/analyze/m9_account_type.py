@@ -22,6 +22,10 @@ from typing import Any
 
 from analyze.metric_registry import METRIC_DIMENSIONS
 from analyze.rates import aggregate_rate
+from analyze.scoring_thresholds import (
+    DEFAULT_INTERACTION_THRESHOLDS,
+    InteractionThresholds,
+)
 
 # 维度 key → 中文 label（从 registry 读，m9 不另抄一份）
 _DIM_LABELS: dict[str, str] = {d["key"]: d["label"] for d in METRIC_DIMENSIONS}
@@ -139,11 +143,24 @@ def _extract_features(dataset: dict[str, Any]) -> dict[str, Any]:
 
 # ───────────────────────── 类型打分 ──────────────────────────────────────────
 
-def _score_types(f: dict[str, Any]) -> dict[str, float]:
-    """六类型各打 0–1 分。加权特征命中，阈值宁保守勿硬判。"""
+def _score_types(
+    f: dict[str, Any],
+    thresholds: InteractionThresholds = DEFAULT_INTERACTION_THRESHOLDS,
+) -> dict[str, float]:
+    """六类型各打 0–1 分。加权特征命中，阈值宁保守勿硬判。
+
+    thresholds 默认为平台级公众号互动阈值；PR B 可传入 niche 覆写实例。
+    本函数只读阈值、不改权重系数。
+    """
+    T = thresholds
     ppw = f["posts_per_week"]
     humanity_low = f["first_person_ratio"] < 0.15 and f["story_ratio"] < 0.15
-    dominant_share = f["avg_share_rate"] >= max(f["avg_comment_rate"], f["avg_like_rate"])
+    # 旧判据 share >= max(comment, like) 在公众号恒为 True（转发天然压过点赞评论），
+    # 等于给 media_news 白送 0.10、零区分度；乘 share_dominance_ratio 后实测
+    # health False / maizong True，恢复区分度。
+    dominant_share = f["avg_share_rate"] >= T.share_dominance_ratio * max(
+        f["avg_comment_rate"], f["avg_like_rate"]
+    )
 
     media = 0.0
     media += 0.30 if ppw >= 4 else (0.15 if ppw >= 2.5 else 0.0)
@@ -155,8 +172,8 @@ def _score_types(f: dict[str, Any]) -> dict[str, float]:
     ip = 0.0
     ip += 0.35 if f["story_ratio"] >= 0.4 or f["first_person_ratio"] >= 0.5 else (
         0.20 if f["story_ratio"] >= 0.2 or f["first_person_ratio"] >= 0.25 else 0.0)
-    ip += 0.20 if f["avg_like_rate"] > 0.04 or f["avg_share_rate"] > 0.025 else 0.0
-    ip += 0.15 if f["avg_comment_rate"] > 0.008 else 0.0
+    ip += 0.20 if f["avg_like_rate"] > T.like_high or f["avg_share_rate"] > T.share_high_ip else 0.0
+    ip += 0.15 if f["avg_comment_rate"] > T.comment_high else 0.0
     ip += 0.10 if f["hotspot_ratio"] < 0.2 else 0.0
     ip += 0.10 if f["median_length"] >= 1500 else 0.0
     ip += 0.10 if 0 < ppw <= 3 else 0.0
@@ -164,7 +181,7 @@ def _score_types(f: dict[str, Any]) -> dict[str, float]:
     ks = 0.0
     ks += 0.35 if f["method_ratio"] >= 0.4 else (0.18 if f["method_ratio"] >= 0.2 else 0.0)
     ks += 0.30 if f["median_length"] >= 2200 else (0.15 if f["median_length"] >= 1500 else 0.0)
-    ks += 0.10 if f["avg_share_rate"] > 0.02 else 0.0
+    ks += 0.10 if f["avg_share_rate"] > T.share_high_ks else 0.0
     ks += 0.10 if f["hotspot_ratio"] < 0.2 else 0.0
     ks += 0.10 if f["story_ratio"] < 0.2 else 0.0
 
@@ -177,7 +194,7 @@ def _score_types(f: dict[str, Any]) -> dict[str, float]:
     brand = 0.0
     brand += 0.40 if f["org_ratio"] >= 0.3 else (0.20 if f["org_ratio"] >= 0.1 else 0.0)
     brand += 0.20 if humanity_low else 0.0
-    brand += 0.15 if f["avg_share_rate"] < 0.01 and f["avg_comment_rate"] < 0.005 else 0.0
+    brand += 0.15 if f["avg_share_rate"] < T.brand_quiet_share and f["avg_comment_rate"] < T.brand_quiet_comment else 0.0
 
     local = 0.0
     local += 0.40 if f["local_ratio"] >= 0.3 else (0.20 if f["local_ratio"] >= 0.1 else 0.0)
@@ -529,8 +546,16 @@ def _routing_chain(module_weights: dict[str, str]) -> list[str]:
     return sorted(MODULE_KEYS_ORDERED, key=lambda m: (order.get(module_weights.get(m, "中"), 1), MODULE_KEYS_ORDERED.index(m)))
 
 
-def _build_evidence(key: str, f: dict[str, Any]) -> list[str]:
-    """识别依据,引用真实特征值(中文可渲染,不含禁词)。"""
+def _build_evidence(
+    key: str,
+    f: dict[str, Any],
+    thresholds: InteractionThresholds = DEFAULT_INTERACTION_THRESHOLDS,
+) -> list[str]:
+    """识别依据,引用真实特征值(中文可渲染,不含禁词)。
+
+    personal_ip 的互动叙事必须与 thresholds 判据同源：数据不支撑时不硬凑互动句。
+    """
+    T = thresholds
     ev: list[str] = []
     if key == "media_news":
         ev.append(f"发文频率约 {f['posts_per_week']:.1f} 篇/周,时效类题材占 {f['hotspot_ratio']:.0%}")
@@ -538,7 +563,12 @@ def _build_evidence(key: str, f: dict[str, Any]) -> list[str]:
             ev.append(f"篇幅中位 {int(f['median_length'])} 字,偏轻快资讯形态")
     elif key == "personal_ip":
         ev.append(f"个人叙事类内容占 {f['story_ratio']:.0%},第一人称出现率 {f['first_person_ratio']:.0%}")
-        ev.append(f"点赞率均值 {f['avg_like_rate']:.3f}、评论率均值 {f['avg_comment_rate']:.3f},认同信号明显")
+        if f["avg_like_rate"] > T.like_high or f["avg_comment_rate"] > T.comment_high:
+            ev.append(
+                f"点赞率均值 {f['avg_like_rate']:.3f}、评论率均值 {f['avg_comment_rate']:.3f},认同信号明显"
+            )
+        elif f["avg_share_rate"] > T.share_high_ip:
+            ev.append(f"转发率均值 {f['avg_share_rate']:.3f},内容被主动转发传播")
     elif key == "knowledge_service":
         ev.append(f"方法/教程类内容占 {f['method_ratio']:.0%},篇幅中位 {int(f['median_length'])} 字")
     elif key == "conversion_sales":
@@ -567,7 +597,9 @@ def build_account_type(dataset: dict[str, Any]) -> dict[str, Any]:
     niche_alert = bool(coverage.get("alert"))
 
     f = _extract_features(dataset)
-    scores = _score_types(f)
+    # 判据与叙述共用同一份阈值实例（PR B 可在此接入 niche 覆写）
+    thresholds = DEFAULT_INTERACTION_THRESHOLDS
+    scores = _score_types(f, thresholds=thresholds)
 
     ranked = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
     top_key, top_score = ranked[0]
@@ -601,7 +633,7 @@ def build_account_type(dataset: dict[str, Any]) -> dict[str, Any]:
             "score": second_score,
         }
 
-    evidence = _build_evidence(primary_key, f)
+    evidence = _build_evidence(primary_key, f, thresholds=thresholds)
 
     result: dict[str, Any] = {
         "engine_version": ENGINE_VERSION,

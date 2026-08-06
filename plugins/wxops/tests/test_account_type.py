@@ -15,10 +15,12 @@ from pathlib import Path
 from analyze.m9_account_type import (
     ACCOUNT_TYPES,
     TYPE_PLAYBOOKS,
+    _build_evidence,
     _extract_features,
     _score_types,
     build_account_type,
 )
+from analyze.scoring_thresholds import DEFAULT_INTERACTION_THRESHOLDS
 from build_wechat_ops_report import build_dataset
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
@@ -92,13 +94,19 @@ def _media_dataset() -> dict:
 
 
 def _ip_dataset() -> dict:
+    # 互动率取自 2026-08-06 两账号实测分布（issue #74），略高于高线以命中 personal_ip 判据。
+    # share 保持 0.03（与 maizong 实测 0.046 同量级）；comment/like 旧 fixture 曾按
+    # 旧阈值反推到 0.012/0.06（比真实高约一个数量级），已压回公众号量级。
+    # reads=10000：避免默认 500 时 round(reads*rate) 把 0.009/0.0025 压成 0.008/0.002，
+    # 刚好卡在高线外侧导致判据/叙事假阴性。
     arts = [
         _mk_article(
             f"我踩坑一年后的第 {i} 条判断",
             "我的亲历复盘,聊聊我自己的取舍和立场。",
+            reads=10000,
             share_rate=0.03,
-            comment_rate=0.012,
-            like_rate=0.06,
+            comment_rate=0.0025,
+            like_rate=0.009,
             length=1800,
         )
         for i in range(16)
@@ -168,10 +176,10 @@ def test_interaction_features_are_not_silently_zero():
 
     守的是：改口径后若 fixture 只写 *_rate 不写原始计数，avg_*_rate 会恒为 0，
     导致 m9_account_type.py 里
-    `ip += 0.20 if avg_like_rate > 0.04 or avg_share_rate > 0.025`
-    永远走不到，测试仍靠标题正则假绿。
+    `ip += 0.20 if avg_like_rate > T.like_high or avg_share_rate > T.share_high_ip`
+    （见 DEFAULT_INTERACTION_THRESHOLDS）永远走不到，测试仍靠标题正则假绿。
     """
-    # shares = round(500 * 0.05) = 25 → 组合率 5% > 2.5%
+    # shares = round(500 * 0.05) = 25 → 组合率 5% > share_high_ip
     arts = [
         _mk_article(
             f"普通随笔 {i}",
@@ -187,7 +195,7 @@ def test_interaction_features_are_not_silently_zero():
     ds = _mk_dataset(arts, posts_per_week=2.0)
     f = _extract_features(ds)
 
-    assert f["avg_share_rate"] > 0.025, (
+    assert f["avg_share_rate"] > DEFAULT_INTERACTION_THRESHOLDS.share_high_ip, (
         f"avg_share_rate={f['avg_share_rate']}，高分享 fixture 不应被静默归零"
     )
     assert f["avg_share_rate"] == 0.05
@@ -213,10 +221,72 @@ def test_extract_features_interaction_rates_not_all_zero_on_normal_dataset():
         f"share={f['avg_share_rate']}, like={f['avg_like_rate']}, "
         f"comment={f['avg_comment_rate']}"
     )
-    # 与 _ip_dataset 设定一致：share_rate=0.03, like_rate=0.06
+    # 与 _ip_dataset 设定一致：share_rate=0.03, like_rate=0.009, comment_rate=0.0025
     assert f["avg_share_rate"] == 0.03
-    assert f["avg_like_rate"] == 0.06
-    assert f["avg_comment_rate"] == 0.012
+    assert f["avg_like_rate"] == 0.009
+    assert f["avg_comment_rate"] == 0.0025
+
+
+# ───────────────────────── 真实量级误判守卫（issue #74） ─────────────────────────
+
+
+def _low_interaction_personal_dataset() -> dict:
+    """真实量级但互动偏低的个人叙事号（照 health 实测：share/comment/like）。"""
+    # reads=10000 保真 ratio-of-means（0.0006 → comments=6，不会被 round 成 0）
+    arts = [
+        _mk_article(
+            f"我踩坑一年后的第 {i} 条判断",
+            "我的亲历复盘,聊聊我自己的取舍和立场。",
+            reads=10000,
+            share_rate=0.008,
+            comment_rate=0.0006,
+            like_rate=0.0045,
+            length=1800,
+        )
+        for i in range(16)
+    ]
+    return _mk_dataset(arts, posts_per_week=2.0)
+
+
+def test_low_interaction_personal_account_not_misjudged_as_brand_org():
+    """真实个人养生号不应因公众号点赞评论天然低被「互动冷清→机构调性」推向 brand_org。
+
+    旧阈值 brand: share<0.01 and comment<0.005 会给 health 量级账号白送 0.15；
+    重标定后 brand_quiet_* 收紧，低互动个人号不得再领这 0.15。
+    """
+    f = _extract_features(_low_interaction_personal_dataset())
+    scores = _score_types(f)
+
+    # 差分法：抬高 share/comment 远超 quiet 线后再打一次，brand_org 分应相等
+    # （说明原分里没有那 0.15 的互动冷清加分）
+    f_raised = dict(f)
+    f_raised["avg_share_rate"] = 0.05
+    f_raised["avg_comment_rate"] = 0.01
+    scores_raised = _score_types(f_raised)
+    assert scores["brand_org"] == scores_raised["brand_org"], (
+        f"brand_org 不应因互动冷清加分: quiet={scores['brand_org']}, "
+        f"raised={scores_raised['brand_org']}"
+    )
+
+    result = build_account_type(_low_interaction_personal_dataset())
+    assert result["primary"]["key"] != "brand_org", (
+        f"低互动个人叙事号被误判为 {result['primary']['key']}"
+    )
+
+
+def test_personal_ip_evidence_omits_interaction_claim_when_data_does_not_support():
+    """personal_ip 证据层：互动数据不支撑时不打印「认同信号明显」；高互动时必须打印。"""
+    f_low = _extract_features(_low_interaction_personal_dataset())
+    ev_low = _build_evidence("personal_ip", f_low)
+    assert all("认同信号明显" not in line for line in ev_low), (
+        f"低互动不应写认同信号: {ev_low}"
+    )
+
+    f_high = _extract_features(_ip_dataset())
+    ev_high = _build_evidence("personal_ip", f_high)
+    assert any("认同信号明显" in line for line in ev_high), (
+        f"高互动应写认同信号: {ev_high}"
+    )
 
 
 # ───────────────────────── 回退与置信 ─────────────────────────
