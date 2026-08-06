@@ -19,6 +19,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from analyze.rates import aggregate_rate
+
 ENGINE_VERSION = "account-type-router-v1"
 
 # 六大类型 + 通用回退（顺序即 scores 输出顺序）
@@ -74,11 +76,6 @@ def _hit_ratio(articles: list[dict[str, Any]], pattern: re.Pattern[str]) -> floa
     return hits / len(articles)
 
 
-def _avg(values: list[float]) -> float:
-    vals = [v for v in values if v is not None]
-    return sum(vals) / len(vals) if vals else 0.0
-
-
 def _median(values: list[float]) -> float:
     vals = sorted(v for v in values if v is not None)
     if not vals:
@@ -114,9 +111,12 @@ def _extract_features(dataset: dict[str, Any]) -> dict[str, Any]:
         "benefit_ratio": _hit_ratio(stable, BENEFIT_RE),
         "org_ratio": _hit_ratio(stable, ORG_RE),
         "local_ratio": _hit_ratio(stable, LOCAL_RE),
-        "avg_share_rate": _avg([a.get("share_rate", 0) or 0 for a in stable]),
-        "avg_comment_rate": _avg([a.get("comment_rate", 0) or 0 for a in stable]),
-        "avg_like_rate": _avg([a.get("like_rate", 0) or 0 for a in stable]),
+        # ratio-of-means（issue #59）；点赞分子与 enrich.py 单篇 like_rate 口径一致
+        "avg_share_rate": aggregate_rate(stable, ["shares"])["value"],
+        "avg_comment_rate": aggregate_rate(stable, ["comments"])["value"],
+        "avg_like_rate": aggregate_rate(
+            stable, ["likes", "old_likes", "moment_likes"]
+        )["value"],
         "median_length": _median([
             float(a.get("article_length_chars") or 0)
             for a in stable if (a.get("article_length_chars") or 0) > 0

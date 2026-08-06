@@ -15,6 +15,8 @@ from pathlib import Path
 from analyze.m9_account_type import (
     ACCOUNT_TYPES,
     TYPE_PLAYBOOKS,
+    _extract_features,
+    _score_types,
     build_account_type,
 )
 from build_wechat_ops_report import build_dataset
@@ -43,10 +45,20 @@ def _mk_article(
     like_rate: float = 0.01,
     length: int = 1500,
 ) -> dict:
+    # 原始计数与率一致，供 m9 aggregate_rate(ratio-of-means) 使用；
+    # 逐篇 *_rate 保留给 m1/m2/m7 等读单篇率的路径。
+    shares = round(reads * share_rate)
+    comments = round(reads * comment_rate)
+    likes = round(reads * like_rate)
     return {
         "title": title,
         "digest": digest,
         "reads": reads,
+        "shares": shares,
+        "comments": comments,
+        "likes": likes,
+        "old_likes": 0,
+        "moment_likes": 0,
         "share_rate": share_rate,
         "comment_rate": comment_rate,
         "like_rate": like_rate,
@@ -146,6 +158,65 @@ def test_knowledge_service_recognized():
 def test_conversion_sales_recognized():
     result = build_account_type(_conversion_dataset())
     assert result["primary"]["key"] == "conversion_sales"
+
+
+# ───────────────────────── 互动特征（issue #59 防假绿） ─────────────────────────
+
+
+def test_interaction_features_are_not_silently_zero():
+    """高互动 fixture 必须让 ratio-of-means 算出真实率，并触发 personal_ip 的 0.20 互动分支。
+
+    守的是：改口径后若 fixture 只写 *_rate 不写原始计数，avg_*_rate 会恒为 0，
+    导致 m9_account_type.py 里
+    `ip += 0.20 if avg_like_rate > 0.04 or avg_share_rate > 0.025`
+    永远走不到，测试仍靠标题正则假绿。
+    """
+    # shares = round(500 * 0.05) = 25 → 组合率 5% > 2.5%
+    arts = [
+        _mk_article(
+            f"普通随笔 {i}",
+            "普通描述，无强人设词。",
+            reads=500,
+            share_rate=0.05,
+            comment_rate=0.001,
+            like_rate=0.01,
+            length=1000,
+        )
+        for i in range(10)
+    ]
+    ds = _mk_dataset(arts, posts_per_week=2.0)
+    f = _extract_features(ds)
+
+    assert f["avg_share_rate"] > 0.025, (
+        f"avg_share_rate={f['avg_share_rate']}，高分享 fixture 不应被静默归零"
+    )
+    assert f["avg_share_rate"] == 0.05
+
+    scores = _score_types(f)
+    f_no_interaction = dict(f)
+    f_no_interaction["avg_share_rate"] = 0.0
+    f_no_interaction["avg_like_rate"] = 0.0
+    scores_no_interaction = _score_types(f_no_interaction)
+    # 差分锁死 0.20 分支，而非只看总分（总分还有叙事/频率等贡献）
+    delta = round(scores["personal_ip"] - scores_no_interaction["personal_ip"], 3)
+    assert delta == 0.2, (
+        f"personal_ip 互动分支应贡献 0.20，实际差分 {delta} "
+        f"(with={scores['personal_ip']}, without={scores_no_interaction['personal_ip']})"
+    )
+
+
+def test_extract_features_interaction_rates_not_all_zero_on_normal_dataset():
+    """常规 IP dataset 的 avg_share_rate / avg_like_rate 不全为 0（防原始字段再丢失）。"""
+    f = _extract_features(_ip_dataset())
+    assert not (f["avg_share_rate"] == 0.0 and f["avg_like_rate"] == 0.0), (
+        f"常规 dataset 互动特征全为 0，疑似 shares/likes 等原始字段丢失: "
+        f"share={f['avg_share_rate']}, like={f['avg_like_rate']}, "
+        f"comment={f['avg_comment_rate']}"
+    )
+    # 与 _ip_dataset 设定一致：share_rate=0.03, like_rate=0.06
+    assert f["avg_share_rate"] == 0.03
+    assert f["avg_like_rate"] == 0.06
+    assert f["avg_comment_rate"] == 0.012
 
 
 # ───────────────────────── 回退与置信 ─────────────────────────

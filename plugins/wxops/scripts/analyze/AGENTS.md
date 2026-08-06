@@ -16,6 +16,7 @@
 | `m8_forward.py` | 向前看引擎(Direction Engine v1) |
 | `m9_account_type.py` | 账号类型识别与分析路由(account-type-router-v1) |
 | `classify.py` / `stats.py` / `confidence.py` | 题材分类(数据驱动,名单与词表来自 niche 赛道包) / 统计原语 / 置信度判定 |
+| `rates.py` | 互动率聚合唯一入口（issue #59）：`aggregate_rate`=ratio-of-means；`median_rate`=min_reads 过滤后中位数 |
 | `niche_loader.py` | 赛道包加载:解析序(用户覆盖→内置→_generic 回落)、schema v1 校验、会话态 get_active/set_active |
 | `constants.py` | 阈值与常量(含覆盖率闸门 `NICHE_COVERAGE_ALERT_THRESHOLD`),改阈值只动这里 |
 | `enrich.py` | 记录级衍生字段计算 |

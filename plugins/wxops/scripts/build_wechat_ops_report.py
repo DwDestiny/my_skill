@@ -34,6 +34,7 @@ from analyze.enrich import *
 from analyze.io_utils import *  # includes load_raw_audience, load_raw_trend
 from analyze.niche_loader import get_active, load_niche, set_active
 from analyze.stats import *
+from analyze.rates import aggregate_rate
 from analyze.m7_standards import build_benchmark
 from analyze.m2_viral_genes import build_viral_genes, classify_quadrant, reverse_viral_formula
 from analyze.m1_checkup import build_checkup
@@ -94,7 +95,12 @@ def build_title_analysis(stable: list[dict[str, Any]]) -> dict[str, Any]:
         ("has_tutorial", "带教程/清单"),
     ]:
         rows = [article for article in stable if article.get("title_structure", {}).get(key)]
-        feature_rows.append({"key": label, **stat_pack(rows), "share_rate_avg": round(mean([r.get("share_rate", 0) for r in rows]), 4) if rows else 0})
+        feature_rows.append({
+            "key": label,
+            **stat_pack(rows),
+            # 与 group_stats 同一入口：ratio-of-means（issue #59）
+            "share_rate_avg": aggregate_rate(rows, ["shares"])["value"] if rows else 0,
+        })
     return {
         "by_primary_pattern": pattern_rows,
         "by_title_length": length_rows,
