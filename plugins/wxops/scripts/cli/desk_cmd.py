@@ -14,6 +14,9 @@ from typing import Any
 from . import accounts_store
 from . import env
 
+# login_alive 真探测结论的可信窗口：超过则不再当在线用，建议复检而非重扫码
+_LOGIN_CHECK_FRESH_DAYS = 3
+
 
 def _parse_ts(iso: str | None) -> datetime | None:
     if not iso:
@@ -35,6 +38,40 @@ def _is_stale(iso: str | None, days: int = 7) -> bool:
     return datetime.now().astimezone() - dt > timedelta(days=days)
 
 
+def _mtime_iso(path: Path) -> str | None:
+    """文件/目录 mtime → ISO 字符串；不存在或读失败返回 None。只读。"""
+    try:
+        if not path.exists():
+            return None
+        ts = path.stat().st_mtime
+    except Exception:
+        return None
+    return datetime.fromtimestamp(ts).astimezone().replace(microsecond=0).isoformat()
+
+
+def _latest_raw_mtime(acct_dir: Path) -> str | None:
+    """raw/ 下最新普通文件的 mtime（不递归子目录）。只读；无文件返回 None。"""
+    raw = acct_dir / "raw"
+    best: float | None = None
+    try:
+        if not raw.is_dir():
+            return None
+        for p in raw.iterdir():
+            if not p.is_file():
+                continue
+            try:
+                m = p.stat().st_mtime
+            except Exception:
+                continue
+            if best is None or m > best:
+                best = m
+    except Exception:
+        return None
+    if best is None:
+        return None
+    return datetime.fromtimestamp(best).astimezone().replace(microsecond=0).isoformat()
+
+
 def _col_login(account: dict[str, Any], pipe: dict[str, Any]) -> str:
     # 优先引用 accounts check 真探测结果
     if account.get("login_alive") is True:
@@ -52,28 +89,38 @@ def _col_login(account: dict[str, Any], pipe: dict[str, Any]) -> str:
     return accounts_store.humanize_ts(str(ts))
 
 
-def _col_data(account: dict[str, Any], pipe: dict[str, Any]) -> str:
+def _col_data(
+    account: dict[str, Any], pipe: dict[str, Any], acct_dir: Path
+) -> tuple[str, bool]:
     ts = None
     fetch_st = (pipe.get("stations") or {}).get("fetch") or {}
     if fetch_st.get("at"):
         ts = fetch_st.get("at")
     elif account.get("last_fetch_at"):
         ts = account.get("last_fetch_at")
-    if not ts:
-        return "—"
-    return accounts_store.humanize_ts(str(ts))
+    if ts:
+        return accounts_store.humanize_ts(str(ts)), False
+    inferred = _latest_raw_mtime(acct_dir)
+    if inferred:
+        return "~" + accounts_store.humanize_ts(inferred), True
+    return "—", False
 
 
-def _col_report(account: dict[str, Any], pipe: dict[str, Any]) -> str:
+def _col_report(
+    account: dict[str, Any], pipe: dict[str, Any], acct_dir: Path
+) -> tuple[str, bool]:
     ts = None
     analyze_st = (pipe.get("stations") or {}).get("analyze") or {}
     if analyze_st.get("at"):
         ts = analyze_st.get("at")
     elif account.get("last_analyze_at"):
         ts = account.get("last_analyze_at")
-    if not ts:
-        return "—"
-    return accounts_store.humanize_ts(str(ts))
+    if ts:
+        return accounts_store.humanize_ts(str(ts)), False
+    inferred = _mtime_iso(acct_dir / "output" / "report.json")
+    if inferred:
+        return "~" + accounts_store.humanize_ts(inferred), True
+    return "—", False
 
 
 def _count_in_flight(root: Path, slug: str) -> tuple[int, int]:
@@ -96,6 +143,7 @@ def _col_in_flight(n: int, m: int) -> str:
 def _suggest_next(
     account: dict[str, Any],
     pipe: dict[str, Any],
+    acct_dir: Path,
     n_topics: int = 0,
     m_drafts: int = 0,
 ) -> str:
@@ -103,22 +151,31 @@ def _suggest_next(
     if account.get("status") == "retired":
         return "(已退休)"
 
-    # 真探测掉线优先于在途/数据新鲜度（仍在 retired 之后）
+    # 真探测掉线：最高优先（retired 之后）
     if account.get("login_alive") is False:
         return f"wxops login --account {slug}"
 
-    last_login = account.get("last_login_at")
-    login_st = (pipe.get("stations") or {}).get("login") or {}
-    if login_st.get("at"):
-        last_login = login_st.get("at") or last_login
+    alive = account.get("login_alive") is True
+    if alive:
+        # 探测结论过期：去复检，不是去重扫码（重扫码在「已在线」这行是自相矛盾的）
+        if _is_stale(account.get("last_check_at"), days=_LOGIN_CHECK_FRESH_DAYS):
+            return f"wxops accounts check {slug}"
+        # 在线且新鲜：登录不再是瓶颈，落到在途/数据分支
+    else:
+        # 从未探测过：回落游标 / account.json 时间戳
+        last_login = account.get("last_login_at")
+        login_st = (pipe.get("stations") or {}).get("login") or {}
+        if login_st.get("at"):
+            last_login = login_st.get("at") or last_login
+        if not last_login:
+            return f"wxops login --account {slug}"
 
     last_fetch = account.get("last_fetch_at")
     fetch_st = (pipe.get("stations") or {}).get("fetch") or {}
     if fetch_st.get("at"):
         last_fetch = fetch_st.get("at") or last_fetch
-
-    if not last_login:
-        return f"wxops login --account {slug}"
+    if not last_fetch:
+        last_fetch = _latest_raw_mtime(acct_dir)
 
     # 在途内容优先于数据陈旧建议
     if m_drafts > 0:
@@ -154,22 +211,31 @@ def run(root: Path) -> int:
 
     headers = ["账号", "登录", "数据", "报告", "在途", "下一步"]
     rows: list[list[str]] = []
+    any_inferred = False
     for acct in ordered:
         slug = str(acct.get("slug") or "")
         pipe = accounts_store.load_pipeline(root, slug)
         n_topics, m_drafts = _count_in_flight(root, slug)
+        try:
+            acct_dir = accounts_store.get_account_dir(root, slug)
+        except ValueError:
+            acct_dir = root / "accounts" / slug
         mark = "●" if slug == current and acct.get("status") != "retired" else "○"
         # retired 即使是 current 也用 ○（规格：行首用 ○）
         if acct.get("status") == "retired":
             mark = "○"
+        data_col, data_inf = _col_data(acct, pipe, acct_dir)
+        report_col, report_inf = _col_report(acct, pipe, acct_dir)
+        if data_inf or report_inf:
+            any_inferred = True
         rows.append(
             [
                 f"{mark} {slug}",
                 _col_login(acct, pipe),
-                _col_data(acct, pipe),
-                _col_report(acct, pipe),
+                data_col,
+                report_col,
                 _col_in_flight(n_topics, m_drafts),
-                _suggest_next(acct, pipe, n_topics, m_drafts),
+                _suggest_next(acct, pipe, acct_dir, n_topics, m_drafts),
             ]
         )
 
@@ -186,5 +252,9 @@ def run(root: Path) -> int:
     print(fmt_row(headers))
     for row in rows:
         print(fmt_row(row))
-    print("(● = 当前账号)")
+    print(
+        "(● = 当前账号)"
+        if not any_inferred
+        else "(● = 当前账号；~ = 据产物文件推断，游标未写)"
+    )
     return 0

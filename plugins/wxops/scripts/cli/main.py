@@ -241,6 +241,28 @@ def _root_from_args(args: argparse.Namespace) -> Path:
     return env.get_wxops_root()
 
 
+def _slug_for_workspace(root: Path, workspace: Path) -> str | None:
+    """--workspace 指向已注册账号目录时反查出 slug；否则 None。
+
+    比对两边 resolve() 后的路径，容忍软链、`..`、尾部斜杠。
+    含 retired 账号：用户显式给了路径就该记游标。
+    """
+    try:
+        target = workspace.resolve()
+    except Exception:
+        return None
+    for acct in accounts_store.list_accounts(root):
+        slug = acct.get("slug")
+        if not isinstance(slug, str) or not slug:
+            continue
+        try:
+            if accounts_store.get_account_dir(root, slug).resolve() == target:
+                return slug
+        except Exception:
+            continue
+    return None
+
+
 def resolve_context(args: argparse.Namespace) -> tuple[Path, str | None]:
     """返回 (workspace, slug)。slug=None 表示 legacy 单租户模式。
 
@@ -260,7 +282,16 @@ def resolve_context(args: argparse.Namespace) -> tuple[Path, str | None]:
         raise SystemExit(2)
 
     if workspace_override:
-        return Path(workspace_override).expanduser().resolve(), None
+        ws = Path(workspace_override).expanduser().resolve()
+        found = _slug_for_workspace(root, ws)
+        if found is not None:
+            env.print_info(f"--workspace 命中已注册账号：{found}，将按该账号记录游标。")
+            return ws, found
+        env.print_warn(
+            "--workspace 指向的目录不在账号注册表内，"
+            "本次运行不会更新任何账号游标（legacy 单租户模式）。"
+        )
+        return ws, None
 
     if account:
         try:
