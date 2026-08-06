@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # GEB-L3
 # Input: WXOPS_HOME/workspace 覆盖路径；workspace/config.json；PATH 上的 node/pnpm/playwright
-# Output: 路径解析、config 读写、目录创建、依赖探测 (ok,msg)、print_* 中文终端样式
+# Output: 路径解析、config 读写、目录创建、运行清单唯一命名、依赖探测 (ok,msg)、print_* 中文终端样式
 # Pos: plugins/wxops/scripts/cli/env.py
 """环境与配置工具：SKILL_DIR 自定位、workspace 解析、config 读写、依赖探测、友好打印。"""
 
@@ -11,6 +11,7 @@ import os
 import shutil
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -107,6 +108,34 @@ def get_workspace_dashboard_dir(workspace: Path) -> Path:
 
 def get_workspace_output_dir(workspace: Path) -> Path:
     return workspace / "output"
+
+
+def new_run_manifest_path(root: Path, prefix: str) -> Path:
+    """runs/<prefix>-<毫秒时间戳>.json，撞名让路，绝不覆盖已有凭证。
+
+    运行清单是审计凭证：用户被告知「源文件原位保留，确认无误后可自行归档」，
+    归档前核对的就是它。秒级时间戳在同秒二次运行时会撞名并被静默覆盖（#72），
+    故精度提到毫秒，并在极端情况（时钟回拨、同毫秒并发）追加 -2 / -3 序号让路。
+
+    让路检查是尽力而为的单进程保证，不做跨进程锁——wxops 是单机 CLI，
+    为跨进程竞态加锁的复杂度换不来实际安全收益。
+
+    目录不存在时一并创建。
+    """
+    runs_dir = root / "runs"
+    runs_dir.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().astimezone().strftime("%Y%m%d-%H%M%S-%f")[:-3]
+    candidate = runs_dir / f"{prefix}-{stamp}.json"
+    if not candidate.exists():
+        return candidate
+    for n in range(2, 1001):
+        candidate = runs_dir / f"{prefix}-{stamp}-{n}.json"
+        if not candidate.exists():
+            return candidate
+    raise RuntimeError(
+        f"无法为运行清单分配唯一路径：{runs_dir / f'{prefix}-{stamp}'}-*.json "
+        f"（序号已用尽至 1000）"
+    )
 
 
 # 依赖探测（不强制崩溃，只返回状态）

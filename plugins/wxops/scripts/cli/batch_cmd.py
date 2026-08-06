@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import random
 import time
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
@@ -98,7 +97,6 @@ def run_all(
         return 1
 
     started_at = accounts_store.now_iso()
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     results: list[dict[str, Any]] = []
 
     env.print_header("批量分析（analyze --all）")
@@ -174,9 +172,7 @@ def run_all(
     }
 
     # 批次报告
-    runs_dir = root / "runs"
-    report_name = f"analyze-all-{stamp}.json"
-    report_path = runs_dir / report_name
+    report_path = env.new_run_manifest_path(root, "analyze-all")
     payload = {
         "version": 1,
         "kind": "analyze-all",
