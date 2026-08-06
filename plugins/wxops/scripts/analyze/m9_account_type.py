@@ -16,10 +16,22 @@
 """
 from __future__ import annotations
 
+import copy
 import re
 from typing import Any
 
+from analyze.metric_registry import METRIC_DIMENSIONS
 from analyze.rates import aggregate_rate
+
+# 维度 key → 中文 label（从 registry 读，m9 不另抄一份）
+_DIM_LABELS: dict[str, str] = {d["key"]: d["label"] for d in METRIC_DIMENSIONS}
+
+# unavailable_lenses 的 action 映射
+_LENS_ACTIONS: dict[str, str] = {
+    "fetch_missing": "跑 wxops accounts check 确认登录态后重新 analyze",
+    "platform_not_provided": "",
+    "collector_not_implemented": "",
+}
 
 ENGINE_VERSION = "account-type-router-v1"
 
@@ -183,11 +195,38 @@ def _score_types(f: dict[str, Any]) -> dict[str, float]:
 
 
 # ───────────────────────── 类型 playbook ─────────────────────────────────────
+#
+# TYPE_PLAYBOOKS 是带声明的内部模板；build_account_type 输出的 playbook 仍是纯字符串。
+#
+# north_star / diagnosis_focus 的每一项可以是：
+#   - 纯 str → 纯定性判断，不依赖任何采集指标，永远原样输出
+#   - dict →
+#       text: 全部依赖可得时的措辞（必填）
+#       metrics: 依赖的 METRIC_DIMENSIONS key 列表（可选，与 not_collected 至少有一个）
+#       not_collected: 采集器未覆盖的字段中文名（可选，同上）
+#       degraded: 有任一依赖不可得时改用的措辞；None 表示整条撤下（必填，可以是 None）
+#
+# reading_guide 可为带 {槽位名} 的模板；槽位定义在 reading_guide_slots：
+#   metrics / not_collected：同上，至少有一个
+#   full: 全部依赖可得时填入的文字
+#   degraded: 有任一依赖不可得时填入的文字（槽位的 degraded 不许是 None，句子不能开天窗）
+#
+# 铁律：所有 degraded 文案只允许引用 core 维度（reads / shares / comments / likes）
+# 或纯定性判断。core 缺失时 validate_dataset 直接拦死报告，degraded 永远成立。
+#
+# 可得判定：
+#   not_collected 声明的字段采集器根本没实现，无条件不可得（与快照无关，旧数据集同样采不到）。
+#   metrics 里每个 key 需 metric_availability 中 status == "available"；
+#   metric_availability 整体缺失（旧数据集）时，metrics 部分视为全部可得。
 
 TYPE_PLAYBOOKS: dict[str, dict[str, Any]] = {
     "media_news": {
         "name": "媒体资讯号",
-        "north_star": ["打开率与阅读量", "时效命中率(热点跟进速度)", "发文频率稳定性"],
+        "north_star": [
+            {"text": "打开率与阅读量", "metrics": ["fans_portrait", "reads"], "degraded": "阅读量与阅读中位"},
+            "时效命中率(热点跟进速度)",
+            "发文频率稳定性",
+        ],
         "diagnosis_focus": [
             "发文节奏是否稳定且够快(资讯号断更即掉量)",
             "爆款是否可复制:哪类快讯题材+钩子标题能打穿推荐流",
@@ -199,6 +238,7 @@ TYPE_PLAYBOOKS: dict[str, dict[str, Any]] = {
             "standards": "中", "forward_looking": "中",
         },
         "reading_guide": "资讯号先看量与速度:阅读中位、发文频率、热点响应窗口比互动率更要紧;分享率是破圈信号,评论率偏低属正常,不必按人设号口径焦虑。",
+        "reading_guide_slots": {},
         "action_bias": [
             "优先提升发文频率与热点响应速度,固化每日选题流程",
             "标题钩子化实验放最高优先级,快速迭代",
@@ -207,10 +247,14 @@ TYPE_PLAYBOOKS: dict[str, dict[str, Any]] = {
     },
     "personal_ip": {
         "name": "内容IP/个人品牌号",
-        "north_star": ["在看率与分享率(认同强度)", "粉丝忠诚与复访", "人设一致性"],
+        "north_star": [
+            {"text": "在看率与分享率(认同强度)", "metrics": ["zaikan", "shares"], "degraded": "分享率(认同强度)"},
+            {"text": "粉丝忠诚与复访", "metrics": ["fans_portrait"], "not_collected": "复访率", "degraded": None},
+            "人设一致性",
+        ],
         "diagnosis_focus": [
             "人设是否一致:题材漂移会稀释信任",
-            "认同信号(在看/评论)是否持续,而非只看阅读量",
+            {"text": "认同信号(在看/评论)是否持续,而非只看阅读量", "metrics": ["zaikan", "comments"], "degraded": "认同信号(分享/评论)是否持续,而非只看阅读量"},
             "信任资产有没有承接口(私域/专栏),避免认同空转",
         ],
         "module_weights": {
@@ -218,7 +262,11 @@ TYPE_PLAYBOOKS: dict[str, dict[str, Any]] = {
             "audience": "高", "growth_funnel": "高", "action_plan": "高",
             "standards": "低", "forward_looking": "高",
         },
-        "reading_guide": "IP号先看认同不看流量:在看率、评论质量、粉丝净增的口碑成分比阅读中位更要紧;单篇低阅读高在看是资产不是失败,不必按资讯号口径追热点。",
+        "reading_guide": "IP号先看认同不看流量:{认同指标}的口碑成分比阅读中位更要紧;单篇低阅读高{认同动作}是资产不是失败,不必按资讯号口径追热点。",
+        "reading_guide_slots": {
+            "认同指标": {"metrics": ["zaikan", "comments", "fans_portrait"], "full": "在看率、评论质量、粉丝净增", "degraded": "分享率与评论数"},
+            "认同动作": {"metrics": ["zaikan"], "full": "在看", "degraded": "分享"},
+        },
         "action_bias": [
             "优先巩固人设主线,砍掉稀释人设的杂题材",
             "把高认同内容沉淀为系列/专栏,建立复访理由",
@@ -227,9 +275,13 @@ TYPE_PLAYBOOKS: dict[str, dict[str, Any]] = {
     },
     "knowledge_service": {
         "name": "知识服务/教育号",
-        "north_star": ["收藏与分享率(工具性价值)", "方法内容密度", "教程系列完成度"],
+        "north_star": [
+            {"text": "收藏与分享率(工具性价值)", "metrics": ["shares"], "not_collected": "收藏数", "degraded": "分享率(工具性价值)"},
+            "方法内容密度",
+            "教程系列完成度",
+        ],
         "diagnosis_focus": [
-            "方法密度与篇幅厚度是否撑得起专业心智",
+            {"text": "方法密度与篇幅厚度是否撑得起专业心智", "metrics": ["article_length_chars"], "degraded": "方法密度是否撑得起专业心智"},
             "教程/清单类是否形成体系,而非零散单篇",
             "深度遗珠象限占比:好内容标题不行是知识号最常见病",
         ],
@@ -238,7 +290,10 @@ TYPE_PLAYBOOKS: dict[str, dict[str, Any]] = {
             "audience": "中", "growth_funnel": "中", "action_plan": "高",
             "standards": "高", "forward_looking": "中",
         },
-        "reading_guide": "知识号先看留存价值:分享率与长文完读比阅读峰值更要紧;深度遗珠(低读高享)多说明标题拖后腿而非内容问题,优化方向是标题不是选题。",
+        "reading_guide": "知识号先看留存价值:{留存指标}比阅读峰值更要紧;深度遗珠(低读高享)多说明标题拖后腿而非内容问题,优化方向是标题不是选题。",
+        "reading_guide_slots": {
+            "留存指标": {"metrics": ["shares"], "not_collected": "完读率", "full": "分享率与长文完读", "degraded": "分享率"},
+        },
         "action_bias": [
             "优先把深度遗珠的标题重做,存量内容二次分发",
             "把散篇方法整合成系列/合集,建立体系感",
@@ -251,14 +306,17 @@ TYPE_PLAYBOOKS: dict[str, dict[str, Any]] = {
         "diagnosis_focus": [
             "漏斗是否完整:拉新内容→信任内容→转化钩子是否断链",
             "转化钩子密度是否过高反噬阅读(全是广告没人看)",
-            "粉丝净增与转化动作的节奏是否匹配",
+            {"text": "粉丝净增与转化动作的节奏是否匹配", "metrics": ["fans_portrait"], "degraded": "转化动作的发布节奏是否稳定"},
         ],
         "module_weights": {
             "checkup": "高", "viral_genes": "中", "content_engine": "高",
             "audience": "高", "growth_funnel": "高", "action_plan": "高",
             "standards": "低", "forward_looking": "中",
         },
-        "reading_guide": "转化号先看漏斗不看单篇:拉新篇的阅读、信任篇的互动、转化篇的钩子点击要分开评估;阅读中位偏低但转化链路通畅是健康状态,不必按媒体号口径冲量。",
+        "reading_guide": "转化号先看漏斗不看单篇:拉新篇的阅读、信任篇的互动、{转化篇观测}要分开评估;阅读中位偏低但转化链路通畅是健康状态,不必按媒体号口径冲量。",
+        "reading_guide_slots": {
+            "转化篇观测": {"not_collected": "转化钩子点击", "full": "转化篇的钩子点击", "degraded": "转化篇的阅读与互动落差"},
+        },
         "action_bias": [
             "优先梳理漏斗断点:哪一环内容缺配比就补哪环",
             "控制转化钩子密度,保持拉新与转化内容配比",
@@ -267,7 +325,11 @@ TYPE_PLAYBOOKS: dict[str, dict[str, Any]] = {
     },
     "brand_org": {
         "name": "企业品牌号",
-        "north_star": ["品牌内容与业务关联度", "发布稳定性", "有效触达(非僵尸阅读)"],
+        "north_star": [
+            "品牌内容与业务关联度",
+            "发布稳定性",
+            {"text": "有效触达(非僵尸阅读)", "metrics": ["fans_portrait"], "not_collected": "阅读来源分布", "degraded": "触达规模与互动落差"},
+        ],
         "diagnosis_focus": [
             "内容是否只有官宣没有用户价值(自嗨风险)",
             "互动全低时要区分:触达失败还是内容无关",
@@ -278,7 +340,10 @@ TYPE_PLAYBOOKS: dict[str, dict[str, Any]] = {
             "audience": "高", "growth_funnel": "中", "action_plan": "高",
             "standards": "中", "forward_looking": "低",
         },
-        "reading_guide": "品牌号先看有效触达:阅读来自目标人群还是员工转发要分开看;爆款公式参考价值低,内容与业务的关联度、用户视角占比才是诊断重点。",
+        "reading_guide": "品牌号先看有效触达:{触达判据};爆款公式参考价值低,内容与业务的关联度、用户视角占比才是诊断重点。",
+        "reading_guide_slots": {
+            "触达判据": {"not_collected": "阅读来源分布", "full": "阅读来自目标人群还是员工转发要分开看", "degraded": "阅读量与互动率的落差能侧面反映触达质量——高阅读零互动多是内部转发"},
+        },
         "action_bias": [
             "优先把官宣类内容改写为用户价值视角",
             "建立固定栏目降低选题成本,保证发布稳定",
@@ -287,9 +352,13 @@ TYPE_PLAYBOOKS: dict[str, dict[str, Any]] = {
     },
     "local_life": {
         "name": "本地生活号",
-        "north_star": ["本地粉丝浓度(城市集中度)", "到店/线下转化钩子", "本地题材覆盖密度"],
+        "north_star": [
+            {"text": "本地粉丝浓度(城市集中度)", "metrics": ["fans_portrait"], "degraded": None},
+            "到店/线下转化钩子",
+            "本地题材覆盖密度",
+        ],
         "diagnosis_focus": [
-            "粉丝城市集中度是否够高:泛流量对本地号无效",
+            {"text": "粉丝城市集中度是否够高:泛流量对本地号无效", "metrics": ["fans_portrait"], "degraded": None},
             "内容是否绑定具体场景(店/商圈/活动)可转化",
             "福利类内容与本地信息类内容的配比",
         ],
@@ -298,7 +367,10 @@ TYPE_PLAYBOOKS: dict[str, dict[str, Any]] = {
             "audience": "高", "growth_funnel": "高", "action_plan": "高",
             "standards": "低", "forward_looking": "中",
         },
-        "reading_guide": "本地号先看城市浓度:一万泛粉不如三千同城粉;粉丝画像的城市分布是第一诊断指标,阅读量要结合本地人口基数评估而非平台通用基准。",
+        "reading_guide": "本地号先看城市浓度:一万泛粉不如三千同城粉;{城市判据},阅读量要结合本地人口基数评估而非平台通用基准。",
+        "reading_guide_slots": {
+            "城市判据": {"metrics": ["fans_portrait"], "full": "粉丝画像的城市分布是第一诊断指标", "degraded": "粉丝画像未采集到时,只能从选题的本地绑定密度侧面判断定位是否跑偏"},
+        },
         "action_bias": [
             "优先做本地强绑定选题(探店/活动/政策),提城市浓度",
             "每篇内容带可执行的线下动作钩子",
@@ -318,12 +390,137 @@ TYPE_PLAYBOOKS: dict[str, dict[str, Any]] = {
             "standards": "中", "forward_looking": "高",
         },
         "reading_guide": "类型特征还不明显,按通用口径解读:先看底盘健康与爆款基因,等样本与信号积累后自动切换到对应类型链路。",
+        "reading_guide_slots": {},
         "action_bias": [
             "按通用诊断执行,不预设类型化打法",
             "持续积累样本,让类型信号自然显影",
         ],
     },
 }
+
+
+def _deps_available(
+    item: dict[str, Any], availability: dict[str, dict[str, Any]]
+) -> bool:
+    """依赖是否全部可得。
+
+    not_collected 声明的字段采集器根本没实现，与本次快照无关，无条件不可得。
+    availability 为空（旧数据集）时，metrics 部分视为全部可得。
+    """
+    if item.get("not_collected"):
+        return False
+    if not availability:
+        return True
+    for key in item.get("metrics") or []:
+        entry = availability.get(key) or {}
+        if entry.get("status") != "available":
+            return False
+    return True
+
+
+def _append_unavailable(
+    item: dict[str, Any],
+    availability: dict[str, dict[str, Any]],
+    lenses: list[dict[str, str]],
+    seen: set[str],
+) -> None:
+    """把 item 里不可得的依赖按首次出现顺序去重追加进 lenses。"""
+    if availability:
+        for key in item.get("metrics") or []:
+            entry = availability.get(key) or {}
+            status = entry.get("status")
+            if status == "available":
+                continue
+            if not status:
+                status = "fetch_missing"
+            label = _DIM_LABELS.get(key, key)
+            if label in seen:
+                continue
+            seen.add(label)
+            lenses.append(
+                {
+                    "label": label,
+                    "reason": status,
+                    "action": _LENS_ACTIONS.get(status, ""),
+                }
+            )
+    nc = item.get("not_collected")
+    if nc and nc not in seen:
+        seen.add(nc)
+        lenses.append(
+            {
+                "label": nc,
+                "reason": "collector_not_implemented",
+                "action": "",
+            }
+        )
+
+
+def _render_list_field(
+    items: list[Any],
+    availability: dict[str, dict[str, Any]],
+    lenses: list[dict[str, str]],
+    seen: set[str],
+) -> list[str]:
+    """渲染 north_star / diagnosis_focus：str 原样；dict 按可得性取 text/degraded。"""
+    out: list[str] = []
+    for item in items:
+        if isinstance(item, str):
+            out.append(item)
+            continue
+        if not isinstance(item, dict):
+            continue
+        if _deps_available(item, availability):
+            out.append(item["text"])
+            continue
+        _append_unavailable(item, availability, lenses, seen)
+        degraded = item.get("degraded")
+        if degraded is None:
+            continue
+        out.append(degraded)
+    return out
+
+
+def _render_playbook(
+    playbook: dict[str, Any], availability: dict[str, dict[str, Any]]
+) -> tuple[dict[str, Any], list[dict[str, str]]]:
+    """把带声明的模板 playbook 渲染成纯字符串 playbook + 不可得镜头清单。
+
+    返回 (rendered_playbook, unavailable_lenses)。
+    rendered_playbook 的 north_star / diagnosis_focus 是 list[str]，
+    reading_guide 是槽位已填的整句 —— 对外契约与改造前一致。
+    """
+    rendered = copy.deepcopy(playbook)
+    lenses: list[dict[str, str]] = []
+    seen: set[str] = set()
+
+    rendered["north_star"] = _render_list_field(
+        rendered.get("north_star") or [], availability, lenses, seen
+    )
+    rendered["diagnosis_focus"] = _render_list_field(
+        rendered.get("diagnosis_focus") or [], availability, lenses, seen
+    )
+
+    slots = rendered.get("reading_guide_slots") or {}
+    guide = rendered.get("reading_guide") or ""
+    for slot_name, slot_def in slots.items():
+        if not isinstance(slot_def, dict):
+            continue
+        if _deps_available(slot_def, availability):
+            fill = slot_def["full"]
+        else:
+            _append_unavailable(slot_def, availability, lenses, seen)
+            fill = slot_def["degraded"]
+        guide = guide.replace("{" + slot_name + "}", fill)
+    if "{" in guide:
+        raise ValueError(
+            f"reading_guide 渲染后仍有未替换占位符: {guide!r} "
+            f"(slots={list(slots.keys())})"
+        )
+    rendered["reading_guide"] = guide
+    rendered.pop("reading_guide_slots", None)
+
+    return rendered, lenses
 
 
 def _routing_chain(module_weights: dict[str, str]) -> list[str]:
@@ -393,7 +590,9 @@ def build_account_type(dataset: dict[str, Any]) -> dict[str, Any]:
         primary_key, confidence, fallback = top_key, "medium", False
         reason = "类型特征基本成立,建议积累样本后复核"
 
-    playbook = TYPE_PLAYBOOKS[primary_key]
+    availability = dataset.get("metric_availability") or {}
+    playbook_template = TYPE_PLAYBOOKS[primary_key]
+    playbook, unavailable_lenses = _render_playbook(playbook_template, availability)
     secondary = None
     if not fallback and second_score >= PRIMARY_THRESHOLD:
         secondary = {
@@ -437,6 +636,7 @@ def build_account_type(dataset: dict[str, Any]) -> dict[str, Any]:
             "reading_guide": playbook["reading_guide"],
             "action_bias": playbook["action_bias"],
         },
+        "unavailable_lenses": unavailable_lenses,
         "routing": {
             "chain": _routing_chain(playbook["module_weights"]),
             "note": (
