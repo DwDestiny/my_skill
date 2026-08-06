@@ -12,6 +12,7 @@ from analyze.confidence import (
     emphasis_for_confidence,
     voice_for_confidence,
 )
+from analyze.niche_loader import get_active
 from analyze.stats import median
 
 
@@ -70,11 +71,18 @@ def build_growth_funnel(
     if stable:
         reads = [int(r.get("reads", 0) or 0) for r in stable]
         read_median = int(median(reads)) if reads else 0
-    topic = viral_formula.get("topic") or "风险/账号/额度焦虑"
-    pattern = viral_formula.get("title_pattern") or "风险损失型"
+    active = get_active()
+    ct_names = active.content_type_names
+    tp_keys = active.title_pattern_keys
+    topic = viral_formula.get("topic") or (ct_names[0] if ct_names else "（题材待定）")
+    pattern = viral_formula.get("title_pattern") or (tp_keys[0] if tp_keys else "（形态待定）")
     hour = viral_formula.get("timing_hour") or 10
     reliable = bool(viral_formula.get("reliable"))
     sfx = "" if reliable else "(待验证)"
+
+    # 深度题材：优先取与爆款题材不同的活跃包题材名，避免 AI 赛道硬编码
+    deep_candidates = [n for n in ct_names if n != topic]
+    deep_topic = deep_candidates[0] if deep_candidates else (ct_names[0] if ct_names else "深度内容")
 
     # 四周有节奏:拉新 → 建心智 → 蹭热点 → 复盘固化,而非重复同一题材
     weeks = [
@@ -84,11 +92,11 @@ def build_growth_funnel(
         },
         {
             "focus": "深度内容建心智",
-            "topics": "工作流/方法论深读文,提高在看与评论,沉淀老粉",
+            "topics": f"{deep_topic}深读文,提高在看与评论,沉淀老粉",
         },
         {
             "focus": "蹭热点扩声量",
-            "topics": "模型发布/行业大事件快速跟进,绑定可用性与判断",
+            "topics": "行业热点/大事件快速跟进,绑定可用性与判断",
         },
         {
             "focus": "复盘固化爆款公式",

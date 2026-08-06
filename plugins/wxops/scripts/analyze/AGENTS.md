@@ -17,7 +17,8 @@
 | `m9_account_type.py` | 账号类型识别与分析路由(account-type-router-v1) |
 | `classify.py` / `stats.py` / `confidence.py` | 题材分类(数据驱动,名单与词表来自 niche 赛道包) / 统计原语 / 置信度判定 |
 | `rates.py` | 互动率聚合唯一入口（issue #59）：`aggregate_rate`=ratio-of-means；`median_rate`=min_reads 过滤后中位数 |
-| `niche_loader.py` | 赛道包加载:解析序(用户覆盖→内置→_generic 回落)、schema v1 校验、会话态 get_active/set_active |
+| `topic_roles.py` | 题材运营角色判定（issue #60）：数据特征→workhorse/volatile/reach_entry/loyalty_base；`assign_topic_roles` |
+| `niche_loader.py` | 赛道包加载:解析序(用户覆盖→内置→_generic 回落)、schema v1 校验、可选 recommendations、会话态 get_active/set_active |
 | `constants.py` | 阈值与常量(含覆盖率闸门 `NICHE_COVERAGE_ALERT_THRESHOLD`),改阈值只动这里 |
 | `enrich.py` | 记录级衍生字段计算 |
 | `io_utils.py` | IO 口径:画像字段"有数据" = 非空 list/dict,字符串/None/标量一律不算 |
