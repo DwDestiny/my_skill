@@ -5,8 +5,8 @@
 """公众号互动率打分阈值（平台级，issue #74）。
 
 这些是**平台级**经验值：面向微信公众号，不是赛道级。
-当前所有赛道共享同一组默认值；赛道包覆写由后续 PR 接入（niche 可传
-InteractionThresholds 实例进 _score_types）。
+平台级缺省值在本文件；赛道包可经 niche_loader 校验后二阶覆写部分字段，
+由编排层 merge 后以 InteractionThresholds 实例注入 _score_types / m9。
 
 标定依据：2026-08-06 对两个真实账号只读复现（health n=56、maizong n=142），
 aggregate_rate ratio-of-means 口径（#59）。样本仅 2 账号 198 篇，属数量级
@@ -14,7 +14,9 @@ aggregate_rate ratio-of-means 口径（#59）。样本仅 2 账号 198 篇，属
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+import math
+from dataclasses import dataclass, fields, replace
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -70,3 +72,77 @@ class InteractionThresholds:
 
 
 DEFAULT_INTERACTION_THRESHOLDS = InteractionThresholds()
+
+# 六个"率"字段：语义是 互动数/阅读数，取值必须落在 (0, 1)
+_RATE_FIELDS = frozenset({
+    "like_high", "comment_high", "share_high_ip", "share_high_ks",
+    "brand_quiet_share", "brand_quiet_comment",
+})
+# 倍数字段：语义是 share 相对 max(comment, like) 的倍数，必须 >= 1
+_RATIO_FIELDS = frozenset({"share_dominance_ratio"})
+
+INTERACTION_THRESHOLD_FIELDS = _RATE_FIELDS | _RATIO_FIELDS
+
+# 模块 import 时守卫：dataclass 字段必须全部归入 rate/ratio，防止加字段忘归类
+_dataclass_field_names = frozenset(f.name for f in fields(InteractionThresholds))
+if _dataclass_field_names != INTERACTION_THRESHOLD_FIELDS:
+    missing = _dataclass_field_names - INTERACTION_THRESHOLD_FIELDS
+    extra = INTERACTION_THRESHOLD_FIELDS - _dataclass_field_names
+    raise RuntimeError(
+        "INTERACTION_THRESHOLD_FIELDS 与 InteractionThresholds 字段不一致："
+        f"dataclass 多出 {sorted(missing)!r}，集合多出 {sorted(extra)!r}"
+    )
+del _dataclass_field_names
+
+
+def validate_threshold_overrides(raw: Any) -> dict[str, float]:
+    """校验赛道包 interaction_thresholds 覆写值；只处理已知键，未知键忽略。
+
+    不合法抛 ValueError（含字段名、实际值、原因）。不依赖 niche_loader。
+    """
+    if not isinstance(raw, dict):
+        raise ValueError(f"interaction_thresholds 必须为对象，得到 {type(raw).__name__}")
+
+    out: dict[str, float] = {}
+    for key, value in raw.items():
+        if key not in INTERACTION_THRESHOLD_FIELDS:
+            continue
+        # bool 必须显式挡在数值检查之前：isinstance(True, int) is True
+        if isinstance(value, bool):
+            raise ValueError(
+                f"{key}={value!r} 不合法：布尔值不能作为阈值"
+                f"（isinstance(True, int) 陷阱）"
+            )
+        if not isinstance(value, (int, float)):
+            raise ValueError(
+                f"{key}={value!r} 不合法：必须为数值，得到 {type(value).__name__}"
+            )
+        if not math.isfinite(float(value)):
+            raise ValueError(f"{key}={value!r} 不合法：不得为 NaN 或 inf")
+        v = float(value)
+        if key in _RATE_FIELDS:
+            if not (0.0 < v < 1.0):
+                raise ValueError(
+                    f"{key}={value!r} 不合法：率字段必须满足 0 < v < 1"
+                )
+        elif key in _RATIO_FIELDS:
+            # 小于 1 语义荒谬（等于说"转发数少于点赞数也算转发主导"）
+            if v < 1.0:
+                raise ValueError(
+                    f"{key}={value!r} 不合法：倍数字段必须 >= 1"
+                )
+        out[key] = v
+    return out
+
+
+def merge_thresholds(
+    base: InteractionThresholds,
+    overrides: dict[str, float],
+) -> InteractionThresholds:
+    """二阶覆写：未提供的字段保持 base 值，不是整体替换。
+
+    overrides 为空 dict 时，返回实例与 base 相等（frozen dataclass __eq__）。
+    """
+    if not overrides:
+        return replace(base)
+    return replace(base, **overrides)

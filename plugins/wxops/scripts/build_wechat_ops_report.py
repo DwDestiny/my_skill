@@ -33,7 +33,7 @@ from analyze.confidence import *
 from analyze.constants import *
 from analyze.enrich import *
 from analyze.io_utils import *  # includes load_raw_audience, load_raw_trend
-from analyze.niche_loader import get_active, load_niche, set_active
+from analyze.niche_loader import NicheSpec, get_active, load_niche, set_active
 from analyze.stats import *
 from analyze.rates import aggregate_rate
 from analyze.topic_roles import MIN_TOPIC_SAMPLES, assign_topic_roles
@@ -52,6 +52,11 @@ from analyze.metric_registry import (
     derived_fans_portrait,
     probe_availability,
 )
+from analyze.scoring_thresholds import (
+    DEFAULT_INTERACTION_THRESHOLDS,
+    InteractionThresholds,
+    merge_thresholds,
+)
 
 
 def _recommendations_from_niche() -> dict[str, Any]:
@@ -69,6 +74,18 @@ def _recommendations_from_niche() -> dict[str, Any]:
         "publish_windows": list(rec.publish_windows),
         "headline_rules": list(rec.headline_rules),
     }
+
+
+def _resolve_interaction_thresholds(spec: NicheSpec) -> InteractionThresholds:
+    """赛道包若声明 scoring.interaction_thresholds 则二阶覆写平台默认（issue #74 验收标准 3）。
+
+    直接访问 spec.scoring 而不用 getattr 兜底：字段若被重命名要当场 AttributeError，
+    而不是静默回落默认值——静默失效正是 #74 那一族的病根。
+    """
+    scoring = spec.scoring
+    if scoring is None or not scoring.interaction_thresholds:
+        return DEFAULT_INTERACTION_THRESHOLDS
+    return merge_thresholds(DEFAULT_INTERACTION_THRESHOLDS, scoring.interaction_thresholds)
 
 
 @dataclass(frozen=True)
@@ -1313,7 +1330,8 @@ def build_dataset(root: Path, *, account_name: str = "我的公众号", since: s
     # 向前看引擎（只读上述字段，仅追加 forward_looking 顶层节点）
     dataset["forward_looking"] = build_forward_looking(dataset)
     # 账号类型识别与路由（只读上述字段，仅追加 account_type 顶层节点）
-    dataset["account_type"] = build_account_type(dataset)
+    _thresholds = _resolve_interaction_thresholds(_spec)
+    dataset["account_type"] = build_account_type(dataset, thresholds=_thresholds)
     return dataset
 
 

@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from .constants import ENGINE_TITLE_PATTERN_LABELS
+from .scoring_thresholds import INTERACTION_THRESHOLD_FIELDS, validate_threshold_overrides
 
 _SLOT_NAMES = ("risk", "price", "release", "workflow")
 _PERSONA_IF_KEYS = frozenset({"terms_any", "content_type", "pain"})
@@ -29,9 +30,11 @@ _KNOWN_TOP_LEVEL = frozenset(
         "personas",
         "title_patterns",
         "recommendations",  # 可选：静态赛道运营建议（issue #60）
+        "scoring",  # 可选：赛道级打分覆写（issue #74）
     }
 )
 _KNOWN_RECOMMENDATIONS = frozenset({"topic_ratio", "publish_windows", "headline_rules"})
+_KNOWN_SCORING = frozenset({"interaction_thresholds"})
 _KNOWN_TOPIC_RATIO_ITEM = frozenset({"label", "ratio", "role"})
 _KNOWN_PUBLISH_WINDOW_ITEM = frozenset({"window", "best_for"})
 _KNOWN_CONTENT_TYPES = frozenset({"names", "rules", "fallback"})
@@ -123,6 +126,13 @@ class RecommendationsSpec:
 
 
 @dataclass
+class ScoringSpec:
+    """可选赛道级打分覆写；缺省 None → 全走 scoring_thresholds 里的平台级默认。"""
+
+    interaction_thresholds: dict[str, float] | None = None
+
+
+@dataclass
 class NicheSpec:
     id: str
     name: str
@@ -133,6 +143,7 @@ class NicheSpec:
     title_patterns: TitlePatternsSpec
     description: str = ""
     recommendations: RecommendationsSpec | None = None
+    scoring: ScoringSpec | None = None
 
     @property
     def content_type_names(self) -> list[str]:
@@ -500,6 +511,31 @@ def _validate_and_build(path: Path, data: dict[str, Any], *, requested_id: str, 
             headline_rules=headline_rules,
         )
 
+    # scoring：可选字段；内部字段亦全部可选（与 recommendations 子字段必填相反）
+    scoring: ScoringSpec | None = None
+    if "scoring" in data:
+        sc_raw = data["scoring"]
+        if not isinstance(sc_raw, dict):
+            _fail(path, "scoring 为对象")
+        _warn_unknown_fields(path, "scoring", set(sc_raw.keys()), _KNOWN_SCORING)
+        if "interaction_thresholds" not in sc_raw:
+            scoring = ScoringSpec(interaction_thresholds=None)
+        else:
+            thr_raw = sc_raw["interaction_thresholds"]
+            if not isinstance(thr_raw, dict):
+                _fail(path, "scoring.interaction_thresholds 为对象")
+            _warn_unknown_fields(
+                path,
+                "scoring.interaction_thresholds",
+                set(thr_raw.keys()),
+                INTERACTION_THRESHOLD_FIELDS,
+            )
+            try:
+                validated = validate_threshold_overrides(thr_raw)
+            except ValueError as exc:
+                _fail(path, f"scoring.interaction_thresholds 合法（{exc}）")
+            scoring = ScoringSpec(interaction_thresholds=validated if validated else None)
+
     return NicheSpec(
         id=niche_id,
         name=name,
@@ -510,6 +546,7 @@ def _validate_and_build(path: Path, data: dict[str, Any], *, requested_id: str, 
         title_patterns=title_patterns,
         description=description or "",
         recommendations=recommendations,
+        scoring=scoring,
     )
 
 

@@ -75,5 +75,12 @@
       },
       "workflow": { "label": "实操方法型", "terms": ["辅食", "睡眠训练", "早教", "亲测", "实操"] }
     }
+  },
+  "scoring": {
+    "interaction_thresholds": {
+      "like_high": 0.01,
+      "comment_high": 0.003,
+      "share_dominance_ratio": 2.0
+    }
   }
 }

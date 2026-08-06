@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import copy
 import re
+from dataclasses import fields
 from typing import Any
 
 from analyze.metric_registry import METRIC_DIMENSIONS
@@ -588,17 +589,23 @@ HIGH_THRESHOLD = 0.6
 HIGH_GAP = 0.15
 
 
-def build_account_type(dataset: dict[str, Any]) -> dict[str, Any]:
+def build_account_type(
+    dataset: dict[str, Any],
+    *,
+    thresholds: InteractionThresholds | None = None,
+) -> dict[str, Any]:
     """主入口:识别账号类型并给出诊断路由。挂 dataset["account_type"]。
 
     niche_coverage.alert 时强制 general 回退并标 degraded；非 alert 不加 degraded 字段。
+    thresholds 由调用方解析注入（编排层读赛道包）；None 回落平台默认。
+    m9 不读取全局赛道状态。
     """
     coverage = dataset.get("niche_coverage") or {}
     niche_alert = bool(coverage.get("alert"))
 
     f = _extract_features(dataset)
-    # 判据与叙述共用同一份阈值实例（PR B 可在此接入 niche 覆写）
-    thresholds = DEFAULT_INTERACTION_THRESHOLDS
+    # 判据与叙述共用同一份阈值；覆写由调用方注入，本函数不摸 get_active()
+    thresholds = DEFAULT_INTERACTION_THRESHOLDS if thresholds is None else thresholds
     scores = _score_types(f, thresholds=thresholds)
 
     ranked = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
@@ -634,6 +641,15 @@ def build_account_type(dataset: dict[str, Any]) -> dict[str, Any]:
         }
 
     evidence = _build_evidence(primary_key, f, thresholds=thresholds)
+
+    # 按值比对是否覆写：调用方可能传入与默认完全相同的实例，那不算覆写
+    # 循环变量不用 f —— 本函数的 f 是 features dict，同名会让读者混淆，
+    # 且将来若把 genexp 改成普通 for 循环会覆盖它、炸在下方 "features" 段
+    overridden_fields = sorted(
+        _fld.name
+        for _fld in fields(InteractionThresholds)
+        if getattr(thresholds, _fld.name) != getattr(DEFAULT_INTERACTION_THRESHOLDS, _fld.name)
+    )
 
     result: dict[str, Any] = {
         "engine_version": ENGINE_VERSION,
@@ -675,6 +691,12 @@ def build_account_type(dataset: dict[str, Any]) -> dict[str, Any]:
                 "诊断阅读顺序按该类型的模块权重排列;权重低的模块仍产出,"
                 "只是解读与行动建议按 reading_guide 口径降权。"
             ),
+        },
+        "scoring_source": {
+            "interaction_thresholds": (
+                "niche_override" if overridden_fields else "platform_default"
+            ),
+            "overridden_fields": overridden_fields,
         },
     }
     if niche_alert:
