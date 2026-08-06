@@ -23,7 +23,7 @@
 | `review_cmd.py` | 复盘：台账 + 选题卡预期 + analyze 数据 → `reports/review-<topic>.md`；全程只读，唯一写动作是落报告 |
 | `compliance_lib.py` | 稿件合规闸纯引擎：compliance.json schema 校验 + terms/regex/cooccur 匹配；文件级三层回落 |
 | `lint_cmd.py` | 稿件合规闸 CLI：按账号 niche 加载规则扫 draft/--text；exit 0=无 BLOCK，1=有 BLOCK，2=用法/缺规则 |
-| `dedup_cmd.py` | 选题去重闸：读 output/wechat-ops-report-*.json 的 articles.stable，bigram Jaccard + 对象共现；exit 0=PASS/WARN，1=BLOCK，2=缺库 |
+| `dedup_cmd.py` | 选题去重闸：读 output/wechat-ops-report-*.json 的 articles.stable，bigram Jaccard + 对象共现；核心对象查重依赖 `--object`，不传则只做标题相似度；exit 0=PASS/WARN，1=BLOCK，2=缺库 |
 
 ## 本地规则
 - 所有路径解析走 `env.py`,不得在子命令内自拼 workspace 路径。

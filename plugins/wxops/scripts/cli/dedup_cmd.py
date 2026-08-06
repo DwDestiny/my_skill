@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 # GEB-L3
 # Input: wxops root、account slug、--title、可选 --object/--json；读 accounts/<slug>/output/wechat-ops-report-*.json
-# Output: 选题去重闸终端/JSON 报告；exit 0=PASS/WARN，1=BLOCK，2=用法/缺库
+# Output: 选题去重闸终端/JSON（含 object_checked）；无 --object 时只做标题相似度并告警；exit 0=PASS/WARN，1=BLOCK，2=用法/缺库
 # Pos: plugins/wxops/scripts/cli/dedup_cmd.py
-"""dedup 选题去重闸：对照已发布 stable 标题做 bigram Jaccard + 对象共现。"""
+"""dedup 选题去重闸：bigram Jaccard 标题相似度；核心对象查重依赖 --object，不传则只做相似度并显式告警。"""
 
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -26,7 +25,6 @@ _PUNCT_CHARS = (
     "\u3000"  # 全角空格会在 isspace 里清，这里冗余无妨
 )
 _PUNCT_TABLE = str.maketrans({c: "" for c in _PUNCT_CHARS})
-_CN_CHUNK_RE = re.compile(r"[\u4e00-\u9fff]{2,}")
 
 
 @dataclass
@@ -175,11 +173,6 @@ def load_stable_articles(report_path: Path) -> list[LibraryArticle]:
     return out
 
 
-def extract_cn_objects(title: str) -> list[str]:
-    """从 title 抽长度 ≥2 的中文连续片段。"""
-    return _CN_CHUNK_RE.findall(title or "")
-
-
 def object_hits_article(obj: str, art: LibraryArticle) -> bool:
     if not obj:
         return False
@@ -193,10 +186,17 @@ def evaluate(
     object_term: str | None = None,
     today: date | None = None,
     warn_days: int = 180,
-) -> tuple[Verdict, list[Match]]:
-    """三档判定。同时命中多篇时按 sim 最高排序，最多返回 5 条。"""
+) -> tuple[Verdict, list[Match], bool]:
+    """三档判定。同时命中多篇时按 sim 最高排序，最多返回 5 条。
+
+    返回 (verdict, matches, object_checked)。
+    object_checked 为 True 仅当调用方显式传入非空 object_term；
+    未传时不做任何对象回落匹配，只走标题相似度。
+    """
     today = today or date.today()
     cutoff = today - timedelta(days=warn_days)
+    obj = (object_term or "").strip() or None
+    object_checked = obj is not None
     scored: list[Match] = []
 
     for art in library:
@@ -208,17 +208,13 @@ def evaluate(
         if sim >= 0.45:
             # BLOCK(≥0.75) 与 相似 WARN(≥0.45) 均走 similar；不限 180 天
             reason = "similar"
-        else:
-            # 核心对象命中 + 距今 < 180 天 → WARN（无日期不纳入）
-            hit_obj = False
-            if object_term:
-                hit_obj = object_hits_article(object_term, art)
-            else:
-                for chunk in extract_cn_objects(title):
-                    if chunk in (art.title or ""):
-                        hit_obj = True
-                        break
-            if hit_obj and art.date_obj is not None and art.date_obj >= cutoff:
+        elif obj is not None:
+            # 仅当显式 --object 时做核心对象命中；+ 距今 < 180 天 → WARN（无日期不纳入）
+            if (
+                object_hits_article(obj, art)
+                and art.date_obj is not None
+                and art.date_obj >= cutoff
+            ):
                 reason = "object"
 
         if reason is None:
@@ -238,10 +234,10 @@ def evaluate(
     scored.sort(key=lambda m: m.sim, reverse=True)
     top = scored[:5]
     if not top:
-        return "PASS", []
+        return "PASS", [], object_checked
     if any(m.sim >= 0.75 for m in top):
-        return "BLOCK", top
-    return "WARN", top
+        return "BLOCK", top, object_checked
+    return "WARN", top, object_checked
 
 
 def _resolve_account(root: Path, account: str | None) -> tuple[str, dict[str, Any]] | int:
@@ -276,6 +272,13 @@ def _fmt_reads(n: int) -> str:
     return f"{n} 阅读"
 
 
+_OBJECT_UNCHECKED_WARN = (
+    "未提供 --object，本次只比对了标题相似度，没有做核心对象查重。\n"
+    "  同一个对象换个说法写（如「隔夜菜」vs「剩菜」），这次不会拦住。\n"
+    "  建议补 --object <核心对象> 重跑。"
+)
+
+
 def _print_human(
     *,
     niche: str,
@@ -284,6 +287,7 @@ def _print_human(
     library_file: str,
     verdict: Verdict,
     matches: list[Match],
+    object_checked: bool,
 ) -> None:
     env.print_header(f"选题去重闸：{niche} / 「{title}」")
     print(f"已发布库：{library_size} 篇（{library_file}）")
@@ -301,6 +305,8 @@ def _print_human(
         if m.url:
             print(f"             {m.url}")
     print()
+    if not object_checked:
+        env.print_warn(_OBJECT_UNCHECKED_WARN)
     if verdict == "BLOCK":
         if matches:
             d = matches[0].date or "某日"
@@ -351,7 +357,7 @@ def run(
         env.print_info("请先跑 wxops analyze 产出结构正确的报告。")
         return 2
 
-    verdict, matches = evaluate(
+    verdict, matches, object_checked = evaluate(
         title, library, object_term=obj, today=today
     )
     lib_rel = f"output/{report.name}"
@@ -361,6 +367,7 @@ def run(
             "verdict": verdict,
             "query": title,
             "object": obj,
+            "object_checked": object_checked,
             "account": slug,
             "niche": niche_id,
             "library_size": len(library),
@@ -386,6 +393,7 @@ def run(
             library_file=lib_rel,
             verdict=verdict,
             matches=matches,
+            object_checked=object_checked,
         )
 
     if verdict == "BLOCK":
