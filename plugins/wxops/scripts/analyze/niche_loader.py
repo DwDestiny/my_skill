@@ -28,8 +28,12 @@ _KNOWN_TOP_LEVEL = frozenset(
         "pain_points",
         "personas",
         "title_patterns",
+        "recommendations",  # 可选：静态赛道运营建议（issue #60）
     }
 )
+_KNOWN_RECOMMENDATIONS = frozenset({"topic_ratio", "publish_windows", "headline_rules"})
+_KNOWN_TOPIC_RATIO_ITEM = frozenset({"label", "ratio", "role"})
+_KNOWN_PUBLISH_WINDOW_ITEM = frozenset({"window", "best_for"})
 _KNOWN_CONTENT_TYPES = frozenset({"names", "rules", "fallback"})
 _KNOWN_CT_RULE = frozenset({"type", "terms"})
 _KNOWN_CT_FALLBACK = frozenset({"title_regex", "type"})
@@ -110,6 +114,15 @@ class TitlePatternsSpec:
 
 
 @dataclass
+class RecommendationsSpec:
+    """可选静态赛道运营建议；缺省 None，不回落任何硬编码文案。"""
+
+    topic_ratio: list[dict[str, Any]]
+    publish_windows: list[dict[str, Any]]
+    headline_rules: list[str]
+
+
+@dataclass
 class NicheSpec:
     id: str
     name: str
@@ -119,6 +132,7 @@ class NicheSpec:
     personas: PersonasSpec
     title_patterns: TitlePatternsSpec
     description: str = ""
+    recommendations: RecommendationsSpec | None = None
 
     @property
     def content_type_names(self) -> list[str]:
@@ -422,6 +436,70 @@ def _validate_and_build(path: Path, data: dict[str, Any], *, requested_id: str, 
 
     description = data.get("description") if isinstance(data.get("description"), str) else ""
 
+    # recommendations：可选字段；缺失 → None；存在则校验结构
+    recommendations: RecommendationsSpec | None = None
+    if "recommendations" in data:
+        rec_raw = data["recommendations"]
+        if not isinstance(rec_raw, dict):
+            _fail(path, "recommendations 为对象")
+        _warn_unknown_fields(path, "recommendations", set(rec_raw.keys()), _KNOWN_RECOMMENDATIONS)
+        for req_key in ("topic_ratio", "publish_windows", "headline_rules"):
+            if req_key not in rec_raw:
+                _fail(path, f"recommendations.{req_key} 齐全")
+        tr_raw = rec_raw["topic_ratio"]
+        pw_raw = rec_raw["publish_windows"]
+        hr_raw = rec_raw["headline_rules"]
+        if not isinstance(tr_raw, list):
+            _fail(path, "recommendations.topic_ratio 为数组")
+        if not isinstance(pw_raw, list):
+            _fail(path, "recommendations.publish_windows 为数组")
+        if not isinstance(hr_raw, list):
+            _fail(path, "recommendations.headline_rules 为数组")
+        topic_ratio: list[dict[str, Any]] = []
+        for i, item in enumerate(tr_raw):
+            if not isinstance(item, dict):
+                _fail(path, f"recommendations.topic_ratio[{i}] 为对象")
+            _warn_unknown_fields(
+                path, f"recommendations.topic_ratio[{i}]", set(item.keys()), _KNOWN_TOPIC_RATIO_ITEM
+            )
+            label = item.get("label")
+            ratio = item.get("ratio")
+            role = item.get("role")
+            if not isinstance(label, str) or not label:
+                _fail(path, f"recommendations.topic_ratio[{i}].label 非空字符串")
+            if not isinstance(ratio, (int, float)):
+                _fail(path, f"recommendations.topic_ratio[{i}].ratio 为数值")
+            if not isinstance(role, str) or not role:
+                _fail(path, f"recommendations.topic_ratio[{i}].role 非空字符串")
+            topic_ratio.append({"label": label, "ratio": float(ratio), "role": role})
+        publish_windows: list[dict[str, Any]] = []
+        for i, item in enumerate(pw_raw):
+            if not isinstance(item, dict):
+                _fail(path, f"recommendations.publish_windows[{i}] 为对象")
+            _warn_unknown_fields(
+                path,
+                f"recommendations.publish_windows[{i}]",
+                set(item.keys()),
+                _KNOWN_PUBLISH_WINDOW_ITEM,
+            )
+            window = item.get("window")
+            best_for = item.get("best_for")
+            if not isinstance(window, str) or not window:
+                _fail(path, f"recommendations.publish_windows[{i}].window 非空字符串")
+            if not isinstance(best_for, str) or not best_for:
+                _fail(path, f"recommendations.publish_windows[{i}].best_for 非空字符串")
+            publish_windows.append({"window": window, "best_for": best_for})
+        headline_rules: list[str] = []
+        for i, item in enumerate(hr_raw):
+            if not isinstance(item, str) or not item:
+                _fail(path, f"recommendations.headline_rules[{i}] 非空字符串")
+            headline_rules.append(item)
+        recommendations = RecommendationsSpec(
+            topic_ratio=topic_ratio,
+            publish_windows=publish_windows,
+            headline_rules=headline_rules,
+        )
+
     return NicheSpec(
         id=niche_id,
         name=name,
@@ -431,6 +509,7 @@ def _validate_and_build(path: Path, data: dict[str, Any], *, requested_id: str, 
         personas=personas,
         title_patterns=title_patterns,
         description=description or "",
+        recommendations=recommendations,
     )
 
 

@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from analyze.niche_loader import get_active
+
 
 def build_action_plan_v2(
     viral_genes: dict[str, Any],
@@ -79,14 +81,19 @@ def build_action_plan_v2(
 
     # also consider viral_genes implicitly via next
     vf = (viral_genes or {}).get("viral_formula", {}) or {}
-    topic = vf.get("topic") or "风险/账号/额度焦虑"
-    pat = vf.get("title_pattern") or "风险损失型"
+    active = get_active()
+    ct_names = active.content_type_names
+    tp_keys = active.title_pattern_keys
+    topic = vf.get("topic") or (ct_names[0] if ct_names else "（题材待定）")
+    pat = vf.get("title_pattern") or (tp_keys[0] if tp_keys else "（形态待定）")
     hr = vf.get("timing_hour") or 10
     reliable = bool(vf.get("reliable", False))
     suffix = "" if reliable else " (待验证)"
+    deep_candidates = [n for n in ct_names if n != topic]
+    deep_topic = deep_candidates[0] if deep_candidates else (ct_names[0] if ct_names else "深度题材")
     next_topics = [
         f"{topic}{suffix} + {pat}标题 + {hr}点窗口",
-        "工作流深读文 + 22点验证",
+        f"{deep_topic}深读文 + 22点验证",
     ][:2]
 
     analysis = "按各模块篮子归集行动；下周选题由爆款基因反推得出。"

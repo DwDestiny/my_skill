@@ -35,6 +35,7 @@ from analyze.io_utils import *  # includes load_raw_audience, load_raw_trend
 from analyze.niche_loader import get_active, load_niche, set_active
 from analyze.stats import *
 from analyze.rates import aggregate_rate
+from analyze.topic_roles import MIN_TOPIC_SAMPLES, assign_topic_roles
 from analyze.m7_standards import build_benchmark
 from analyze.m2_viral_genes import build_viral_genes, classify_quadrant, reverse_viral_formula
 from analyze.m1_checkup import build_checkup
@@ -44,6 +45,23 @@ from analyze.m5_growth_funnel import build_growth_funnel
 from analyze.m6_action_plan import build_action_plan_v2
 from analyze.m8_forward import build_forward_looking
 from analyze.m9_account_type import build_account_type
+
+
+def _recommendations_from_niche() -> dict[str, Any]:
+    """从活跃赛道包读取静态运营建议；未配置时不回落 AI 文案。"""
+    rec = get_active().recommendations
+    if rec is None:
+        return {
+            "topic_ratio": [],
+            "publish_windows": [],
+            "headline_rules": [],
+            "status": "未配置赛道运营建议",
+        }
+    return {
+        "topic_ratio": list(rec.topic_ratio),
+        "publish_windows": list(rec.publish_windows),
+        "headline_rules": list(rec.headline_rules),
+    }
 
 
 @dataclass(frozen=True)
@@ -123,113 +141,136 @@ def build_length_analysis(stable: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def build_conclusions(dataset: dict[str, Any]) -> list[dict[str, str]]:
-    stats_by_type = {row["key"]: row for row in dataset["analysis"]["by_content_type"]}
-    risk = stats_by_type.get("风险/账号/额度焦虑", {})
-    price = stats_by_type.get("价格/额度/羊毛情报", {})
-    agent = stats_by_type.get("AI 编程/Agent 工作流", {})
-    model = stats_by_type.get("模型发布/能力解读", {})
-    hour_best = sorted(
-        [row for row in dataset["analysis"]["by_hour"] if row["count"] >= 3],
-        key=lambda row: (row["median"], row["p75"], row["avg"]),
-        reverse=True,
-    )[:3]
-    best_hours = "、".join(f"{row['key']}点" for row in hour_best) or "样本不足"
-    return [
-        {
-            "id": "risk-engine",
-            "title": "账号风险、验证、额度焦虑是当前最强推荐流入口",
-            "body": (
-                f"这一类稳定样本 {risk.get('count', 0)} 篇，平均阅读 {risk.get('avg', 0)}，"
-                f"中位数 {risk.get('median', 0)}，P75 {risk.get('p75', 0)}。它不是靠老粉打开，"
-                "而是用直接损失感把推荐入口打穿。"
-            ),
-            "evidence": "内容类型矩阵",
-        },
-        {
-            "id": "price-volatility",
-            "title": "免费、额度、价格情报能爆，但普通稿波动很大",
-            "body": (
-                f"价格/额度类平均阅读 {price.get('avg', 0)}，但中位数只有 {price.get('median', 0)}。"
-                "这说明爆款会把均值抬高，日常选题必须写清楚适用场景、领取路径和风险边界。"
-            ),
-            "evidence": "排行榜与类型分布",
-        },
-        {
-            "id": "ip-mainline",
-            "title": "AI 编程/Agent 是 IP 主线，不该只用阅读量裁掉",
-            "body": (
-                f"工作流类样本最多（{agent.get('count', 0)} 篇），中位数 {agent.get('median', 0)}，"
-                "阅读不如风险文，但它负责建立“这个号真会用工具”的信任。标题必须从项目意义改成用户收益。"
-            ),
-            "evidence": "内容类型矩阵",
-        },
-        {
-            "id": "model-topic",
-            "title": "模型发布文要和成本、可用性、替代关系绑定",
-            "body": (
-                f"模型能力类平均阅读 {model.get('avg', 0)}，中位数 {model.get('median', 0)}。"
-                "单纯讲模型变强不够，最好回答“谁能免费用、能替代谁、现在该不该切”。"
-            ),
-            "evidence": "痛点/人群分布",
-        },
-        {
-            "id": "publish-window",
-            "title": "发布时间不能只看均值，优先试 9-10、12、15-17、22 点窗口",
-            "body": (
-                f"按稳定样本看，中位数较好的小时集中在 {best_hours}；但多个时段是爆款拉高均值，"
-                "后续应该用题材匹配窗口，而不是机械定点。"
-            ),
-            "evidence": "发布时间热力图",
-        },
-    ]
-
-
 def build_action_items(dataset: dict[str, Any]) -> list[dict[str, Any]]:
+    """角色驱动的行动建议（issue #60）：到场角色各出一条，赛道无关模板。"""
     overall = dataset["analysis"]["overall"]
-    stable_count = dataset["data_quality"]["stable_article_count"]
-    return [
+    by_content_type = dataset["analysis"]["by_content_type"]
+    stable = dataset.get("articles", {}).get("stable") or []
+    account_share_rate = aggregate_rate(stable, ["shares"])["value"]
+    roles = assign_topic_roles(by_content_type, account_share_rate)
+    by_role = {item["role"]: item for item in roles}
+
+    items: list[dict[str, Any]] = []
+    # 零角色：P0 守卫后仍走 filler 补齐到 5 条（契约恒 5，不可 early return）
+    if not roles:
+        items.append(
+            {
+                "priority": "P0",
+                "title": "先把稳定样本累积到可分析量级",
+                "why": (
+                    f"各题材样本量均低于 {MIN_TOPIC_SAMPLES} 篇最小判定阈值，"
+                    "题材角色判断不可靠，不宜下运营结论。"
+                ),
+                "action": "先按账号节奏稳定发文，累积稳定样本后再做题材角色与配比决策。",
+                "owner": "运营负责人",
+                "due": "下一轮 7 天",
+            }
+        )
+    else:
+        # 建议顺序：workhorse / reach_entry / volatile / loyalty_base（与角色认领序不同）
+        if "workhorse" in by_role:
+            item = by_role["workhorse"]
+            key = item["key"]
+            count = int(item["stats"].get("count", 0) or 0)
+            items.append(
+                {
+                    "priority": "P0",
+                    "title": f"稳住 {key} 的产能与质量",
+                    "why": f"稳定样本 {count} 篇集中在这一类，它塌了整个账号节奏就塌了。",
+                    "action": "为这一类建立选题储备池，保证每周至少 N 篇不断档；标题从主题陈述改成读者收益。",
+                    "owner": "运营负责人",
+                    "due": "下一轮 7 天",
+                }
+            )
+        if "reach_entry" in by_role:
+            item = by_role["reach_entry"]
+            key = item["key"]
+            items.append(
+                {
+                    "priority": "P0",
+                    "title": f"保留 {key} 作为推荐流入口",
+                    "why": "这一类中位阅读最高但分享率低于账号整体，是拉新主通道。",
+                    "action": "每周固定投放这一类，标题面向陌生读者写，不要依赖账号既有认知。",
+                    "owner": "运营负责人",
+                    "due": "下一轮 7 天",
+                }
+            )
+        if "volatile" in by_role:
+            item = by_role["volatile"]
+            key = item["key"]
+            s = item["stats"]
+            med_f = float(s.get("median", 0) or 0)
+            ratio = round(float(s.get("avg", 0) or 0) / med_f, 1) if med_f > 0 else 0.0
+            items.append(
+                {
+                    "priority": "P1",
+                    "title": f"{key} 必须补齐读者可操作信息",
+                    "why": f"均值被爆款拉高 {ratio} 倍，普通稿波动大。",
+                    "action": "这一类首屏写清适用人群、具体做法、边界条件，降低对爆款运气的依赖。",
+                    "owner": "运营负责人",
+                    "due": "下一篇开始",
+                }
+            )
+        if "loyalty_base" in by_role:
+            item = by_role["loyalty_base"]
+            key = item["key"]
+            items.append(
+                {
+                    "priority": "P1",
+                    "title": f"{key} 用互动率评估，不要用阅读量裁掉",
+                    "why": "分享率高于账号整体，承担信任建立职能。",
+                    "action": "这一类的考核指标换成分享率和评论率，阅读量不达标不作为砍掉理由。",
+                    "owner": "运营负责人",
+                    "due": "下一篇开始",
+                }
+            )
+
+    items.append(
         {
-            "priority": "P0",
-            "title": "把 AI 编程/Agent 工作流继续做成 IP 主线",
-            "why": f"稳定样本 {stable_count} 篇里,工作流类样本最多,但中位阅读仍偏低;问题不是不该写,而是标题和首屏还不够用户收益化。",
-            "action": "下一批工作流文章标题先写少踩什么坑、少花多少 token、少翻多少文件,不要用项目名当主角。",
+            "priority": "P2",
+            "title": "用题材匹配发布时间窗口做 2 周验证",
+            "why": (
+                f"当前稳定中位阅读 {overall['median']},"
+                "多个高均值时段有爆款拉高,需要验证题材窗口而不是机械定点。"
+            ),
+            "action": "按题材匹配发布时间窗口投放，每周复盘中位数和 P75，不机械定点。",
+            "owner": "运营负责人",
+            "due": "连续 2 周",
+        }
+    )
+    # 契约要求 action_plan.items 恒为 5 条：角色缺席时用赛道无关通用项补齐
+    # 顺序：复盘中位/P75 → 续跑样本 → 标题收益（最不易与 workhorse 撞车的先补）
+    fillers = [
+        {
+            "priority": "P2",
+            "title": "复盘时同时看中位数和 P75",
+            "why": "均值易被单篇爆款拉高，中位数和 P75 更能反映底盘。",
+            "action": "每周固定对比类型中位数与 P75 是否同步上移。",
+            "owner": "运营负责人",
+            "due": "每周复盘",
+        },
+        {
+            "priority": "P2",
+            "title": "用稳定样本续跑再调配比",
+            "why": "样本不足时任何题材配比都不可靠。",
+            "action": "先维持发文节奏，样本够了再改题材占比。",
             "owner": "运营负责人",
             "due": "下一轮 7 天",
         },
         {
-            "priority": "P0",
-            "title": "保留风险/账号/额度题材作为推荐流入口",
-            "why": "风险类能打穿推荐流,但不能让账号变成焦虑广播站。",
-            "action": "每天最多 1 篇强风险入口文;每篇都要给检查清单或解决路径。",
-            "owner": "运营负责人",
-            "due": "本周持续",
-        },
-        {
-            "priority": "P1",
-            "title": "羊毛/价格文必须补齐领取路径和风险边界",
-            "why": "价格/额度类均值容易被爆款拉高,普通稿波动大。",
-            "action": "所有羊毛文首屏写清免费额度、适用人群、入口路径、到期或限制。",
+            "priority": "P2",
+            "title": "标题先写读者收益再放产品名",
+            "why": "收益/损失/替代关系比主题陈述更易点击，是通用标题规律。",
+            "action": "每篇至少准备一版收益向标题，再从中挑选。",
             "owner": "运营负责人",
             "due": "下一篇开始",
         },
-        {
-            "priority": "P1",
-            "title": "模型发布文绑定可用性和替代关系",
-            "why": "单纯讲模型变强不能稳定转化阅读。",
-            "action": "模型文固定回答:谁能用、哪里免费、替代谁、现在该不该切。",
-            "owner": "运营负责人",
-            "due": "下一篇模型文",
-        },
-        {
-            "priority": "P2",
-            "title": "用题材匹配发布时间窗口做 2 周验证",
-            "why": f"当前稳定中位阅读 {overall['median']},多个高均值时段有爆款拉高,需要验证题材窗口而不是机械定点。",
-            "action": "风险/福利放午间或晚间短窗口,工作流和深度判断放夜间深读窗口,每周复盘中位数和 P75。",
-            "owner": "运营负责人",
-            "due": "连续 2 周",
-        },
     ]
+    fi = 0
+    while len(items) < 5 and fi < len(fillers):
+        items.append(fillers[fi])
+        fi += 1
+    return items[:5]
 
 
 def build_narrative_flow() -> list[dict[str, str]]:
@@ -268,7 +309,7 @@ def build_top_conclusion(dataset: dict[str, Any]) -> dict[str, Any]:
     # next_action <=24 chars, from high prio, modulated by level
     base_action = "抬中位阅读、拆开管理三件事"
     if level == "high":
-        next_action = "→ 立即执行IP主线与中位验证"
+        next_action = "→ 立即执行主线与中位验证"
     elif level == "low":
         next_action = "→ 继续观察底盘再定动作"
     else:
@@ -300,8 +341,21 @@ def build_analysis_sections(dataset: dict[str, Any]) -> list[dict[str, Any]]:
         reverse=True,
     )[:4]
     top_types = sorted(type_rows, key=lambda row: (row["median"], row["p75"], row["avg"]), reverse=True)
-    top_pain = max(pain_rows, key=lambda row: (row["median"], row["p75"], row["avg"]), default={})
-    top_persona = max(persona_rows, key=lambda row: (row["median"], row["p75"], row["avg"]), default={})
+    # 表现最好（median）：analysis 用；规模最大（count）：audience conclusion 用。先滤 count==0。
+    pain_rows_nz = [row for row in pain_rows if int(row.get("count", 0) or 0) > 0]
+    persona_rows_nz = [row for row in persona_rows if int(row.get("count", 0) or 0) > 0]
+    top_pain = max(pain_rows_nz, key=lambda row: (row["median"], row["p75"], row["avg"]), default={})
+    top_persona = max(persona_rows_nz, key=lambda row: (row["median"], row["p75"], row["avg"]), default={})
+    main_pain = max(
+        pain_rows_nz,
+        key=lambda row: (int(row.get("count", 0) or 0), float(row.get("total_reads", 0) or 0)),
+        default={},
+    )
+    main_persona = max(
+        persona_rows_nz,
+        key=lambda row: (int(row.get("count", 0) or 0), float(row.get("total_reads", 0) or 0)),
+        default={},
+    )
     top_read = rankings["top_reads"][0] if rankings["top_reads"] else {}
     top_share = rankings["top_shares"][0] if rankings["top_shares"] else {}
     top_title = max(title_rows, key=lambda row: (row["median"], row["p75"], row["avg"]), default={})
@@ -350,49 +404,223 @@ def build_analysis_sections(dataset: dict[str, Any]) -> list[dict[str, Any]]:
             return "可继续观察" + base if not base.startswith("可") else base
         return base
 
+    # 题材角色：报告叙事真源 analysis_sections 用，不再另建 build_conclusions（issue #60）
+    account_share_rate = aggregate_rate(stable, ["shares"])["value"]
+    topic_roles = assign_topic_roles(type_rows, account_share_rate)
+    by_role_key = {item["role"]: str(item.get("key") or "") for item in topic_roles}
+    reach_key = by_role_key.get("reach_entry") or ""
+    loyalty_key = by_role_key.get("loyalty_base") or ""
+    workhorse_key = by_role_key.get("workhorse") or ""
+
+    def _topic_short(key: str, max_len: int = 6) -> str:
+        """叙事字数硬上限下的题材缩写：优先取 / 前段。"""
+        k = str(key or "").strip()
+        if not k:
+            return "题材"
+        head = k.split("/")[0].strip() or k
+        return head if len(head) <= max_len else head[:max_len]
+
+    def _fit_text(text: str, limit: int) -> str:
+        t = str(text or "")
+        if len(t) <= limit:
+            return t
+        if limit <= 1:
+            return t[:limit]
+        return t[: limit - 1] + "…"
+
+    def _voiced_conclusion(base: str, voice: str, limit: int = 40) -> str:
+        return _fit_text(_tone_conclusion(base, voice), limit)
+
+    def _voiced_action(base: str, voice: str, limit: int = 30) -> str:
+        return _fit_text(_tone_action(base, voice), limit)
+
+    def _pick_fitting(*candidates: str, limit: int) -> str:
+        for c in candidates:
+            if c and len(c) <= limit:
+                return c
+        return _fit_text(candidates[-1] if candidates else "", limit)
+
     overview_voice = voice_for_confidence(conf_overview)
-    overview_conc = _tone_conclusion("账号能打爆款，稳定中位数仍未抬升。", overview_voice)
-    overview_act = _tone_action("每周复盘同时看类型中位数和P75是否上移。", overview_voice)
+    ov_max = float(overall.get("max", 0) or 0)
+    ov_med = float(overall.get("median", 0) or 0)
+    if ov_med > 0 and ov_max >= 10.0 * ov_med:
+        viral_clause = "账号能打爆款"
+    else:
+        viral_clause = "账号尚未跑出爆款"
+    # benchmark 与 overall 同源，缺历史对照时只陈述当前中位数，不写「未抬升」
+    overview_conc = _voiced_conclusion(
+        f"{viral_clause}，稳定中位数为{fmt_num(overall.get('median', 0))}。",
+        overview_voice,
+    )
+    overview_act = _voiced_action("每周复盘同时看类型中位数和P75是否上移。", overview_voice)
 
     content_voice = voice_for_confidence(conf_content)
-    content_conc = _tone_conclusion("风险羊毛负责推荐入口，工作流主攻IP心智。", content_voice)
-    content_act = _tone_action("工作流标题改写用户收益，风险文每天最多1篇。", content_voice)
+    # conclusion：全名优先，超限再缩写（契约 conclusion<=40，low 声线会加前缀）
+    if reach_key and loyalty_key:
+        content_conc = _voiced_conclusion(
+            _pick_fitting(
+                f"{reach_key}负责推荐流拉新，{loyalty_key}负责老粉信任。",
+                f"{_topic_short(reach_key)}负责推荐流拉新，{_topic_short(loyalty_key)}负责老粉信任。",
+                f"{_topic_short(reach_key)}拉新，{_topic_short(loyalty_key)}建信任。",
+                limit=34,  # 预留「初步迹象显示」
+            ),
+            content_voice,
+        )
+    elif reach_key:
+        content_conc = _voiced_conclusion(
+            _pick_fitting(
+                f"{reach_key}负责推荐流拉新。",
+                f"{_topic_short(reach_key)}负责推荐流拉新。",
+                limit=34,
+            ),
+            content_voice,
+        )
+    elif loyalty_key:
+        content_conc = _voiced_conclusion(
+            _pick_fitting(
+                f"{loyalty_key}负责老粉信任。",
+                f"{_topic_short(loyalty_key)}负责老粉信任。",
+                limit=34,
+            ),
+            content_voice,
+        )
+    elif workhorse_key:
+        content_conc = _voiced_conclusion(
+            _pick_fitting(
+                f"当前产能集中在{workhorse_key}，题材角色分化尚不明显。",
+                f"产能集中在{_topic_short(workhorse_key)}，角色分化尚不明显。",
+                limit=34,
+            ),
+            content_voice,
+        )
+    else:
+        content_conc = _voiced_conclusion("稳定样本不足，题材角色暂不可判断。", content_voice)
+
+    # action：契约 <=30；high 声线可能加「立即」(2 字)。模板勿以题材名开头，否则成病句。
+    if reach_key and workhorse_key:
+        content_act = _voiced_action(
+            _pick_fitting(
+                f"优先用{reach_key}做入口标题，保住{workhorse_key}产能。",
+                f"优先用{_topic_short(reach_key)}做入口，保住{_topic_short(workhorse_key)}产能。",
+                f"优先{_topic_short(reach_key, 4)}做入口，{_topic_short(workhorse_key, 4)}保产能。",
+                limit=28,
+            ),
+            content_voice,
+        )
+    elif reach_key:
+        content_act = _voiced_action(
+            _pick_fitting(
+                f"优先把{reach_key}做成面向陌生读者的标题。",
+                f"优先把{_topic_short(reach_key)}做成陌生读者入口标题。",
+                f"优先用{_topic_short(reach_key)}做推荐入口标题。",
+                limit=28,
+            ),
+            content_voice,
+        )
+    elif workhorse_key:
+        content_act = _voiced_action(
+            _pick_fitting(
+                f"优先保住{workhorse_key}的产能不断档。",
+                f"优先保住{_topic_short(workhorse_key)}的产能不断档。",
+                f"优先保住{_topic_short(workhorse_key)}产能不断档。",
+                limit=28,
+            ),
+            content_voice,
+        )
+    else:
+        content_act = _voiced_action("先累积稳定样本再做题材配比。", content_voice)
 
     title_voice = voice_for_confidence(conf_title)
-    title_conc = _tone_conclusion("标题先给损失收益或替代关系，再放产品名。", title_voice)
-    title_act = _tone_action("每篇备收益风险替代版供挑选。", title_voice)
+    title_conc = _voiced_conclusion("标题先给损失收益或替代关系，再放产品名。", title_voice)
+    title_act = _voiced_action("每篇备收益风险替代版供挑选。", title_voice)
 
     length_voice = voice_for_confidence(conf_length)
-    length_conc = _tone_conclusion("长度不是越短越好，关键控制信息密度与动作服务。", length_voice)
-    length_act = _tone_action("深度文保留空间，每600字加图表清单喘气点。", length_voice)
+    length_conc = _voiced_conclusion("长度不是越短越好，关键控制信息密度与动作服务。", length_voice)
+    length_act = _voiced_action("深度文保留空间，每600字加图表清单喘气点。", length_voice)
 
     audience_voice = voice_for_confidence(conf_audience)
-    audience_conc = _tone_conclusion("读者以账号额度敏感和编程实践者为主，非泛AI用户。", audience_voice)
-    audience_act = _tone_action("开头先写损失、省什么、怎么用。", audience_voice)
+    # conclusion 用规模最大（main_*）；analysis 仍用表现最好（top_*）
+    main_persona_key = main_persona.get("key") if main_persona else None
+    main_pain_key = main_pain.get("key") if main_pain else None
+    main_persona_count = int(main_persona.get("count", 0) or 0) if main_persona else 0
+    if main_persona_key and main_pain_key:
+        # 契约 conclusion<=40；优先全名，超限先缩模板助词再缩键长
+        audience_conc = _voiced_conclusion(
+            _pick_fitting(
+                f"读者主体是{main_persona_key}（{main_persona_count}篇），最集中的痛点是{main_pain_key}。",
+                f"读者主体是{main_persona_key}（{main_persona_count}篇），最集中痛点是{main_pain_key}。",
+                f"读者主体是{main_persona_key}（{main_persona_count}篇），痛点是{main_pain_key}。",
+                f"读者主体是{_topic_short(str(main_persona_key), 12)}（{main_persona_count}篇），痛点是{_topic_short(str(main_pain_key), 12)}。",
+                f"读者主体是{_topic_short(str(main_persona_key), 8)}（{main_persona_count}篇），痛点是{_topic_short(str(main_pain_key), 8)}。",
+                limit=40,
+            ),
+            audience_voice,
+        )
+    else:
+        audience_conc = _voiced_conclusion("人群与痛点样本不足，画像暂不可判断。", audience_voice)
+    audience_act = _voiced_action("开头先写损失、省什么、怎么用。", audience_voice)
 
     timing_voice = voice_for_confidence(conf_timing)
-    timing_conc = _tone_conclusion("发布时间需与题材匹配验证，不能只看均值。", timing_voice)
-    timing_act = _tone_action("风险放午晚短窗，工作流放22点深读窗。", timing_voice)
-
-    evidence_voice = voice_for_confidence(conf_evidence)
-    evidence_conc = _tone_conclusion("爆款证明入口有效，高分享指向IP资产方向。", evidence_voice)
-    evidence_act = _tone_action("拆爆款触发词，沉淀高分享为选题模板。", evidence_voice)
+    timing_conc = _voiced_conclusion("发布时间需与题材匹配验证，不能只看均值。", timing_voice)
+    # 赛道无关：不写死「风险/工作流」题材名
+    timing_act = _voiced_action("短通知放午晚短窗，深度文放夜间深读窗。", timing_voice)
 
     quality_voice = voice_for_confidence(conf_quality)
     # 数据质量章双覆盖维度分支：文章指标齐全 ≠ 粉丝画像齐全（issue #54）
     if fans_portrait_available:
-        quality_conc = _tone_conclusion("核心指标齐全，仍需保留导出时间和待补动作。", quality_voice)
-        quality_act = _tone_action("每次复盘先刷新后台导出，登录失效先补数据。", quality_voice)
+        quality_conc = _voiced_conclusion("核心指标齐全，仍需保留导出时间和待补动作。", quality_voice)
+        quality_act = _voiced_action("每次复盘先刷新后台导出，登录失效先补数据。", quality_voice)
     else:
-        quality_conc = _tone_conclusion(
+        quality_conc = _voiced_conclusion(
             "文章指标齐全，粉丝画像缺失，人群结论只能靠标签推断。", quality_voice
         )
-        quality_act = _tone_action("先登录后台补抓画像，再复盘人群结论。", quality_voice)
+        quality_act = _voiced_action("先登录后台补抓画像，再复盘人群结论。", quality_voice)
     portrait_status = "粉丝画像可用" if fans_portrait_available else "粉丝画像不可得"
 
     final_voice = voice_for_confidence(conf_final)
-    final_conc = _tone_conclusion("先把可复制的动作执行到位，不盲目追加新图表。", final_voice)
-    final_act = _tone_action("可执行的优先落地，验证的先小步试，暂缓的等数据。", final_voice)
+    final_conc = _voiced_conclusion("先把可复制的动作执行到位，不盲目追加新图表。", final_voice)
+    final_act = _voiced_action("可执行的优先落地，验证的先小步试，暂缓的等数据。", final_voice)
+
+    # content-engine analysis：count 前三题材真实中位；全名优先，超 60 字再缩（契约硬上限）
+    def _fmt_median(v: Any) -> str:
+        try:
+            f = float(v)
+            return str(int(f)) if f == int(f) else str(v)
+        except (TypeError, ValueError):
+            return str(v)
+
+    top3_types = sorted(type_rows, key=lambda r: int(r.get("count", 0) or 0), reverse=True)[:3]
+    if not top3_types:
+        content_analysis = f"稳定样本{len(stable)}篇，题材分布数据不足。"
+    else:
+        content_analysis = ""
+        for n in (3, 2, 1):
+            rows = top3_types[:n]
+            full = "、".join(f"{r['key']}中位{_fmt_median(r.get('median'))}" for r in rows)
+            cand_full = f"{full}，类型分化明显（{len(stable)}篇稳定）。"
+            if len(cand_full) <= 60:
+                content_analysis = cand_full
+                break
+            short = "、".join(
+                f"{_topic_short(str(r.get('key', '')), 6)}中位{_fmt_median(r.get('median'))}"
+                for r in rows
+            )
+            cand_short = f"{short}，类型分化明显（{len(stable)}篇）。"
+            if len(cand_short) <= 60:
+                content_analysis = cand_short
+                break
+        if not content_analysis:
+            content_analysis = f"稳定样本{len(stable)}篇，题材分化见类型矩阵。"
+
+    title_analysis_text = _fit_text(
+        f"{top_title.get('key', '样本不足')}标题中位最高，样本{top_title.get('count', 0)}。",
+        60,
+    )
+
+    # evidence_conc / 其余保留章：继续走 _voiced_* 保证字数契约
+    evidence_voice = voice_for_confidence(conf_evidence)
+    evidence_conc = _voiced_conclusion("爆款证明入口有效，高分享指向IP资产方向。", evidence_voice)
+    evidence_act = _voiced_action("拆爆款触发词，沉淀高分享为选题模板。", evidence_voice)
 
     # build new structure: analysis (fact <=60) + conclusion (<=40 voiced) + action (<=30) + voice/emphasis/basket ; no evidence/next_test/conf
     sections = [
@@ -413,7 +641,7 @@ def build_analysis_sections(dataset: dict[str, Any]) -> list[dict[str, Any]]:
             "id": "content-engine",
             "title": "内容引擎",
             "question": "哪些内容负责拉新和建心智?",
-            "analysis": f"风险类中位265、价格类415、工作流类300，类型分化明显（{len(stable)}篇稳定）。",
+            "analysis": content_analysis,
             "conclusion": content_conc,
             "action": content_act,
             "chart_payload": {"kind": "content_type_matrix", "rows": type_rows, "top_types": top_types[:3]},
@@ -426,7 +654,7 @@ def build_analysis_sections(dataset: dict[str, Any]) -> list[dict[str, Any]]:
             "id": "title-structure",
             "title": "标题结构",
             "question": "什么标题结构更容易带来点击和分享?",
-            "analysis": f"风险损失型标题中位最高，样本{top_title.get('count',0)}，数字价格风险词影响点击。",
+            "analysis": title_analysis_text,
             "conclusion": title_conc,
             "action": title_act,
             "chart_payload": {
@@ -573,10 +801,11 @@ def build_account_profile(dataset: dict[str, Any]) -> dict[str, Any]:
     # 爆款：reads >= P90
     p90 = percentile([float(r) for r in reads], 0.9) if reads else 0.0
     explosive_count = sum(1 for r in reads if r >= p90) if p90 > 0 else 0
+    niche_desc = (get_active().description or "").strip()
     return {
         "name": account_name,
         "platform": "微信公众号",
-        "description": "面向 AI 工具、Agent 工作流和普通人可落地效率场景的内容号。",
+        "description": niche_desc if niche_desc else f"{account_name}的内容分析",
         "avatar_text": avatar_text,
         "analysis_period": f"{dataset['meta']['period_start'][:10]} 至 {dataset['meta']['period_end'][:10]}",
         "article_count": article_n,
@@ -932,27 +1161,7 @@ def build_dataset(root: Path, *, account_name: str = "我的公众号", since: s
             "by_title_length": group_stats(stable, "title_length_bucket", TITLE_LENGTH_BUCKETS),
             "by_article_length": group_stats(stable, "length_bucket", ARTICLE_LENGTH_BUCKETS),
         },
-        "recommendations": {
-            "topic_ratio": [
-                {"label": "AI 编程/Agent 工作流", "ratio": 0.40, "role": "IP 主线"},
-                {"label": "风险/账号/额度焦虑", "ratio": 0.25, "role": "推荐流入口"},
-                {"label": "价格/额度/羊毛情报", "ratio": 0.20, "role": "转化与收藏入口"},
-                {"label": "模型发布/能力解读", "ratio": 0.10, "role": "热点解释与判断"},
-                {"label": "泛 AI 热点/效率工具", "ratio": 0.05, "role": "拓圈与轻量内容"},
-            ],
-            "publish_windows": [
-                {"window": "09:00-10:30", "best_for": "刚需工具、价格/额度更新"},
-                {"window": "12:00-12:45", "best_for": "强风险、强利益短通知"},
-                {"window": "15:00-17:30", "best_for": "模型发布、官方更新、二次解读"},
-                {"window": "22:00-22:45", "best_for": "深度判断、争议复盘、工作流文章"},
-            ],
-            "headline_rules": [
-                "风险文标题先写直接损失，再写对象：谁今天会被卡、会少什么、要检查什么。",
-                "羊毛文标题必须写清免费/额度/价格和适用人群，不写泛泛的“福利来了”。",
-                "工作流文标题不要讲项目意义，先讲用户少翻多少文件、少花多少 token、少踩什么坑。",
-                "模型发布文必须绑定可用性：谁能用、哪里免费、能不能替代当前方案。",
-            ],
-        },
+        "recommendations": _recommendations_from_niche(),
     }
     dataset["benchmark"] = build_benchmark(stable)
     dataset["viral_genes"] = build_viral_genes(stable, dataset["benchmark"])
