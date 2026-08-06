@@ -12,12 +12,7 @@ from analyze.confidence import (
     emphasis_for_confidence,
     voice_for_confidence,
 )
-from analyze.stats import median
-
-
-def _median_of_field(records: list[dict[str, Any]], field: str) -> float:
-    vals = [float(r.get(field, 0) or 0) for r in records]
-    return median(vals) if vals else 0.0
+from analyze.rates import median_rate
 
 
 def build_checkup(stable: list[dict[str, Any]], benchmark: dict[str, Any], audience: dict[str, Any]) -> dict[str, Any]:
@@ -46,10 +41,10 @@ def build_checkup(stable: list[dict[str, Any]], benchmark: dict[str, Any], audie
     skew_ratio = round(read_max / read_median, 2) if read_median > 0 else (8.0 if read_max > 0 else 0)
     is_dependent = (avg_ratio > 2.6) or (skew_ratio > 8)
 
-    # interaction medians
-    zaikan_m = round(_median_of_field(stable, "zaikan_rate"), 4)
-    share_m = round(_median_of_field(stable, "share_rate"), 4)
-    comment_m = round(_median_of_field(stable, "comment_rate"), 4)
+    # interaction medians：min_reads 过滤后的中位数（issue #59；原先无最小分母保护）
+    zaikan_m = median_rate(stable, "zaikan_rate")["value"]
+    share_m = median_rate(stable, "share_rate")["value"]
+    comment_m = median_rate(stable, "comment_rate")["value"]
     zaikan_healthy = zaikan_m > 0.03
     share_healthy = share_m > 0.02
     comment_healthy = comment_m > 0.005

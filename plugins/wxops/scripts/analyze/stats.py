@@ -11,6 +11,7 @@ from typing import Any
 
 from analyze.constants import WEEKDAY_LABELS
 from analyze.io_utils import parse_dt
+from analyze.rates import aggregate_rate
 
 
 def percentile(values: list[float], pct: float) -> float:
@@ -66,12 +67,9 @@ def group_stats(records: list[dict[str, Any]], key: str, fixed_keys: list[str] |
                 "key": group_key,
                 **stats,
                 "total_reads": total_reads,
-                "share_rate_avg": round(mean([r.get("share_rate", 0) for r in rows]), 4)
-                if rows
-                else 0,
-                "comment_rate_avg": round(mean([r.get("comment_rate", 0) for r in rows]), 4)
-                if rows
-                else 0,
+                # 组内 ratio-of-means（issue #59），分母=组内总阅读
+                "share_rate_avg": aggregate_rate(rows, ["shares"])["value"] if rows else 0,
+                "comment_rate_avg": aggregate_rate(rows, ["comments"])["value"] if rows else 0,
                 "top_sample": {
                     "title": top.get("title"),
                     "reads": top.get("reads"),

@@ -6,7 +6,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from analyze.stats import median, stat_pack
+from analyze.rates import median_rate
+from analyze.stats import stat_pack
 
 
 def build_benchmark(stable: list[dict[str, Any]]) -> dict[str, Any]:
@@ -35,25 +36,9 @@ def build_benchmark(stable: list[dict[str, Any]]) -> dict[str, Any]:
     read_avg = pack.get("avg", 0)
     read_max = pack.get("max", 0)
 
-    # share_rate_median: only reads>=30 to avoid low-base noise; fallback to all if insufficient
-    share_candidates = [
-        float(a.get("share_rate", 0) or 0)
-        for a in stable
-        if (a.get("reads", 0) or 0) >= 30
-    ]
-    if not share_candidates:
-        share_candidates = [float(a.get("share_rate", 0) or 0) for a in stable]
-    share_rate_median = round(median(share_candidates), 4) if share_candidates else 0.0
-
-    # zaikan_rate_median: same filter rule, default 0 if missing
-    zaikan_candidates = [
-        float(a.get("zaikan_rate", 0) or 0)
-        for a in stable
-        if (a.get("reads", 0) or 0) >= 30
-    ]
-    if not zaikan_candidates:
-        zaikan_candidates = [float(a.get("zaikan_rate", 0) or 0) for a in stable]
-    zaikan_rate_median = round(median(zaikan_candidates), 4) if zaikan_candidates else 0.0
+    # 典型文章率：median + reads>=30 过滤 + 样本不足回落全量（issue #59 → rates.median_rate）
+    share_rate_median = median_rate(stable, "share_rate")["value"]
+    zaikan_rate_median = median_rate(stable, "zaikan_rate")["value"]
 
     # thresholds
     viral_read_threshold = round(read_avg * 1.5)

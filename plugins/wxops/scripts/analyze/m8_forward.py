@@ -22,6 +22,8 @@ from datetime import datetime, timezone
 from statistics import median as _median
 from typing import Any
 
+from analyze.rates import aggregate_rate
+
 
 # ───────────────────────────── 常量 ──────────────────────────────────────────
 
@@ -74,13 +76,6 @@ def _safe_median(values: list[float]) -> float:
     if not vals:
         return 0.0
     return float(_median(vals))
-
-
-def _safe_mean(values: list[float]) -> float:
-    vals = [v for v in values if v is not None]
-    if not vals:
-        return 0.0
-    return sum(vals) / len(vals)
 
 
 def _days_since(dt_str: str | None, as_of: str | datetime | None = None) -> int | None:
@@ -284,13 +279,10 @@ def _interaction_signal(dataset: dict[str, Any]) -> dict[str, Any]:
             "detail": {"share_rate": 0, "comment_rate": 0, "like_rate": 0, "dominant": "未知"},
         }
 
-    share_rates = [a.get("share_rate", 0) or 0 for a in stable]
-    comment_rates = [a.get("comment_rate", 0) or 0 for a in stable]
-    like_rates = [a.get("like_rate", 0) or 0 for a in stable]
-
-    avg_share = round(_safe_mean(share_rates), 4)
-    avg_comment = round(_safe_mean(comment_rates), 4)
-    avg_like = round(_safe_mean(like_rates), 4)
+    # ratio-of-means（issue #59）；点赞分子与 enrich.py 单篇 like_rate 口径一致
+    avg_share = aggregate_rate(stable, ["shares"])["value"]
+    avg_comment = aggregate_rate(stable, ["comments"])["value"]
+    avg_like = aggregate_rate(stable, ["likes", "old_likes", "moment_likes"])["value"]
 
     # 主导项：相对高低
     rates = {"分享": avg_share, "评论": avg_comment, "点赞": avg_like}
