@@ -6,7 +6,7 @@
 ## 文件清单
 | 文件 | 职责 |
 |---|---|
-| `main.py` | 可执行入口主分发:init / login / analyze / accounts / migrate / desk / kit / publish / review；账号解析与锁在此层包一层 |
+| `main.py` | 可执行入口主分发:init / login / analyze / accounts / migrate / desk / kit / publish / review / lint / dedup；账号解析与锁在此层包一层 |
 | `init_cmd.py` | 环境自检 + 依赖自动装 + workspace 初始化 + 配置写入 |
 | `login_cmd.py` | 扫码登录持久化浏览器 profile;按回车后 `_confirm_token` 就地判定(快路径读 URL + 最多 3 轮主动 goto 探 token,与 health._probe 同原理;禁调 check_login 以免锁重入) |
 | `analyze_cmd.py` | 抓取(或 demo)→ build 报告 → dashboard 预览/构建 |
@@ -21,6 +21,9 @@
 | `batch_cmd.py` | analyze --all 批量编排：前置体检 + 顺序拉数 + 防风控间隔 + 失败隔离 + 批次报告 |
 | `publish_cmd.py` | 发布主链编排：预检七项 → 渲染 → （`--go`）上传素材 + 建草稿 → 发布台账；引擎在 `../publish/` |
 | `review_cmd.py` | 复盘：台账 + 选题卡预期 + analyze 数据 → `reports/review-<topic>.md`；全程只读，唯一写动作是落报告 |
+| `compliance_lib.py` | 稿件合规闸纯引擎：compliance.json schema 校验 + terms/regex/cooccur 匹配；文件级三层回落 |
+| `lint_cmd.py` | 稿件合规闸 CLI：按账号 niche 加载规则扫 draft/--text；exit 0=无 BLOCK，1=有 BLOCK，2=用法/缺规则 |
+| `dedup_cmd.py` | 选题去重闸：读 output/wechat-ops-report-*.json 的 articles.stable，bigram Jaccard + 对象共现；核心对象查重依赖 `--object`，不传则只做标题相似度；exit 0=PASS/WARN，1=BLOCK，2=缺库 |
 
 ## 本地规则
 - 所有路径解析走 `env.py`,不得在子命令内自拼 workspace 路径。
