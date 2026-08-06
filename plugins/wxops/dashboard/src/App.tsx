@@ -627,8 +627,25 @@ function CheckupScreen() {
     { label: "去极值均值", value: fmtNum(bm.read_trimmed_mean), color: MACARON.lavender },
     { label: "最高阅读", value: fmtNum(bm.read_max), color: MACARON.peach },
   ];
+  // issue #61：指标不可得时显示「不可得」，不把 null 当 0%
+  const zaikanUnavailable =
+    inter.zaikan_rate == null ||
+    inter.zaikan_status === "platform_not_provided" ||
+    inter.zaikan_status === "fetch_missing" ||
+    inter.zaikan_status === "not_applicable";
   const inters = [
-    { label: "在看率", value: pct(inter.zaikan_rate, 1), color: MACARON.mint },
+    {
+      label: "在看率",
+      value: zaikanUnavailable ? "不可得" : pct(inter.zaikan_rate, 1),
+      color: MACARON.mint,
+      hint: zaikanUnavailable
+        ? inter.zaikan_status === "platform_not_provided"
+          ? "平台未提供该字段"
+          : inter.zaikan_status === "fetch_missing"
+            ? "本次采集缺失"
+            : "该维度不可得"
+        : undefined,
+    },
     { label: "分享率", value: pct(inter.share_rate, 1), color: MACARON.blush },
     { label: "评论率", value: pct(inter.comment_rate, 1), color: MACARON.butter },
   ];
@@ -663,7 +680,7 @@ function CheckupScreen() {
         </div>
         <div className="checkup-micro">
           {inters.map((r) => (
-            <span key={r.label} className="cmicro">
+            <span key={r.label} className="cmicro" title={(r as any).hint || undefined}>
               <i style={{ background: r.color }} />
               <span className="cm-label">{r.label}</span>
               <b>{r.value}</b>
@@ -1024,9 +1041,16 @@ function StandardsScreen() {
     value: fmtNum(bm.viral_read_threshold),
     hint: "≥ 本号均值 1.5 倍，达到即记爆款",
   };
+  // issue #61：zaikan 不可得时 viral_zaikan_threshold 为 null，不显示 5%
+  const zaikanThrMissing =
+    bm.viral_zaikan_threshold == null || bm.viral_zaikan_threshold === undefined;
   const notes = [
     { label: "爆款分享率门槛", value: pct(bm.viral_share_threshold, 1), hint: "≥ 中位 2 倍" },
-    { label: "在看率门槛", value: pct(bm.viral_zaikan_threshold, 0), hint: "优质传播线" },
+    {
+      label: "在看率门槛",
+      value: zaikanThrMissing ? "不可得" : pct(bm.viral_zaikan_threshold, 0),
+      hint: zaikanThrMissing ? "平台未提供该字段" : "优质传播线",
+    },
     { label: "选题有效率", value: pct(bm.topic_select_rate, 0), hint: "超本号均值文章占比" },
   ];
   return (

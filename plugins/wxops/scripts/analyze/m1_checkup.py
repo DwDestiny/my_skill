@@ -1,5 +1,5 @@
 # GEB-L3
-# Input: stable 文章列表 + benchmark（m7）+ audience raw（粉丝/净增/取关）
+# Input: stable 文章列表 + benchmark（m7）+ audience raw（粉丝/净增/取关）+ 可选 metric_availability
 # Output: health_score/dependency/interaction/fans + verdict/action/voice 体检 dict（含 chart_payload）
 # Pos: plugins/wxops/scripts/analyze/m1_checkup.py
 from __future__ import annotations
@@ -14,15 +14,55 @@ from analyze.confidence import (
 )
 from analyze.rates import median_rate
 
+# 互动原权重；不可得维度不参与，满分 25 在可得维度间按原比例重分配（issue #61）
+_INTER_WEIGHTS = {
+    "zaikan": 9.0,
+    "share": 9.0,
+    "comment": 7.0,
+}
+_INTER_MAX = 25.0
 
-def build_checkup(stable: list[dict[str, Any]], benchmark: dict[str, Any], audience: dict[str, Any]) -> dict[str, Any]:
+
+def _dim_status(metric_availability: dict[str, Any] | None, key: str) -> str:
+    """缺省 available：直接调用方未传注册表时保持旧行为。"""
+    if not metric_availability:
+        return "available"
+    entry = metric_availability.get(key) or {}
+    status = entry.get("status")
+    return str(status) if status else "available"
+
+
+def _is_available(status: str) -> bool:
+    return status == "available"
+
+
+def build_checkup(
+    stable: list[dict[str, Any]],
+    benchmark: dict[str, Any],
+    audience: dict[str, Any],
+    metric_availability: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    zaikan_status = _dim_status(metric_availability, "zaikan")
+    # share/comment 在注册表里叫 shares/comments
+    share_status = _dim_status(metric_availability, "shares")
+    comment_status = _dim_status(metric_availability, "comments")
+
     if not stable:
         conf = confidence_for_records([], note="checkup")
         voice = voice_for_confidence(conf)
+        inter: dict[str, Any] = {
+            "zaikan_rate": None if not _is_available(zaikan_status) else 0,
+            "share_rate": None if not _is_available(share_status) else 0,
+            "comment_rate": None if not _is_available(comment_status) else 0,
+            "healthy": False,
+            "zaikan_status": zaikan_status,
+            "share_status": share_status,
+            "comment_status": comment_status,
+        }
         return {
             "health_score": 0,
             "dependency": {"avg_ratio": 0, "skew_ratio": 0, "is_dependent": False},
-            "interaction": {"zaikan_rate": 0, "share_rate": 0, "comment_rate": 0, "healthy": False},
+            "interaction": inter,
             "fans": {"netgain_7d": 0, "cancel_rate": 0, "available": False},
             "verdict": "样本不足，暂无诊断",
             "analysis": "稳定样本为空，无法计算体检。",
@@ -42,13 +82,23 @@ def build_checkup(stable: list[dict[str, Any]], benchmark: dict[str, Any], audie
     is_dependent = (avg_ratio > 2.6) or (skew_ratio > 8)
 
     # interaction medians：min_reads 过滤后的中位数（issue #59；原先无最小分母保护）
-    zaikan_m = median_rate(stable, "zaikan_rate")["value"]
-    share_m = median_rate(stable, "share_rate")["value"]
-    comment_m = median_rate(stable, "comment_rate")["value"]
-    zaikan_healthy = zaikan_m > 0.03
-    share_healthy = share_m > 0.02
-    comment_healthy = comment_m > 0.005
-    inter_healthy = zaikan_healthy and share_healthy and comment_healthy
+    zaikan_m = median_rate(stable, "zaikan_rate")["value"] if _is_available(zaikan_status) else None
+    share_m = median_rate(stable, "share_rate")["value"] if _is_available(share_status) else None
+    comment_m = median_rate(stable, "comment_rate")["value"] if _is_available(comment_status) else None
+
+    zaikan_healthy = bool(zaikan_m is not None and zaikan_m > 0.03)
+    share_healthy = bool(share_m is not None and share_m > 0.02)
+    comment_healthy = bool(comment_m is not None and comment_m > 0.005)
+
+    # 不可得维度不参与 inter_healthy
+    healthy_flags: list[bool] = []
+    if _is_available(zaikan_status):
+        healthy_flags.append(zaikan_healthy)
+    if _is_available(share_status):
+        healthy_flags.append(share_healthy)
+    if _is_available(comment_status):
+        healthy_flags.append(comment_healthy)
+    inter_healthy = bool(healthy_flags) and all(healthy_flags)
 
     # fans
     fans_available = bool(audience.get("available"))
@@ -71,15 +121,27 @@ def build_checkup(stable: list[dict[str, Any]], benchmark: dict[str, Any], audie
         anti_dep = 14.0
     anti_score = round(anti_dep, 1)  # already scaled
 
-    # interaction: each healthy gives points, max 25
-    inter_points = 0.0
-    if zaikan_healthy:
-        inter_points += 9
-    if share_healthy:
-        inter_points += 9
-    if comment_healthy:
-        inter_points += 7
-    inter_score = round(inter_points, 1)
+    # interaction: 满分 25，在可得维度间按原权重比例重分配（issue #61）
+    avail_weights: dict[str, float] = {}
+    if _is_available(zaikan_status):
+        avail_weights["zaikan"] = _INTER_WEIGHTS["zaikan"]
+    if _is_available(share_status):
+        avail_weights["share"] = _INTER_WEIGHTS["share"]
+    if _is_available(comment_status):
+        avail_weights["comment"] = _INTER_WEIGHTS["comment"]
+
+    if not avail_weights:
+        inter_score = 0.0
+    else:
+        w_sum = sum(avail_weights.values())
+        inter_points = 0.0
+        if "zaikan" in avail_weights and zaikan_healthy:
+            inter_points += _INTER_MAX * avail_weights["zaikan"] / w_sum
+        if "share" in avail_weights and share_healthy:
+            inter_points += _INTER_MAX * avail_weights["share"] / w_sum
+        if "comment" in avail_weights and comment_healthy:
+            inter_points += _INTER_MAX * avail_weights["comment"] / w_sum
+        inter_score = round(inter_points, 1)
 
     # fans netgain: if available, netgain_7d >0 gives points, higher better, cap ~15; also penalize high cancel
     fan_score = 0.0
@@ -114,10 +176,18 @@ def build_checkup(stable: list[dict[str, Any]], benchmark: dict[str, Any], audie
     else:
         verdict = base_ver
 
-    # analysis short
-    analysis = (
-        f"中位{int(read_median)}、均值{int(read_avg)}、最大{int(read_max)}；"
-        f"分享中位{share_m*100:.1f}%、在看{zaikan_m*100:.1f}%、评论{comment_m*100:.1f}%。"
+    # analysis：不可得维度不打印百分比（issue #61）
+    analysis = _build_interaction_analysis(
+        read_median=read_median,
+        read_avg=read_avg,
+        read_max=read_max,
+        share_m=share_m,
+        zaikan_m=zaikan_m,
+        comment_m=comment_m,
+        share_status=share_status,
+        zaikan_status=zaikan_status,
+        comment_status=comment_status,
+        avail_weights=avail_weights,
     )
 
     # action voice modulated
@@ -140,6 +210,9 @@ def build_checkup(stable: list[dict[str, Any]], benchmark: dict[str, Any], audie
             "share_rate": share_m,
             "comment_rate": comment_m,
             "healthy": inter_healthy,
+            "zaikan_status": zaikan_status,
+            "share_status": share_status,
+            "comment_status": comment_status,
         },
         "fans": {
             "netgain_7d": netgain_7d,
@@ -157,5 +230,65 @@ def build_checkup(stable: list[dict[str, Any]], benchmark: dict[str, Any], audie
             "health_score": health_score,
             "dependency": is_dependent,
             "interaction_healthy": inter_healthy,
+            "inter_score": inter_score,
         },
     }
+
+
+def _status_reason(status: str) -> str:
+    if status == "platform_not_provided":
+        return "平台未提供"
+    if status == "fetch_missing":
+        return "本次未采到"
+    if status == "not_applicable":
+        return "不适用"
+    return status
+
+
+def _build_interaction_analysis(
+    *,
+    read_median: float,
+    read_avg: float,
+    read_max: float,
+    share_m: float | None,
+    zaikan_m: float | None,
+    comment_m: float | None,
+    share_status: str,
+    zaikan_status: str,
+    comment_status: str,
+    avail_weights: dict[str, float],
+) -> str:
+    head = f"中位{int(read_median)}、均值{int(read_avg)}、最大{int(read_max)}；"
+    parts: list[str] = []
+    missing: list[str] = []
+
+    if _is_available(share_status) and share_m is not None:
+        parts.append(f"分享中位{share_m * 100:.1f}%")
+    else:
+        missing.append(f"分享{_status_reason(share_status)}")
+
+    if _is_available(comment_status) and comment_m is not None:
+        parts.append(f"评论{comment_m * 100:.1f}%")
+    else:
+        missing.append(f"评论{_status_reason(comment_status)}")
+
+    if _is_available(zaikan_status) and zaikan_m is not None:
+        parts.append(f"在看{zaikan_m * 100:.1f}%")
+    else:
+        missing.append(f"在看{_status_reason(zaikan_status)}")
+
+    if not avail_weights:
+        body = "互动维度整体不可得，互动分不计分。"
+    else:
+        body = "、".join(parts)
+        if missing:
+            if body:
+                body += f"；{'、'.join(missing)}。"
+            else:
+                body = "、".join(missing) + "。"
+        elif body:
+            body += "。"
+        else:
+            body = "互动样本不足。"
+
+    return head + body
