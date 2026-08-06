@@ -1501,6 +1501,27 @@ def render_report(dataset: dict[str, Any], dataset_path: Path | str) -> str:
         at_focus = "\n".join(f"- {x}" for x in at_pb.get("diagnosis_focus", []))
         at_bias = "\n".join(f"- {x}" for x in at_pb.get("action_bias", []))
         at_fallback_note = "（类型信号不足，本轮按通用链路解读）" if at.get("fallback_to_general") else ""
+        # 口径校正：仅当 m9 报告了不可得观察维度时出现（issue #69）
+        at_correction = ""
+        at_lenses = at.get("unavailable_lenses") or []
+        if at_lenses:
+            _reason_txt = {
+                "platform_not_provided": "微信后台不提供",
+                "fetch_missing": "本次未采集到",
+                "collector_not_implemented": "采集器未覆盖",
+            }
+            parts: list[str] = []
+            for lens in at_lenses:
+                reason = _reason_txt.get(lens.get("reason", ""), lens.get("reason", ""))
+                action = lens.get("action") or ""
+                if action:
+                    parts.append(f"{lens.get('label', '')}（{reason}，{action}）")
+                else:
+                    parts.append(f"{lens.get('label', '')}（{reason}）")
+            at_correction = (
+                f"\n口径校正：本号有 {len(at_lenses)} 个该类型的常用观察维度取不到——"
+                f"{'、'.join(parts)}。上面的口径已按可得数据改写。"
+            )
         account_type_block = f"""## 账号类型与分析路由
 
 本轮判定：**{at['primary'].get('name', '')}**{at_fallback_note}
@@ -1509,7 +1530,7 @@ def render_report(dataset: dict[str, Any], dataset_path: Path | str) -> str:
 
 {at_evidence}
 
-解读口径：{at_pb.get('reading_guide', '')}
+解读口径：{at_pb.get('reading_guide', '')}{at_correction}
 
 诊断重点：
 
