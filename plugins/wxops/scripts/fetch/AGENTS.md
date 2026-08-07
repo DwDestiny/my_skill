@@ -6,7 +6,7 @@
 ## 文件清单
 | 文件 | 职责 |
 |---|---|
-| `orchestrator.py` | 四接口总编排:发布记录 → 账号 → 画像 → 内容趋势,接口间 3-8s 随机 sleep,任一失败立即返回 failed |
+| `orchestrator.py` | 四接口总编排:经 `scripts.browser.launch_profile_context` 启持久化上下文 → 发布记录 → 账号 → 画像 → 内容趋势,接口间 3-8s 随机 sleep,任一失败立即返回 failed |
 | `session.py` | 登录态判定与页面获取(`open_logged_in_page` → page + token) |
 | `fetch_account.py` | 接口 A `/cgi-bin/home`,取 `window.wx.commonData`(已知缺口:取值路径错层——昵称/头像/user_name 在 `commonData.data` 子对象内而非顶层,叠加 `or {}` 静默兜底致四字段恒 null 却报成功,见 #83;原「domcontentloaded 时机竞态」诊断已实测证伪,commonData 22ms 即就绪) |
 | `fetch_audience.py` | 接口 B `/misc/useranalysis`,正则解析内联 JS 变量,非空 list/dict 才算有数据,垃圾输入降级为 None |

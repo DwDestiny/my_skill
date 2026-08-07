@@ -17,6 +17,7 @@
 | `test_accounts.py` | 多账号底座:store / resolve_context / migrate / lock / desk / pipeline e2e / legacy 不变性 |
 | `test_health_batch.py` | 登录态体检 check_login/cmd_check + analyze --all 批量编排 + main 互斥 + desk login_alive |
 | `test_login_cmd.py` | login `_confirm_token`：快路径零 goto / 延迟跳转首轮得 token / 真未登录三轮 goto / goto 异常不崩溃（issue #53） |
+| `test_browser.py` | issue #82：`launch_profile_context` 版本选择——精确匹配优先、同 major 且版本不低者取最小、同 major 更低与跨 major 一律 fail-fast、全新 profile 不传 executable；禁真浏览器禁子进程 |
 | `test_niche_loader.py` | 赛道包加载:解析序/用户覆盖/坏包硬报错/懒加载/未知字段警告 |
 | `test_niche_coverage.py` | C4 覆盖率闸门:非 AI fixture 触闸(G2)、_generic 恒触闸、total=0 不告警、m8/m9 降级、MD 警示块、内置 ai-tools 字面量钉死 |
 | `test_kit.py` | kit 写作三件套门禁:空壳三态/结构三层回落/账号级与开工级/未知账号 + desk 在途列与建议 |

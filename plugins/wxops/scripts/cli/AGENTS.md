@@ -8,7 +8,7 @@
 |---|---|
 | `main.py` | 可执行入口主分发:init / login / analyze / accounts / migrate / desk / kit / publish / review / lint / dedup；账号解析与锁在此层包一层 |
 | `init_cmd.py` | 环境自检 + 依赖自动装 + workspace 初始化 + 配置写入 |
-| `login_cmd.py` | 扫码登录持久化浏览器 profile;按回车后 `_confirm_token` 就地判定(快路径读 URL + 最多 3 轮主动 goto 探 token,与 health._probe 同原理;禁调 check_login 以免锁重入) |
+| `login_cmd.py` | 扫码登录持久化浏览器 profile；内部 `profile_lock` 互斥；`launch_profile_context` 按 Last Version 自适应 Chromium；按回车后 `_confirm_token` 就地判定(快路径读 URL + 最多 3 轮主动 goto 探 token；禁调 check_login 以免锁重入) |
 | `analyze_cmd.py` | 抓取(或 demo)→ build 报告 → dashboard 预览/构建 |
 | `env.py` | SKILL_DIR 自定位、`WXOPS_HOME`/workspace 解析、账号目录树、config 读写、依赖探测、中文打印工具 |
 | `accounts_store.py` | 多账号注册表核心:accounts.json 薄指针 + account.json/pipeline.json 单一真源(纯逻辑,零交互) |
@@ -17,7 +17,7 @@
 | `lock.py` | 同号 browser-profile 并发锁(fcntl flock;Windows no-op 降级) |
 | `desk_cmd.py` | 编辑部总控台:只读展示各账号流水线状态、在途内容与下一步建议 |
 | `kit_cmd.py` | 写作三件套只读门禁:persona + 结构契约(+ 选题卡/证据包);缺一 exit 1 |
-| `health.py` | 登录态健康探测：headless 打开 browser-profile 查 token，写回前由调用方持锁 |
+| `health.py` | 登录态健康探测：headless 经 `launch_profile_context` 打开 browser-profile 查 token；内部 `profile_lock`，写回前由调用方持锁语义不变 |
 | `batch_cmd.py` | analyze --all 批量编排：前置体检 + 顺序拉数 + 防风控间隔 + 失败隔离 + 批次报告 |
 | `publish_cmd.py` | 发布主链编排：预检七项 → 渲染 → （`--go`）上传素材 + 建草稿 → 发布台账；引擎在 `../publish/` |
 | `review_cmd.py` | 复盘：台账 + 选题卡预期 + analyze 数据 → `reports/review-<topic>.md`；全程只读，唯一写动作是落报告 |

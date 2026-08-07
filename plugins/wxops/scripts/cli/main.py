@@ -389,14 +389,8 @@ def _login_all(
             workspace = accounts_store.get_account_dir(root, slug)
             env.print_header(f"即将登录账号：{name}（{slug}）")
             env.print_step("请核对账号", "扫码前确认目标公众号无误，避免扫错号")
-            try:
-                profile_lock = lock_mod.acquire_profile_lock(workspace)
-            except lock_mod.ProfileLockError as e:
-                env.print_error(str(e))
-                still_offline.append(slug)
-                continue
-            with profile_lock:
-                rc = do_login(workspace)
+            # profile 锁改由 login_cmd.run 内部持有（与 health 一致；同进程二次 flock 会失败）
+            rc = do_login(workspace)
             if rc == 0:
                 accounts_store.touch(root, slug, "last_login_at")
                 ok = accounts_store.touch_pipeline(root, slug, "login", ok=True)
@@ -530,13 +524,8 @@ def main(argv: list[str] | None = None) -> int:
             name = (acct or {}).get("name") or slug
             env.print_header(f"即将登录账号：{name}（{slug}）")
             env.print_step("请核对账号", "扫码前确认目标公众号无误，避免扫错号")
-        try:
-            profile_lock = lock_mod.acquire_profile_lock(workspace)
-        except lock_mod.ProfileLockError as e:
-            env.print_error(str(e))
-            return 1
-        with profile_lock:
-            rc = login_cmd.run(workspace=workspace, headless=headless)
+        # profile 锁改由 login_cmd.run 内部持有（与 health 一致；同进程二次 flock 会失败）
+        rc = login_cmd.run(workspace=workspace, headless=headless)
         if rc == 0 and slug:
             accounts_store.touch(root, slug, "last_login_at")
             ok = accounts_store.touch_pipeline(root, slug, "login", ok=True)

@@ -30,13 +30,11 @@ def _probe(profile_dir: Path, timeout_ms: int) -> str | None:
     from playwright.sync_api import sync_playwright
 
     _ensure_in_path(env.get_skill_dir())
+    from scripts.browser import launch_profile_context  # 统一入口（版本自适应）
     from scripts.export_wechat_publish_records import token_from_url  # 复用
 
     with sync_playwright() as playwright:
-        context = playwright.chromium.launch_persistent_context(
-            user_data_dir=str(profile_dir),
-            headless=True,
-        )
+        context = launch_profile_context(playwright, profile_dir, headless=True)
         try:
             page = context.pages[0] if context.pages else context.new_page()
             page.goto(

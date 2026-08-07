@@ -5,7 +5,7 @@
 """Orchestrator: coordinates the 4 interfaces with anti-detection sleeps.
 
 Flow:
-  1. launch_persistent_context
+  1. launch_profile_context（scripts.browser：按 profile Last Version 自适应 Chromium）
   2. open_logged_in_page -> (page, token)
   3. scrape_publish_records + write_export
   4. sleep(3~8)
@@ -39,6 +39,17 @@ def _ensure_scripts_on_path() -> None:
 
 
 _ensure_scripts_on_path()
+
+
+def _import_launch_profile_context():
+    try:
+        from browser import launch_profile_context  # type: ignore
+
+        return launch_profile_context
+    except ImportError:
+        from scripts.browser import launch_profile_context  # type: ignore
+
+        return launch_profile_context
 
 
 def run(workspace: Path | str, profile_dir: Path | str, headless: bool = True) -> dict[str, Any]:
@@ -98,11 +109,11 @@ def run(workspace: Path | str, profile_dir: Path | str, headless: bool = True) -
     open_logged_in_page = _import_session()
     _fetch_publish_payload, _process_publish_payload, write_export = _import_publish_funcs()
     fetch_account, fetch_audience, fetch_content_trend = _import_fetchers()
+    launch_profile_context = _import_launch_profile_context()
 
     with sync_playwright() as playwright:
-        context = playwright.chromium.launch_persistent_context(
-            user_data_dir=str(profile_dir),
-            headless=headless,
+        context = launch_profile_context(
+            playwright, profile_dir, headless=headless
         )
         try:
             page, token = open_logged_in_page(context)
