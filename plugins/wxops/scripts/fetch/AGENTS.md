@@ -6,9 +6,9 @@
 ## 文件清单
 | 文件 | 职责 |
 |---|---|
-| `orchestrator.py` | 四接口总编排:经 `scripts.browser.launch_profile_context` 启持久化上下文 → 发布记录 → 账号 → 画像 → 内容趋势,接口间 3-8s 随机 sleep,任一失败立即返回 failed |
+| `orchestrator.py` | 四接口总编排:经 `scripts.browser.launch_profile_context` 启持久化上下文 → 发布记录 → 账号 → 画像 → 内容趋势,接口间 3-8s 随机 sleep;接住三 fetcher 返回值做**结构性**断言(account=dict 且 nick_name 非空;audience/trend 仅断言 dict——`available=false` 合法);成功返回含 `account` 原样;任一失败立即 failed |
 | `session.py` | 登录态判定与页面获取(`open_logged_in_page` → page + token) |
-| `fetch_account.py` | 接口 A `/cgi-bin/home`,取 `window.wx.commonData`(已知缺口:取值路径错层——昵称/头像/user_name 在 `commonData.data` 子对象内而非顶层,叠加 `or {}` 静默兜底致四字段恒 null 却报成功,见 #83;原「domcontentloaded 时机竞态」诊断已实测证伪,commonData 22ms 即就绪) |
+| `fetch_account.py` | 接口 A `/cgi-bin/home`,读 `window.wx.commonData`:nick_name=`data`→`user_info`、user_name=`data.user_name`→`data.alias`、head_img=`data`→`user_info`(缺则 null+stderr warning);无 `or {}` 静默兜底;commonData 非 dict / 关键字段空则 RuntimeError 且**不写** `raw/account.json`(issue #83) |
 | `fetch_audience.py` | 接口 B `/misc/useranalysis`,正则解析内联 JS 变量,非空 list/dict 才算有数据,垃圾输入降级为 None |
 | `fetch_content_trend.py` | 接口 C `/misc/appmsganalysis?action=report&f=json` |
 

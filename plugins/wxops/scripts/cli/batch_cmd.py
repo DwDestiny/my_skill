@@ -30,17 +30,15 @@ def _default_runner(root: Path, slug: str, workspace: Path) -> int:
     profile_lock = lock_mod.acquire_profile_lock(workspace)
     try:
         acct = accounts_store.get_account(root, slug)
-        name = None
         niche = "ai-tools"
-        if acct and acct.get("name"):
-            name = str(acct["name"])
         if acct and acct.get("niche"):
             niche = str(acct["niche"])
+        # 不注入注册表人工名：由 analyze_cmd 按「显式 override > 后台真名 > config」决定（issue #83）
         rc = analyze_cmd.run(
             workspace=workspace,
             demo=False,
             build_only=False,
-            account_name_override=name,
+            account_name_override=None,
             data_only=True,
             niche=niche,
         )

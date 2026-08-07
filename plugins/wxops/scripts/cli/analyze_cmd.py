@@ -393,6 +393,25 @@ def run(
         return 1
     print_success(f"抓取完成: publish={result.get('publish_export')}, raw={result.get('raw_dir')}")
 
+    # 后台真实昵称回填：人工输入降级为兜底（issue #83）
+    real_nick = None
+    acct_payload = result.get("account")
+    if isinstance(acct_payload, dict):
+        candidate = acct_payload.get("nick_name")
+        if isinstance(candidate, str) and candidate.strip():
+            real_nick = candidate.strip()
+
+    if real_nick and root is not None and slug:
+        stored = accounts_store.get_account(root, slug)
+        if stored is not None and str(stored.get("name") or "") != real_nick:
+            old = str(stored.get("name") or "（空）")
+            stored["name"] = real_nick
+            accounts_store.save_account(root, slug, stored)
+            print_info(f"账号名已按公众号后台更新：{old} → {real_nick}")
+
+    # 显式 --account-name > 后台真名 > config 人工值
+    account_name = account_name_override or real_nick or config.get("account_name") or "我的公众号"
+
     # 构建
     rc = _run_build(workspace, account_name, niche=niche)
     if rc != 0:
