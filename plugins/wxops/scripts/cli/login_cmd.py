@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from . import env
+from . import lock as lock_mod
 
 # 登录态确认：快路径无 token 时的主动 goto 重探参数（与 health._probe 同原理，就地复用当前 page）
 _TOKEN_RETRY_ROUNDS = 3
@@ -78,6 +79,7 @@ def run(workspace: Path, headless: bool = False) -> int:
         return 1
 
     _ensure_in_path(env.get_skill_dir())
+    from scripts.browser import launch_profile_context  # 统一入口（版本自适应）
 
     profile_dir = env.get_browser_profile_dir(workspace)
     profile_dir.mkdir(parents=True, exist_ok=True)
@@ -85,47 +87,61 @@ def run(workspace: Path, headless: bool = False) -> int:
     print_step("启动持久化浏览器上下文", f"用户数据目录: {profile_dir}")
     print_info("即将打开 https://mp.weixin.qq.com/ （headless=" + str(headless) + "）")
 
-    with sync_playwright() as playwright:
-        context = playwright.chromium.launch_persistent_context(
-            user_data_dir=str(profile_dir),
-            headless=headless,
-        )
-        try:
-            page = context.pages[0] if context.pages else context.new_page()
-            if "mp.weixin.qq.com" not in (page.url or ""):
-                page.goto("https://mp.weixin.qq.com/", wait_until="domcontentloaded", timeout=30000)
-
-            print("\n" + "=" * 50)
-            print("浏览器已打开公众号登录页")
-            print("① 浏览器已打开 →")
-            print("② 请用公众号管理员微信扫码登录")
-            print("③ 登录成功后回到终端按回车确认")
-            print("=" * 50 + "\n")
-
-            try:
-                input("登录完成后请按回车继续...")
-            except (EOFError, KeyboardInterrupt):
-                print_warn("用户中断")
-                return 1
-
-            # 就地确认 token（快路径 + 主动 goto 重探）；禁止调用 health.check_login（会与已持 profile 锁冲突）
-            token = _confirm_token(page)
-            if token:
-                print_success("登录成功，登录态已保存")
-                print_info("（persistent context 会自动把 cookies 等保存到 browser-profile/）")
-                print_guide_next("wxops analyze   （抓取最新数据并生成看板）")
-                return 0
-            else:
-                print_warn("未能在页面 URL 中确认到登录 token。")
-                print_info(
-                    "若你确认已扫码成功，可运行 `wxops accounts check` 复核真实登录态；"
-                    "本次未能在页面 URL 捕获到 token，登录态可能已保存但未被确认。"
+    # 与 health/batch 一致：持锁期间独占 browser-profile（login 与拉数互斥）
+    try:
+        with lock_mod.profile_lock(workspace):
+            with sync_playwright() as playwright:
+                context = launch_profile_context(
+                    playwright, profile_dir, headless=headless
                 )
-                print_info(
-                    "可能原因：未完成扫码、页面还在登录中、网络延迟，"
-                    "或使用了个人订阅号而非服务号/公众号后台。"
-                )
-                print_info("请重新运行 wxops login 再试，或先用 accounts check 确认状态。")
-                return 1
-        finally:
-            context.close()
+                try:
+                    page = context.pages[0] if context.pages else context.new_page()
+                    if "mp.weixin.qq.com" not in (page.url or ""):
+                        page.goto(
+                            "https://mp.weixin.qq.com/",
+                            wait_until="domcontentloaded",
+                            timeout=30000,
+                        )
+
+                    print("\n" + "=" * 50)
+                    print("浏览器已打开公众号登录页")
+                    print("① 浏览器已打开 →")
+                    print("② 请用公众号管理员微信扫码登录")
+                    print("③ 登录成功后回到终端按回车确认")
+                    print("=" * 50 + "\n")
+
+                    try:
+                        input("登录完成后请按回车继续...")
+                    except (EOFError, KeyboardInterrupt):
+                        print_warn("用户中断")
+                        return 1
+
+                    # 就地确认 token（快路径 + 主动 goto 重探）；禁止调用
+                    # health.check_login（其内部会再抢 profile 锁，同进程二次 flock 失败）
+                    token = _confirm_token(page)
+                    if token:
+                        print_success("登录成功，登录态已保存")
+                        print_info(
+                            "（persistent context 会自动把 cookies 等保存到 browser-profile/）"
+                        )
+                        print_guide_next("wxops analyze   （抓取最新数据并生成看板）")
+                        return 0
+                    else:
+                        print_warn("未能在页面 URL 中确认到登录 token。")
+                        print_info(
+                            "若你确认已扫码成功，可运行 `wxops accounts check` 复核真实登录态；"
+                            "本次未能在页面 URL 捕获到 token，登录态可能已保存但未被确认。"
+                        )
+                        print_info(
+                            "可能原因：未完成扫码、页面还在登录中、网络延迟，"
+                            "或使用了个人订阅号而非服务号/公众号后台。"
+                        )
+                        print_info(
+                            "请重新运行 wxops login 再试，或先用 accounts check 确认状态。"
+                        )
+                        return 1
+                finally:
+                    context.close()
+    except lock_mod.ProfileLockError as e:
+        print_error(str(e))
+        return 1

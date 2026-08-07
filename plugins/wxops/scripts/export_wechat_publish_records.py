@@ -245,14 +245,25 @@ def write_export(
     return out_path
 
 
+def _import_launch_profile_context():
+    try:
+        from browser import launch_profile_context  # type: ignore
+
+        return launch_profile_context
+    except ImportError:
+        from scripts.browser import launch_profile_context  # type: ignore
+
+        return launch_profile_context
+
+
 def export_via_persistent(workspace: Path, profile_dir: Path | str, headless: bool = True) -> Path:
     """Launch persistent context from profile, ensure logged-in mp page, scrape via JS logic, write export, return Path."""
     profile_dir = Path(profile_dir).resolve()
     captured_at = datetime.now(timezone.utc).isoformat()
+    launch_profile_context = _import_launch_profile_context()
     with sync_playwright() as playwright:
-        context = playwright.chromium.launch_persistent_context(
-            user_data_dir=str(profile_dir),
-            headless=headless,
+        context = launch_profile_context(
+            playwright, profile_dir, headless=headless
         )
         try:
             page = context.pages[0] if context.pages else context.new_page()
