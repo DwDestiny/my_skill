@@ -1277,7 +1277,7 @@ def build_dataset(root: Path, *, account_name: str = "我的公众号", since: s
         "action_plan": action_plan_v2,
     }
     dataset["account"] = {
-        "name": account_raw.get("name") or account_name,
+        "name": account_raw.get("nick_name") or account_raw.get("name") or account_name,
         "cumulate_user": audience_raw.get("cumulate_user"),
         "avatar_local": account_raw.get("avatar_local"),
         "head_img": account_raw.get("head_img"),

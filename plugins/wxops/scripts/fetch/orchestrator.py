@@ -1,6 +1,6 @@
 # GEB-L3
 # Input: workspace + Chromium profile_dir（+ headless）；持久化上下文打开登录页
-# Output: 串行发布列表/账号/粉丝/趋势抓取，接口间 3~8s sleep；成功 status=ok，失败立即 failed 不重试
+# Output: 串行发布列表/账号/粉丝/趋势抓取，接口间 3~8s sleep；成功 status=ok（含 account 原样返回值），失败立即 failed 不重试；对三 fetcher 做结构性返回值断言
 # Pos: plugins/wxops/scripts/fetch/orchestrator.py
 """Orchestrator: coordinates the 4 interfaces with anti-detection sleeps.
 
@@ -9,11 +9,11 @@ Flow:
   2. open_logged_in_page -> (page, token)
   3. scrape_publish_records + write_export
   4. sleep(3~8)
-  5. fetch_account
+  5. fetch_account（断言 dict 且 nick_name 非空，结果带入返回 account）
   6. sleep
-  7. fetch_audience
+  7. fetch_audience（仅断言 dict；available=false 是合法输出）
   8. sleep
-  9. fetch_content_trend
+  9. fetch_content_trend（仅断言 dict）
   Any failure (login or base_resp.ret !=0 ) -> immediate {"status":"failed", ...} no retry/continue.
 """
 from __future__ import annotations
@@ -133,22 +133,43 @@ def run(workspace: Path | str, profile_dir: Path | str, headless: bool = True) -
             # Anti-detect sleeps between interfaces
             time.sleep(random.uniform(3, 8))
 
-            # 2. 账号信息
-            fetch_account(page, workspace)
+            # 2. 账号信息（结构性校验；业务 fail-fast 在 fetch_account 内）
+            account_result = fetch_account(page, workspace)
+            if not isinstance(account_result, dict):
+                raise RuntimeError(
+                    "account_fetch_failed: fetch_account 返回值不是 dict"
+                    f"（实际 {type(account_result).__name__}）"
+                )
+            _nick = account_result.get("nick_name")
+            if not isinstance(_nick, str) or not _nick.strip():
+                raise RuntimeError(
+                    "account_fetch_failed: fetch_account 返回的 nick_name 为空"
+                )
             time.sleep(random.uniform(3, 8))
 
-            # 3. 粉丝画像
-            fetch_audience(page, workspace)
+            # 3. 粉丝画像（仅断言 dict；available=false 是正常合法输出，禁止当失败）
+            audience_result = fetch_audience(page, workspace)
+            if not isinstance(audience_result, dict):
+                raise RuntimeError(
+                    "audience_fetch_failed: fetch_audience 返回值不是 dict"
+                    f"（实际 {type(audience_result).__name__}）"
+                )
             time.sleep(random.uniform(3, 8))
 
-            # 4. 内容趋势
-            fetch_content_trend(page, workspace)
+            # 4. 内容趋势（仅断言 dict；业务 ret 校验在 fetcher 内）
+            trend_result = fetch_content_trend(page, workspace)
+            if not isinstance(trend_result, dict):
+                raise RuntimeError(
+                    "trend_fetch_failed: fetch_content_trend 返回值不是 dict"
+                    f"（实际 {type(trend_result).__name__}）"
+                )
 
             return {
                 "status": "ok",
                 "raw_dir": str(raw_dir),
                 "publish_export": str(publish_export),
                 "captured_at": captured_at,
+                "account": account_result,
             }
         except Exception as exc:
             msg = str(exc)
