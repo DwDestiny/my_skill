@@ -1,0 +1,18 @@
+{
+  "name": "ui-delivery",
+  "version": "0.1.0",
+  "description": "从产品页面目标到逐屏设计、实现与实机验收的八阶段 UI 交付工作流。",
+  "author": {
+    "name": "DwDestiny"
+  },
+  "skills": "./skills/",
+  "repository": "https://github.com/DwDestiny/my_skill",
+  "license": "MIT",
+  "keywords": [
+    "ui",
+    "ux",
+    "design-system",
+    "handoff",
+    "visual-qa"
+  ]
+}

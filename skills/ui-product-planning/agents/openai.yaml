@@ -1,0 +1,6 @@
+interface:
+  display_name: "UI 产品规划"
+  short_description: "将 UI 目标整理成可验证范围、页面清单和关键状态"
+  default_prompt: "Use $ui-product-planning to create a product brief and page inventory for this interface request."
+policy:
+  allow_implicit_invocation: true

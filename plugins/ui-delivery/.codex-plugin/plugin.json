@@ -1,0 +1,33 @@
+{
+  "name": "ui-delivery",
+  "version": "0.1.0",
+  "description": "从产品页面目标到逐屏设计、实现与实机验收的八阶段 UI 交付工作流。",
+  "author": {
+    "name": "DwDestiny"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "UI Delivery · UI 全流程交付",
+    "shortDescription": "八个独立阶段，用统一产物和验收契约连接产品、设计与实现。",
+    "longDescription": "规划页面目标与用户任务，设计信息架构和状态，探索视觉方向，建立设计系统，交付逐屏高保真、动效规格、前端实现和实机验收证据。包含总调度 Skill 与本地契约校验工具。",
+    "developerName": "DwDestiny",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "使用 $ui-delivery，为当前产品建立从页面目标到实机验收的完整 UI 交付计划。",
+      "使用 $ui-visual-qa，按页面、状态和屏幕尺寸检查实际界面并记录证据。"
+    ]
+  },
+  "repository": "https://github.com/DwDestiny/my_skill",
+  "license": "MIT",
+  "keywords": [
+    "ui",
+    "ux",
+    "design-system",
+    "handoff",
+    "visual-qa"
+  ]
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "UI 交付总调度"
+  short_description: "串联 UI 规划、设计、实现与真实运行界面验收工作流"
+  default_prompt: "Use $ui-delivery to route this interface task through the needed UI stages and track evidence-based completion."
+policy:
+  allow_implicit_invocation: true

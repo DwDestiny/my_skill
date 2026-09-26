@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "stage": "product-planning",
+  "status": "ready",
+  "stage_sha256": "0349a60f666bf2fa4b3e41e69d3125f604cdc94361b34a33234fafe712a4b31f",
+  "artifacts": {
+    "page-inventory.json": "0c28b1a933753ae2879ad9a3b4adb0f5d6b2ab1c109fbfdb8f5bc20a77fb87b5",
+    "product-brief.md": "d6cb20bf0acd7fd16e52335314b9e5981fbf63a5b3180fe1e7c6cfcdced6d09c"
+  },
+  "upstream": {
+    "delivery.json": "af78a3af7286b09bcf762ce0619a87fb2b6f6ce182178e5579d4cfc30b6f02ac"
+  }
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "UI 设计系统"
+  short_description: "将获授权的视觉方向整理成令牌与复用组件清单和状态规则"
+  default_prompt: "Use $ui-design-system to define interface tokens and component inventory from the authorized direction."
+policy:
+  allow_implicit_invocation: true

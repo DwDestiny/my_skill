@@ -17,6 +17,7 @@
 | Plugin | 路径 | 状态 | 适用场景 |
 |---|---|---|---|
 | wxops | `plugins/wxops/` | v0.6.0 · 可 plugin 安装 | 公众号**多账号编辑部**：账号 / 数据分析 / 选题 / 写作 / 配图 / 发布（草稿箱止步）/ 复盘 八个工位全环节（详见该目录 [`README.md`](plugins/wxops/README.md)） |
+| ui-delivery | `plugins/ui-delivery/` | v0.1.0 · 可构建便携包 | 总调度及八个独立阶段 Skill，覆盖 UI 产品规划、交互、视觉、设计系统、高保真原型、动效、前端实现与真实视觉验收 |
 
 ## Skill 目录
 
@@ -26,6 +27,15 @@
 | visual-ppt-deck-builder | `skills/visual-ppt-deck-builder/` | 已入库 | 从主题、大纲和风格样张出发，生成高视觉质量且可编辑的 PPTX |
 | geb-project-doc-system | `skills/geb-project-doc-system/` | v0.2 | 为大中型代码仓库建立 L1/L2/L3 AI 项目文档体系，减少 Agent 盲读和上下文浪费 |
 | grok-cli | `skills/grok-cli/` | 已入库 · 可 plugin 安装 | 把 xAI 官方 Grok Build CLI 当外部子智能体用：headless 调用范式、`--json-schema` 结构化输出、模型 ID 与 reasoning-effort 的真实可用范围、静默 fallback 等实测坑（详见该目录 `README.md`） |
+| ui-delivery | `skills/ui-delivery/` | v0.1.0 · 插件总调度 | 选择独立 UI 阶段或串联完整交付，追踪交接、阻塞和验收证据 |
+| ui-product-planning | `skills/ui-product-planning/` | v0.1.0 · UI 交付套件 | 将 UI 目标整理成可验证的产品范围和页面清单 |
+| ui-ux-architecture | `skills/ui-ux-architecture/` | v0.1.0 · UI 交付套件 | 梳理页面结构、交互路径、权限和界面状态 |
+| ui-visual-direction | `skills/ui-visual-direction/` | v0.1.0 · UI 交付套件 | 比较视觉方向并记录授权选择，需要图片探索时交付真实图片 |
+| ui-design-system | `skills/ui-design-system/` | v0.1.0 · UI 交付套件 | 整理视觉令牌、组件语义与使用规则 |
+| ui-high-fidelity | `skills/ui-high-fidelity/` | v0.1.0 · UI 交付套件 | 编制逐屏高保真规格和可实际点击走查的原型 |
+| ui-motion-design | `skills/ui-motion-design/` | v0.1.0 · UI 交付套件 | 设计有目的、可降级并照顾 reduced-motion 的动效 |
+| ui-frontend-implementation | `skills/ui-frontend-implementation/` | v0.1.0 · UI 交付套件 | 按确认的页面行为和设计资产实现可运行前端 |
+| ui-visual-qa | `skills/ui-visual-qa/` | v0.1.0 · UI 交付套件 | 检查真实运行页面、状态与视口并记录证据和结论 |
 
 ## 重点：GEB Project Doc System
 
@@ -178,6 +188,7 @@ plugins/
     scripts/                     # Python 引擎(cli/fetch/analyze/publish)
     niches/                      # 赛道数据包(知识层)
     templates/ dashboard/ tests/ fixtures/ references/
+  ui-delivery/                   # UI Delivery 便携插件包配方（Skills 真源在 skills/）
 skills/
   product-expert/
   visual-ppt-deck-builder/
@@ -192,12 +203,22 @@ skills/
     README.md                    # 手册门面 + 前置条件 + 最小可跑示例
     agents/openai.yaml
     references/cookbook.md       # 进阶配方与排障速查
+  ui-delivery/                   # 总调度与交接参考
+  ui-product-planning/           # 阶段 01
+  ui-ux-architecture/            # 阶段 02
+  ui-visual-direction/           # 阶段 03
+  ui-design-system/              # 阶段 04
+  ui-high-fidelity/              # 阶段 05
+  ui-motion-design/              # 阶段 06
+  ui-frontend-implementation/    # 阶段 07
+  ui-visual-qa/                  # 阶段 08
 packages/
   create-wechat-ops-skill/       # npx 一键安装包(create-* 约定)
 docs/
   repository-architecture.md
   skill-intake-checklist.md
   wechat-content-ops-map.md  # 公众号运营主题的唯一索引页
+  ui-delivery-map.md         # UI 交付 Skill 套件与插件入口
   assets/
 scripts/
 tests/
@@ -209,6 +230,7 @@ templates/
 当前已有索引：
 
 - [`docs/wechat-content-ops-map.md`](docs/wechat-content-ops-map.md) — 公众号运营主题的唯一入口，串联 skill 本体、npm 分发包、付费系列大纲、外部 wiki 概念页与治理 issue
+- [`docs/ui-delivery-map.md`](docs/ui-delivery-map.md) — UI Delivery 总调度、八阶段 Skill、交接契约、来源与插件构建入口
 
 接到公众号相关任务时，先读该索引页，再展开具体文件；新增公众号相关资产时须回填本页。
 
@@ -249,6 +271,7 @@ Instead of growing one giant global prompt, each workflow becomes a focused Skil
 | Plugin | Path | Status | Use case |
 |---|---|---|---|
 | wxops | `plugins/wxops/` | v0.6.0 · plugin | WeChat Official Account **multi-account editorial desk**: accounts, analytics, topic selection, writing, illustration, publishing (stops at the draft box), and post-publish review — eight stations covering the full pipeline |
+| ui-delivery | `plugins/ui-delivery/` | v0.1.0 · portable package | Dispatcher and eight independent UI Skills for product planning, UX, visual direction, design systems, clickable prototypes, motion, frontend implementation, and visual QA |
 
 ## Skills
 
@@ -258,6 +281,15 @@ Instead of growing one giant global prompt, each workflow becomes a focused Skil
 | visual-ppt-deck-builder | `skills/visual-ppt-deck-builder/` | Available | Build high-quality editable PPTX decks from a topic, outline, and visual direction |
 | geb-project-doc-system | `skills/geb-project-doc-system/` | v0.2 | Maintain L1/L2/L3 AI-facing project documentation for medium and large code repositories |
 | grok-cli | `skills/grok-cli/` | Available · plugin | Drive the official xAI Grok Build CLI as an external sub-agent: headless invocation, `--json-schema` structured output, which model IDs and reasoning-effort levels actually work, silent model fallback, cost and permission control |
+| ui-delivery | `skills/ui-delivery/` | v0.1.0 · plugin dispatcher | Route UI work to an independent stage or coordinate the full planning-to-visual-QA workflow |
+| ui-product-planning | `skills/ui-product-planning/` | v0.1.0 · UI Delivery suite | Turn UI goals into a verifiable scope and page inventory |
+| ui-ux-architecture | `skills/ui-ux-architecture/` | v0.1.0 · UI Delivery suite | Define page structure, interaction paths, permissions, and states |
+| ui-visual-direction | `skills/ui-visual-direction/` | v0.1.0 · UI Delivery suite | Compare visual directions and record an authorized choice |
+| ui-design-system | `skills/ui-design-system/` | v0.1.0 · UI Delivery suite | Define reusable visual tokens, component semantics, and usage rules |
+| ui-high-fidelity | `skills/ui-high-fidelity/` | v0.1.0 · UI Delivery suite | Produce screen specs and a clickable prototype for real walkthroughs |
+| ui-motion-design | `skills/ui-motion-design/` | v0.1.0 · UI Delivery suite | Specify purposeful motion and reduced-motion behavior |
+| ui-frontend-implementation | `skills/ui-frontend-implementation/` | v0.1.0 · UI Delivery suite | Implement a runnable frontend from approved behavior and design assets |
+| ui-visual-qa | `skills/ui-visual-qa/` | v0.1.0 · UI Delivery suite | Inspect running pages and record viewport/state evidence and verdicts |
 
 ## Topic Indexes
 
@@ -266,6 +298,7 @@ Beyond repository standards, `docs/` also serves as a **topic index layer**. Cro
 Current indexes:
 
 - [`docs/wechat-content-ops-map.md`](docs/wechat-content-ops-map.md) — sole entry point for WeChat Official Account ops, linking the skill, npm package, paid series outline, external wiki concept pages, and governance issues
+- [`docs/ui-delivery-map.md`](docs/ui-delivery-map.md) — entry point for the UI Delivery dispatcher, eight stage Skills, handoff contract, sources, and portable plugin build
 
 For WeChat-related tasks, read this index first, then open the concrete files it points to. When adding WeChat-related assets, update the index page.
 

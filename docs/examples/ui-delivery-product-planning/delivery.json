@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "project": {
+    "id": "community-library-borrowing",
+    "name": "社区图书馆公开借阅入口（合成案例）",
+    "revision": "synthetic-brief-r1"
+  },
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "id": "mobile",
+      "width": 375,
+      "height": 844
+    }
+  ],
+  "pages": [
+    {
+      "id": "borrow",
+      "route": "/borrow",
+      "screens": [
+        {
+          "id": "borrow-entry",
+          "states": [
+            {
+              "id": "borrow-default",
+              "kind": "default"
+            },
+            {
+              "id": "borrow-query-loading",
+              "kind": "loading"
+            },
+            {
+              "id": "borrow-reservation-submitting",
+              "kind": "loading"
+            },
+            {
+              "id": "borrow-no-available-match",
+              "kind": "empty"
+            },
+            {
+              "id": "borrow-query-error",
+              "kind": "error"
+            },
+            {
+              "id": "borrow-reservation-error",
+              "kind": "error"
+            },
+            {
+              "id": "borrow-access-denied",
+              "kind": "permission_denied"
+            },
+            {
+              "id": "borrow-results-ready",
+              "kind": "success"
+            },
+            {
+              "id": "borrow-reservation-confirmed",
+              "kind": "success"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

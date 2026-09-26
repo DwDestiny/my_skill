@@ -1,0 +1,6 @@
+interface:
+  display_name: "UI 视觉方向"
+  short_description: "探索多种 UI 视觉方案并记录用户授权的正式选择依据"
+  default_prompt: "Use $ui-visual-direction to create visual direction candidates and record the authorized choice."
+policy:
+  allow_implicit_invocation: true

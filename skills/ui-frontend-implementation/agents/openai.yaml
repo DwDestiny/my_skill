@@ -1,0 +1,6 @@
+interface:
+  display_name: "UI 前端实现"
+  short_description: "依据确认的页面行为与设计资产实现可运行的前端界面流程"
+  default_prompt: "Use $ui-frontend-implementation to implement the approved interface and report observable behavior."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,6 @@
+interface:
+  display_name: "UI 视觉验收"
+  short_description: "检查真实页面的视觉、交互状态与屏幕尺寸并生成验收记录"
+  default_prompt: "Use $ui-visual-qa to inspect running pages and report an evidence-based UI verdict."
+policy:
+  allow_implicit_invocation: true

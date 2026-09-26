@@ -1,0 +1,6 @@
+interface:
+  display_name: "UI 动效设计"
+  short_description: "为已确定的界面设计可理解且能降级的动效反馈与使用规则"
+  default_prompt: "Use $ui-motion-design to specify purposeful interface motion and reduced-motion behavior."
+policy:
+  allow_implicit_invocation: true

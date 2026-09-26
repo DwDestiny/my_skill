@@ -1,0 +1,6 @@
+interface:
+  display_name: "UI/UX 架构"
+  short_description: "梳理页面结构、交互路径、权限状态与低保真线框行为约定"
+  default_prompt: "Use $ui-ux-architecture to map interaction paths, states, and wireframes for this interface."
+policy:
+  allow_implicit_invocation: true

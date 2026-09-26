@@ -1,0 +1,14 @@
+{
+  "zip": "/Users/dw/Desktop/my_skill/dist/ui-delivery-0.1.0/ui-delivery-0.1.0.zip",
+  "sha256": "8c1294703dbf1311a4ec8f920ae2ca7d47ea8bd38e322fe959cbdc9617a40131",
+  "size_bytes": 62144,
+  "file_count_including_lock": 46,
+  "skills": 9,
+  "hashes": "passed",
+  "schema": "passed",
+  "plugin_validator": "Plugin validation passed: /private/var/folders/p6/8h0prdp534q48gqc4zttx7p00000gn/T/ui-delivery-final-iep8_4da/extract/ui-delivery",
+  "extracted_init": "passed: 8 draft stages",
+  "draft_validation": "correctly rejected",
+  "rebuild": "byte-identical",
+  "verification_workspace": "/var/folders/p6/8h0prdp534q48gqc4zttx7p00000gn/T/ui-delivery-final-iep8_4da"
+}

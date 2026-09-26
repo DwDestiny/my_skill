@@ -1,0 +1,66 @@
+{
+  "pages": [
+    {
+      "id": "borrow",
+      "route": "/borrow",
+      "entry": "公开路由 /borrow；站内链接入口未提供",
+      "purpose": "供社区读者查询可借图书并提交预约",
+      "primary_user": "reader",
+      "tasks": [
+        "查询可借图书",
+        "提交图书预约",
+        "查看表示提交成功的预约确认回执"
+      ],
+      "screen_ids": [
+        "borrow-entry"
+      ],
+      "states": [
+        {
+          "id": "borrow-default",
+          "kind": "default",
+          "summary": "公开借阅入口待读者查询"
+        },
+        {
+          "id": "borrow-query-loading",
+          "kind": "loading",
+          "summary": "查询现有库存系统中的可借图书"
+        },
+        {
+          "id": "borrow-reservation-submitting",
+          "kind": "loading",
+          "summary": "正在提交读者的预约请求"
+        },
+        {
+          "id": "borrow-no-available-match",
+          "kind": "empty",
+          "summary": "查询没有返回符合条件的可借图书；该状态语义仍待产品规则确认"
+        },
+        {
+          "id": "borrow-query-error",
+          "kind": "error",
+          "summary": "可借图书查询失败；反馈与恢复规则待确认"
+        },
+        {
+          "id": "borrow-reservation-error",
+          "kind": "error",
+          "summary": "预约提交失败；反馈与重试规则待确认"
+        },
+        {
+          "id": "borrow-access-denied",
+          "kind": "permission_denied",
+          "summary": "由现有登录/权限系统决定；具体触发条件和路径未知"
+        },
+        {
+          "id": "borrow-results-ready",
+          "kind": "success",
+          "summary": "现有库存系统成功返回查询结果"
+        },
+        {
+          "id": "borrow-reservation-confirmed",
+          "kind": "success",
+          "summary": "读者收到预约确认回执，表示预约提交成功"
+        }
+      ]
+    }
+  ]
+}

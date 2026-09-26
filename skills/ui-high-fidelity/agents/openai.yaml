@@ -1,0 +1,6 @@
+interface:
+  display_name: "UI 高保真设计"
+  short_description: "按交互规则和设计系统制作高保真页面与可点原型走查路径"
+  default_prompt: "Use $ui-high-fidelity to create high-fidelity screen specs and a clickable prototype."
+policy:
+  allow_implicit_invocation: true

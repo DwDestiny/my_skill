@@ -1,0 +1,14 @@
+{
+  "stage": "product-planning",
+  "status": "ready",
+  "reason": "",
+  "review": {
+    "verdict": "approved",
+    "by": "Codex delegated reviewer (root task instruction)",
+    "note": "D2 规划内容复核：补齐模块到用户任务映射与 CTA 优先级矩阵；新增内容均为规划建议，资格/登录规则沿用现有系统且待确认，回执仅表示提交成功；不代表真实产品验收。"
+  },
+  "artifacts": [
+    "product-brief.md",
+    "page-inventory.json"
+  ]
+}
