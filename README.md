@@ -17,7 +17,7 @@
 | Plugin | 路径 | 状态 | 适用场景 |
 |---|---|---|---|
 | wxops | `plugins/wxops/` | v0.6.0 · 可 plugin 安装 | 公众号**多账号编辑部**：账号 / 数据分析 / 选题 / 写作 / 配图 / 发布（草稿箱止步）/ 复盘 八个工位全环节（详见该目录 [`README.md`](plugins/wxops/README.md)） |
-| ui-delivery | `plugins/ui-delivery/` | v0.1.0 · 可构建便携包 | 总调度及八个独立阶段 Skill，覆盖 UI 产品规划、交互、视觉、设计系统、高保真原型、动效、前端实现与真实视觉验收 |
+| ui-delivery | `plugins/ui-delivery/` | v0.2.0 · 便携包已验证 | 总调度及八个独立阶段 Skill，贯通旅程、页面/状态/必需元素、视觉基线、实现映射与真实浏览器验收 |
 
 ## Skill 目录
 
@@ -27,15 +27,15 @@
 | visual-ppt-deck-builder | `skills/visual-ppt-deck-builder/` | 已入库 | 从主题、大纲和风格样张出发，生成高视觉质量且可编辑的 PPTX |
 | geb-project-doc-system | `skills/geb-project-doc-system/` | v0.2 | 为大中型代码仓库建立 L1/L2/L3 AI 项目文档体系，减少 Agent 盲读和上下文浪费 |
 | grok-cli | `skills/grok-cli/` | 已入库 · 可 plugin 安装 | 把 xAI 官方 Grok Build CLI 当外部子智能体用：headless 调用范式、`--json-schema` 结构化输出、模型 ID 与 reasoning-effort 的真实可用范围、静默 fallback 等实测坑（详见该目录 `README.md`） |
-| ui-delivery | `skills/ui-delivery/` | v0.1.0 · 插件总调度 | 选择独立 UI 阶段或串联完整交付，追踪交接、阻塞和验收证据 |
-| ui-product-planning | `skills/ui-product-planning/` | v0.1.0 · UI 交付套件 | 将 UI 目标整理成可验证的产品范围和页面清单 |
-| ui-ux-architecture | `skills/ui-ux-architecture/` | v0.1.0 · UI 交付套件 | 梳理页面结构、交互路径、权限和界面状态 |
-| ui-visual-direction | `skills/ui-visual-direction/` | v0.1.0 · UI 交付套件 | 比较视觉方向并记录授权选择，需要图片探索时交付真实图片 |
-| ui-design-system | `skills/ui-design-system/` | v0.1.0 · UI 交付套件 | 整理视觉令牌、组件语义与使用规则 |
-| ui-high-fidelity | `skills/ui-high-fidelity/` | v0.1.0 · UI 交付套件 | 编制逐屏高保真规格和可实际点击走查的原型 |
-| ui-motion-design | `skills/ui-motion-design/` | v0.1.0 · UI 交付套件 | 设计有目的、可降级并照顾 reduced-motion 的动效 |
-| ui-frontend-implementation | `skills/ui-frontend-implementation/` | v0.1.0 · UI 交付套件 | 按确认的页面行为和设计资产实现可运行前端 |
-| ui-visual-qa | `skills/ui-visual-qa/` | v0.1.0 · UI 交付套件 | 检查真实运行页面、状态与视口并记录证据和结论 |
+| ui-delivery | `skills/ui-delivery/` | v0.2.0 · 插件总调度 | 选择独立 UI 阶段或串联完整交付，追踪旅程覆盖、元素映射、阻塞和真实验收证据 |
+| ui-product-planning | `skills/ui-product-planning/` | v0.2.0 · UI 交付套件 | 将 UI 目标整理成有序用户旅程、完整页面范围和可追溯关键元素 |
+| ui-ux-architecture | `skills/ui-ux-architecture/` | v0.2.0 · UI 交付套件 | 把旅程映射到页面、screen、state、交互和必需元素 |
+| ui-visual-direction | `skills/ui-visual-direction/` | v0.2.0 · UI 交付套件 | 比较视觉方向并记录授权选择，需要图片探索时交付真实图片 |
+| ui-design-system | `skills/ui-design-system/` | v0.2.0 · UI 交付套件 | 整理可核对的视觉令牌、组件母版、版本和使用规则 |
+| ui-high-fidelity | `skills/ui-high-fidelity/` | v0.2.0 · UI 交付套件 | 建立每页/视口完整视觉基线；可点击原型为独立可选产物 |
+| ui-motion-design | `skills/ui-motion-design/` | v0.2.0 · UI 交付套件 | 设计有目的、可降级并照顾 reduced-motion 的动效 |
+| ui-frontend-implementation | `skills/ui-frontend-implementation/` | v0.2.0 · UI 交付套件 | 将必需元素和组件映射到可核对的页面实现与运行版本 |
+| ui-visual-qa | `skills/ui-visual-qa/` | v0.2.0 · UI 交付套件 | 在真实浏览器逐步点击旅程，对照视觉基线并记录页面证据和结论 |
 
 ## 重点：GEB Project Doc System
 
@@ -271,7 +271,7 @@ Instead of growing one giant global prompt, each workflow becomes a focused Skil
 | Plugin | Path | Status | Use case |
 |---|---|---|---|
 | wxops | `plugins/wxops/` | v0.6.0 · plugin | WeChat Official Account **multi-account editorial desk**: accounts, analytics, topic selection, writing, illustration, publishing (stops at the draft box), and post-publish review — eight stations covering the full pipeline |
-| ui-delivery | `plugins/ui-delivery/` | v0.1.0 · portable package | Dispatcher and eight independent UI Skills for product planning, UX, visual direction, design systems, clickable prototypes, motion, frontend implementation, and visual QA |
+| ui-delivery | `plugins/ui-delivery/` | v0.2.0 · portable package verified | Dispatcher and eight independent UI Skills linking journey coverage, required elements, visual baselines, implementation mapping, and real-browser QA |
 
 ## Skills
 
@@ -281,15 +281,15 @@ Instead of growing one giant global prompt, each workflow becomes a focused Skil
 | visual-ppt-deck-builder | `skills/visual-ppt-deck-builder/` | Available | Build high-quality editable PPTX decks from a topic, outline, and visual direction |
 | geb-project-doc-system | `skills/geb-project-doc-system/` | v0.2 | Maintain L1/L2/L3 AI-facing project documentation for medium and large code repositories |
 | grok-cli | `skills/grok-cli/` | Available · plugin | Drive the official xAI Grok Build CLI as an external sub-agent: headless invocation, `--json-schema` structured output, which model IDs and reasoning-effort levels actually work, silent model fallback, cost and permission control |
-| ui-delivery | `skills/ui-delivery/` | v0.1.0 · plugin dispatcher | Route UI work to an independent stage or coordinate the full planning-to-visual-QA workflow |
-| ui-product-planning | `skills/ui-product-planning/` | v0.1.0 · UI Delivery suite | Turn UI goals into a verifiable scope and page inventory |
-| ui-ux-architecture | `skills/ui-ux-architecture/` | v0.1.0 · UI Delivery suite | Define page structure, interaction paths, permissions, and states |
-| ui-visual-direction | `skills/ui-visual-direction/` | v0.1.0 · UI Delivery suite | Compare visual directions and record an authorized choice |
-| ui-design-system | `skills/ui-design-system/` | v0.1.0 · UI Delivery suite | Define reusable visual tokens, component semantics, and usage rules |
-| ui-high-fidelity | `skills/ui-high-fidelity/` | v0.1.0 · UI Delivery suite | Produce screen specs and a clickable prototype for real walkthroughs |
-| ui-motion-design | `skills/ui-motion-design/` | v0.1.0 · UI Delivery suite | Specify purposeful motion and reduced-motion behavior |
-| ui-frontend-implementation | `skills/ui-frontend-implementation/` | v0.1.0 · UI Delivery suite | Implement a runnable frontend from approved behavior and design assets |
-| ui-visual-qa | `skills/ui-visual-qa/` | v0.1.0 · UI Delivery suite | Inspect running pages and record viewport/state evidence and verdicts |
+| ui-delivery | `skills/ui-delivery/` | v0.2.0 · plugin dispatcher | Route UI work or coordinate journeys, page/state/element traceability, implementation, and real-browser acceptance |
+| ui-product-planning | `skills/ui-product-planning/` | v0.2.0 · UI Delivery suite | Turn UI goals into ordered user journeys, complete page scope, and traceable required elements |
+| ui-ux-architecture | `skills/ui-ux-architecture/` | v0.2.0 · UI Delivery suite | Map journeys to pages, screens, states, interactions, and required elements |
+| ui-visual-direction | `skills/ui-visual-direction/` | v0.2.0 · UI Delivery suite | Compare visual directions and record an authorized choice |
+| ui-design-system | `skills/ui-design-system/` | v0.2.0 · UI Delivery suite | Define verifiable visual tokens, component masters, revisions, and usage rules |
+| ui-high-fidelity | `skills/ui-high-fidelity/` | v0.2.0 · UI Delivery suite | Produce full visual baselines per page and viewport; prototypes are optional and separate |
+| ui-motion-design | `skills/ui-motion-design/` | v0.2.0 · UI Delivery suite | Specify purposeful motion and reduced-motion behavior |
+| ui-frontend-implementation | `skills/ui-frontend-implementation/` | v0.2.0 · UI Delivery suite | Map required elements and components to implementation files and runtime revision |
+| ui-visual-qa | `skills/ui-visual-qa/` | v0.2.0 · UI Delivery suite | Click real user journeys, compare running pages to baselines, and record evidence and verdict |
 
 ## Topic Indexes
 

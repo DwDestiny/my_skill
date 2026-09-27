@@ -6,22 +6,22 @@
 
 ## 最小输入
 
-运行中的应用或可复现启动命令、revision/构建号、目标 routes/screens、state × viewport、设计基线、交互路径以及当前可用的截图/浏览器/桌面检查能力。缺任一项时先标明验证范围。
+运行中的应用或可复现启动命令、revision/构建号、目标 routes/screens、state × viewport、实现前冻结的设计基线及版本、交互路径，以及当前可用的截图/浏览器/桌面检查能力。缺任一项时先标明验证范围。
 
 ## 工作步骤
 
-1. 核对被测工作树、进程 cwd、页面 URL 和 revision；版本不一致会使旧截图与当前实现失效，先重拍或标 blocked。
-2. 建 qa-matrix.json，覆盖相关 screen × state × viewport，至少含 desktop 与 mobile；对不适用项写出原因。
-3. 逐页实际操作并观察层级、对齐、溢出、截断、焦点、组件状态、失败反馈和视觉节奏。使用键盘完成重要路径，检查焦点可见、顺序合理；在约 200% 放大或浏览器缩放下复核长文本与表单。
+1. 核对被测工作树、进程 cwd、页面 URL、revision、视口、字体加载和浏览器/系统渲染环境；版本或环境不一致会使旧截图与当前实现不可比，先校准、重拍或标 unable_to_verify。锁定设计基线版本，严禁用当前实现截图反写基线以消除差异。
+2. 建 qa-matrix.json，覆盖完整旅程及相关 screen × state × viewport，至少含 desktop 与 mobile；对不适用项写出原因。逐条对应设计基线、必需元素、公共组件和运行截图；无基线时只能对既有行为/规格给有限结论。
+3. 逐页实际操作并观察层级、对齐、溢出、截断、焦点、组件状态、失败反馈和视觉节奏。将同 route/state/viewport 的冻结设计图与运行图并排或叠加，逐项核必需元素、文案、尺寸/间距和公共导航；对高保真阶段登记的关键测量给出实际值，按预先确认的容差判断，不只凭整体像素分数。使用键盘完成重要路径，检查焦点可见、顺序合理；在约 200% 放大或浏览器缩放下复核长文本与表单。
 4. 检查 reduced-motion 偏好下内容和操作是否仍可用；对触控目标与小屏布局按产品/项目所需基线核实。
 5. 为每个发现立刻保存邻接证据：报告同一问题段紧邻对应截图/证据链接，写明 route、viewport、state、revision、复现步骤及期望/实测。避免把一组截图堆在报告末尾却没有逐问题映射。
-6. 独立比对实现与被认可的设计方向/原型以及行为契约。严重判断须写成可证伪条件，例如“在 390px 宽的 error 状态，重试 CTA 被固定底栏遮挡；重新打开该 route/state 可复现”。
-7. 记录每条结果为 pass、fail 或 unable_to_verify；evidence.json 区分 runtime_capture、concept、mock。只有 runtime_capture 能支撑运行态结论。
-8. 写 qa-report.md、qa-matrix.json、evidence.json、verdict.json；完整串联时由独立审查人 review stage 08 并生成最终 snapshot。单阶段审查无需造全链快照。
+6. 独立比对实现与冻结设计方向/逐屏基线以及行为契约。严重判断须写成可证伪条件，例如“在 390px 宽的 error 状态，重试 CTA 被固定底栏遮挡；重新打开该 route/state 可复现”。逐段点击已登记用户旅程，确认页面、模块、CTA 和状态没有漏掉。
+7. 记录每条结果为 pass、fail 或 unable_to_verify；evidence.json 区分 runtime_capture、concept、mock。只有 runtime_capture 能支撑运行态结论。修复后在相同条件重拍、保留前后证据并关闭对应问题；公共组件变更时，依使用清单复验所有受影响页面。
+8. 写 qa-report.md、qa-matrix.json、evidence.json、verdict.json；完整串联时由独立审查人 review stage 08 并生成最终 snapshot。单阶段审查无需造全链快照。自动截图比较可辅助发现漂移，但不能靠像素分数或同一实现者自述给最终 pass。
 
 ## 产物
 
-qa-report.md 每个问题含位置/症状/复现/证据/判断；qa-matrix.json 记录覆盖项与逐项结论；evidence.json 保存证据上下文；verdict.json 记录结论人、判断依据和未决项。
+qa-report.md 每个问题含位置/症状/复现/冻结基线/运行证据/修复后重拍/判断；qa-matrix.json 记录覆盖项与逐项结论；evidence.json 保存版本与环境上下文；verdict.json 记录独立结论人、判断依据和未决项。
 
 ## 失败与回退
 
@@ -30,11 +30,14 @@ qa-report.md 每个问题含位置/症状/复现/证据/判断；qa-matrix.json 
 ## 验收
 
 - 验收人未参与本轮实现或能说明独立性；所依据的 revision 与实现报告一致。
+- 基线先于实现冻结；逐屏比对包含必需元素、公共组件、尺寸/间距和字体条件，发现的差异有修复后重拍或明确未关闭状态。
 - 关键状态、viewport 和真实操作路径可复现；键盘焦点、放大显示和 reduced-motion 有结果或明示未验证。
 - 每个 fail 有邻接的截图/证据和可证伪复现条件；未验证项不计 pass。
 - verdict 不靠通过率平均掉 blocker；契约脚本通过只代表结构有效，不能授权发布。
+- 公共组件变更的所有使用页均复验；自动像素分数和同一 agent 自述不作为唯一放行依据。
 
 ## 参考
 
 - [交接契约：证据和最终判断](../../ui-delivery/references/handoff-contract.md#阶段结构字段)
+- [视觉一致性交接](../../ui-delivery/references/visual-consistency.md)：基线、运行图、公共组件影响范围与复验闭环。
 - [来源选型：真实视觉 QA](../../ui-delivery/references/source-selection.md#八阶段选型)：自动化用于覆盖交互和截图，不能取代独立视觉判断；按环境选择可用浏览器工具。

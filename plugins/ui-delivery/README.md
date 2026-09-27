@@ -1,8 +1,8 @@
 # UI Delivery Plugin 配方
 
-**版本：** 0.1.0
+**版本：** 0.2.0
 
-这里保存便携 Plugin 的 manifests 和 README。九个 Skill 的维护真源位于源码仓库的 `skills/`；构建时复制到包内 `./skills/`，不会在本目录另存一份。
+这里保存便携 Plugin 的 manifests 和 README。九个 Skill 的维护真源位于源码仓库的 `skills/`；构建时复制到包内 `./skills/`，不会在本目录另存一份。v0.2.0 以 schema v2 创建交付；v1 仅保留 legacy 结构校验。
 
 ## 直接使用
 
@@ -17,14 +17,16 @@
 - [前端实现](./skills/ui-frontend-implementation/SKILL.md)
 - [视觉验收](./skills/ui-visual-qa/SKILL.md)
 
-如果用户要求比较多个图片视觉版本，必须交付实际可查看的图片。运行时先检查现有图像工具；不能生成或查看图片时将该阶段标为阻塞，不能拿文字清单代替。用户指定的模型或服务当前不可用时如实说明，不声称曾使用。
+完整交付以用户旅程核对范围，每个范围内页面、screen、state 和关键必需元素都可追溯。若用户要求比较多个图片视觉版本，必须交付实际可查看的图片。运行时先检查现有图像工具；不能生成或查看图片时将该阶段标为阻塞，不能拿文字清单代替。用户指定的模型或服务当前不可用时如实说明，不声称曾使用。
+
+高保真静态基线与可点击原型分开登记，原型可选。最终 QA 需要在真实运行界面逐步点击旅程，并用页面截图或 DOM 证据核对目标页面、状态和关键元素。HTTP 200、成功打开浏览器标签、契约校验和概念图均不单独证明页面已正确渲染或交互通过；每条缺陷的截图应放在对应问题附近。具体字段形状与证据条件以包内 [交接契约](./skills/ui-delivery/references/handoff-contract.md) 为准。
 
 ## 构建便携包
 
 在源码仓库根目录构建到一个尚不存在的新目录：
 
 ```bash
-python3 scripts/build_ui_delivery_plugin.py --output dist/ui-delivery-0.1.0
+python3 scripts/build_ui_delivery_plugin.py --output dist/ui-delivery-0.2.0
 ```
 
 构建器会将维护中的九个 Skill、这份 README、Plugin manifests 和许可证写入一个可移植目录，并生成 ZIP 与 SHA-256 清单。构建不会安装 Plugin，也不会修改全局设置。
@@ -33,7 +35,7 @@ python3 scripts/build_ui_delivery_plugin.py --output dist/ui-delivery-0.1.0
 
 ## 安装与权限
 
-本包尚未安装。用户可先直接让 Codex 加载包内的 `ui-delivery/skills/<skill-name>/SKILL.md`。如需登记 Plugin，可将解压根放到 Codex 支持的本地 marketplace 根目录，并按本机 Codex CLI 执行：
+便携 Plugin 包的安装状态与源码 Skill 的全局软链分开记录。v0.1.0 源码 Skills 曾完成本机全局入口软链安装；这不代表 v0.2.0 便携包已构建或安装。用户可先直接让 Codex 加载包内的 `ui-delivery/skills/<skill-name>/SKILL.md`。如需登记 Plugin，可将解压根放到 Codex 支持的本地 marketplace 根目录，并按目标主机当前 Codex CLI 执行：
 
 ```text
 codex plugin marketplace add <市场根>

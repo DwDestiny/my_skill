@@ -4,6 +4,7 @@
 # Pos: Repository-level deterministic test; fixtures are synthetic, not product acceptance evidence.
 
 import base64
+import hashlib
 import json
 import subprocess
 import sys
@@ -101,7 +102,269 @@ class DeliveryContractTest(unittest.TestCase):
             result = cli("snapshot", self.root, "--stage", STAGES[i - 1])
             self.assertEqual(result.returncode, 0, result.stderr)
 
+    def upgrade_v2_fixture(self):
+        """Upgrade synthetic v1 data to the stricter v2 shape and resnapshot."""
+        self.make_ready_fixture()
+        path = self.root / "delivery.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["schema_version"] = 2
+        data["journeys"] = [{"id": "visit-home", "steps": [{
+            "page_id": "home", "screen_id": "home-hero", "state_id": "home-hero-default", "action": "open home"
+        }]}]
+        put_json(path, data)
+        matrix_path = self.stage(2) / "state-matrix.json"
+        matrix = json.loads(matrix_path.read_text(encoding="utf-8"))
+        for row in matrix["rows"]:
+            row["required_elements"] = [{"id": "shell", "role": "navigation", "component_id": "shell"}]
+        put_json(matrix_path, matrix)
+        style = json.loads((self.stage(3) / "style-decision.json").read_text(encoding="utf-8"))
+        for option in style["options"]:
+            (self.stage(3) / option["concept_path"]).write_bytes(PNG)
+        chosen = next(x for x in style["options"] if x["id"] == style["selected_id"])
+        style_sha = hashlib.sha256((self.stage(3) / chosen["concept_path"]).read_bytes()).hexdigest()
+        put_json(self.stage(4) / "tokens.json", {"colors": {"primary": "#123456"},
+                 "typography": {"body": "16px"}, "spacing": {"base": "8px"},
+                 "layout": {"content": "1200px"}, "style_sha256": style_sha})
+        (self.stage(4) / "shell.md").write_text("# Shell component\n\nNavigation specification.\n")
+        put_json(self.stage(4) / "component-inventory.json", {"components": [{
+            "id": "shell", "revision": "r1", "master_path": "shell.md", "render_mode": "code", "used_by": ["home-hero"]
+        }]})
+        specs_path = self.stage(5) / "screen-specs.json"
+        specs = json.loads(specs_path.read_text(encoding="utf-8"))
+        for spec in specs["specs"]:
+            spec["element_ids"] = ["shell"]
+            spec["component_refs"] = [{"id": "shell", "revision": "r1"}]
+            spec["review"] = {"by": "fixture-designer", "note": "Synthetic screen review"}
+            spec["measurements"] = []
+            if spec["state_id"] == "home-hero-default":
+                spec["visual_mode"] = "full"
+                spec["asset_kind"] = "design"
+                spec["measurements"] = [{"id": "gutter", "element_id": "shell", "property": "left-gap",
+                                          "expected": 16, "unit": "px", "tolerance": 2}]
+                (self.stage(5) / spec["asset_path"]).write_bytes(PNG)
+            else:
+                spec["visual_mode"] = "delta"
+                spec["base_state_id"] = "home-hero-default"
+                spec["state_delta"] = "State-specific feedback in the same shell"
+                spec.pop("asset_path")
+                spec.pop("asset_kind")
+        put_json(specs_path, specs)
+        implementation_path = self.stage(7) / "implementation-map.json"
+        implementation = json.loads(implementation_path.read_text(encoding="utf-8"))
+        (self.stage(7) / "src").mkdir()
+        (self.stage(7) / "src/Shell.tsx").write_text("export const Shell = () => null;\n")
+        code_sha = hashlib.sha256((self.stage(7) / "src/Shell.tsx").read_bytes()).hexdigest()
+        put_json(self.stage(7) / "runtime-manifest.json", {"files": {"src/Shell.tsx": code_sha}})
+        fingerprint = hashlib.sha256((self.stage(7) / "runtime-manifest.json").read_bytes()).hexdigest()
+        implementation.update({"implemented_by": "fixture-developer", "runtime_manifest_path": "runtime-manifest.json",
+                               "runtime_fingerprint": fingerprint, "elements": [{"screen_id": "home-hero",
+                               "element_id": "shell", "code_path": "src/Shell.tsx"}],
+                               "components": [{"id": "shell", "revision": "r1"}]})
+        put_json(implementation_path, implementation)
+        evidence_path = self.stage(8) / "evidence.json"
+        evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+        for item in evidence["items"]:
+            item["source_url"] = "http://localhost:3000/"
+            item["runtime_fingerprint"] = fingerprint
+        put_json(evidence_path, evidence)
+        qa_path = self.stage(8) / "qa-matrix.json"
+        qa = json.loads(qa_path.read_text(encoding="utf-8"))
+        baseline = {spec["viewport_id"]: hashlib.sha256((self.stage(5) / spec["asset_path"]).read_bytes()).hexdigest()
+                    for spec in specs["specs"] if spec["visual_mode"] == "full"}
+        for row in qa["rows"]:
+            row["baseline_sha256"] = baseline[row["viewport_id"]]
+            row["element_checks"] = [{"element_id": "shell", "result": "pass", "evidence_id": row["evidence_ids"][0]}]
+            row["measurements"] = [{"id": "gutter", "actual": 16, "evidence_id": row["evidence_ids"][0]}]
+            row["comparison_path"] = "comparison.md"
+        (self.stage(8) / "comparison.md").write_text(
+            "# Synthetic comparison\n\nDesign baseline and runtime capture reviewed side by side.\n")
+        (self.stage(8) / "interaction.txt").write_text("Opened home and observed shell.\n")
+        qa["journey_results"] = [{"journey_id": "visit-home", "viewport_id": vp,
+                                  "result": "pass", "steps": [{"action": "open home",
+                                  "observed_result": "shell visible", "interaction_path": "interaction.txt",
+                                  "evidence_id": f"capture-default-{vp}"}]}
+                                 for vp in ("desktop", "mobile")]
+        put_json(qa_path, qa)
+        verdict_path = self.stage(8) / "verdict.json"
+        verdict = json.loads(verdict_path.read_text(encoding="utf-8"))
+        verdict.update({"reviewed_by": "fixture-reviewer", "open_blockers": []})
+        put_json(verdict_path, verdict)
+        for slug in STAGES:
+            result = cli("snapshot", self.root, "--stage", slug)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_v2_complete_synthetic_contract(self):
+        self.upgrade_v2_fixture()
+        self.assertEqual(cli("validate", self.root).returncode, 0)
+
+    def test_v2_missing_journey_page_fails(self):
+        self.upgrade_v2_fixture()
+        path = self.root / "delivery.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["journeys"] = []
+        put_json(path, data)
+        self.assertNotEqual(cli("validate", self.root).returncode, 0)
+
+    def test_v2_declared_tablet_requires_journey_result(self):
+        self.upgrade_v2_fixture()
+        delivery_path = self.root / "delivery.json"
+        delivery = json.loads(delivery_path.read_text(encoding="utf-8"))
+        delivery["viewports"].append({"id": "tablet", "width": 768, "height": 1024})
+        put_json(delivery_path, delivery)
+        for index, filename, member in (
+            (2, "state-matrix.json", "rows"),
+            (5, "screen-specs.json", "specs"),
+            (8, "evidence.json", "items"),
+            (8, "qa-matrix.json", "rows"),
+        ):
+            path = self.stage(index) / filename
+            data = json.loads(path.read_text(encoding="utf-8"))
+            clones = []
+            for item in data[member]:
+                if item["viewport_id"] != "mobile":
+                    continue
+                clone = json.loads(json.dumps(item))
+                clone["viewport_id"] = "tablet"
+                if member == "items":
+                    clone["id"] = clone["id"].replace("mobile", "tablet")
+                if member == "rows" and index == 8:
+                    clone["evidence_ids"] = [eid.replace("mobile", "tablet") for eid in clone["evidence_ids"]]
+                    for check in clone["element_checks"]:
+                        check["evidence_id"] = check["evidence_id"].replace("mobile", "tablet")
+                    for check in clone["measurements"]:
+                        check["evidence_id"] = check["evidence_id"].replace("mobile", "tablet")
+                clones.append(clone)
+            data[member].extend(clones)
+            put_json(path, data)
+        for slug in STAGES[:-1]:
+            result = cli("snapshot", self.root, "--stage", slug)
+            self.assertEqual(result.returncode, 0, result.stderr)
+        result = cli("snapshot", self.root, "--stage", "visual-qa")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("missing journey viewport", result.stderr)
+        qa_path = self.stage(8) / "qa-matrix.json"
+        qa = json.loads(qa_path.read_text(encoding="utf-8"))
+        tablet_result = json.loads(json.dumps(next(item for item in qa["journey_results"]
+                                                if item["viewport_id"] == "mobile")))
+        tablet_result["viewport_id"] = "tablet"
+        for step in tablet_result["steps"]:
+            step["evidence_id"] = step["evidence_id"].replace("mobile", "tablet")
+        qa["journey_results"].append(tablet_result)
+        put_json(qa_path, qa)
+        result = cli("snapshot", self.root, "--stage", "visual-qa")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(cli("validate", self.root).returncode, 0)
+
+    def test_v2_missing_element_and_wrong_component_version_fail(self):
+        self.upgrade_v2_fixture()
+        path = self.stage(5) / "screen-specs.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["specs"][0]["element_ids"] = []
+        put_json(path, data)
+        self.assertNotEqual(cli("snapshot", self.root, "--stage", "high-fidelity").returncode, 0)
+        data["specs"][0]["element_ids"] = ["shell"]
+        data["specs"][0]["component_refs"][0]["revision"] = "r2"
+        put_json(path, data)
+        self.assertNotEqual(cli("snapshot", self.root, "--stage", "high-fidelity").returncode, 0)
+
+    def test_v2_changed_baseline_and_self_review_fail(self):
+        self.upgrade_v2_fixture()
+        path = self.stage(8) / "qa-matrix.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["rows"][0]["baseline_sha256"] = "0" * 64
+        put_json(path, data)
+        self.assertNotEqual(cli("snapshot", self.root, "--stage", "visual-qa").returncode, 0)
+        data["rows"][0]["baseline_sha256"] = data["rows"][1]["baseline_sha256"]
+        put_json(path, data)
+        verdict_path = self.stage(8) / "verdict.json"
+        verdict = json.loads(verdict_path.read_text(encoding="utf-8"))
+        verdict["reviewed_by"] = "fixture-developer"
+        put_json(verdict_path, verdict)
+        self.assertNotEqual(cli("snapshot", self.root, "--stage", "visual-qa").returncode, 0)
+
+    def test_v2_missing_spacing_measurement_and_outside_tolerance_fail(self):
+        self.upgrade_v2_fixture()
+        path = self.stage(5) / "screen-specs.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        default = next(x for x in data["specs"] if x["state_id"] == "home-hero-default")
+        default["measurements"] = []
+        put_json(path, data)
+        result = cli("snapshot", self.root, "--stage", "high-fidelity")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("critical measurement", result.stderr)
+        default["measurements"] = [{"id": "gutter", "element_id": "shell", "property": "left-gap",
+                                    "expected": 16, "unit": "px", "tolerance": 2}]
+        put_json(path, data)
+        qa_path = self.stage(8) / "qa-matrix.json"
+        qa = json.loads(qa_path.read_text(encoding="utf-8"))
+        qa["rows"][0]["measurements"][0]["actual"] = 30
+        put_json(qa_path, qa)
+        result = cli("snapshot", self.root, "--stage", "visual-qa")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("outside tolerance", result.stderr)
+
+    def test_v2_raster_navigation_and_modified_manifest_file_fail(self):
+        self.upgrade_v2_fixture()
+        path = self.stage(4) / "component-inventory.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["components"][0]["render_mode"] = "raster"
+        put_json(path, data)
+        result = cli("snapshot", self.root, "--stage", "design-system")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("cannot be raster", result.stderr)
+        data["components"][0]["render_mode"] = "code"
+        put_json(path, data)
+        (self.stage(7) / "src/Shell.tsx").write_text("export const Shell = () => 'changed';\n")
+        result = cli("snapshot", self.root, "--stage", "frontend-implementation")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("hash mismatch", result.stderr)
+
+    def test_v2_cta_alias_cannot_bypass_interactive_component_gate(self):
+        self.upgrade_v2_fixture()
+        matrix_path = self.stage(2) / "state-matrix.json"
+        matrix = json.loads(matrix_path.read_text(encoding="utf-8"))
+        for row in matrix["rows"]:
+            row["required_elements"][0]["role"] = "cta"
+        put_json(matrix_path, matrix)
+        component_path = self.stage(4) / "component-inventory.json"
+        components = json.loads(component_path.read_text(encoding="utf-8"))
+        components["components"][0]["render_mode"] = "raster"
+        put_json(component_path, components)
+        result = cli("snapshot", self.root, "--stage", "ux-architecture")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("role must be", result.stderr)
+        for row in matrix["rows"]:
+            row["required_elements"][0]["role"] = "control"
+        put_json(matrix_path, matrix)
+        self.assertEqual(cli("snapshot", self.root, "--stage", "ux-architecture").returncode, 0)
+        self.assertEqual(cli("snapshot", self.root, "--stage", "visual-direction").returncode, 0)
+        result = cli("snapshot", self.root, "--stage", "design-system")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("cannot be raster", result.stderr)
+
+    def test_v2_missing_click_log_and_unknown_evidence_fail(self):
+        self.upgrade_v2_fixture()
+        path = self.stage(8) / "qa-matrix.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["journey_results"][0]["steps"][0]["interaction_path"] = "missing.txt"
+        put_json(path, data)
+        self.assertNotEqual(cli("snapshot", self.root, "--stage", "visual-qa").returncode, 0)
+        data["journey_results"][0]["steps"][0]["interaction_path"] = "interaction.txt"
+        data["rows"][0]["evidence_ids"].append("nonexistent")
+        put_json(path, data)
+        result = cli("snapshot", self.root, "--stage", "visual-qa")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unknown evidence", result.stderr)
+
+    def test_v2_generated_concept_requires_raster_signature(self):
+        self.upgrade_v2_fixture()
+        (self.stage(3) / "concepts/option-a.png").write_bytes(b"not an image")
+        result = cli("snapshot", self.root, "--stage", "visual-direction")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("signature", result.stderr)
+
     def test_init_is_draft_and_repeated_init_does_not_overwrite(self):
+        self.assertEqual(json.loads((self.root / "delivery.json").read_text())["schema_version"], 2)
         marker = self.root / "01-product-planning/product-brief.md"
         marker.write_text("my notes", encoding="utf-8")
         result = cli("init", self.root)
@@ -113,6 +376,7 @@ class DeliveryContractTest(unittest.TestCase):
         self.make_ready_fixture()
         result = cli("validate", self.root)
         self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("legacy structural gate only", result.stdout)
 
     def test_missing_required_file_fails(self):
         self.make_ready_fixture()
