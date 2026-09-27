@@ -17,7 +17,7 @@
 | Plugin | 路径 | 状态 | 适用场景 |
 |---|---|---|---|
 | wxops | `plugins/wxops/` | v0.6.0 · 可 plugin 安装 | 公众号**多账号编辑部**：账号 / 数据分析 / 选题 / 写作 / 配图 / 发布（草稿箱止步）/ 复盘 八个工位全环节（详见该目录 [`README.md`](plugins/wxops/README.md)） |
-| ui-delivery | `plugins/ui-delivery/` | v0.2.0 · 便携包已验证 | 总调度及八个独立阶段 Skill，贯通旅程、页面/状态/必需元素、视觉基线、实现映射与真实浏览器验收 |
+| ui-delivery | `plugins/ui-delivery/` | v0.2.0 · 便携包已验证；Plugin Creator 私有托管插件已创建 | 总调度及八个独立阶段 Skill，贯通旅程、页面/状态/必需元素、视觉基线、实现映射与真实浏览器验收 |
 
 ## Skill 目录
 
@@ -271,7 +271,7 @@ Instead of growing one giant global prompt, each workflow becomes a focused Skil
 | Plugin | Path | Status | Use case |
 |---|---|---|---|
 | wxops | `plugins/wxops/` | v0.6.0 · plugin | WeChat Official Account **multi-account editorial desk**: accounts, analytics, topic selection, writing, illustration, publishing (stops at the draft box), and post-publish review — eight stations covering the full pipeline |
-| ui-delivery | `plugins/ui-delivery/` | v0.2.0 · portable package verified | Dispatcher and eight independent UI Skills linking journey coverage, required elements, visual baselines, implementation mapping, and real-browser QA |
+| ui-delivery | `plugins/ui-delivery/` | v0.2.0 · portable package verified; private hosted plugin created through Plugin Creator | Dispatcher and eight independent UI Skills linking journey coverage, required elements, visual baselines, implementation mapping, and real-browser QA |
 
 ## Skills
 

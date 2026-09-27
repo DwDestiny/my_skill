@@ -33,6 +33,8 @@
 - 源码配方：[plugins/ui-delivery/](../plugins/ui-delivery/)，维护 manifests 和可移植包 README；Skill 真源仍在 `skills/`。所有白板、设计或原型工具均按项目选择，不是公共 Skill 的强依赖。
 - 构建：[scripts/build_ui_delivery_plugin.py](../scripts/build_ui_delivery_plugin.py)。
 - 在仓库根执行：`python3 scripts/build_ui_delivery_plugin.py --output dist/ui-delivery-0.2.0`。目标目录必须不存在。产物是插件目录、zip 和 SHA-256 清单；构建不会安装插件或修改全局设置。
+- 2026-09-27，v0.2.0 已通过 Plugin Creator 创建为私有托管插件，后端回读确认 47 个文件，包含 9 个 Skill。托管详情链接仅保留在用户会话，权限另行管理；此状态不表示插件已安装、启用或公开发布。
+- 本机 Skill 软链、仓库里的可移植包/ZIP 配方与私有托管插件是彼此独立的分发方式；修改源码后须按各自流程更新，托管版本不会自动跟随软链或重建的 ZIP。
 - 发布、全机安装和 Codex 全局设置不属于当前包的自动化动作；安装命令应在目标主机按当前 CLI 能力另行验证。
 
 ## 来源和许可
