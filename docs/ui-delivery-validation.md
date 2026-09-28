@@ -1,5 +1,11 @@
 # UI Delivery 验证记录
 
+## 当前版本 0.2.1（2026-09-28）
+
+本次将九个 Skill 的仓库维护真源迁入 `plugins/ui-delivery/skills/`，使 `plugins/ui-delivery/` 成为含 manifests、LICENSE、README 和 Skill 本体的完整插件目录；根目录 `skills/ui-*` 保留为兼容软链。便携包构建器现在从插件目录读取 Skill 与 LICENSE。此结构调整未改变 Hub 内的实体副本和既有 Hub 软链。
+
+主控验证结果：**40 项测试通过**，九个 Skill 均通过结构校验；最终 ZIP 含 **47 个文件**，官方 `validate_plugin.py` 校验通过。Plugin Creator 托管插件已更新至 v0.2.1；托管端回读确认 47 个文件、9 个 Skill、三份 manifest 版本一致、README 版本为 0.2.1，默认提示保持。本记录不表示该插件已安装或公开发布，也不构成具体产品的 UI 验收。
+
 ## 当前版本 0.2.0（2026-09-27）
 
 UI Delivery v0.2.0 的交接契约、便携包和 Hub 同步验收已完成。本节记录套件本身的验证结果；它不代表任何具体产品的页面视觉或业务交互已经通过验收。

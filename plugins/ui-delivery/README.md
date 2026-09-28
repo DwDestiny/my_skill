@@ -1,8 +1,8 @@
-# UI Delivery Plugin 配方
+# UI Delivery Plugin
 
-**版本：** 0.2.0
+**版本：** 0.2.1
 
-这里保存便携 Plugin 的 manifests 和 README。九个 Skill 的维护真源位于源码仓库的 `skills/`；构建时复制到包内 `./skills/`，不会在本目录另存一份。v0.2.0 以 schema v2 创建交付；v1 仅保留 legacy 结构校验。
+本目录是可单独浏览和下载的完整插件源码，包含 manifests、许可证、说明和九个 Skill。九个 Skill 的唯一仓库维护真源位于本目录的 `skills/`；仓库根 `skills/ui-*` 是保留既有加载路径的相对软链。v0.2.1 以 schema v2 创建交付；v1 仅保留 legacy 结构校验。
 
 ## 直接使用
 
@@ -26,16 +26,16 @@
 在源码仓库根目录构建到一个尚不存在的新目录：
 
 ```bash
-python3 scripts/build_ui_delivery_plugin.py --output dist/ui-delivery-0.2.0
+python3 scripts/build_ui_delivery_plugin.py --output dist/ui-delivery-0.2.1
 ```
 
 构建器会将维护中的九个 Skill、这份 README、Plugin manifests 和许可证写入一个可移植目录，并生成 ZIP 与 SHA-256 清单。构建不会安装 Plugin，也不会修改全局设置。
 
-在源码仓库中，Skill 维护位置是 `skills/ui-delivery/`；构建命令见仓库根的 `scripts/build_ui_delivery_plugin.py`。解压后的包内入口是 `ui-delivery/skills/ui-delivery/SKILL.md`，其余阶段同在 `ui-delivery/skills/`。包内链接以插件目录为根，不依赖源码仓库的 `docs/`。
+构建命令见仓库根的 `scripts/build_ui_delivery_plugin.py`。单独下载本目录即可取得 manifests、LICENSE、README 和 `skills/` 下的九个 Skill；构建产物内入口是 `ui-delivery/skills/ui-delivery/SKILL.md`，其余阶段同在 `ui-delivery/skills/`。包内链接以插件目录为根，不依赖源码仓库的 `docs/`。
 
 ## 安装与权限
 
-便携 Plugin 包的安装状态与源码 Skill 的全局软链分开记录。v0.1.0 源码 Skills 曾完成本机全局入口软链安装；这不代表 v0.2.0 便携包已构建或安装。用户可先直接让 Codex 加载包内的 `ui-delivery/skills/<skill-name>/SKILL.md`。如需登记 Plugin，可将解压根放到 Codex 支持的本地 marketplace 根目录，并按目标主机当前 Codex CLI 执行：
+便携 Plugin 包的安装状态与源码 Skill 的全局软链分开记录。v0.1.0 源码 Skills 曾完成本机全局入口软链安装；这不代表 v0.2.1 便携包已安装。用户可先直接让 Codex 加载包内的 `ui-delivery/skills/<skill-name>/SKILL.md`。如需登记 Plugin，可将解压根放到 Codex 支持的本地 marketplace 根目录，并按目标主机当前 Codex CLI 执行：
 
 ```text
 codex plugin marketplace add <市场根>

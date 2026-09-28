@@ -1,14 +1,14 @@
 # UI Delivery 套件索引
 
-本页是 UI Delivery 九个 Skill、阶段交接、来源说明和插件分发包的唯一仓库入口。套件版本为 **0.2.0**。v2 交接契约为新建交付的默认格式；v1 只保留旧结构的 legacy 校验，不代表通过 v2 的完整性门槛。
+本页是 UI Delivery 九个 Skill、阶段交接、来源说明和插件分发包的唯一仓库入口。套件版本为 **0.2.1**。v2 交接契约为新建交付的默认格式；v1 只保留旧结构的 legacy 校验，不代表通过 v2 的完整性门槛。
 
 ## 从哪里开始
 
-- 要完整规划、设计、实现并验收 UI：从 [ui-delivery 总调度](../skills/ui-delivery/SKILL.md) 开始。
+- 要完整规划、设计、实现并验收 UI：从 [ui-delivery 总调度](../plugins/ui-delivery/skills/ui-delivery/SKILL.md) 开始。
 - 只做一个阶段时，可直接用对应阶段 Skill；阶段 Skill 接受该阶段实际输入，不要求补齐所有上游文件。
-- 交付文件、旅程覆盖、stage 状态、review 与快照规则见 [handoff-contract.md](../skills/ui-delivery/references/handoff-contract.md)。
-- 整套页面、公共组件和图到代码的一致性规则见[视觉一致性交接](../skills/ui-delivery/references/visual-consistency.md)；本轮脱敏问题类型、证据等级与修订范围见[保真问题复核](ui-delivery-fidelity-review.md)。
-- 上游规范的选择、许可边界与引用链接见 [source-selection.md](../skills/ui-delivery/references/source-selection.md)。
+- 交付文件、旅程覆盖、stage 状态、review 与快照规则见 [handoff-contract.md](../plugins/ui-delivery/skills/ui-delivery/references/handoff-contract.md)。
+- 整套页面、公共组件和图到代码的一致性规则见[视觉一致性交接](../plugins/ui-delivery/skills/ui-delivery/references/visual-consistency.md)；本轮脱敏问题类型、证据等级与修订范围见[保真问题复核](ui-delivery-fidelity-review.md)。
+- 上游规范的选择、许可边界与引用链接见 [source-selection.md](../plugins/ui-delivery/skills/ui-delivery/references/source-selection.md)。
 - 套件的测试、最终包验收与未做事项见 [验证记录](ui-delivery-validation.md)；受限请求的实际回应见 [前向行为评估](ui-delivery-forward-eval.md)。
 - 想查看旧版阶段文件结构，可从[合成产品规划样例（v1 legacy）](examples/ui-delivery-product-planning/README.md)开始；它只展示旧结构，不是 v2 模板，也不代表真实业务产品证据。
 
@@ -16,25 +16,26 @@
 
 | 顺序 | Skill | 阶段产物 / 用途 |
 |---|---|---|
-| 调度 | [ui-delivery](../skills/ui-delivery/SKILL.md) | 选择独立阶段或完整串联，追踪交接、状态和验收 |
-| 01 | [ui-product-planning](../skills/ui-product-planning/SKILL.md) | `product-brief.md`、`page-inventory.json`；把用户任务整理为有序旅程并覆盖所有范围内页面 |
-| 02 | [ui-ux-architecture](../skills/ui-ux-architecture/SKILL.md) | `ux-map.md`、`state-matrix.json`、`wireframes.md`；把旅程逐步映射到页面、screen、state 与关键元素 |
-| 03 | [ui-visual-direction](../skills/ui-visual-direction/SKILL.md) | `direction-options.md`、`style-decision.json` 和需要时的实际图片候选 |
-| 04 | [ui-design-system](../skills/ui-design-system/SKILL.md) | `design-system.md`、`tokens.json`、`component-inventory.json` |
-| 05 | [ui-high-fidelity](../skills/ui-high-fidelity/SKILL.md) | 每页/视口的完整视觉基线与逐屏状态规格；可点击原型是独立可选产物 |
-| 06 | [ui-motion-design](../skills/ui-motion-design/SKILL.md) | `motion-spec.md`、`motion-map.json` |
-| 07 | [ui-frontend-implementation](../skills/ui-frontend-implementation/SKILL.md) | 实现报告、页面路由、screen 状态和必需元素到代码的映射 |
-| 08 | [ui-visual-qa](../skills/ui-visual-qa/SKILL.md) | 真实运行页面的逐旅程点击结果、逐状态/视口视觉比较、证据和独立 verdict |
+| 调度 | [ui-delivery](../plugins/ui-delivery/skills/ui-delivery/SKILL.md) | 选择独立阶段或完整串联，追踪交接、状态和验收 |
+| 01 | [ui-product-planning](../plugins/ui-delivery/skills/ui-product-planning/SKILL.md) | `product-brief.md`、`page-inventory.json`；把用户任务整理为有序旅程并覆盖所有范围内页面 |
+| 02 | [ui-ux-architecture](../plugins/ui-delivery/skills/ui-ux-architecture/SKILL.md) | `ux-map.md`、`state-matrix.json`、`wireframes.md`；把旅程逐步映射到页面、screen、state 与关键元素 |
+| 03 | [ui-visual-direction](../plugins/ui-delivery/skills/ui-visual-direction/SKILL.md) | `direction-options.md`、`style-decision.json` 和需要时的实际图片候选 |
+| 04 | [ui-design-system](../plugins/ui-delivery/skills/ui-design-system/SKILL.md) | `design-system.md`、`tokens.json`、`component-inventory.json` |
+| 05 | [ui-high-fidelity](../plugins/ui-delivery/skills/ui-high-fidelity/SKILL.md) | 每页/视口的完整视觉基线与逐屏状态规格；可点击原型是独立可选产物 |
+| 06 | [ui-motion-design](../plugins/ui-delivery/skills/ui-motion-design/SKILL.md) | `motion-spec.md`、`motion-map.json` |
+| 07 | [ui-frontend-implementation](../plugins/ui-delivery/skills/ui-frontend-implementation/SKILL.md) | 实现报告、页面路由、screen 状态和必需元素到代码的映射 |
+| 08 | [ui-visual-qa](../plugins/ui-delivery/skills/ui-visual-qa/SKILL.md) | 真实运行页面的逐旅程点击结果、逐状态/视口视觉比较、证据和独立 verdict |
 
 用户旅程是完整范围的主线：每个范围内页面要被旅程覆盖，旅程步骤要能追溯到 page、screen 和 state，关键元素在规划、结构设计、高保真、实现和 QA 中保持可对照。流程次序为交互早于视觉、动效在主要界面之后。静态高保真基线与可点击原型分开记录；原型可选，最终 QA 必须在真实运行页面逐步点击实际旅程。视觉 QA 要核对真实页面、代码工作树、截图基线、状态和视口；HTTP 200、打开 tab 或结构校验通过，都不代表页面渲染或交互通过。问题截图应放在报告对应问题旁。
 
 ## 插件包
 
-- 源码配方：[plugins/ui-delivery/](../plugins/ui-delivery/)，维护 manifests 和可移植包 README；Skill 真源仍在 `skills/`。所有白板、设计或原型工具均按项目选择，不是公共 Skill 的强依赖。
+- 完整插件源码：[plugins/ui-delivery/](../plugins/ui-delivery/)；目录内含 manifests、LICENSE、README 和九个 Skill，可单独浏览或下载。仓库根 `skills/ui-*` 是指向该处的兼容软链。所有白板、设计或原型工具均按项目选择，不是公共 Skill 的强依赖。
 - 构建：[scripts/build_ui_delivery_plugin.py](../scripts/build_ui_delivery_plugin.py)。
-- 在仓库根执行：`python3 scripts/build_ui_delivery_plugin.py --output dist/ui-delivery-0.2.0`。目标目录必须不存在。产物是插件目录、zip 和 SHA-256 清单；构建不会安装插件或修改全局设置。
+- 在仓库根执行：`python3 scripts/build_ui_delivery_plugin.py --output dist/ui-delivery-0.2.1`。目标目录必须不存在。产物是插件目录、zip 和 SHA-256 清单；构建不会安装插件或修改全局设置。
 - 2026-09-27，v0.2.0 已通过 Plugin Creator 创建为私有托管插件，后端回读确认 47 个文件，包含 9 个 Skill。托管详情链接仅保留在用户会话，权限另行管理；此状态不表示插件已安装、启用或公开发布。
-- 本机 Skill 软链、仓库里的可移植包/ZIP 配方与私有托管插件是彼此独立的分发方式；修改源码后须按各自流程更新，托管版本不会自动跟随软链或重建的 ZIP。
+- 2026-09-28，Plugin Creator 已成功将托管插件更新至 v0.2.1；托管端回读确认 47 个文件、9 个 Skill、三份 manifest 版本一致、README 为 0.2.1，默认提示保持。
+- 本机 Hub 软链、仓库内的完整插件源码、可移植包/ZIP 与私有托管插件是彼此独立的分发方式；修改源码后须按各自流程更新，托管版本不会自动跟随仓库变更或重建的 ZIP。
 - 发布、全机安装和 Codex 全局设置不属于当前包的自动化动作；安装命令应在目标主机按当前 CLI 能力另行验证。
 
 ## 来源和许可

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """GEB-L3
-Input: the nine maintained UI skills, plugin recipe, and repository MIT license.
+Input: the nine maintained skills inside plugins/ui-delivery and its plugin recipe.
 Output: a portable, deterministic plugin directory and ZIP with file hashes.
 Pos: UI delivery distribution builder; never installs or changes global settings.
 """
@@ -73,7 +73,7 @@ def build(source, output):
     if manifest.get("skills") != "./skills/":
         raise ValueError("recipe skills path must be ./skills/")
     files = {".codex-plugin/plugin.json": encoded(manifest),
-             "LICENSE": checked_file(source / "LICENSE", source),
+             "LICENSE": checked_file(recipe / "LICENSE", source),
              "README.md": checked_file(recipe / "README.md", source)}
     for optional in ("plugin.json", ".claude-plugin/plugin.json"):
         if (recipe / optional).exists():
@@ -83,7 +83,7 @@ def build(source, output):
                 raise ValueError(f"manifest identity mismatch: {optional}")
             files[optional] = data
     for name in SKILLS:
-        folder = source / "skills" / name
+        folder = recipe / "skills" / name
         check_source_path(folder, source)
         if folder.is_symlink() or not folder.is_dir():
             raise ValueError(f"missing regular skill folder: {name}")
