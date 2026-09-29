@@ -36,6 +36,7 @@
 | ui-motion-design | [`plugins/ui-delivery/skills/ui-motion-design/`](plugins/ui-delivery/skills/ui-motion-design/SKILL.md) | v0.2.1 · UI 交付套件；`skills/ui-motion-design/` 为兼容软链 | 设计有目的、可降级并照顾 reduced-motion 的动效 |
 | ui-frontend-implementation | [`plugins/ui-delivery/skills/ui-frontend-implementation/`](plugins/ui-delivery/skills/ui-frontend-implementation/SKILL.md) | v0.2.1 · UI 交付套件；`skills/ui-frontend-implementation/` 为兼容软链 | 将必需元素和组件映射到可核对的页面实现与运行版本 |
 | ui-visual-qa | [`plugins/ui-delivery/skills/ui-visual-qa/`](plugins/ui-delivery/skills/ui-visual-qa/SKILL.md) | v0.2.1 · UI 交付套件；`skills/ui-visual-qa/` 为兼容软链 | 在真实浏览器逐步点击旅程，对照视觉基线并记录页面证据和结论 |
+| ui-visual-walkthrough | `skills/ui-visual-walkthrough/` | 已入库 | 对真实运行站点做无基线逐屏视觉走查：双视口截图 + DOM/CSS 探针实证（容器边界/hover 死区/字号分布/截断溢出），产出每条内嵌截图的分级 issue 台账 |
 
 ## 重点：GEB Project Doc System
 
@@ -294,6 +295,7 @@ Instead of growing one giant global prompt, each workflow becomes a focused Skil
 | ui-motion-design | [`plugins/ui-delivery/skills/ui-motion-design/`](plugins/ui-delivery/skills/ui-motion-design/SKILL.md) | v0.2.1 · UI Delivery suite; `skills/ui-motion-design/` is a compatibility symlink | Specify purposeful motion and reduced-motion behavior |
 | ui-frontend-implementation | [`plugins/ui-delivery/skills/ui-frontend-implementation/`](plugins/ui-delivery/skills/ui-frontend-implementation/SKILL.md) | v0.2.1 · UI Delivery suite; `skills/ui-frontend-implementation/` is a compatibility symlink | Map required elements and components to implementation files and runtime revision |
 | ui-visual-qa | [`plugins/ui-delivery/skills/ui-visual-qa/`](plugins/ui-delivery/skills/ui-visual-qa/SKILL.md) | v0.2.1 · UI Delivery suite; `skills/ui-visual-qa/` is a compatibility symlink | Click real user journeys, compare running pages to baselines, and record evidence and verdict |
+| ui-visual-walkthrough | `skills/ui-visual-walkthrough/` | Available | Baseline-free screen-by-screen visual audit of a running site: dual-viewport screenshots plus DOM/CSS probes (container boundaries, hover dead zones, font-size census, truncation/overflow), producing a severity-graded issue ledger with inline screenshots |
 
 ## Topic Indexes
 

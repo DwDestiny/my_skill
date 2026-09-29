@@ -1,0 +1,7 @@
+interface:
+  display_name: "UI 视觉走查"
+  short_description: "对真实运行站点逐屏截图取证，产出带图的分级视觉 issue 台账；无设计基线也可用"
+  default_prompt: "Use $ui-visual-walkthrough to audit this running site screen by screen and produce a screenshot-evidenced issue list."
+
+policy:
+  allow_implicit_invocation: true
