@@ -37,6 +37,12 @@
 | ui-frontend-implementation | [`plugins/ui-delivery/skills/ui-frontend-implementation/`](plugins/ui-delivery/skills/ui-frontend-implementation/SKILL.md) | v0.2.1 · UI 交付套件；`skills/ui-frontend-implementation/` 为兼容软链 | 将必需元素和组件映射到可核对的页面实现与运行版本 |
 | ui-visual-qa | [`plugins/ui-delivery/skills/ui-visual-qa/`](plugins/ui-delivery/skills/ui-visual-qa/SKILL.md) | v0.2.1 · UI 交付套件；`skills/ui-visual-qa/` 为兼容软链 | 在真实浏览器逐步点击旅程，对照视觉基线并记录页面证据和结论 |
 | ui-visual-walkthrough | `skills/ui-visual-walkthrough/` | 已入库 | 对真实运行站点做无基线逐屏视觉走查：双视口截图 + DOM/CSS 探针实证（容器边界/hover 死区/字号分布/截断溢出），产出每条内嵌截图的分级 issue 台账 |
+| content-blueprint | `skills/content-blueprint/` | v0.1 · 配对使用 | 把资料和目标拆成讲解蓝图：受众、可测结果、内容取舍、形式选择、断言来源与可信度；产物交给 visual-motion-design（详见该目录 `README.md`） |
+| visual-motion-design | `skills/visual-motion-design/` | v0.1 · 配对使用 | 读蓝图设计并搭建 HTML 页面：令牌、图表与图示、动效引擎，按 clear / mixed / show 三档分配动效预算（详见该目录 `README.md`） |
+
+### 内容 + 视觉配对
+
+[`content-blueprint`](skills/content-blueprint/README.md) 负责“说什么、怎么讲”，输出 `blueprint.md`、证据索引和术语表。[`visual-motion-design`](skills/visual-motion-design/README.md) 读这份蓝图，负责“怎么看”，搭建 HTML 页面。两者通过 `handoff-log.md` 往来，视觉侧可退回 7 种蓝图问题。建议一起安装。
 
 ## 重点：GEB Project Doc System
 
