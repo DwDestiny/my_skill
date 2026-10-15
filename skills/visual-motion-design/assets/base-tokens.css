@@ -1,0 +1,97 @@
+/* base-tokens.css  令牌起点。名字是契约，值按设计计划逐项改写。
+   不要原样发布这些值：中性灰只为让页面能渲染。
+   结构遵循"裸 :root 浅色全集 → 系统深色重载 → 手动深色重载"三态（见 references/artifact-contract.md）。 */
+
+:root {
+  /* 色：按角色命名，不按色相。强调色只给状态与至多一处焦点。 */
+  --bg: #f6f6f4;            /* 底 */
+  --surface-1: #fbfbfa;     /* 比底高一档的面板，明度差 2 到 6 个点，不用描边分层 */
+  --surface-2: #ffffff;     /* 浮层、输入 */
+  --ink: #16181d;           /* 正文满墨色 */
+  --ink-2: #4a4f58;         /* 辅助文字，须 4.5:1 */
+  --ink-3: #6f747d;         /* 图注、占位，只用于 12px 以上且 4.5:1 可过时 */
+  --line: rgb(22 24 29 / 0.14);   /* 同一墨色的低透明度，换底色自动适配 */
+  --accent: #1f4fd8;        /* 单一强调色，占任一屏 <5% */
+  --accent-ink: #ffffff;    /* 强调色上的文字 */
+  /* 状态色固定，不随主题翻转，且必须配文字或形状 */
+  --state-good: #0c7a3e;
+  --state-warn: #9a6400;
+  --state-bad: #b3261e;
+
+  /* 字体：联网字体在前（assets/fonts-web.html），系统栈在后。离线或字体被拦截时系统栈接手。 */
+  --font-system: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", "WenQuanYi Micro Hei", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Noto Sans SC", var(--font-system);
+  --font-display: "Bricolage Grotesque", "Noto Sans SC", var(--font-system);
+  --font-serif: "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", "SimSun", Georgia, serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Noto Sans Mono CJK SC", monospace;
+
+  /* 字阶：角色绑定字号、行高、字重。同屏至多 4 个字号。 */
+  --t-display: clamp(2.5rem, 1.6rem + 3.2vw, 4.5rem);  /* 仅 mixed / show 档的舞台区 */
+  --t-h1: clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem);
+  --t-h2: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  --t-body: 1.0625rem;      /* 17px，中文正文 16 到 18px */
+  --t-small: 0.875rem;      /* 14px，图注、来源、表格副文字；不低于 12px */
+  --lh-display: 1.15;       /* 中文显示字行高不低于 1.1，不用负字距 */
+  --lh-heading: 1.3;
+  --lh-body: 1.75;          /* 中文正文 1.7 到 1.9 */
+  --measure: 40em;          /* 中文每行 32 到 40 字 */
+
+  /* 间距刻度：一套，全部元素只从这里取值 */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px;
+  --s-6: 32px; --s-7: 48px; --s-8: 64px; --s-9: 96px; --s-10: 128px;
+  --gutter: clamp(16px, 2.5vw, 32px);     /* 侧边距 16 到 32px */
+  --section: clamp(72px, 10vw, 160px);    /* 节间距明显大于节内间距 */
+
+  /* 圆角：按角色分阶，不是全站一个值 */
+  --r-control: 6px; --r-card: 10px; --r-sheet: 16px; --r-pill: 999px;
+
+  /* 动效令牌 */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.87, 0, 0.13, 1);
+  --ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
+  --t-press: 140ms; --t-hover: 180ms; --t-ui: 240ms; --t-reveal: 800ms;
+
+  color-scheme: light;
+}
+
+/* 系统深色，且页面未手动指定浅色 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171b; --surface-1: #1b1e23; --surface-2: #22262c;
+    --ink: #eceef1; --ink-2: #b4b9c2; --ink-3: #8b919b;
+    --line: rgb(236 238 241 / 0.14);
+    --accent: #7ea2ff; --accent-ink: #0b1430;
+    color-scheme: dark;
+  }
+}
+/* 手动深色 */
+:root[data-theme="dark"] {
+  --bg: #15171b; --surface-1: #1b1e23; --surface-2: #22262c;
+  --ink: #eceef1; --ink-2: #b4b9c2; --ink-3: #8b919b;
+  --line: rgb(236 238 241 / 0.14);
+  --accent: #7ea2ff; --accent-ink: #0b1430;
+  color-scheme: dark;
+}
+
+/* 基础排版（组件不得在媒体块里直接写颜色，只能引用令牌） */
+html { background: var(--bg); color: var(--ink); -webkit-text-size-adjust: none; text-size-adjust: none; }
+body {
+  margin: 0; min-height: 100dvh; font-family: var(--font-sans); font-size: var(--t-body); line-height: var(--lh-body);
+  background: var(--bg); overflow-x: clip;
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+*, *::before, *::after { box-sizing: border-box; }
+img, svg, video, canvas { display: block; max-width: 100%; height: auto; }
+h1, h2, h3 { line-height: var(--lh-heading); text-wrap: balance; margin: 0; }
+p { text-wrap: pretty; max-width: var(--measure); margin: 0; }
+.display { font-family: var(--font-display); font-size: var(--t-display); line-height: var(--lh-display); font-weight: 600; letter-spacing: 0; }
+h1 { font-size: var(--t-h1); font-weight: 600; }
+h2 { font-size: var(--t-h2); font-weight: 600; }
+small, .small, figcaption, .source { font-size: var(--t-small); color: var(--ink-2); }
+table { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+td.num, th.num { text-align: right; }
+a { color: inherit; text-decoration: underline; text-underline-offset: 0.18em; text-decoration-thickness: 0.06em; }
+.num, [data-counter] { font-variant-numeric: tabular-nums; }
+.scroll-x { overflow-x: auto; max-width: 100%; }
+.scroll-x > * { min-width: 0; }

@@ -1,0 +1,7 @@
+interface:
+  display_name: "视觉与动效设计"
+  short_description: "读内容蓝图，按档位（clear / mixed / show）设计并搭建 HTML 页面、图表与动效"
+  default_prompt: "Use $visual-motion-design to design and build an HTML page from this blueprint, choosing a gear (clear, mixed or show) and checking it with screenshots."
+
+policy:
+  allow_implicit_invocation: true
