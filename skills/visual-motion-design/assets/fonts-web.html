@@ -1,0 +1,10 @@
+<!-- 联网字体片段：放进 <head>，位于 base-tokens.css 之前。
+     正文：Noto Sans SC（简体中文，Google Fonts 按字切片，只下载页面用到的字）。
+     显示：Bricolage Grotesque（只含拉丁与数字，汉字自动落到 Noto Sans SC 粗体）。
+     display=swap：字体未到时先用系统字体，不留空白。
+     离线或被拦截时，base-tokens.css 里的系统字体栈接手，页面仍完整。
+     换字体时：改下面的 family 参数，再改 base-tokens.css 的 --font-sans / --font-display。
+     不要把 Inter、Space Grotesk 当安全默认。发布为 Artifact 时，字体样式只允许来自 Google Fonts。 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400..700&family=Bricolage+Grotesque:wght@600;700&display=swap">
