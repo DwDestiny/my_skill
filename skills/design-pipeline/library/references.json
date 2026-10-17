@@ -1,0 +1,494 @@
+{
+ "_meta": {
+  "source": "research/R2-expression.md 各卡与第 6 节",
+  "note": "verified=false 表示二手或未读到一手页面。只存网址与要点，不存站点内容。"
+ },
+ "references": [
+  {
+   "id": "ref-01",
+   "name": "Overworld Audio",
+   "url": "https://overworldaudio.com/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "webgl-scene"
+   ],
+   "what": "可探索的工作室地图（Three.js + Nuxt）",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-02",
+   "name": "Lidar Drone Scanning（Riotters）",
+   "url": "https://drone.riotters.com/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "webgl-scene"
+   ],
+   "what": "地形扫描视觉与滚动镜头",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-03",
+   "name": "Oryzo（Lusion）",
+   "url": "https://oryzo.ai",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "webgl-scene"
+   ],
+   "what": "单件物体渲染，滚动推镜头",
+   "verified": false,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-04",
+   "name": "Edolus（Yann Trevelot / Vertex3D）",
+   "url": "https://edolus.com/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "fluid-noise",
+    "cursor-magnetic"
+   ],
+   "what": "WebGL + GLSL，鼠标交互流体；多处鼠标交互效果；配色类 dark-neon，配色未核",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-05",
+   "name": "IVRESS（Utsubo）",
+   "url": "https://brand.ivress.co.jp",
+   "year": 2026,
+   "source": "other",
+   "forms": [
+    "fluid-noise"
+   ],
+   "what": "TSL 着色器，WebGPU 带 WebGL 回退",
+   "verified": false,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-06",
+   "name": "Butter（ToyFight）",
+   "url": "https://www.butter.video/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "video-bg"
+   ],
+   "what": "首页英雄区两段视频",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-07",
+   "name": "CoMinVi（HOLOGRAPHIK）",
+   "url": "https://www.cominvi.com.mx/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "video-bg",
+    "generative-data"
+   ],
+   "what": "全屏视频英雄区；含数据可视化元素",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-08",
+   "name": "Milledollars（Magnetism）",
+   "url": "https://milledollars.fr/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "video-bg"
+   ],
+   "what": "视频驱动的作品墙",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-09",
+   "name": "Glitch&Grit",
+   "url": "https://glitchandgrit.com/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "chromatic-glitch"
+   ],
+   "what": "Awwwards glitch 标签页列出，技法未核",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-10",
+   "name": "Kinoria",
+   "url": "https://kinoria.studio/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "grain"
+   ],
+   "what": "暗房、胶卷主题（颗粒本身页面未写）；配色类 paper-muted，暗房主题，配色未核",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-11",
+   "name": "Frontend Masters《Liquid Glass on the Web》",
+   "url": "https://frontendmasters.com/blog/liquid-glass-on-the-web/",
+   "year": 2025,
+   "source": "other",
+   "forms": [
+    "glass"
+   ],
+   "what": "SVG feDisplacementMap 折射做法，Chromium 外不稳",
+   "verified": false,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-12",
+   "name": "Neutomni",
+   "url": "https://neutomni.com/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "scroll-story",
+    "kinetic-type"
+   ],
+   "what": "GSAP + Webflow，滚动与叙事；粗犷编辑式，字体排印加复古 UI；配色类 retro-muted，复古 UI，配色未核",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-13",
+   "name": "Heron AI（Bearplus）",
+   "url": "https://heronaiapp.com/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "scroll-story"
+   ],
+   "what": "GSAP + Canvas，滚动叙事",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-14",
+   "name": "Chladni · A Geometry of Sound",
+   "url": "http://chladni-plate-experiment.vercel.app/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "scroll-story",
+    "pin-scrub",
+    "generative-data"
+   ],
+   "what": "滚动推进物理讲解章节；滚动 scrub 章节；物理模型生成沙纹图形；配色类 mono-structure，配色未核",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-15",
+   "name": "Sobha Privy Collection（Vide Infra）",
+   "url": "https://sobha-privy-collection.com/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "pin-scrub",
+    "parallax-25d"
+   ],
+   "what": "滚动驱动的缩放转场；Parallax、Three.js，地产",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-16",
+   "name": "Apple",
+   "url": "https://www.apple.com/",
+   "year": 2026,
+   "source": "other",
+   "forms": [
+    "pin-scrub",
+    "image-sequence"
+   ],
+   "what": "电影式滚动，含 3D 产品旋转（School of Motion 转述）；电影式滚动（School of Motion 转述）",
+   "verified": false,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-17",
+   "name": "Realevate",
+   "url": "https://realevate.agency/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "view-transitions"
+   ],
+   "what": "卡片式页面转场（用 GSAP，不是 API）",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-18",
+   "name": "Epic",
+   "url": "https://www.epic.net/en/",
+   "year": 2025,
+   "source": "other",
+   "forms": [
+    "kinetic-type"
+   ],
+   "what": "滚动时字体变形位移（School of Motion 转述）",
+   "verified": false,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-19",
+   "name": "Huy Phan Vol.2",
+   "url": "https://huyml.co/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "kinetic-type",
+    "editorial-type"
+   ],
+   "what": "Typography + GSAP + Three.js；大字与动效结合",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-20",
+   "name": "Boc.Studio",
+   "url": "https://boc.studio/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "editorial-type"
+   ],
+   "what": "Typography、大图，Framer；配色类 color-field，配色未核",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-21",
+   "name": "siteInspire Typographic",
+   "url": "https://www.siteinspire.com/websites?categories=typographic",
+   "year": 2026,
+   "source": "siteinspire",
+   "forms": [
+    "editorial-type"
+   ],
+   "what": "分类页，逐站技法未核",
+   "verified": false,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-22",
+   "name": "fireart 2026 趋势文",
+   "url": "https://fireart.studio/blog/the-best-web-design-trends/",
+   "year": 2026,
+   "source": "other",
+   "forms": [
+    "bento"
+   ],
+   "what": "把 bento 列为趋势（二手汇总，非站点）",
+   "verified": false,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-23",
+   "name": "Brutalism",
+   "url": "https://storyofbrutalism.com/",
+   "year": 2024,
+   "source": "awwwards",
+   "forms": [
+    "brutalism"
+   ],
+   "what": "荣誉提名，早于 2025",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-24",
+   "name": "Brutally Human",
+   "url": "https://brutallyhuman.com/",
+   "year": 2022,
+   "source": "awwwards",
+   "forms": [
+    "brutalism"
+   ],
+   "what": "荣誉提名，早于 2025；配色类 bw-signal，2022，配色未核",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-25",
+   "name": "Previously Installed",
+   "url": "https://previouslyinstalled.com",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "brutalism"
+   ],
+   "what": "Experimental、Retro，近粗野不严格；配色类 retro-muted，配色未核",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-26",
+   "name": "Santioni Spirits（Active Theory + plan8）",
+   "url": "https://santionispirits.com/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "isometric",
+    "cursor-magnetic"
+   ],
+   "what": "漫画风插画旅程 + WebGL；鼠标驱动的倒酒、手部动画",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-27",
+   "name": "Dropbox Brand Guidelines",
+   "url": "https://brand.dropbox.com/",
+   "year": 2025,
+   "source": "other",
+   "forms": [
+    "isometric"
+   ],
+   "what": "动画角色插画、色彩过渡（School of Motion 转述）",
+   "verified": false,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-28",
+   "name": "Extremists on Both Sides",
+   "url": "https://both-sides.the7eye.org.il/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "generative-data"
+   ],
+   "what": "Data Visualization、Scrolling、Storytelling；配色类 data-scale，配色未核",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-29",
+   "name": "BDSN Club",
+   "url": "https://www.bdsn.club/",
+   "year": 2025,
+   "source": "other",
+   "forms": [
+    "cursor-magnetic"
+   ],
+   "what": "光标响应的生成艺术（School of Motion 转述）",
+   "verified": false,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-30",
+   "name": "Rive",
+   "url": "https://rive.app/",
+   "year": 2025,
+   "source": "other",
+   "forms": [
+    "lottie-rive"
+   ],
+   "what": "角色动画随滚动与光标响应（School of Motion 转述）",
+   "verified": false,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-31",
+   "name": "Rive hero animations",
+   "url": "https://rive.app/use-cases/hero-animations",
+   "year": 2025,
+   "source": "other",
+   "forms": [
+    "lottie-rive"
+   ],
+   "what": "官方示例与教程（仅见搜索摘要）",
+   "verified": false,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-32",
+   "name": "Spline 3D web experiences",
+   "url": "https://spline.design/solutions/3d-web-experiences",
+   "year": 2025,
+   "source": "other",
+   "forms": [
+    "spline"
+   ],
+   "what": "官方页，无获奖站核实",
+   "verified": false,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-33",
+   "name": "Awwwards Scroll-based Video Sequence – Sol",
+   "url": "https://www.awwwards.com/inspiration/scroll-based-video-sequence-sol",
+   "year": 2025,
+   "source": "other",
+   "forms": [
+    "image-sequence"
+   ],
+   "what": "GSAP 序列（仅见搜索摘要）",
+   "verified": false,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-34",
+   "name": "Moto Finance（Properly Studio）",
+   "url": "https://www.moto-card.com/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [
+    "parallax-25d"
+   ],
+   "what": "Parallax、Scrolling、GSAP、Three.js；配色类 brand-neutral，配色未核",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-35",
+   "name": "Awwwards Sites of the Day 列表",
+   "url": "https://www.awwwards.com/websites/sites_of_the_day/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [],
+   "what": "列表页，按日期找近期获奖站",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-36",
+   "name": "siteInspire 站点列表",
+   "url": "https://www.siteinspire.com/websites",
+   "year": 2026,
+   "source": "siteinspire",
+   "forms": [
+    "editorial-type"
+   ],
+   "what": "分类页，含 Typographic、Minimal，无逐站技法",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-37",
+   "name": "Awwwards 评审体系",
+   "url": "https://www.awwwards.com/about-evaluation/",
+   "year": 2026,
+   "source": "awwwards",
+   "forms": [],
+   "what": "Design 40、Usability 30、Creativity 20、Content 10",
+   "verified": true,
+   "checked_at": "2026-10-16"
+  }
+ ]
+}

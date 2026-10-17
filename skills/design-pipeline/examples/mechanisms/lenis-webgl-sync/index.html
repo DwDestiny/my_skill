@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>机制示例：Lenis 与 WebGL 同步</title>
+<!--
+机制：Lenis 平滑滚动。只用一个循环：gsap.ticker 调 lenis.raf。lenis.on('scroll') 同时写 ScrollTrigger.update 与 three 着色器的 uProg。
+来自技术卡：T18（research/R4-visual-tech.md）。
+适合 / 不适合：适合滚动驱动的 WebGL 背景、相机、着色器参数。不适合表单页与长文阅读页（Lenis 改变滚动手感）。
+依赖与固定版本：gsap 与 ScrollTrigger 3.15.0，lenis 1.3.11，three 0.186.0，全部经 jsDelivr。
+Reduce Motion 退路：不创建 Lenis，用原生滚动。window scroll 事件仍写 uProg，画面终态由滚动位置决定。
+性能预算：画布内部分辨率 ≤960×540。只在进度变化时渲染一帧，静止时不渲染。
+已知限制：库加载失败时背景留空，文字仍可读。
+不可照抄的部分：颜色、着色器图案、文案。只抄 ticker 同步顺序与 dirty 渲染。
+接入方法：
+1. 保留 gsap.ticker.add(t=>lenis.raf(t*1000)) 与 gsap.ticker.lagSmoothing(0)。
+2. 在 lenis.on('scroll') 回调里写 uniform 并调用 ScrollTrigger.update。
+3. 保持 reduced-motion 分支。
+-->
+<style>
+:root{--bg:#d8d8d8;--fg:#151515;--mute:#3a3a3a;--acc:#c2410c}
+@media (prefers-color-scheme:dark){:root{--bg:#161616;--fg:#eee;--mute:#bbb;--acc:#fb923c}}
+*{box-sizing:border-box}
+html.lenis,html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.7 system-ui,"PingFang SC","Noto Sans CJK SC",sans-serif}
+canvas{position:fixed;inset:0;width:100vw;height:100vh;z-index:0}
+main{position:relative;z-index:1}
+section{min-height:100vh;display:flex;align-items:center;padding:0 max(16px,6vw)}
+.box{max-width:30rem;background:color-mix(in srgb,var(--bg) 82%,transparent);padding:1.4rem 1.6rem;border-left:4px solid var(--acc)}
+h2{margin:0 0 .4rem;font-size:clamp(1.6rem,4vw,2.4rem)}
+p{margin:0;color:var(--mute)}
+.bar{position:fixed;left:0;top:0;height:4px;width:100%;background:var(--acc);transform-origin:0 0;transform:scaleX(0);z-index:2}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<canvas id="gl"></canvas>
+<main>
+<section><div class="box"><h2>滚动写入着色器</h2><p>向下滚动。背景条纹的相位由滚动进度 uProg 驱动。Scroll to drive the shader.</p></div></section>
+<section><div class="box"><h2>一个循环</h2><p>gsap.ticker 是唯一的时钟。Lenis、ScrollTrigger 与 WebGL 渲染共用它，因此不抖动。</p></div></section>
+<section><div class="box"><h2>静止即停</h2><p>进度不变时不渲染。减少动态偏好下回到原生滚动。</p></div></section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.11/dist/lenis.min.js"></script>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.min.js';
+const rm=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const cv=document.getElementById('gl'),bar=document.getElementById('bar');
+const css=getComputedStyle(document.documentElement);
+const r=new THREE.WebGLRenderer({canvas:cv,antialias:false});
+r.setPixelRatio(1);
+function size(){const w=Math.min(960,innerWidth),h=Math.min(540,Math.round(w*innerHeight/innerWidth));r.setSize(w,h,false);u.uAsp.value=w/h;dirty=true}
+const u={uProg:{value:0},uAsp:{value:1},uAcc:{value:new THREE.Color(css.getPropertyValue('--acc').trim())}};
+const sc=new THREE.Scene(),cam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+sc.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.ShaderMaterial({uniforms:u,
+vertexShader:'varying vec2 v;void main(){v=uv;gl_Position=vec4(position,1.);}',
+fragmentShader:'varying vec2 v;uniform float uProg,uAsp;uniform vec3 uAcc;void main(){vec2 p=(v-.5)*vec2(uAsp,1.);float d=length(p);float s=sin(d*14.-uProg*18.)*.5+.5;float k=smoothstep(.4,.6,s)*.22;gl_FragColor=vec4(mix(vec3(.5),uAcc,k*1.6)*(.55+.2*(1.-d)),1.);}'})));
+let dirty=true;
+function setProg(p){u.uProg.value=p;bar.style.transform='scaleX('+p+')';dirty=true}
+const maxS=()=>Math.max(1,document.documentElement.scrollHeight-innerHeight);
+if(window.gsap&&window.ScrollTrigger){
+  gsap.registerPlugin(ScrollTrigger);
+  if(!rm&&window.Lenis){
+    const lenis=new Lenis({lerp:.1});
+    lenis.on('scroll',e=>{setProg(e.scroll/maxS());ScrollTrigger.update()});
+    gsap.ticker.add(t=>lenis.raf(t*1000));
+    gsap.ticker.lagSmoothing(0);
+  }else addEventListener('scroll',()=>setProg(scrollY/maxS()),{passive:true});
+  gsap.ticker.add(()=>{if(dirty){r.render(sc,cam);dirty=false}});
+}else{addEventListener('scroll',()=>{setProg(scrollY/maxS());r.render(sc,cam)},{passive:true})}
+addEventListener('resize',size);size();setProg(scrollY/maxS());r.render(sc,cam);
+</script>
+</body>
+</html>

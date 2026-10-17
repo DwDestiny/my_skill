@@ -31,7 +31,7 @@
 | O2 | | | 必须 |
 | O3 | | | 应当 |
 
-## 3 档位建议
-- gear_suggestion：clear | mixed | show
+## 3 读者使用方式（reader_mode）
+- reader_mode：读 | 读看 | 看
 - 依据：
 - 用户关于风格的原话（逐字，若有）：

@@ -13,6 +13,7 @@
 | artifact-design（内置） | 内置 | 平台契约；三态主题结构；静止即完整；安全区侧边距 | "最多看一次渲染图"（用户规则要求修到过） | 用户规则优先 |
 | dataviz（内置） | 内置 | 选形式→分配颜色→校验器→标记→悬停→无障碍；强调法；表格孪生；状态色固定 | 无 | |
 | artifact-diagramming（内置） | 内置 | 画机制不画名称；每条箭头有标签；`currentColor`；figure/figcaption/role=img | 无 | |
+| 灵感库（navbar.gallery、footer.design、cta.gallery、404s.design、60fps.design，加扩展 6 站；见 `inspiration-library.md` 与 `inspiration/`） | 多数未写许可 | 入口、分类方式、与本 skill 组件的对应关系 | 图片、提示词、代码、外观 | 许可不明。只作灵感索引，实际吸收时再逐条登记 |
 | 用户全局设计规则 | 用户 | 5 步流程；10 项检查表；"门禁不证明设计好" | 无；冲突项按 `gears.md` 第 3 节解释 | |
 
 ## 2. 取更严值的记录
@@ -23,7 +24,7 @@
 | 触控命中区 | juliobsz ≥24px | taste ≥44px | 普通 ≥24px，主操作 ≥44px |
 | 图内最小字 | diagram-design 7 到 9px（拉丁） | diagram-design 中文 12px | 12px |
 | 正文对比 | 各方 4.5:1 | 一致 | 4.5:1，深浅各算 |
-| 加载器 | taste 无 | juliobsz 1.1 到 2.6 秒 | 按档位：clear 无；mixed ≤1.2；show 1.1 到 2.6 |
+| 加载器 | taste 无 | juliobsz 1.1 到 2.6 秒 | 按预算预设：clear 无；mixed ≤1.2；show 1.1 到 2.6 |
 | 弹簧参数 | open-claude-ui 两处矛盾 | 无 | 不抄数值，只取"结构类不回弹、反馈类可回弹" |
 
 ## 3. 运行时依赖（从 CDN 加载，不分发）
@@ -33,7 +34,7 @@
 | GSAP 与 ScrollTrigger | 3.15.0 | GSAP 标准免费许可（standard no-charge license），见 https://gsap.com/standard-license | 从 CDN 加载，未再分发。使用条件以该链接为准 |
 | Lenis | 1.3.26 | MIT | 从 CDN 加载，未再分发 |
 
-零依赖引擎 `motion-engine.js` 是 `clear` 档的引擎，也是 CDN 失败时的回退。
+零依赖引擎 `motion-engine.js` 是 预设 `clear`的引擎，也是 CDN 失败时的回退。
 
 ## 4. 版权规则
 

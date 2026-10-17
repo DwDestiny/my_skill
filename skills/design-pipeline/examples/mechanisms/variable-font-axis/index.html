@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>机制示例：可变字体轴动画</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Recursive:slnt,wght,CASL@-15..0,300..1000,0..1&display=swap">
+<!--
+机制：原生 font-variation-settings。滚动进度 t（0 到 1）写进 CSS 变量，字重 wght、倾斜 slnt、休闲度 CASL 随 t 连续变化。
+来自技术卡：T20（research/R4-visual-tech.md）。
+适合 / 不适合：适合大标题、数字、短句。不适合整段正文（重排成本高）。
+依赖与固定版本：Google Fonts 的 Recursive 可变字体（轴 slnt、wght、CASL）。无 JS 库。
+Reduce Motion 退路：不监听滚动，字体固定在 wght 700、slnt 0、CASL 0.5。
+性能预算：只改一个标题和一个数字行。滚动事件内用 rAF 合并，一帧最多写一次。
+已知限制：中文走系统字体，没有轴变化，只有英文和数字有。字体加载失败时回退系统字体，轴设置无效但文字可读。
+不可照抄的部分：颜色、文案。只抄 @font-face 轴范围声明与 rAF 合并写法。
+接入方法：
+1. 在 Google Fonts 链接里声明要用的轴范围。
+2. 给元素设 font-variation-settings 为 var 组合。
+3. 保持 reduced-motion 分支。
+-->
+<style>
+:root{--bg:#d8d8d8;--fg:#151515;--mute:#3a3a3a;--acc:#c2410c;--t:.5}
+@media (prefers-color-scheme:dark){:root{--bg:#161616;--fg:#eee;--mute:#bbb;--acc:#fb923c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.7 system-ui,"PingFang SC","Noto Sans CJK SC",sans-serif}
+section{min-height:100vh;padding:0 max(16px,6vw);display:flex;flex-direction:column;justify-content:center}
+.axis{font-family:"Recursive",system-ui,"PingFang SC","Noto Sans CJK SC",sans-serif;
+  font-variation-settings:"wght" calc(300 + 700*var(--t)),"slnt" calc(-15*(1 - var(--t))),"CASL" var(--t)}
+h1{margin:0;font-size:clamp(2.6rem,11vw,7rem);line-height:1.05;overflow-wrap:anywhere}
+.zh{margin:.6rem 0 0;font-size:clamp(1.3rem,4vw,2rem)}
+.num{font-size:clamp(3rem,14vw,8rem);color:var(--acc);font-variant-numeric:tabular-nums;margin:0}
+p.note{max-width:34rem;color:var(--mute)}
+@media (prefers-reduced-motion:reduce){:root{--t:.7}}
+</style>
+</head>
+<body>
+<section>
+<h1 class="axis">Weight &amp; Slant</h1>
+<p class="zh axis">字重随滚动变化，中文走系统字体</p>
+<p class="note">向下滚动。英文与数字的字重、倾斜、休闲度连续变化。Scroll to move the axes.</p>
+</section>
+<section>
+<p class="num axis" id="n">0.50</p>
+<p class="note">这个数字是当前轴进度 t。Axis progress t.</p>
+</section>
+<section style="min-height:60vh"><p class="note">终点：t 等于 1。End of range.</p></section>
+<script>
+(function(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  var root=document.documentElement,n=document.getElementById('n'),q=0;
+  function upd(){q=0;
+    var m=Math.max(1,root.scrollHeight-innerHeight),t=Math.min(1,Math.max(0,scrollY/m));
+    root.style.setProperty('--t',t.toFixed(3));n.textContent=t.toFixed(2)}
+  addEventListener('scroll',function(){if(!q)q=requestAnimationFrame(upd)},{passive:true});
+  upd();
+})();
+</script>
+</body>
+</html>

@@ -21,8 +21,8 @@
 > <原话 1>
 > <原话 2>
 
-## 档位
-<clear|mixed|show>。预算见 gears.md 第 2 节。底线见 gears.md 第 4 节。不要为通过检查表删动效；过不了先改角色、位置、幅度。
+## 预算预设
+<clear|mixed|show>。预设是起点，氛围决定收放，不是品质分级。预算（上限）见 gears.md 第 2 节。参考值（F1 到 F6）见 gears.md 第 2.1 节，设计计划第 2.1 节有这个页面的验收项。底线见 gears.md 第 4 节。用户的风格词是对效果的要求，不是成本上限。不要为通过检查表或省成本删参考项和动效；过不了先改角色、位置、幅度。
 
 ## 文件所有权
 | 文件 | 所有者 |
@@ -38,7 +38,7 @@
 固定版本的 CDN 脚本（GSAP、ScrollTrigger、Lenis）和联网字体可以直接用，`mixed` 与 `show` 默认用 `assets/engine/motion-engine-gsap.js`。取图、发布到公开库、发布 Artifact、调用外部模型或图像生成服务：先停下来问用户。不运行 anatomy 的 publish.mjs，不运行 design-taste-frontend 的 assets.mjs --get。
 
 ## 验证
-1 级（每次改动后）：HTML 校验、外链只含固定版本 CDN 与 Google Fonts、`lang="zh-CN"`、对比度计算、引擎在减少动效下内容可见。
+1 级（每次改动后）：`assets/floor-check.py` 无 FAIL、HTML 校验、外链只含固定版本 CDN 与 Google Fonts、`lang="zh-CN"`、对比度计算、引擎在减少动效下内容可见。
 2 级（里程碑）：按 review.md 第 1 节拍全套截图，逐项过第 2 节自检表，写 ROUND 记录。
 把截图放在 05-评审/shots/<日期>/。
 

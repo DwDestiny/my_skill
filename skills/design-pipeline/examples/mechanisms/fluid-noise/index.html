@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>机制示例：噪声流体背景</title>
+<!--
+机制：全屏片元着色器，用 fbm 噪声做域扭曲，三个 CSS 变量传入 uniform 作为三色。
+适合 / 不适合：适合首屏背景或章节底，文字叠在上面。不适合需要精确读数的图表底，不适合低端机全页常驻。
+依赖与固定版本：无库。原生 WebGL2。
+来源与许可：自写，MIT。噪声为通用 value-noise 写法。
+Reduce Motion 退路：冻结时间 uniform，只画一帧。matchMedia 检查，且监听变化。
+性能预算：限制 30 fps，渲染分辨率为 CSS 像素的 0.5 倍（画面柔和，成本低），页面不可见时停。无 WebGL2 时显示 CSS 渐变底。
+不可照抄的部分：三个颜色值、字体、文案、版式。只抄着色器、节流与可见性处理。
+接入方法：
+1. 复制 canvas、着色器和 JS 到页面，canvas 设 position:fixed 且 z-index 为 -1。
+2. 在 :root 里改 --c1 --c2 --c3，脚本会读取并传入 uniform。
+3. 在 canvas 上方放文字，检查文字对比度在最亮处也达 4.5:1。
+-->
+<style>
+:root{--c1:#20292b;--c2:#4a6f73;--c3:#c4cbcc;--fg:#f4f6f6}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;color:var(--fg);background:linear-gradient(135deg,var(--c1),var(--c2));font:17px/1.7 system-ui,-apple-system,"Segoe UI","PingFang SC","Noto Sans CJK SC",sans-serif}
+canvas{position:fixed;inset:0;width:100%;height:100%;z-index:-1;display:block}
+main{max-width:40rem;margin:0 auto;padding:18vh 16px}
+h1{font-size:2.2rem;line-height:1.2;margin:0 0 1rem}
+.panel{background:rgba(16,20,21,.72);padding:1.2rem 1.5rem;border-left:6px solid var(--c3)}
+.panel p{margin:0}
+</style>
+</head>
+<body>
+<canvas id="c" aria-hidden="true"></canvas>
+<main>
+<h1>噪声流体背景</h1>
+<div class="panel"><p>这是机制示例，只演示技术，不带最终配色与版式。背景由片元着色器实时计算，颜色来自三个 CSS 变量。文字放在半透明深色底上，保证对比度。</p></div>
+</main>
+<script>
+(()=>{
+const cv=document.getElementById('c'),gl=cv.getContext('webgl2',{antialias:false,alpha:false});
+if(!gl)return; // 无 WebGL2：保留 CSS 渐变
+const rm=matchMedia('(prefers-reduced-motion: reduce)');
+const vs='#version 300 es\nin vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+const fs=`#version 300 es
+precision highp float;
+uniform vec2 R;uniform float T;uniform vec3 A,B,C;out vec4 o;
+float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+ return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+float fbm(vec2 p){float s=0.,a=.5;for(int i=0;i<5;i++){s+=a*n(p);p=p*2.02+7.;a*=.5;}return s;}
+void main(){
+ vec2 u=gl_FragCoord.xy/R.y*1.6;
+ vec2 q=vec2(fbm(u+T*.05),fbm(u+vec2(5.2,1.3)-T*.04));
+ float f=fbm(u+2.*q+T*.03);
+ vec3 c=mix(A,B,smoothstep(.2,.7,f));
+ c=mix(c,C,smoothstep(.55,.95,length(q)*f*1.6));
+ o=vec4(c,1.);}`;
+const sh=(t,s)=>{const x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShader(x);if(!gl.getShaderParameter(x,gl.COMPILE_STATUS))console.warn(gl.getShaderInfoLog(x));return x};
+const pg=gl.createProgram();gl.attachShader(pg,sh(gl.VERTEX_SHADER,vs));gl.attachShader(pg,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(pg);gl.useProgram(pg);
+gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+const loc=gl.getAttribLocation(pg,'p');gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+const U=k=>gl.getUniformLocation(pg,k);
+const toRGB=s=>{const e=document.createElement('i');e.style.color=s;document.body.append(e);const m=getComputedStyle(e).color.match(/[\d.]+/g).slice(0,3).map(v=>v/255);e.remove();return m};
+function colors(){const s=getComputedStyle(document.documentElement);
+ gl.uniform3fv(U('A'),toRGB(s.getPropertyValue('--c1')));gl.uniform3fv(U('B'),toRGB(s.getPropertyValue('--c2')));gl.uniform3fv(U('C'),toRGB(s.getPropertyValue('--c3')))}
+function size(){const k=.5;cv.width=Math.max(2,innerWidth*k|0);cv.height=Math.max(2,innerHeight*k|0);gl.viewport(0,0,cv.width,cv.height);gl.uniform2f(U('R'),cv.width,cv.height)}
+let t0=performance.now(),last=0,raf=0;
+function draw(t){gl.uniform1f(U('T'),t);gl.drawArrays(gl.TRIANGLES,0,3)}
+function loop(now){raf=requestAnimationFrame(loop);if(now-last<33)return;last=now;draw((now-t0)/1000)}
+function start(){cancelAnimationFrame(raf);if(rm.matches||document.hidden){if(rm.matches)draw(12);return}raf=requestAnimationFrame(loop)}
+colors();size();start();
+addEventListener('resize',()=>{size();if(rm.matches)draw(12)});
+document.addEventListener('visibilitychange',start);
+rm.addEventListener('change',start);
+})();
+</script>
+</body>
+</html>

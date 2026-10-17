@@ -1,0 +1,2225 @@
+{
+  "_meta": {
+    "source": "research/R2-expression.md 第 2 节 C01 到 C20",
+    "checked": "2026-10-16",
+    "note": "refs.verified=false 表示二手或未读到一手页面。cost 各项为 低/中/高 或区间。",
+    "expansion": "2026-10-16 按 research/R4-visual-tech.md 第 5.1 节新增 20 张技术卡，共 40 张。refs.verified 均为 false（只核对 HTTP 200）。 2026-10-16 冷启动修复：新增 3 张轻量舞台卡（paper-object-stage、svg-scene-stage、typographic-object-stage），共 43 张。",
+    "card_count": 43,
+    "example_field": "example 指向 examples/mechanisms/<id>/，相对 design-pipeline 目录。example_kind 说明是同名、近似还是无示例。"
+  },
+  "cards": [
+    {
+      "id": "webgl-scene",
+      "name_zh": "WebGL 3D 场景",
+      "layer": "stage",
+      "expresses": "沉浸、探索、空间与物件的隐喻",
+      "fits": [
+        "产品展示",
+        "地图与空间导览",
+        "品牌发布",
+        "展览"
+      ],
+      "avoid": [
+        "信息查询",
+        "表单",
+        "政务与医疗说明页",
+        "低端手机为主的受众"
+      ],
+      "cost": {
+        "difficulty": "高",
+        "performance": "高",
+        "size": "高",
+        "a11y": "高"
+      },
+      "reduced_motion": "停自动旋转与相机漂移，渲染静帧，保留点击切换。canvas 旁给 DOM 文本等价物。",
+      "libs": [
+        {
+          "name": "three",
+          "version": "0.186.0",
+          "license": "MIT",
+          "cdn": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "Overworld Audio",
+          "url": "https://overworldaudio.com/",
+          "year": 2026,
+          "what": "可探索的工作室地图（Three.js + Nuxt）",
+          "verified": true
+        },
+        {
+          "name": "Lidar Drone Scanning（Riotters）",
+          "url": "https://drone.riotters.com/",
+          "year": 2026,
+          "what": "地形扫描视觉与滚动镜头",
+          "verified": true
+        },
+        {
+          "name": "Oryzo（Lusion）",
+          "url": "https://oryzo.ai",
+          "year": 2026,
+          "what": "单件物体渲染，滚动推镜头",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "首屏加载超过 3 秒才见内容",
+        "3D 遮住标题或正文",
+        "用户必须拖动才能找到入口",
+        "手机上低于 20 fps",
+        "3D 物件和业务无关"
+      ],
+      "gear_min": "show",
+      "mechanism": "examples/mechanisms/webgl-scene/index.html",
+      "example": "examples/mechanisms/webgl-scene/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "fluid-noise",
+      "name_zh": "着色器流体与噪声",
+      "layer": "material",
+      "expresses": "液态、有机、能量，隐喻水、烟、光",
+      "fits": [
+        "音乐",
+        "科技品牌",
+        "AI 产品首屏背景",
+        "艺术与实验页"
+      ],
+      "avoid": [
+        "大段阅读页",
+        "金融合规页",
+        "老年用户页"
+      ],
+      "cost": {
+        "difficulty": "高",
+        "performance": "高",
+        "size": "低到中",
+        "a11y": "中"
+      },
+      "reduced_motion": "冻结时间 uniform，只画一帧。",
+      "libs": [
+        {
+          "name": "three",
+          "version": "0.186.0",
+          "license": "MIT",
+          "cdn": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js"
+        },
+        {
+          "name": "ogl",
+          "version": "1.0.11",
+          "license": "未核",
+          "cdn": "https://cdn.jsdelivr.net/npm/ogl@1.0.11/src/index.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "Edolus（Yann Trevelot / Vertex3D）",
+          "url": "https://edolus.com/",
+          "year": 2026,
+          "what": "WebGL + GLSL，鼠标交互流体",
+          "verified": true
+        },
+        {
+          "name": "fromanother",
+          "year": 2026,
+          "what": "自写 GLSL 做流体、光基识别，站址未找到",
+          "verified": false
+        },
+        {
+          "name": "IVRESS（Utsubo）",
+          "url": "https://brand.ivress.co.jp",
+          "year": 2026,
+          "what": "TSL 着色器，WebGPU 带 WebGL 回退",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "全屏流体盖住正文",
+        "无限循环且无暂停",
+        "流体颜色和品牌色无关",
+        "低端机帧率不足"
+      ],
+      "gear_min": "show",
+      "mechanism": "examples/mechanisms/fluid-noise/index.html",
+      "example": "examples/mechanisms/fluid-noise/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "video-bg",
+      "name_zh": "视频背景",
+      "layer": "stage",
+      "expresses": "真实感、人、氛围",
+      "fits": [
+        "品牌首屏",
+        "地产",
+        "酒店",
+        "影视",
+        "医疗机构的真实场景"
+      ],
+      "avoid": [
+        "带宽受限用户",
+        "需要快速读完的工具页"
+      ],
+      "cost": {
+        "difficulty": "低",
+        "performance": "中",
+        "size": "高",
+        "a11y": "中"
+      },
+      "reduced_motion": "不自动播放，显示海报图。超过 5 秒的自动播放必须可暂停。",
+      "libs": [],
+      "refs": [
+        {
+          "name": "Butter（ToyFight）",
+          "url": "https://www.butter.video/",
+          "year": 2026,
+          "what": "首页英雄区两段视频",
+          "verified": true
+        },
+        {
+          "name": "CoMinVi（HOLOGRAPHIK）",
+          "url": "https://www.cominvi.com.mx/",
+          "year": 2026,
+          "what": "全屏视频英雄区",
+          "verified": true
+        },
+        {
+          "name": "Milledollars（Magnetism）",
+          "url": "https://milledollars.fr/",
+          "year": 2026,
+          "what": "视频驱动的作品墙",
+          "verified": true
+        }
+      ],
+      "flash_signals": [
+        "视频文件超 3 MB 阻塞首屏",
+        "文字叠在亮处看不清",
+        "视频内容和页面任务无关",
+        "多段视频同屏"
+      ],
+      "gear_min": "mixed",
+      "mechanism": null,
+      "example": "examples/mechanisms/image-sequence/",
+      "example_kind": "近似示例，机制不同，只借接入骨架"
+    },
+    {
+      "id": "chromatic-glitch",
+      "name_zh": "色差与故障",
+      "layer": "material",
+      "expresses": "失真、数码、赛博、反叛",
+      "fits": [
+        "游戏",
+        "电子音乐",
+        "潮牌",
+        "实验媒体"
+      ],
+      "avoid": [
+        "医疗",
+        "教育",
+        "政务",
+        "金融",
+        "老年受众"
+      ],
+      "cost": {
+        "difficulty": "低到中",
+        "performance": "低到中",
+        "size": "低",
+        "a11y": "高"
+      },
+      "reduced_motion": "关闭动态，保留静态轻微偏移或完全去掉。",
+      "libs": [
+        {
+          "name": "postprocessing",
+          "version": "6.39.5",
+          "license": "Zlib",
+          "cdn": "https://cdn.jsdelivr.net/npm/postprocessing@6.39.5/build/index.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "Glitch&Grit",
+          "url": "https://glitchandgrit.com/",
+          "year": 2026,
+          "what": "Awwwards glitch 标签页列出，技法未核",
+          "verified": true
+        }
+      ],
+      "flash_signals": [
+        "正文也在抖",
+        "持续闪烁（每秒超过 3 次闪光）",
+        "故障效果覆盖超过 30% 屏面",
+        "每次滚动都触发"
+      ],
+      "gear_min": "show",
+      "mechanism": null,
+      "example": "examples/mechanisms/fluid-noise/",
+      "example_kind": "近似示例，机制不同，只借接入骨架"
+    },
+    {
+      "id": "grain",
+      "name_zh": "颗粒与胶片",
+      "layer": "material",
+      "expresses": "质感、怀旧、手工，不是一张光滑的屏幕",
+      "fits": [
+        "摄影",
+        "电影",
+        "咖啡与酒类品牌",
+        "纸感低饱和风格"
+      ],
+      "avoid": [
+        "数据仪表",
+        "极简科技"
+      ],
+      "cost": {
+        "difficulty": "低",
+        "performance": "中",
+        "size": "低",
+        "a11y": "低"
+      },
+      "reduced_motion": "噪点静止，不做 jitter。",
+      "libs": [
+        {
+          "name": "postprocessing",
+          "version": "6.39.5",
+          "license": "Zlib",
+          "cdn": "https://cdn.jsdelivr.net/npm/postprocessing@6.39.5/build/index.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "Kinoria",
+          "url": "https://kinoria.studio/",
+          "year": 2026,
+          "what": "暗房、胶卷主题（颗粒本身页面未写）",
+          "verified": true
+        }
+      ],
+      "flash_signals": [
+        "颗粒强度让正文发糊",
+        "叠层压住点击",
+        "与题材无关地全站加"
+      ],
+      "gear_min": "mixed",
+      "mechanism": "examples/mechanisms/grain/index.html",
+      "example": "examples/mechanisms/grain/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "glass",
+      "name_zh": "玻璃与 Liquid Glass",
+      "layer": "material",
+      "expresses": "通透、轻、层次、系统感",
+      "fits": [
+        "覆盖在图片或视频上的导航",
+        "浮层",
+        "控制条",
+        "苹果生态相关页"
+      ],
+      "avoid": [
+        "大面积正文背板",
+        "浅色背景上的浅色玻璃"
+      ],
+      "cost": {
+        "difficulty": "中到高",
+        "performance": "中到高",
+        "size": "低",
+        "a11y": "高"
+      },
+      "reduced_motion": "关闭折射动画，改纯色半透明底。",
+      "libs": [],
+      "refs": [
+        {
+          "name": "Frontend Masters《Liquid Glass on the Web》",
+          "url": "https://frontendmasters.com/blog/liquid-glass-on-the-web/",
+          "year": 2025,
+          "what": "SVG feDisplacementMap 折射做法，Chromium 外不稳",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "正文放在玻璃上且对比低于 4.5:1",
+        "多层玻璃嵌套",
+        "每个卡片都是玻璃"
+      ],
+      "gear_min": "mixed",
+      "mechanism": "examples/mechanisms/glass/index.html",
+      "example": "examples/mechanisms/glass/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "scroll-story",
+      "name_zh": "滚动驱动叙事",
+      "layer": "interaction",
+      "expresses": "节奏、章节、被带着读故事",
+      "fits": [
+        "讲解页",
+        "产品故事",
+        "案例页",
+        "年报"
+      ],
+      "avoid": [
+        "用户要快速跳读的参考文档"
+      ],
+      "cost": {
+        "difficulty": "中",
+        "performance": "低到中",
+        "size": "低",
+        "a11y": "中"
+      },
+      "reduced_motion": "取消 scrub，内容直接显示。CSS animation-timeline 只作渐进增强，用 @supports 包住。",
+      "libs": [
+        {
+          "name": "gsap",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"
+        },
+        {
+          "name": "gsap ScrollTrigger",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"
+        },
+        {
+          "name": "lenis",
+          "version": "1.3.26",
+          "license": "MIT",
+          "cdn": "https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "Neutomni",
+          "url": "https://neutomni.com/",
+          "year": 2026,
+          "what": "GSAP + Webflow，滚动与叙事",
+          "verified": true
+        },
+        {
+          "name": "Heron AI（Bearplus）",
+          "url": "https://heronaiapp.com/",
+          "year": 2026,
+          "what": "GSAP + Canvas，滚动叙事",
+          "verified": true
+        },
+        {
+          "name": "Chladni · A Geometry of Sound",
+          "url": "http://chladni-plate-experiment.vercel.app/",
+          "year": 2026,
+          "what": "滚动推进物理讲解章节",
+          "verified": true
+        }
+      ],
+      "flash_signals": [
+        "滚动速度被改慢到有粘滞感",
+        "一屏滚三次才出下一句",
+        "滚动条被隐藏",
+        "每个元素都有入场"
+      ],
+      "gear_min": "clear",
+      "mechanism": "examples/mechanisms/scroll-story/index.html",
+      "example": "examples/mechanisms/scroll-story/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "pin-scrub",
+      "name_zh": "固定舞台 pin 加 scrub",
+      "layer": "interaction",
+      "expresses": "同一画面持续变化，一个舞台讲完一件事",
+      "fits": [
+        "产品拆解",
+        "流程演示",
+        "步骤讲解"
+      ],
+      "avoid": [
+        "手机窄屏",
+        "内容很短的页"
+      ],
+      "cost": {
+        "difficulty": "中到高",
+        "performance": "中",
+        "size": "低",
+        "a11y": "中到高"
+      },
+      "reduced_motion": "取消 pin，章节顺序平铺。给键盘与读屏用户文本替代。",
+      "libs": [
+        {
+          "name": "gsap",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"
+        },
+        {
+          "name": "gsap ScrollTrigger",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "Sobha Privy Collection（Vide Infra）",
+          "url": "https://sobha-privy-collection.com/",
+          "year": 2026,
+          "what": "滚动驱动的缩放转场",
+          "verified": true
+        },
+        {
+          "name": "Chladni · A Geometry of Sound",
+          "url": "http://chladni-plate-experiment.vercel.app/",
+          "year": 2026,
+          "what": "滚动 scrub 章节",
+          "verified": true
+        },
+        {
+          "name": "Apple",
+          "url": "https://www.apple.com/",
+          "year": 2026,
+          "what": "电影式滚动，含 3D 产品旋转（School of Motion 转述）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "pin 区超过 5 个屏高",
+        "pin 内无进度提示",
+        "到不了页脚"
+      ],
+      "gear_min": "mixed",
+      "mechanism": null,
+      "example": "examples/mechanisms/pinned-3d-scrub/",
+      "example_kind": "近似示例，机制不同，只借接入骨架"
+    },
+    {
+      "id": "view-transitions",
+      "name_zh": "视图转场",
+      "layer": "interaction",
+      "expresses": "页面之间连续，元素从列表飞到详情",
+      "fits": [
+        "多页站",
+        "作品列表到详情",
+        "MPA 小站"
+      ],
+      "avoid": [
+        "需兼容旧浏览器的政务站（可降级但无动效）"
+      ],
+      "cost": {
+        "difficulty": "低到中",
+        "performance": "低",
+        "size": "零",
+        "a11y": "低"
+      },
+      "reduced_motion": "时长设为接近 0 或改交叉淡入。必须写 document.startViewTransition 特征检测。",
+      "libs": [],
+      "refs": [
+        {
+          "name": "Realevate",
+          "url": "https://realevate.agency/",
+          "year": 2026,
+          "what": "卡片式页面转场（用 GSAP，不是 API）",
+          "verified": true
+        }
+      ],
+      "flash_signals": [
+        "每次点击等 1 秒以上",
+        "共享元素飞错位置",
+        "转场期间输入被阻塞"
+      ],
+      "gear_min": "clear",
+      "mechanism": null,
+      "example": "examples/mechanisms/cross-doc-view-transition/",
+      "example_kind": "近似示例，机制不同，只借接入骨架"
+    },
+    {
+      "id": "kinetic-type",
+      "name_zh": "动态字体与字形动画",
+      "layer": "type",
+      "expresses": "文字即画面，节奏与个性",
+      "fits": [
+        "品牌",
+        "编辑式页",
+        "发布页",
+        "portfolio"
+      ],
+      "avoid": [
+        "长文阅读正文"
+      ],
+      "cost": {
+        "difficulty": "中",
+        "performance": "低到中",
+        "size": "中",
+        "a11y": "中"
+      },
+      "reduced_motion": "静态字重，不逐字动。逐字拆分保留完整 aria-label。",
+      "libs": [
+        {
+          "name": "gsap",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"
+        },
+        {
+          "name": "gsap SplitText",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/SplitText.min.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "Epic",
+          "url": "https://www.epic.net/en/",
+          "year": 2025,
+          "what": "滚动时字体变形位移（School of Motion 转述）",
+          "verified": false
+        },
+        {
+          "name": "Neutomni",
+          "url": "https://neutomni.com/",
+          "year": 2026,
+          "what": "粗犷编辑式，字体排印加复古 UI",
+          "verified": true
+        },
+        {
+          "name": "Huy Phan Vol.2",
+          "url": "https://huyml.co/",
+          "year": 2026,
+          "what": "Typography + GSAP + Three.js",
+          "verified": true
+        }
+      ],
+      "flash_signals": [
+        "正文也逐字入场",
+        "字体动画盖过信息",
+        "多种字体动画同屏"
+      ],
+      "gear_min": "mixed",
+      "mechanism": null,
+      "example": "examples/mechanisms/splittext-kinetic/",
+      "example_kind": "近似示例，机制不同，只借接入骨架"
+    },
+    {
+      "id": "editorial-type",
+      "name_zh": "大字排版与编辑式版面",
+      "layer": "type",
+      "expresses": "权威、杂志感、观点鲜明",
+      "fits": [
+        "讲解页",
+        "观点页",
+        "品牌故事",
+        "咨询机构"
+      ],
+      "avoid": [
+        "数据密集的操作界面"
+      ],
+      "cost": {
+        "difficulty": "低到中",
+        "performance": "低",
+        "size": "低到中",
+        "a11y": "低"
+      },
+      "reduced_motion": "无影响。",
+      "libs": [],
+      "refs": [
+        {
+          "name": "Boc.Studio",
+          "url": "https://boc.studio/",
+          "year": 2026,
+          "what": "Typography、大图，Framer",
+          "verified": true
+        },
+        {
+          "name": "Huy Phan Vol.2",
+          "url": "https://huyml.co/",
+          "year": 2026,
+          "what": "大字与动效结合",
+          "verified": true
+        },
+        {
+          "name": "siteInspire Typographic",
+          "url": "https://www.siteinspire.com/websites?categories=typographic",
+          "year": 2026,
+          "what": "分类页，逐站技法未核",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "标题占满一屏而无说明文字",
+        "字号缩到手机上溢出",
+        "大字与图片抢焦点"
+      ],
+      "gear_min": "clear",
+      "mechanism": null,
+      "example": null,
+      "example_kind": "无示例，按 research/R4-visual-tech.md 技术卡自写"
+    },
+    {
+      "id": "bento",
+      "name_zh": "便当格",
+      "layer": "type",
+      "expresses": "模块化、整洁、一眼看全",
+      "fits": [
+        "功能总览",
+        "产品特性",
+        "仪表盘式首页"
+      ],
+      "avoid": [
+        "叙事线性内容",
+        "已被 AI 页面滥用，是同质化重灾区"
+      ],
+      "cost": {
+        "difficulty": "低",
+        "performance": "低",
+        "size": "低",
+        "a11y": "低"
+      },
+      "reduced_motion": "无影响。保证 DOM 顺序合理。",
+      "libs": [],
+      "refs": [
+        {
+          "name": "fireart 2026 趋势文",
+          "url": "https://fireart.studio/blog/the-best-web-design-trends/",
+          "year": 2026,
+          "what": "把 bento 列为趋势（二手汇总，非站点）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "每个格子都有独立动画和渐变",
+        "格子大小全相同",
+        "每格塞图标"
+      ],
+      "gear_min": "clear",
+      "mechanism": null,
+      "example": null,
+      "example_kind": "无示例，按 research/R4-visual-tech.md 技术卡自写"
+    },
+    {
+      "id": "brutalism",
+      "name_zh": "粗野主义",
+      "layer": "type",
+      "expresses": "直白、反精致、态度，2026 版为 1px 实线、硬几何、强对比",
+      "fits": [
+        "设计类",
+        "独立出版",
+        "文化机构",
+        "反主流品牌"
+      ],
+      "avoid": [
+        "医疗",
+        "金融",
+        "需要信任感的政务"
+      ],
+      "cost": {
+        "difficulty": "低",
+        "performance": "低",
+        "size": "低",
+        "a11y": "低到中"
+      },
+      "reduced_motion": "无影响。",
+      "libs": [],
+      "refs": [
+        {
+          "name": "Brutalism",
+          "url": "https://storyofbrutalism.com/",
+          "year": 2024,
+          "what": "荣誉提名，早于 2025",
+          "verified": true
+        },
+        {
+          "name": "Brutally Human",
+          "url": "https://brutallyhuman.com/",
+          "year": 2022,
+          "what": "荣誉提名，早于 2025",
+          "verified": true
+        },
+        {
+          "name": "Previously Installed",
+          "url": "https://previouslyinstalled.com",
+          "year": 2026,
+          "what": "Experimental、Retro，近粗野不严格",
+          "verified": true
+        }
+      ],
+      "flash_signals": [
+        "为乱而乱，错位到看不清",
+        "全页原色高饱和刺眼"
+      ],
+      "gear_min": "clear",
+      "mechanism": null,
+      "example": null,
+      "example_kind": "无示例，按 research/R4-visual-tech.md 技术卡自写"
+    },
+    {
+      "id": "isometric",
+      "name_zh": "等轴测与插画体系",
+      "layer": "stage",
+      "expresses": "友好、可解释，把复杂系统画清楚",
+      "fits": [
+        "技术讲解",
+        "SaaS 流程",
+        "教育",
+        "品牌插画系统"
+      ],
+      "avoid": [
+        "需要照片真实感的题材"
+      ],
+      "cost": {
+        "difficulty": "中到高",
+        "performance": "低",
+        "size": "低",
+        "a11y": "低"
+      },
+      "reduced_motion": "静态图，保留悬停高亮。加 title 与 aria-label。",
+      "libs": [],
+      "refs": [
+        {
+          "name": "Santioni Spirits（Active Theory + plan8）",
+          "url": "https://santionispirits.com/",
+          "year": 2026,
+          "what": "漫画风插画旅程 + WebGL",
+          "verified": true
+        },
+        {
+          "name": "Dropbox Brand Guidelines",
+          "url": "https://brand.dropbox.com/",
+          "year": 2025,
+          "what": "动画角色插画、色彩过渡（School of Motion 转述）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "插画数量多于内容",
+        "每张图都有独立动画",
+        "风格在页内不统一"
+      ],
+      "gear_min": "clear",
+      "mechanism": null,
+      "example": "examples/mechanisms/webgl-scene/",
+      "example_kind": "近似示例，机制不同，只借接入骨架"
+    },
+    {
+      "id": "generative-data",
+      "name_zh": "数据驱动的生成图形",
+      "layer": "stage",
+      "expresses": "证据、理性，数据自己在说话",
+      "fits": [
+        "研究",
+        "新闻",
+        "年报",
+        "监测与分析页"
+      ],
+      "avoid": [
+        "无真实数据的页（编造数据是红线）"
+      ],
+      "cost": {
+        "difficulty": "中",
+        "performance": "中",
+        "size": "中",
+        "a11y": "中"
+      },
+      "reduced_motion": "直接显示终态，不做计数与绘制动画。图表给文本摘要与表格替代。",
+      "libs": [],
+      "refs": [
+        {
+          "name": "Extremists on Both Sides",
+          "url": "https://both-sides.the7eye.org.il/",
+          "year": 2026,
+          "what": "Data Visualization、Scrolling、Storytelling",
+          "verified": true
+        },
+        {
+          "name": "CoMinVi",
+          "url": "https://www.cominvi.com.mx/",
+          "year": 2026,
+          "what": "含数据可视化元素",
+          "verified": true
+        },
+        {
+          "name": "Chladni · A Geometry of Sound",
+          "url": "http://chladni-plate-experiment.vercel.app/",
+          "year": 2026,
+          "what": "物理模型生成沙纹图形",
+          "verified": true
+        }
+      ],
+      "flash_signals": [
+        "动画比数据难读",
+        "3D 柱状图",
+        "所有数字都在跳动"
+      ],
+      "gear_min": "clear",
+      "mechanism": null,
+      "example": "examples/mechanisms/instanced-field/",
+      "example_kind": "近似示例，机制不同，只借接入骨架"
+    },
+    {
+      "id": "cursor-magnetic",
+      "name_zh": "光标与磁吸交互",
+      "layer": "interaction",
+      "expresses": "响应、手感，页面认得你",
+      "fits": [
+        "portfolio",
+        "创意机构",
+        "桌面端展示页"
+      ],
+      "avoid": [
+        "触屏为主的受众",
+        "无障碍要求高的页"
+      ],
+      "cost": {
+        "difficulty": "低到中",
+        "performance": "低",
+        "size": "低",
+        "a11y": "中"
+      },
+      "reduced_motion": "关闭磁吸位移，保留原生光标。不遮挡焦点环。",
+      "libs": [
+        {
+          "name": "gsap",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"
+        },
+        {
+          "name": "motion",
+          "version": "13.5.1",
+          "license": "MIT",
+          "cdn": "https://cdn.jsdelivr.net/npm/motion@13.5.1/dist/cjs/index.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "BDSN Club",
+          "url": "https://www.bdsn.club/",
+          "year": 2025,
+          "what": "光标响应的生成艺术（School of Motion 转述）",
+          "verified": false
+        },
+        {
+          "name": "Edolus",
+          "url": "https://edolus.com/",
+          "year": 2026,
+          "what": "多处鼠标交互效果",
+          "verified": true
+        },
+        {
+          "name": "Santioni Spirits",
+          "url": "https://santionispirits.com/",
+          "year": 2026,
+          "what": "鼠标驱动的倒酒、手部动画",
+          "verified": true
+        }
+      ],
+      "flash_signals": [
+        "光标拖尾遮住内容",
+        "每个元素都磁吸",
+        "所有可点区域光标样式各不同"
+      ],
+      "gear_min": "show",
+      "mechanism": null,
+      "example": null,
+      "example_kind": "无示例，按 research/R4-visual-tech.md 技术卡自写"
+    },
+    {
+      "id": "lottie-rive",
+      "name_zh": "Lottie 与 Rive 矢量动画",
+      "layer": "interaction",
+      "expresses": "精致小动画、状态反馈、带状态机的角色",
+      "fits": [
+        "引导",
+        "空状态",
+        "成功反馈",
+        "移动端微交互"
+      ],
+      "avoid": [
+        "大场景 3D"
+      ],
+      "cost": {
+        "difficulty": "中",
+        "performance": "低到中",
+        "size": "低到中",
+        "a11y": "低"
+      },
+      "reduced_motion": "显示第一帧或终态帧。循环动画可暂停。",
+      "libs": [
+        {
+          "name": "@lottiefiles/dotlottie-web",
+          "version": "0.80.0",
+          "license": "MIT",
+          "cdn": "https://cdn.jsdelivr.net/npm/@lottiefiles/dotlottie-web@0.80.0/dist/index.js"
+        },
+        {
+          "name": "@rive-app/canvas",
+          "version": "2.44.0",
+          "license": "未核",
+          "cdn": "https://cdn.jsdelivr.net/npm/@rive-app/canvas@2.44.0/rive.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "Rive",
+          "url": "https://rive.app/",
+          "year": 2025,
+          "what": "角色动画随滚动与光标响应（School of Motion 转述）",
+          "verified": false
+        },
+        {
+          "name": "Rive hero animations",
+          "url": "https://rive.app/use-cases/hero-animations",
+          "year": 2025,
+          "what": "官方示例与教程（仅见搜索摘要）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "循环动画永不停",
+        "动画文件超过 500 KB",
+        "动画与页面状态无关"
+      ],
+      "gear_min": "mixed",
+      "mechanism": null,
+      "example": null,
+      "example_kind": "无示例，按 research/R4-visual-tech.md 技术卡自写"
+    },
+    {
+      "id": "spline",
+      "name_zh": "Spline 嵌入 3D",
+      "layer": "stage",
+      "expresses": "低门槛的轻 3D 摆件",
+      "fits": [
+        "设计师主导",
+        "无前端 3D 经验",
+        "需快速出 hero 的页"
+      ],
+      "avoid": [
+        "需要精细性能控制的页",
+        "不能接受第三方托管外链的页"
+      ],
+      "cost": {
+        "difficulty": "低",
+        "performance": "中到高",
+        "size": "中到高",
+        "a11y": "中"
+      },
+      "reduced_motion": "用静态导出图替代 viewer。",
+      "libs": [
+        {
+          "name": "@splinetool/viewer",
+          "version": "2.0.65",
+          "license": "未核",
+          "cdn": "https://cdn.jsdelivr.net/npm/@splinetool/viewer@2.0.65/build/spline-viewer.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "Spline 3D web experiences",
+          "url": "https://spline.design/solutions/3d-web-experiences",
+          "year": 2025,
+          "what": "官方页，无获奖站核实",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "随便放一个旋转的玻璃体当装饰",
+        "首屏等 viewer 超过 3 秒"
+      ],
+      "gear_min": "show",
+      "mechanism": null,
+      "example": null,
+      "example_kind": "无示例，按 research/R4-visual-tech.md 技术卡自写"
+    },
+    {
+      "id": "image-sequence",
+      "name_zh": "图片序列滚动",
+      "layer": "stage",
+      "expresses": "电影级产品镜头，滚动即播放",
+      "fits": [
+        "硬件产品",
+        "建筑",
+        "汽车",
+        "一件物体的 360 度或拆解"
+      ],
+      "avoid": [
+        "无高质量素材的项目（素材须来自用户或自建 3D 渲染）"
+      ],
+      "cost": {
+        "difficulty": "中",
+        "performance": "中",
+        "size": "高",
+        "a11y": "中"
+      },
+      "reduced_motion": "只显示第一帧或关键帧。",
+      "libs": [
+        {
+          "name": "gsap",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"
+        },
+        {
+          "name": "gsap ScrollTrigger",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "Awwwards Scroll-based Video Sequence – Sol",
+          "url": "https://www.awwwards.com/inspiration/scroll-based-video-sequence-sol",
+          "year": 2025,
+          "what": "GSAP 序列（仅见搜索摘要）",
+          "verified": false
+        },
+        {
+          "name": "Apple 产品页",
+          "url": "https://www.apple.com/",
+          "year": 2026,
+          "what": "电影式滚动（School of Motion 转述）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "首屏加载序列超过 5 MB",
+        "帧间闪烁",
+        "滚动一点就跳很多帧"
+      ],
+      "gear_min": "show",
+      "mechanism": "examples/mechanisms/image-sequence/index.html",
+      "example": "examples/mechanisms/image-sequence/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "parallax-25d",
+      "name_zh": "2.5D 视差",
+      "layer": "stage",
+      "expresses": "纵深、层次，低成本的立体感",
+      "fits": [
+        "建筑与地产",
+        "品牌故事",
+        "长图文页"
+      ],
+      "avoid": [
+        "易晕动的受众",
+        "信息密集页"
+      ],
+      "cost": {
+        "difficulty": "低到中",
+        "performance": "低",
+        "size": "中",
+        "a11y": "中到高"
+      },
+      "reduced_motion": "关闭视差，图层静止。",
+      "libs": [
+        {
+          "name": "gsap",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"
+        },
+        {
+          "name": "gsap ScrollTrigger",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "Sobha Privy Collection",
+          "url": "https://sobha-privy-collection.com/",
+          "year": 2026,
+          "what": "Parallax、Three.js，地产",
+          "verified": true
+        },
+        {
+          "name": "Moto Finance（Properly Studio）",
+          "url": "https://www.moto-card.com/",
+          "year": 2026,
+          "what": "Parallax、Scrolling、GSAP、Three.js",
+          "verified": true
+        }
+      ],
+      "flash_signals": [
+        "层间速度差过大导致错位",
+        "文字也参与视差"
+      ],
+      "gear_min": "mixed",
+      "mechanism": null,
+      "example": "examples/mechanisms/depth-parallax-image/",
+      "example_kind": "近似示例，机制不同，只借接入骨架"
+    },
+    {
+      "id": "webgpu-tsl-material",
+      "name_zh": "WebGPU 与 TSL 节点材质",
+      "layer": "material",
+      "expresses": "材质质感、能量、液态与水面的真实感",
+      "fits": [
+        "产品展示",
+        "品牌发布",
+        "展览",
+        "科技主题的首屏背景"
+      ],
+      "avoid": [
+        "政务与医疗说明页",
+        "用户主要用低端手机的页面",
+        "未加 await renderer.init() 的自写 requestAnimationFrame 循环（会黑屏）",
+        "需要在 2 核无 GPU 机器上测帧率的验收"
+      ],
+      "cost": {
+        "difficulty": "高",
+        "performance": "中到高",
+        "size": "中",
+        "a11y": "中"
+      },
+      "reduced_motion": "渲染单帧后调用 setAnimationLoop(null)，时间参数固定为常数，保留材质静态画面。canvas 旁放 DOM 文字等价物。",
+      "libs": [
+        {
+          "name": "three",
+          "version": "0.186.0",
+          "license": "MIT",
+          "cdn": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.webgpu.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "three.js TSL 水面示例",
+          "url": "https://threejs.org/examples/webgpu_tsl_raging_sea.html",
+          "year": 2026,
+          "what": "TSL 水面写法（HTTP 200，未看）",
+          "verified": false
+        },
+        {
+          "name": "three.js 实例网格示例",
+          "url": "https://threejs.org/examples/webgpu_instance_mesh.html",
+          "year": 2026,
+          "what": "节点材质加实例（HTTP 200，未看）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "材质动效占满整屏",
+        "无 WebGPU 时回退后帧率低于 20 fps",
+        "材质亮度差让正文对比低于 4.5:1",
+        "首屏加载超过 3 秒才见内容"
+      ],
+      "gear_min": "mixed",
+      "mechanism": null,
+      "example": "examples/mechanisms/instanced-field/",
+      "example_kind": "近似示例，机制不同，只借接入骨架"
+    },
+    {
+      "id": "gltf-model-stage",
+      "name_zh": "glTF 模型舞台",
+      "layer": "stage",
+      "expresses": "物件本身、结构、拆解、实物展示",
+      "fits": [
+        "产品展示",
+        "设备与器械讲解",
+        "场馆与空间导览",
+        "展览"
+      ],
+      "avoid": [
+        "模型文件超过 1 MB 且无海报先行的首屏",
+        "没有授权的第三方模型",
+        "有机造型（人体、器械）由程序化几何硬拼",
+        "信息查询页"
+      ],
+      "cost": {
+        "difficulty": "中",
+        "performance": "低到中",
+        "size": "中",
+        "a11y": "中"
+      },
+      "reduced_motion": "只显示静态姿势，动画剪辑不播放，相机不漂移。canvas 旁放 DOM 文字说明。",
+      "libs": [
+        {
+          "name": "three",
+          "version": "0.186.0",
+          "license": "MIT",
+          "cdn": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "glTF-Transform",
+          "url": "https://gltf-transform.dev/",
+          "year": 2026,
+          "what": "压缩命令与流程（HTTP 200，未看）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "模型加载超过 3 秒首屏仍为空",
+        "模型遮住标题或正文",
+        "模型与业务无关",
+        "手机上低于 20 fps"
+      ],
+      "gear_min": "mixed",
+      "mechanism": "examples/mechanisms/gltf-model-stage/index.html",
+      "example": "examples/mechanisms/gltf-model-stage/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "instanced-field",
+      "name_zh": "实例化几何场",
+      "layer": "stage",
+      "expresses": "规模、网络、晶格、数据聚集的整体感",
+      "fits": [
+        "数据与网络主题的背景",
+        "能力矩阵的隐喻场",
+        "科技品牌首屏",
+        "地形或点阵意象"
+      ],
+      "avoid": [
+        "同屏有 1 万以上实例且同时位移的低端手机页",
+        "正文密集的说明页",
+        "要求精确读数的图表页"
+      ],
+      "cost": {
+        "difficulty": "中",
+        "performance": "低到中",
+        "size": "低",
+        "a11y": "低"
+      },
+      "reduced_motion": "静态排列，不做逐帧位移，渲染一帧后停止循环。",
+      "libs": [
+        {
+          "name": "three",
+          "version": "0.186.0",
+          "license": "MIT",
+          "cdn": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "three.js 实例网格示例",
+          "url": "https://threejs.org/examples/webgpu_instance_mesh.html",
+          "year": 2026,
+          "what": "InstancedMesh 写法（HTTP 200，未看）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "同屏同时运动的元素超过 1 万",
+        "实例颜色亮度差遮住正文",
+        "实例排列与主题无关"
+      ],
+      "gear_min": "mixed",
+      "mechanism": null,
+      "example": "examples/mechanisms/instanced-field/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "raymarch-backdrop",
+      "name_zh": "Raymarching 全屏着色器背景",
+      "layer": "material",
+      "expresses": "液态金属、有机融合、不可名状的能量体",
+      "fits": [
+        "品牌发布首屏",
+        "音乐与艺术展示",
+        "科技概念页"
+      ],
+      "avoid": [
+        "正文占首屏一半以上的说明页",
+        "没有降分辨率方案的手机页",
+        "2 核无 GPU 机器上的实时验收"
+      ],
+      "cost": {
+        "difficulty": "高",
+        "performance": "高",
+        "size": "低",
+        "a11y": "中"
+      },
+      "reduced_motion": "time 固定为常数，渲染一帧静态画面。背景层与正文之间保持对比 4.5:1 以上。",
+      "libs": [
+        {
+          "name": "ogl",
+          "version": "1.0.11",
+          "license": "未核",
+          "cdn": "https://cdn.jsdelivr.net/npm/ogl@1.0.11/src/index.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "Active Theory",
+          "url": "https://activetheory.net",
+          "year": 2026,
+          "what": "全屏着色器与整站空间感（HTTP 200，未看）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "全屏着色器占 100% 屏面且盖住正文",
+        "headless 软件渲染单帧超过 3 秒",
+        "手机上低于 20 fps"
+      ],
+      "gear_min": "show",
+      "mechanism": null,
+      "example": "examples/mechanisms/raymarch-backdrop/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "postfx-bloom-dof",
+      "name_zh": "后期处理：辉光与景深",
+      "layer": "material",
+      "expresses": "摄影感、光晕、焦点与虚化",
+      "fits": [
+        "产品展示",
+        "夜景与霓虹主题",
+        "品牌发布",
+        "展览"
+      ],
+      "avoid": [
+        "白底为主的说明页",
+        "bloom 阈值低于 0.8 的高亮文字场景",
+        "需要文字边缘锐利的表格页"
+      ],
+      "cost": {
+        "difficulty": "中",
+        "performance": "中到高",
+        "size": "中",
+        "a11y": "中"
+      },
+      "reduced_motion": "保留静态辉光，关闭随时间变化的色差抖动与景深扫焦。",
+      "libs": [
+        {
+          "name": "three",
+          "version": "0.186.0",
+          "license": "MIT",
+          "cdn": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js"
+        },
+        {
+          "name": "postprocessing",
+          "version": "6.39.5",
+          "license": "Zlib",
+          "cdn": "https://cdn.jsdelivr.net/npm/postprocessing@6.39.5/build/index.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "three.js bloom 示例",
+          "url": "https://threejs.org/examples/webgpu_postprocessing_bloom.html",
+          "year": 2026,
+          "what": "WebGPU 路径的 bloom（HTTP 200，未看）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "高亮处辉光闪烁",
+        "辉光让文字边缘模糊",
+        "WebGLRenderer 与 WebGPU 两条后期路径混用"
+      ],
+      "gear_min": "show",
+      "mechanism": null,
+      "example": "examples/mechanisms/webgl-scene/",
+      "example_kind": "近似示例，机制不同，只借接入骨架"
+    },
+    {
+      "id": "fluid-ink-pointer",
+      "name_zh": "指针墨水流体",
+      "layer": "material",
+      "expresses": "交互反馈、流动、墨与染的扩散",
+      "fits": [
+        "品牌发布",
+        "艺术展示",
+        "首屏互动背景"
+      ],
+      "avoid": [
+        "表单页",
+        "需要精确点击的操作界面",
+        "正文占首屏的说明页",
+        "手机无指针的页面（需改成触摸注入）"
+      ],
+      "cost": {
+        "difficulty": "高",
+        "performance": "中",
+        "size": "低",
+        "a11y": "中"
+      },
+      "reduced_motion": "关闭指针注入，渲染一帧预先注入的静态墨迹。",
+      "libs": [],
+      "refs": [
+        {
+          "name": "WebGL-Fluid-Simulation",
+          "url": "https://paveldogreat.github.io/WebGL-Fluid-Simulation/",
+          "year": 2026,
+          "what": "双缓冲 FBO 的速度场流体（MIT，HTTP 200，未看）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "墨水盖住标题或正文",
+        "参数手感未经 3 到 5 轮截图迭代",
+        "动效占屏超过一半"
+      ],
+      "gear_min": "mixed",
+      "mechanism": "examples/mechanisms/fluid-ink-pointer/index.html",
+      "example": "examples/mechanisms/fluid-ink-pointer/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "gpgpu-curl-particles",
+      "name_zh": "GPGPU 粒子与 curl noise",
+      "layer": "material",
+      "expresses": "烟、星云、丝带、流动的群体",
+      "fits": [
+        "科技品牌",
+        "数据流隐喻",
+        "艺术展示背景"
+      ],
+      "avoid": [
+        "手机上超过 5 万粒子",
+        "正文密集的说明页",
+        "粒子与主题无关的页面"
+      ],
+      "cost": {
+        "difficulty": "高",
+        "performance": "中到高",
+        "size": "低",
+        "a11y": "中"
+      },
+      "reduced_motion": "冻结时间，显示粒子的一个静态快照。",
+      "libs": [
+        {
+          "name": "three",
+          "version": "0.186.0",
+          "license": "MIT",
+          "cdn": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "three.js 计算粒子示例",
+          "url": "https://threejs.org/examples/webgpu_compute_particles.html",
+          "year": 2026,
+          "what": "计算着色器粒子（HTTP 200，未看）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "粒子盖住正文",
+        "同屏运动层多于 2 个",
+        "headless 下粒子数未降到 1 万导致无法截图"
+      ],
+      "gear_min": "show",
+      "mechanism": null,
+      "example": "examples/mechanisms/fluid-ink-pointer/",
+      "example_kind": "近似示例，机制不同，只借接入骨架"
+    },
+    {
+      "id": "mesh-gradient",
+      "name_zh": "网格渐变与噪声渐变",
+      "layer": "material",
+      "expresses": "柔和、液态、氛围、品牌色场",
+      "fits": [
+        "首屏背景",
+        "品牌页",
+        "小程序封面（用预渲染图）",
+        "讲解页章节底色"
+      ],
+      "avoid": [
+        "色斑亮度差使正文对比低于 4.5:1 的页面",
+        "需要中性底色的表格与数据页"
+      ],
+      "cost": {
+        "difficulty": "低",
+        "performance": "低到中",
+        "size": "低",
+        "a11y": "低"
+      },
+      "reduced_motion": "渲染一帧静态画面。CSS 版本不设动画。",
+      "libs": [
+        {
+          "name": "ogl",
+          "version": "1.0.11",
+          "license": "未核",
+          "cdn": "https://cdn.jsdelivr.net/npm/ogl@1.0.11/src/index.js"
+        }
+      ],
+      "refs": [],
+      "flash_signals": [
+        "色斑亮度差过大",
+        "渐变盖住正文",
+        "与品牌色无关的随机配色"
+      ],
+      "gear_min": "clear",
+      "mechanism": null,
+      "example": "examples/mechanisms/mesh-gradient/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "scroll-camera-path",
+      "name_zh": "滚动驱动相机路径",
+      "layer": "stage",
+      "expresses": "空间、穿行、过程，章节是场景里的站点",
+      "fits": [
+        "产品旅程",
+        "流程与全链路讲解",
+        "场馆与展览导览",
+        "品牌故事"
+      ],
+      "avoid": [
+        "信息查询页",
+        "需要直接跳到某一章的手册页",
+        "pin 总高度超过 5 屏的路径",
+        "没有静态站点图的页面"
+      ],
+      "cost": {
+        "difficulty": "中",
+        "performance": "中",
+        "size": "中",
+        "a11y": "高"
+      },
+      "reduced_motion": "保留章节分区与导航，每章显示一张该站点的静态视图，不绑定滚动。",
+      "libs": [
+        {
+          "name": "three",
+          "version": "0.186.0",
+          "license": "MIT",
+          "cdn": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js"
+        },
+        {
+          "name": "gsap",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"
+        },
+        {
+          "name": "gsap ScrollTrigger",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "Lusion",
+          "url": "https://lusion.co",
+          "year": 2026,
+          "what": "整站是一个空间（HTTP 200，未看）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "pin 总屏高超过 5 屏",
+        "无法滚动到页脚",
+        "相机运动让正文不可读",
+        "手机上低于 20 fps"
+      ],
+      "gear_min": "mixed",
+      "mechanism": "examples/mechanisms/scroll-camera-path/index.html",
+      "example": "examples/mechanisms/scroll-camera-path/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "css-scroll-timeline",
+      "name_zh": "CSS 滚动驱动动画",
+      "layer": "interaction",
+      "expresses": "进度、揭示、层次、轻量视差",
+      "fits": [
+        "讲解页",
+        "文章页",
+        "产品介绍",
+        "所有档位的入场与视差"
+      ],
+      "avoid": [
+        "需要 Firefox 稳定表现且无降级方案的页面",
+        "没有 @supports 包裹的写法"
+      ],
+      "cost": {
+        "difficulty": "低",
+        "performance": "低",
+        "size": "低",
+        "a11y": "低"
+      },
+      "reduced_motion": "prefers-reduced-motion: reduce 内设 animation: none。用 @supports (animation-timeline: view()) 包住，不支持时直接显示最终状态。",
+      "libs": [],
+      "refs": [
+        {
+          "name": "Scroll-driven animations",
+          "url": "https://scroll-driven-animations.style/",
+          "year": 2026,
+          "what": "animation-timeline 写法集（HTTP 200，未看）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "同屏运动元素过多",
+        "正文滚动中位移导致阅读困难",
+        "不支持的浏览器上元素停在隐藏态"
+      ],
+      "gear_min": "clear",
+      "mechanism": "examples/mechanisms/css-scroll-timeline/index.html",
+      "example": "examples/mechanisms/css-scroll-timeline/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "cross-doc-view-transition",
+      "name_zh": "跨文档 View Transitions",
+      "layer": "interaction",
+      "expresses": "连续感、页面之间的共享元素变形",
+      "fits": [
+        "多页站点",
+        "产品目录到详情",
+        "讲解页分章节多文件"
+      ],
+      "avoid": [
+        "单页应用的内部切换（用同文档版本）",
+        "小程序",
+        "首屏加载已超过 3 秒的站点"
+      ],
+      "cost": {
+        "difficulty": "低",
+        "performance": "低",
+        "size": "低",
+        "a11y": "中"
+      },
+      "reduced_motion": "prefers-reduced-motion: reduce 内把 ::view-transition-group(*) 的动画时长设为 0。",
+      "libs": [],
+      "refs": [
+        {
+          "name": "View Transitions 示例",
+          "url": "https://view-transitions.chrome.dev/",
+          "year": 2026,
+          "what": "跨文档转场写法（HTTP 200，未看）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "转场让首屏出现内容的时间超过 3 秒",
+        "共享元素错位"
+      ],
+      "gear_min": "mixed",
+      "mechanism": null,
+      "example": "examples/mechanisms/cross-doc-view-transition/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "pinned-3d-scrub",
+      "name_zh": "Pin 加 scrub 驱动 3D 状态",
+      "layer": "stage",
+      "expresses": "变形、拆解、材质变化、因果过程",
+      "fits": [
+        "产品拆解",
+        "结构与机理讲解",
+        "前后对比的状态变化"
+      ],
+      "avoid": [
+        "pin 总屏高超过 5 屏的页面",
+        "信息查询页",
+        "没有每状态静态图的页面"
+      ],
+      "cost": {
+        "difficulty": "中",
+        "performance": "中",
+        "size": "中",
+        "a11y": "高"
+      },
+      "reduced_motion": "去掉 pin 与 scrub，每个状态做成一个章节，显示一张静态图并保留章节导航。",
+      "libs": [
+        {
+          "name": "three",
+          "version": "0.186.0",
+          "license": "MIT",
+          "cdn": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js"
+        },
+        {
+          "name": "gsap",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"
+        },
+        {
+          "name": "gsap ScrollTrigger",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "GSAP ScrollTrigger 文档",
+          "url": "https://gsap.com/docs/v3/Plugins/ScrollTrigger/",
+          "year": 2026,
+          "what": "pin 与 scrub 参数（HTTP 200，未看）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "pin 总屏高超过 5 屏",
+        "用户无法滚动到页脚",
+        "3D 状态变化与正文说明不同步"
+      ],
+      "gear_min": "show",
+      "mechanism": null,
+      "example": "examples/mechanisms/pinned-3d-scrub/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "lenis-webgl-sync",
+      "name_zh": "Lenis 平滑滚动与 WebGL 同步",
+      "layer": "interaction",
+      "expresses": "质感、惯性、顺滑的滚动手感",
+      "fits": [
+        "WebGL 滚动场景",
+        "展示页",
+        "品牌发布"
+      ],
+      "avoid": [
+        "以阅读和查表为主的页面",
+        "表单页",
+        "已用原生滚动锚点的长文档"
+      ],
+      "cost": {
+        "difficulty": "中",
+        "performance": "低",
+        "size": "低",
+        "a11y": "中"
+      },
+      "reduced_motion": "不创建 Lenis 实例，使用原生滚动。",
+      "libs": [
+        {
+          "name": "lenis",
+          "version": "1.3.26",
+          "license": "MIT",
+          "cdn": "https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js"
+        },
+        {
+          "name": "gsap",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"
+        },
+        {
+          "name": "gsap ScrollTrigger",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "Lenis",
+          "url": "https://github.com/darkroomengineering/lenis",
+          "year": 2026,
+          "what": "与 gsap.ticker 同步（HTTP 200，未看）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "两个 requestAnimationFrame 循环造成抖动",
+        "滚动手感被改变使用户找不到页脚"
+      ],
+      "gear_min": "mixed",
+      "mechanism": null,
+      "example": "examples/mechanisms/lenis-webgl-sync/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "sdf-text-3d",
+      "name_zh": "SDF 文字（3D 场景内）",
+      "layer": "type",
+      "expresses": "文字成为空间中的物体、可缩放、可加着色器",
+      "fits": [
+        "3D 场景标题",
+        "品牌发布",
+        "展览标语"
+      ],
+      "avoid": [
+        "正文段落",
+        "没有 DOM 文字副本的页面",
+        "字体来源不是 Google Fonts 的页面"
+      ],
+      "cost": {
+        "difficulty": "中",
+        "performance": "中",
+        "size": "低",
+        "a11y": "高"
+      },
+      "reduced_motion": "文字静止，同时在 DOM 放一份真实文字。",
+      "libs": [
+        {
+          "name": "troika-three-text",
+          "version": "0.52.5",
+          "license": "未核",
+          "cdn": "未核"
+        },
+        {
+          "name": "three",
+          "version": "0.186.0",
+          "license": "MIT",
+          "cdn": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "troika 示例站",
+          "url": "https://troika-examples.netlify.app/",
+          "year": 2026,
+          "what": "SDF 文字示例（HTTP 200，未看）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "3D 文字无 DOM 副本",
+        "标题 3 秒内不可读",
+        "troika 运行时取字体的用法未核"
+      ],
+      "gear_min": "show",
+      "mechanism": null,
+      "example": "examples/mechanisms/webgl-scene/",
+      "example_kind": "近似示例，机制不同，只借接入骨架"
+    },
+    {
+      "id": "variable-font-axis",
+      "name_zh": "可变字体轴动画",
+      "layer": "type",
+      "expresses": "呼吸、强调、从轻到重的变化",
+      "fits": [
+        "标题",
+        "品牌页",
+        "讲解页的章节标题"
+      ],
+      "avoid": [
+        "整段正文（重排成本高）",
+        "字体不在 Google Fonts 上的页面"
+      ],
+      "cost": {
+        "difficulty": "低",
+        "performance": "低到中",
+        "size": "低",
+        "a11y": "低"
+      },
+      "reduced_motion": "固定在一个轴值，不做字重或字宽变化。",
+      "libs": [
+        {
+          "name": "motion",
+          "version": "13.5.1",
+          "license": "MIT",
+          "cdn": "https://cdn.jsdelivr.net/npm/motion@13.5.1/dist/cjs/index.js"
+        }
+      ],
+      "refs": [],
+      "flash_signals": [
+        "整段正文做轴动画",
+        "首屏可读内容被轴变化打乱"
+      ],
+      "gear_min": "clear",
+      "mechanism": null,
+      "example": "examples/mechanisms/variable-font-axis/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "splittext-kinetic",
+      "name_zh": "SplitText 逐字与路径文字",
+      "layer": "type",
+      "expresses": "节奏、入场仪式、文字流动",
+      "fits": [
+        "标题入场",
+        "品牌发布",
+        "展览标语"
+      ],
+      "avoid": [
+        "标题长度超过 3 行的页面",
+        "入场后 3 秒内仍不可读的首屏",
+        "正文段落"
+      ],
+      "cost": {
+        "difficulty": "低",
+        "performance": "低",
+        "size": "低",
+        "a11y": "低"
+      },
+      "reduced_motion": "直接显示最终文字，不做逐字入场。",
+      "libs": [
+        {
+          "name": "gsap SplitText",
+          "version": "3.15.0",
+          "license": "GSAP Standard no-charge License",
+          "cdn": "https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/SplitText.min.js"
+        }
+      ],
+      "refs": [
+        {
+          "name": "GSAP SplitText 文档",
+          "url": "https://gsap.com/docs/v3/Plugins/SplitText/",
+          "year": 2026,
+          "what": "mask、autoSplit、aria 选项（HTTP 200，已读选项）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "标题 3 秒内不可读",
+        "入场动画与其他运动层叠加"
+      ],
+      "gear_min": "mixed",
+      "mechanism": null,
+      "example": "examples/mechanisms/splittext-kinetic/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "balanced-text-property-gradient",
+      "name_zh": "text-wrap 均衡与 @property 渐变",
+      "layer": "type",
+      "expresses": "整洁、克制、渐变进度",
+      "fits": [
+        "标题",
+        "进度条",
+        "所有档位的基础排版"
+      ],
+      "avoid": [
+        "超过 6 行的 text-wrap: balance 标题（Chromium 对 6 行以上无效）"
+      ],
+      "cost": {
+        "difficulty": "低",
+        "performance": "低",
+        "size": "低",
+        "a11y": "低"
+      },
+      "reduced_motion": "@property 动画在 reduce 时设 animation: none。",
+      "libs": [],
+      "refs": [
+        {
+          "name": "MDN @property",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/@property",
+          "year": 2026,
+          "what": "渐变动画写法（HTTP 200，已读）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "无限循环渐变动画多于 1 个"
+      ],
+      "gear_min": "clear",
+      "mechanism": null,
+      "example": null,
+      "example_kind": "无示例，按 research/R4-visual-tech.md 技术卡自写"
+    },
+    {
+      "id": "blender-headless-glb",
+      "name_zh": "Blender 无头建模导出 glb",
+      "layer": "stage",
+      "expresses": "定制物件、器械、场馆等 R2 以外的专属模型",
+      "fits": [
+        "产品展示",
+        "设备与器械讲解",
+        "场馆与空间导览"
+      ],
+      "avoid": [
+        "本机未装 Blender 时的即时交付",
+        "复杂场景（本机 2 核 3 GB 未测）",
+        "glb 超过 1 MB 且无压缩的首屏"
+      ],
+      "cost": {
+        "difficulty": "高",
+        "performance": "构建时一次性",
+        "size": "中",
+        "a11y": "中"
+      },
+      "reduced_motion": "构建时工具，不适用。页面侧见 gltf-model-stage。",
+      "libs": [],
+      "refs": [
+        {
+          "name": "glTF Tutorials：Blender 导出",
+          "url": "https://github.khronos.org/glTF-Tutorials/BlenderGltfConverter/",
+          "year": 2026,
+          "what": "blender -b -P 用法（已读摘要）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "glb 体积让首屏出现内容超过 3 秒",
+        "导出操作名在 Blender 5.2 是否改名未核"
+      ],
+      "gear_min": "show",
+      "mechanism": null,
+      "example": "examples/mechanisms/blender-headless-glb/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "depth-parallax-image",
+      "name_zh": "单图深度图 2.5D 视差",
+      "layer": "stage",
+      "expresses": "立体感、纵深、静态图变活",
+      "fits": [
+        "品牌故事",
+        "场景插画展示",
+        "产品场景图"
+      ],
+      "avoid": [
+        "没有深度图且无法生成的场景",
+        "深度错位明显的人像特写"
+      ],
+      "cost": {
+        "difficulty": "中",
+        "performance": "低到中",
+        "size": "低",
+        "a11y": "低"
+      },
+      "reduced_motion": "只显示原图，不做指针或滚动错位。",
+      "libs": [
+        {
+          "name": "ogl",
+          "version": "1.0.11",
+          "license": "未核",
+          "cdn": "https://cdn.jsdelivr.net/npm/ogl@1.0.11/src/index.js"
+        }
+      ],
+      "refs": [],
+      "flash_signals": [
+        "同屏运动元素过多",
+        "深度边缘撕裂"
+      ],
+      "gear_min": "mixed",
+      "mechanism": "examples/mechanisms/depth-parallax-image/index.html",
+      "example": "examples/mechanisms/depth-parallax-image/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "capability-tiering",
+      "name_zh": "偏好探测与能力分级",
+      "layer": "interaction",
+      "expresses": "稳妥、可达、按设备给不同档位",
+      "fits": [
+        "所有档位的 3D 与动效页面"
+      ],
+      "avoid": [
+        "缺 Reduce Motion 退路的任何页面"
+      ],
+      "cost": {
+        "difficulty": "低",
+        "performance": "低",
+        "size": "低",
+        "a11y": "低"
+      },
+      "reduced_motion": "本卡本身是退路机制：reduce 时用静帧，无 WebGL 2 时用静态图。",
+      "libs": [],
+      "refs": [
+        {
+          "name": "MDN prefers-reduced-transparency",
+          "url": "https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-transparency",
+          "year": 2026,
+          "what": "实验性，只当增强（HTTP 200，已读）",
+          "verified": false
+        }
+      ],
+      "flash_signals": [
+        "缺少 Reduce Motion 退路",
+        "阈值未实测却当作固定值"
+      ],
+      "gear_min": "clear",
+      "mechanism": "examples/mechanisms/capability-tiering/index.html",
+      "example": "examples/mechanisms/capability-tiering/",
+      "example_kind": "同名示例"
+    },
+    {
+      "id": "paper-object-stage",
+      "name_zh": "CSS 3D 纸件舞台",
+      "layer": "stage",
+      "expresses": "纸件、卡片、手册的实体感，可翻、可叠、可抽出",
+      "fits": [
+        "3 到 5 章小页面",
+        "流程与步骤讲解",
+        "档案与材料类内容",
+        "clear 与 mixed 档页面"
+      ],
+      "avoid": [
+        "需要真实光影与材质的产品展示",
+        "大量纸件同屏（超过 12 张）",
+        "纸件上放长段正文"
+      ],
+      "cost": {
+        "difficulty": "低",
+        "performance": "低",
+        "size": "低",
+        "a11y": "低"
+      },
+      "reduced_motion": "关闭翻转与堆叠过渡，直接显示终态（纸件摊开或叠好的静态排列）。翻面内容用 DOM 文本，键盘可达。",
+      "libs": [],
+      "refs": [],
+      "flash_signals": [
+        "纸件翻转时文字镜像或不可读",
+        "阴影用大面积 blur 导致滚动掉帧",
+        "纸件和章节内容无关，只是装饰"
+      ],
+      "gear_min": "clear",
+      "mechanism": null,
+      "example": null,
+      "example_kind": "无示例，按卡面自写"
+    },
+    {
+      "id": "svg-scene-stage",
+      "name_zh": "手绘风 SVG 场景舞台",
+      "layer": "stage",
+      "expresses": "手作、亲和、讲故事的场景感，线条随阅读逐步画出",
+      "fits": [
+        "3 到 5 章小页面",
+        "科普与教育讲解",
+        "品牌故事与流程场景",
+        "clear 与 mixed 档页面"
+      ],
+      "avoid": [
+        "需要精确数据读数的图表",
+        "路径点超过 2000 的复杂插画",
+        "需要照片级真实感的内容"
+      ],
+      "cost": {
+        "difficulty": "低",
+        "performance": "低",
+        "size": "低",
+        "a11y": "低"
+      },
+      "reduced_motion": "描边动画（stroke-dashoffset 入场）关闭，直接显示完整描边与填充终态。场景给 title 与 desc 文本。",
+      "libs": [],
+      "refs": [],
+      "flash_signals": [
+        "描边动画超过 3 秒才见全貌",
+        "线条粗细不一致，像素材拼贴",
+        "场景遮住标题或正文",
+        "同屏所有路径同时画"
+      ],
+      "gear_min": "clear",
+      "mechanism": null,
+      "example": null,
+      "example_kind": "无示例，按卡面自写"
+    },
+    {
+      "id": "typographic-object-stage",
+      "name_zh": "字体实体舞台",
+      "layer": "stage",
+      "expresses": "把一个词或数字当作舞台上的实体，字本身就是画面",
+      "fits": [
+        "3 到 5 章小页面",
+        "一个核心数字或一个核心词的页面",
+        "发布与宣言类首屏",
+        "clear 与 mixed 档页面"
+      ],
+      "avoid": [
+        "核心词不明确的页面",
+        "长标题（超过 6 个字）",
+        "需要多语种换行的位置"
+      ],
+      "cost": {
+        "difficulty": "低",
+        "performance": "低",
+        "size": "低",
+        "a11y": "低"
+      },
+      "reduced_motion": "关闭随滚动变轴、变重与遮罩移动，固定在一个可读的终态字重与字号。保留真实文本节点，不转成图片。",
+      "libs": [],
+      "refs": [],
+      "flash_signals": [
+        "超大字挤出正文，首屏看不到第二层信息",
+        "变轴过程中字形不可读",
+        "字内贴图对比度不足",
+        "用图片代替真实文字"
+      ],
+      "gear_min": "clear",
+      "mechanism": null,
+      "example": null,
+      "example_kind": "无示例，按卡面自写"
+    }
+  ]
+}

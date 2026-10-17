@@ -1,0 +1,6 @@
+- id：splittext-kinetic
+- 机制：SplitText 按字入场（位移加旋转）加 SVG textPath 的 startOffset 随滚动 scrub。
+- 依赖（固定版本）：gsap、ScrollTrigger、SplitText 均 3.15.0（jsDelivr，三个 URL 已核 200）
+- 文件体积：index.html 3631 字节
+- Reduce Motion 行为：不分割，不创建动画，标题与路径文字直接显示终态。
+- 已验证项：1440 截图已看，console 0 error，aria-label 由 SplitText 自动加。390 截图未单独截（版式同流式）。

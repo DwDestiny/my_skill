@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>机制示例：图片序列滚动</title>
+<!--
+机制：canvas 按滚动进度绘制序列帧。本示例没有图片素材，24 帧在启动时用 canvas 程序化生成（立方体展开），再存成 ImageBitmap 预加载。展示预加载、进度映射、低端机降帧。
+适合 / 不适合：适合产品旋转、物体展开这类需要逐帧精确控制的画面。不适合帧数超过 150 的整页常驻（内存高），那时改用视频或 WebGL。
+依赖与固定版本：无。原生 JS。
+来源与许可：自写，MIT。
+Reduce Motion 退路：显示最后一帧，不随滚动变化。matchMedia 检查，且监听变化。
+性能预算：24 帧，每帧 640×400，内存约 24×1 MB。低端机（deviceMemory ≤ 4 或 hardwareConcurrency ≤ 4）只用每 2 帧一张（12 帧）。绘制只在帧号变化时进行。
+不可照抄的部分：帧内容、颜色、字体、版式。真实项目把 gen() 换成 fetch 图片再 createImageBitmap。
+接入方法：
+1. 保留 N、预加载进度条和 draw(i)。把 gen(i) 换成加载你的 WebP 序列。
+2. 序列的总帧数写进 N，并按滚动距离设 .track 高度。
+3. 保留低端机降帧和 Reduce Motion 分支。
+-->
+<style>
+:root{--bg:#e6e9e9;--fg:#141a1b;--accent:#2f6f73;--line:#8a9698}
+@media (prefers-color-scheme:dark){:root{--bg:#161b1c;--fg:#eef1f1;--accent:#6fb3b8;--line:#4a5658}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.7 system-ui,-apple-system,"Segoe UI","PingFang SC","Noto Sans CJK SC",sans-serif}
+.intro{max-width:40rem;margin:0 auto;padding:12vh 16px 4vh}
+h1{font-size:2rem;line-height:1.25;margin:0 0 1rem}
+.track{height:260vh;position:relative}
+.sticky{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;padding:0 16px}
+canvas{width:min(100%,640px);aspect-ratio:8/5;background:var(--bg);border:2px solid var(--line)}
+.bar{width:min(100%,640px);height:6px;background:var(--line)}
+.bar i{display:block;height:100%;background:var(--accent);width:0}
+#st{margin:0;color:var(--fg);font-size:.95rem}
+.after{max-width:40rem;margin:0 auto;padding:6vh 16px 20vh}
+</style>
+</head>
+<body>
+<section class="intro"><h1>图片序列滚动</h1><p>这是机制示例，只演示技术，不带最终配色与版式。下方 canvas 固定在屏幕中央，滚动进度决定显示第几帧。帧由脚本生成，没有图片文件。</p></section>
+<div class="track" id="track"><div class="sticky">
+ <canvas id="cv" width="640" height="400" role="img" aria-label="立方体逐步展开的序列帧，随滚动推进"></canvas>
+ <div class="bar" aria-hidden="true"><i id="pb"></i></div>
+ <p id="st" aria-live="polite">预加载中…</p>
+</div></div>
+<section class="after"><p>序列结束。</p></section>
+<script>
+(()=>{
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),pb=document.getElementById('pb'),st=document.getElementById('st'),track=document.getElementById('track');
+const rm=matchMedia('(prefers-reduced-motion: reduce)');
+const css=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+const W=640,H=400,FULL=24;
+// 低端机降帧：每 2 帧取 1 帧
+const low=(navigator.deviceMemory&&navigator.deviceMemory<=4)||(navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4);
+const step=low?2:1,N=Math.ceil(FULL/step);
+const frames=[];let cur=-1;
+// 程序化生成第 i 帧：立方体六面向外展开，t 从 0 到 1
+function gen(i){
+  const t=i/(FULL-1),c=new OffscreenCanvas(W,H),g=c.getContext('2d');
+  const fg=css('--fg'),ac=css('--accent'),bg=css('--bg');
+  g.fillStyle=bg;g.fillRect(0,0,W,H);g.lineWidth=3;g.strokeStyle=fg;
+  const s=56,cx=W/2,cy=H/2-45,e=t*t*(3-2*t); // 缓动
+  const faces=[[0,0],[0,-1],[0,1],[-1,0],[1,0],[0,2]]; // 十字展开的格位
+  faces.forEach((f,k)=>{
+    const ox=f[0]*s*(1+.6*e),oy=f[1]*s*(1+.6*e),rot=(1-e)*(k%2?.6:-.6);
+    g.save();g.translate(cx+ox,cy+oy);g.rotate(rot*(1-e));g.scale(1-.25*(1-e)*(k?1:0),1);
+    g.fillStyle=k===0?ac:bg;g.globalAlpha=k===0?1:.9;g.fillRect(-s/2,-s/2,s,s);g.globalAlpha=1;g.strokeRect(-s/2,-s/2,s,s);g.restore();
+  });
+  return c;
+}
+async function preload(){
+  for(let k=0;k<N;k++){
+    frames[k]=await createImageBitmap(gen(Math.min(FULL-1,k*step)));
+    pb.style.width=((k+1)/N*100)+'%';
+    if(k%4===3)await new Promise(r=>setTimeout(r)); // 让出主线程
+  }
+}
+function draw(k){if(k===cur||!frames[k])return;cur=k;ctx.clearRect(0,0,W,H);ctx.drawImage(frames[k],0,0)}
+// 进度映射：滚动进度 → 帧号
+function progress(){const r=track.getBoundingClientRect(),m=track.offsetHeight-innerHeight;return Math.min(1,Math.max(0,-r.top/m))}
+function update(){
+  if(!frames.length||frames.length<N)return;
+  const k=rm.matches?N-1:Math.round(progress()*(N-1));
+  draw(k);st.textContent='第 '+(k+1)+' / '+N+' 帧'+(low?'（低端机降帧）':'');
+}
+let ticking=false;
+addEventListener('scroll',()=>{if(ticking)return;ticking=true;requestAnimationFrame(()=>{ticking=false;update()})},{passive:true});
+rm.addEventListener('change',update);
+preload().then(()=>{update()});
+})();
+</script>
+</body>
+</html>

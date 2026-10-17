@@ -1,0 +1,6 @@
+- id：variable-font-axis
+- 机制：原生 font-variation-settings，滚动进度 t 驱动 wght、slnt、CASL，rAF 合并写入。
+- 依赖（固定版本）：Google Fonts Recursive（轴 slnt、wght、CASL），无 JS 库
+- 文件体积：index.html 3368 字节
+- Reduce Motion 行为：不监听滚动，--t 固定 0.7。
+- 已验证项：1440 与 390 截图已看，console 0 error，http 外链只有 jsDelivr 与 Google Fonts。 减少动态下为固定字形。中文走系统字体，无轴变化。

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>机制示例：CSS 滚动时间线</title>
+<!--
+机制：零 JS。animation-timeline: view() 让元素进入视口时淡入、位移、缩放。animation-timeline: scroll() 驱动顶部进度条。
+来自技术卡：T14（research/R4-visual-tech.md）。
+适合 / 不适合：适合入场、进度条、轻量视差。不适合需要 pin 与跨元素时间线编排的场景（用 scroll-story）。
+依赖与固定版本：无。需要支持 scroll-driven animations 的浏览器（Chromium 115 以上、Safari 26 以上）。
+Reduce Motion 退路：animation:none，元素直接显示终态。
+@supports 退路：不支持 animation-timeline 时不设初始隐藏状态，元素直接显示终态，进度条隐藏。
+已知限制：Firefox 默认未启用时走终态。没有 JS 回退动画。
+不可照抄的部分：颜色、版式、文案。只抄 @keyframes、animation-range 与 @supports 的包法。
+接入方法：
+1. 复制 @supports 块里的规则。
+2. 给元素加 class="rise" 或 "zoom"。
+3. 保持 @media (prefers-reduced-motion) 块。
+-->
+<style>
+:root{--bg:#dcdcdc;--fg:#161616;--mute:#444;--card:#f2f2f2;--bar:#222}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1c1c;--fg:#eee;--mute:#b5b5b5;--card:#2a2a2a;--bar:#eee}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.7 system-ui,-apple-system,"Segoe UI","PingFang SC","Noto Sans CJK SC",sans-serif}
+main{max-width:44rem;margin:0 auto;padding:0 16px 20vh}
+.hero{min-height:70vh;display:flex;flex-direction:column;justify-content:center}
+h1{font-size:2.25rem;line-height:1.2;margin:0 0 1rem}
+section{margin:0 0 30vh;background:var(--card);padding:1.5rem}
+h2{margin:0 0 .5rem}p{margin:0;color:var(--mute)}
+.bar{display:none;position:fixed;top:0;left:0;right:0;height:5px;background:var(--bar);transform-origin:left}
+.rule{height:4px;background:var(--fg);margin-top:1rem;width:100%}
+@supports (animation-timeline:view()){
+ .bar{display:block;transform:scaleX(0);animation:grow linear both;animation-timeline:scroll(root)}
+ .rise{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 70%}
+ .zoom{animation:zoom linear both;animation-timeline:view();animation-range:entry 0% cover 50%}
+ .rule{transform-origin:left;animation:grow linear both;animation-timeline:view();animation-range:entry 20% cover 45%}
+ .slide{animation:slide linear both;animation-timeline:view();animation-range:cover 0% cover 100%}
+}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes rise{from{opacity:0;transform:translateY(60px)}to{opacity:1;transform:none}}
+@keyframes zoom{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
+@keyframes slide{from{transform:translateX(-6%)}to{transform:translateX(6%)}}
+@media (prefers-reduced-motion:reduce){.bar,.rise,.zoom,.rule,.slide{animation:none!important;opacity:1;transform:none}.bar{display:none}}
+</style>
+</head>
+<body>
+<div class="bar" aria-hidden="true"></div>
+<main>
+ <div class="hero"><h1>CSS 滚动时间线</h1><p>机制示例，零 JS。向下滚动：每块在进入视口时淡入、位移或缩放，顶部进度条跟随页面滚动。</p></div>
+ <section class="rise"><h2>淡入加上移</h2><p>animation-range 为 entry 0% 到 entry 70%。</p><div class="rule"></div></section>
+ <section class="zoom"><h2>缩放进入</h2><p>从 85% 放大到 100%，范围到 cover 50%。</p></section>
+ <section class="slide"><h2>横向漂移</h2><p>整个可见过程中左右各移 6%，是最简单的视差。</p></section>
+ <section class="rise"><h2>终态</h2><p>不支持该特性的浏览器会直接显示这些块的终态。</p></section>
+</main>
+</body>
+</html>

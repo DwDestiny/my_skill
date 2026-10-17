@@ -6,13 +6,28 @@
 
 | 文件 | 位置 | A 用哪些字段 |
 |---|---|---|
-| `blueprint.md` | `01-内容规划/` | front matter：`title` `one_line` `gear_suggestion` `audience.use_mode` `audience.language` `delivery`；每章：`id` `heading` `outcome_ids` `pattern` `claims` `new_terms` `blocks` `screens` `fold` `checkpoint` `stage`；每个 block：`shape` `form` `title` `claims` `budget` `mobile` `twin` |
+| `blueprint.md` | `01-内容规划/` | front matter：`title` `one_line` `reader_mode` `audience.use_mode` `audience.language` `delivery`；产品层：根本目标、工作故事、职责卡；每章：`id` `heading` `outcome_ids` `pattern` `claims` `new_terms` `blocks` `screens` `fold` `checkpoint` `stage` `image_needs`；每个 block：`shape` `form` `title` `claims` `budget` `mobile` `twin` |
 | `evidence-index.md` | `01-内容规划/` | 断言 ID、原话、类型、来源、定位、日期、可信度，用来渲染标记与脚注 |
 | `glossary.md` | `01-内容规划/` | 首选词、一句话定义、首次出现章节，用来渲染 `dfn` |
 | `audience-outcomes.md` | `01-内容规划/` | 结果清单，用来写章末检查点与顶部摘要 |
 | `handoff-log.md` | `01-内容规划/` | 双方的来往记录 |
 
 A 不读原始资料。页面上的每个数字、每句断言都来自 `evidence-index.md`。A 发现蓝图没覆盖的内容，不自己补，退回 B。
+
+产品层与新字段的读法（字段定义见 `content-blueprint/references/blueprint-template.md` 第 1.1 节）：
+
+| 蓝图内容 | A 在哪一步用 | 怎么用 |
+|---|---|---|
+| `stage: yes` | S3 方向单、设计计划第 2 节 | 进舞台幕表候选。A 从中选舞台区，未选的章写理由 |
+| `stage: no` | 同上 | 默认安静区。A 改成舞台区时写理由 |
+| `image_needs` | S3 资产清单 | 每项一行。A 按 `kind`（`data` / `mechanism` / `atmosphere`）定做法与风格：生成图像按 `design-pipeline/references/asset-generation.md` 写提示词，或自绘 SVG |
+| 职责卡"视觉重量" | S4 页面规划、设计计划第 6 节 | 主角章分配舞台预算，背景章只做阅读 |
+| 职责卡"唯一主任务""离开时必须做到" | S3.5 首屏、S6 验收 | 首屏对照首屏卡。验收时逐章核"离开时必须做到" |
+| 职责卡"禁止出现" | S6 验收 | 截图里出现即为问题，修后再交 |
+
+A 不改职责卡。A 认为职责卡与预算预设冲突时，按第 3 节写 `gear_conflict`。
+
+舞台章 ≥ 总章数 1/4 的比例由 B（`design-pipeline` S2 门）保证，A 的门禁只查字段存在。
 
 ## 2. 进入 A 的门禁
 
@@ -23,7 +38,8 @@ A 不读原始资料。页面上的每个数字、每句断言都来自 `evidenc
 3. 每个 block 的 `form` 是允许值之一：`text` `table` `compare` `timeline` `metric` `chart` `diagram` `figure3d` `exploded`。
 4. 每个非 `text` 的 block 有 `budget` 数值（节点数、行列数、序列数、字数）。
 5. 每章 `screens` 为 1 到 3。
-6. `gear_suggestion` 为 `clear` `mixed` `show` 之一。
+6. `reader_mode` 为 读、读看、看 之一。
+7. 每章有 `stage` 字段，值为 `yes` 或 `no`。
 
 ## 3. 退回类型
 
@@ -35,7 +51,7 @@ A 不读原始资料。页面上的每个数字、每句断言都来自 `evidenc
 | `missing_source` | 页面需要的数字或断言没有证据 ID | 位置、所需内容 |
 | `term_conflict` | 同一概念在蓝图里有两个词，或术语表缺词 | 两处位置 |
 | `incomplete` | 第 2 节门禁未过 | 缺哪一项 |
-| `gear_conflict` | A 认为档位与读者使用方式不符 | 理由；最终由用户裁决 |
+| `gear_conflict` | A 认为预算预设与读者使用方式不符 | 理由；最终由用户裁决 |
 
 ## 4. 退回条目格式
 
@@ -60,4 +76,4 @@ B 处理后在同一条目下追加：
 
 ## 5. A 的产出回传给 B 的字段
 
-页面完成后，A 在 `handoff-log.md` 末尾追加一条 `delivered`：页面路径、档位、每章实际屏数、每张图的实际节点数、未渲染的断言 ID（若有）。B 据此更新蓝图的 `screens` 实际值。
+页面完成后，A 在 `handoff-log.md` 末尾追加一条 `delivered`：页面路径、预算预设、每章实际屏数、每张图的实际节点数、未渲染的断言 ID（若有）。B 据此更新蓝图的 `screens` 实际值。

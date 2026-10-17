@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>机制示例：three.js 分层板片</title>
+<!--
+机制：three.js 程序化几何。五块分层板片加节点连线，鼠标视差，滚动推镜头。不加载任何外部模型。
+适合 / 不适合：适合用一个物件讲“分层”或“网络”的概念。不适合需要精确读数的数据，也不适合首屏阻塞加载的低端机页面。
+依赖与固定版本：three 0.186.0，经 jsDelivr 的 ESM importmap 加载。
+来源与许可：自写，MIT。three.js 为 MIT。
+Reduce Motion 退路：停自转与漂移，渲染一帧，不随鼠标移动。滚动与尺寸变化时只重画一帧，没有持续循环。canvas 外有同义文本。
+性能预算：桌面 60 fps，窄屏限 30 fps 并把像素比降到 1。几何总共约 400 个顶点。three 库约 700 KB（CDN），自有代码约 4 KB。页面不可见时停。
+不可照抄的部分：板片数量与颜色、物件含义、字体、版式。只抄渲染循环、视差、滚动映射和降采样。
+接入方法：
+1. 复制 importmap 和模块脚本，把 build() 换成你自己的物件。
+2. 页面设一个高于视口的滚动区，canvas 用 position:fixed。
+3. 在 canvas 旁放同义文本，并保留 Reduce Motion 分支。
+-->
+<style>
+:root{--bg:#e4e7e7;--fg:#141a1b;--plate:#9aa7a9;--line:#2f6f73;--node:#141a1b}
+@media (prefers-color-scheme:dark){:root{--bg:#161b1c;--fg:#eef1f1;--plate:#3a4749;--line:#6fb3b8;--node:#eef1f1}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.7 system-ui,-apple-system,"Segoe UI","PingFang SC","Noto Sans CJK SC",sans-serif}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+.scroll{height:220vh;position:relative}
+.text{position:sticky;top:0;height:100vh;display:flex;align-items:flex-end;padding:0 16px 8vh;pointer-events:none}
+.card{max-width:30rem;background:var(--bg);padding:1rem 1.25rem;border-left:6px solid var(--line);pointer-events:auto}
+h1{font-size:1.8rem;margin:0 0 .5rem;line-height:1.25}
+p{margin:0 0 .6rem}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js"}}</script>
+</head>
+<body>
+<canvas id="c" role="img" aria-label="五层板片和连线的三维示意，等价说明见左下文字"></canvas>
+<div class="scroll"><div class="text"><div class="card">
+<h1>分层板片</h1>
+<p>这是机制示例，只演示技术，不带最终配色与版式。画面是五块叠放的板片，每块板片上有节点，相邻板片的节点用线连接。</p>
+<p>鼠标移动时画面轻微偏转。向下滚动时镜头推近。</p>
+</div></div></div>
+<script type="module">
+import * as THREE from 'three';
+const cv=document.getElementById('c'),rm=matchMedia('(prefers-reduced-motion: reduce)');
+const small=matchMedia('(max-width: 700px)').matches;
+const css=k=>new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue(k).trim());
+const r=new THREE.WebGLRenderer({canvas:cv,antialias:!small,alpha:true});
+r.setPixelRatio(small?1:Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(40,1,.1,100);
+const g=new THREE.Group();scene.add(g);
+// 程序化物件：5 层板片，每层 6 个节点，相邻层节点连线
+function build(){
+  const plate=css('--plate'),line=css('--line'),node=css('--node'),L=5,N=6,pts=[];
+  const pg=new THREE.BoxGeometry(4,.06,3),pm=new THREE.MeshBasicMaterial({color:plate,transparent:true,opacity:.35,depthWrite:false});
+  const em=new THREE.LineBasicMaterial({color:plate}),eg=new THREE.EdgesGeometry(pg);
+  const sg=new THREE.SphereGeometry(.07,12,8),sm=new THREE.MeshBasicMaterial({color:node});
+  for(let i=0;i<L;i++){
+    const y=(i-(L-1)/2)*.8,m=new THREE.Mesh(pg,pm);m.position.y=y;g.add(m);
+    const e=new THREE.LineSegments(eg,em);e.position.y=y;g.add(e);
+    pts[i]=[];
+    for(let j=0;j<N;j++){ // 确定性伪随机，保证每次一致
+      const a=Math.sin((i*7+j*13)*12.9898)*43758.5453,b=Math.sin((i*5+j*3)*78.233)*12345.678;
+      const p=new THREE.Vector3((a-Math.floor(a)-.5)*3.4,y,(b-Math.floor(b)-.5)*2.4);
+      const s=new THREE.Mesh(sg,sm);s.position.copy(p);g.add(s);pts[i][j]=p;
+    }
+  }
+  const v=[];
+  for(let i=0;i<L-1;i++)for(let j=0;j<N;j++){v.push(pts[i][j],pts[i+1][(j+1)%N]);v.push(pts[i][j],pts[i+1][j])}
+  g.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(v),new THREE.LineBasicMaterial({color:line})));
+}
+build();
+g.rotation.set(.35,.5,0);
+let mx=0,my=0,sp=0,last=0,raf=0;
+function size(){r.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}
+function scrollP(){const m=document.documentElement.scrollHeight-innerHeight;return m>0?scrollY/m:0}
+function frame(t){
+  sp=scrollP();
+  // 滚动推镜头：距离从 11 推到 6.5
+  const k=Math.max(1,1.1/cam.aspect); // 窄屏拉远，防止裁切
+  cam.position.set(0,1.2*k,(11-4.5*sp)*k);cam.lookAt(0,0,0);
+  const drift=rm.matches?0:t/1000;
+  g.rotation.y=.5+drift*.12+mx*.25;
+  g.rotation.x=.35+Math.sin(drift*.4)*.03+my*.15;
+  r.render(scene,cam);
+}
+function loop(now){raf=requestAnimationFrame(loop);if(small&&now-last<33)return;last=now;frame(now)}
+function start(){cancelAnimationFrame(raf);if(rm.matches||document.hidden){frame(0);return}raf=requestAnimationFrame(loop)}
+addEventListener('pointermove',e=>{if(rm.matches)return;mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5});
+addEventListener('resize',()=>{size();if(rm.matches)frame(0)});
+addEventListener('scroll',()=>{if(rm.matches)frame(0)},{passive:true});
+document.addEventListener('visibilitychange',start);
+rm.addEventListener('change',start);
+size();start();
+</script>
+</body>
+</html>

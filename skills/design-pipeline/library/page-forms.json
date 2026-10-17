@@ -1,0 +1,1335 @@
+{
+  "_meta": {
+    "source": "research/R5-page-forms.md（第 2 节形态卡、第 5.2 节字段）",
+    "date": "2026-10-16",
+    "note": "页面形态库。形态在表现形式（expressions.json）之上：先选形态，再选每一幕的表现形式。选形态用 scripts/pick-form.mjs，规则见 R5 第 3.2 节。",
+    "fields": {
+      "id": "P01 到 P15",
+      "name_zh": "中文名",
+      "name_en": "英文名",
+      "one_liner": "一句话",
+      "unit": "内容单元名（图幅、站、步等）",
+      "advance": "推进方式",
+      "nav": "导航方式",
+      "fit": "四类任务适合度：high | mid | low。键 explainer（讲解页）launch（发布页）prototype（产品原型）datastory（数据叙事）。来源：作者判断，未在真实项目上校准",
+      "carriers": "键 desktop_web mobile_web miniprogram。值 true、false 或 \"模式: 说明\" 字符串",
+      "min_gear": "能成立的最低档位 clear | mixed | show。用户档位低于它时不选该形态",
+      "gear_note": "档位补充说明",
+      "chapter_range": "[最小, 最大] 内容单元数，单位见 unit，不等于章数",
+      "chars_per_unit": "每单元字数上限，null 表示 R5 未给",
+      "chapter_overflow": "超限时的处理",
+      "mechanism": "实现机制标签",
+      "libs": "固定版本。verified:false 表示发布日期未核，S5 使用前先核日期，晚于 2026-10-02 则改用上一版本",
+      "expressions": "表现形式卡 id，指向 library/expressions.json。由 R5 的 C 编号映射而来。R5 只明确给出 P01 的 C07、C08、C20，其余为入库时按机制推导，属作者判断",
+      "reduce_motion": "prefers-reduced-motion 下的有结构退路",
+      "no_js_fallback": "无 JS 退路。两者都保留章节分区与导航，不退成无结构长文",
+      "a11y": "可访问性与移动端要点",
+      "overshoot_risk": "最容易超的浮夸度指标",
+      "overshoot_limit": "对应限制",
+      "examples": "示例站。evidence 取值 read | snippet | listing | r2（已读 | 搜索摘要 | 目录页列出 | R2 已核）",
+      "homogeneity": "同质化风险：常见簇与避开办法",
+      "acts_template": "S4 幕表的列",
+      "status": "见 status_values",
+      "not_recommended_reason": "仅 not-recommended 卡有",
+      "vs_pure_waterfall": "仅 P13 有"
+    },
+    "status_values": {
+      "p1": "P1 必进。clear 或 mixed 档可用，载体覆盖广，退路简单，实现成本可控",
+      "p1-show": "P1 进，标 show。用户要 3D、WebGL、Blender 的主入口，要标注限制和降级",
+      "p2": "P2 进。题材特定，按条件触发",
+      "not-recommended": "保留是为了决策表能写出排除理由。pick-form 只在没有其他候选时才给出"
+    },
+    "pure_waterfall_three_questions": {
+      "rule": "三个问题都答“是”才算纯瀑布流。Q3 答“否”才计入“是”。带视差图片但三问皆“是”的页面，仍是纯瀑布流。视差背景不改变形态",
+      "Q1": "所有章节的版式骨架相同吗？ 是 = 同一个“标题加文字加图”槽位重复",
+      "Q2": "滚动只改变内容在屏幕上的位置吗？ 是 = 没有相机、缩放、状态切换、舞台替换",
+      "Q3": "读者能一眼看到全局结构并跳到任一章吗？ 否 = 没有地图、轨道、目录之外的空间线索"
+    }
+  },
+  "forms": [
+    {
+      "id": "P01",
+      "status": "p1",
+      "name_zh": "空间画布缩放",
+      "name_en": "Spatial Canvas Zoom",
+      "one_liner": "读者看到一张大图纸。相机平移和缩放到各个区域，像在桌面上看一张全景图。",
+      "unit": "图幅",
+      "advance": [
+        "scroll-trigger",
+        "click",
+        "drag"
+      ],
+      "nav": "右下角小地图加章目录，点任一章相机飞过去",
+      "fit": {
+        "explainer": "high",
+        "launch": "mid",
+        "prototype": "mid",
+        "datastory": "mid"
+      },
+      "carriers": {
+        "desktop_web": true,
+        "mobile_web": "points-only: 改为相机点序列，禁用自由拖拽缩放",
+        "miniprogram": "points-only: 只用相机点序列，不用手势缩放"
+      },
+      "gear_note": "clear 档可用，但相机移动要慢、要短，且每个图幅可读",
+      "chapter_range": [
+        7,
+        12
+      ],
+      "chars_per_unit": 120,
+      "chapter_overflow": "超过 12 个图幅时拆成两张画布，用 P11 房间连接",
+      "mechanism": [
+        "css-transform-camera",
+        "gsap-tween",
+        "d3-zoom",
+        "svg-or-tiled-webp"
+      ],
+      "libs": [
+        {
+          "name": "gsap",
+          "ver": "3.15.0",
+          "verified": true
+        },
+        {
+          "name": "d3-zoom",
+          "ver": "3.0.0",
+          "verified": false,
+          "note": "npm latest 2026-10-16，发布日期未核"
+        }
+      ],
+      "expressions": [
+        "scroll-story",
+        "pin-scrub",
+        "parallax-25d"
+      ],
+      "reduce_motion": "相机瞬切，无补间，保留小地图高亮。",
+      "no_js_fallback": "画布变成“图纸总览图 + 图幅列表”。总览图是一张静态图，每个图幅有编号和锚点链接，点击跳到下方对应的图幅卡。",
+      "a11y": "每个图幅是一个 section，有标题和 tabindex=0。键盘：方向键或 PageUp/PageDown 切图幅，Esc 回总览。读屏顺序按 DOM 顺序，等于章顺序。触屏：双指缩放只在总览模式开放，章节模式用上一个与下一个按钮。",
+      "overshoot_risk": [
+        "same-screen-motion",
+        "vertigo"
+      ],
+      "overshoot_limit": "单次飞行不超过 1.2 秒，缩放比不超过 4 倍。静止时去掉 will-change。",
+      "examples": [
+        {
+          "url": "https://tympanus.net/codrops/2026/01/07/infinite-canvas-building-a-seamless-pan-anywhere-image-space/",
+          "visited": "2026-10-16",
+          "evidence": "snippet",
+          "learn": "拖拽平移、滚动或双指缩放、分块渲染"
+        },
+        {
+          "url": "https://www.framer.com/marketplace/templates/infinite-canvas/",
+          "visited": "2026-10-16",
+          "evidence": "snippet",
+          "learn": "768 px 以下改成固定查看器加滚动列表，是移动端退路的做法"
+        }
+      ],
+      "homogeneity": {
+        "common_cluster": "一堆等大圆角缩略图铺满无限网格，点开是灯箱。",
+        "avoid": "画布要有“图纸感”的内部结构（连线、分区、比例尺），图幅大小不等，相机路径有叙事顺序。"
+      },
+      "acts_template": [
+        "幕号",
+        "对应章",
+        "相机或舞台状态",
+        "视觉主体",
+        "停留方式"
+      ],
+      "not_recommended_reason": null,
+      "vs_pure_waterfall": null
+    },
+    {
+      "id": "P02",
+      "status": "p1-show",
+      "name_zh": "相机穿行 3D 场景",
+      "name_en": "Camera-Path Journey",
+      "one_liner": "滚动时相机沿一条路径穿过一个三维场景。每一站看到一个物件或一组文字。",
+      "unit": "站",
+      "advance": [
+        "scroll-driven-camera"
+      ],
+      "nav": "侧边进度点，点击跳到该站，相机回放到该点",
+      "fit": {
+        "explainer": "mid",
+        "launch": "high",
+        "prototype": "low",
+        "datastory": "low"
+      },
+      "carriers": {
+        "desktop_web": true,
+        "mobile_web": "reduced: 降采样，限帧 30，模型减面，弱设备走海报序列",
+        "miniprogram": false
+      },
+      "gear_note": "mixed 档只在 hero 用，不在整页用。小程序不可用，改用 P15 或 P03",
+      "chapter_range": [
+        5,
+        8
+      ],
+      "chars_per_unit": 60,
+      "chapter_overflow": "总滚动长度不超过 6 个屏高。超过时拆成“章节 + 一条穿行”",
+      "mechanism": [
+        "three-camera-path",
+        "CatmullRomCurve3.getPointAt",
+        "scrolltrigger-progress",
+        "lenis-smooth",
+        "blender-curve-export",
+        "gltf-transform"
+      ],
+      "libs": [
+        {
+          "name": "three",
+          "ver": "0.186.0",
+          "verified": true
+        },
+        {
+          "name": "gsap",
+          "ver": "3.15.0",
+          "verified": true
+        },
+        {
+          "name": "lenis",
+          "ver": "1.3.26",
+          "verified": true
+        },
+        {
+          "name": "@react-three/drei",
+          "ver": "10.7.9",
+          "verified": false,
+          "note": "npm latest 2026-10-16，发布日期未核，peer three 不低于 0.159"
+        }
+      ],
+      "expressions": [
+        "webgl-scene",
+        "scroll-camera-path",
+        "gltf-model-stage",
+        "lenis-webgl-sync",
+        "blender-headless-glb",
+        "postfx-bloom-dof"
+      ],
+      "reduce_motion": "不随滚动移动相机。显示每站一帧静态渲染图，点击进度点切换站，切换用淡入，保留侧边进度目录。",
+      "no_js_fallback": "无 JS 或无 WebGL：显示“站序列”，每站一张预渲染的海报图加正文，保留侧边进度目录。",
+      "a11y": "canvas 对读屏不可见。每站在 DOM 里有一份文字，叠加在 canvas 上方，读屏按站顺序读。键盘：上下键或 PageUp/PageDown 逐站。焦点只落在文字层。加载 glTF 前检测设备档位。",
+      "overshoot_risk": [
+        "first-content-time",
+        "scroll-hijack"
+      ],
+      "overshoot_limit": "首屏先出文字和海报图，模型后加载。总滚动不超过 6 屏高。模型总量不超过 2 MB（建议值，未核）。路径控制点 15 到 40（第三方来源，未核）。",
+      "examples": [
+        {
+          "url": "https://lusion.co",
+          "visited": "2026-10-16",
+          "evidence": "read",
+          "learn": "滚动驱动，有 scroll to explore 提示和 Next Page 控件"
+        },
+        {
+          "url": "https://www.awwwards.com/inspiration/3d-webgl-scroll-monogrid-com",
+          "visited": "2026-10-16",
+          "evidence": "listing",
+          "learn": "标签 3D、WebGL scroll；首页滚动与项目转场预览，机制未验"
+        },
+        {
+          "url": "https://tympanus.net/codrops/?p=117076",
+          "visited": "2026-10-16",
+          "evidence": "snippet",
+          "learn": "Blender 曲线导出 JSON，three 重建，GSAP 驱动"
+        }
+      ],
+      "homogeneity": {
+        "common_cluster": "深色背景上一个悬浮的发光几何体加粒子，滚动时旋转。",
+        "avoid": "场景要有题材专属的物件和尺度，路径要有前景遮挡和景深变化，不用通用发光球。"
+      },
+      "acts_template": [
+        "幕号",
+        "对应章",
+        "相机或舞台状态",
+        "视觉主体",
+        "停留方式"
+      ],
+      "not_recommended_reason": null,
+      "vs_pure_waterfall": null
+    },
+    {
+      "id": "P03",
+      "status": "p1",
+      "name_zh": "固定舞台换内容",
+      "name_en": "Sticky Stage",
+      "one_liner": "屏幕一侧固定一个舞台。滚动文字步骤时，舞台随步骤变化。",
+      "unit": "步",
+      "advance": [
+        "scroll"
+      ],
+      "nav": "顶部章目录，每步有步号，点击目录回到该章第一步",
+      "fit": {
+        "explainer": "high",
+        "launch": "mid",
+        "prototype": "low",
+        "datastory": "high"
+      },
+      "carriers": {
+        "desktop_web": true,
+        "mobile_web": "stage-top: 舞台固定为顶部 40vh，文字区至少 60vh",
+        "miniprogram": "stage-top: 舞台固定在上半屏，文字在下半屏"
+      },
+      "gear_note": "",
+      "chapter_range": [
+        3,
+        12
+      ],
+      "chars_per_unit": 80,
+      "chapter_overflow": "一个舞台最多 6 步，整页最多 4 个舞台。超过时开新舞台，不加步。章数范围为估计值，R5 未给",
+      "mechanism": [
+        "css-sticky",
+        "intersection-observer",
+        "scrollama",
+        "scrolltrigger-pin-scrub",
+        "mapbox-flyto"
+      ],
+      "libs": [
+        {
+          "name": "scrollama",
+          "ver": "3.2.0",
+          "verified": false,
+          "note": "npm latest 2026-10-16，发布日期未核；S5 使用前核日期，晚于 2026-10-02 则改用上一版本"
+        },
+        {
+          "name": "gsap",
+          "ver": "3.15.0",
+          "verified": true
+        },
+        {
+          "name": "mapbox-gl",
+          "ver": "3.33.0",
+          "verified": false,
+          "note": "Mapbox 文档示例页引用，发布日期未核，需要 token"
+        }
+      ],
+      "expressions": [
+        "scroll-story",
+        "pin-scrub",
+        "generative-data"
+      ],
+      "reduce_motion": "取消 scrub，步骤切换时舞台瞬换，保留章目录。",
+      "no_js_fallback": "每步下方内联一张该步的静态图，舞台区隐藏。保留章目录和锚点。",
+      "a11y": "舞台内容需要文字等价物，放在每步的 figure 说明里。键盘：焦点落在步骤文字上，Tab 到下一步时舞台自动更新。屏幕阅读器不依赖舞台。离散状态、需要直接访问或重放时，改用 P12 步进器。",
+      "overshoot_risk": [
+        "scroll-hijack"
+      ],
+      "overshoot_limit": "每个舞台的总滚动不超过 2 屏高（mixed 档）。pin 区总高不超过 5 屏。",
+      "examples": [
+        {
+          "url": "https://docs.mapbox.com/mapbox-gl-js/example/scroll-fly-to/",
+          "visited": "2026-10-16",
+          "evidence": "read",
+          "learn": "左半屏固定地图，右侧滚动章节，章节检测后调用 flyTo"
+        },
+        {
+          "url": "https://neutomni.com/",
+          "visited": "2026-10-16",
+          "evidence": "r2",
+          "learn": "SOTD 2026-10-13，标签含 Scrolling、Storytelling"
+        },
+        {
+          "url": "http://chladni-plate-experiment.vercel.app/",
+          "visited": "2026-10-16",
+          "evidence": "r2",
+          "learn": "滚动推进物理讲解章节"
+        }
+      ],
+      "homogeneity": {
+        "common_cluster": "左边一张浮动的 UI 截图，右边三段话，每段淡入。",
+        "avoid": "舞台里要有真实的状态变化（图表重排、地图飞行、模型拆解），不只是换图。"
+      },
+      "acts_template": [
+        "幕号",
+        "对应章",
+        "相机或舞台状态",
+        "视觉主体",
+        "停留方式"
+      ],
+      "not_recommended_reason": null,
+      "vs_pure_waterfall": null
+    },
+    {
+      "id": "P04",
+      "status": "p2",
+      "name_zh": "横向卷轴",
+      "name_en": "Horizontal Track",
+      "one_liner": "读者向下滚动，页面却向左平移，像在看一条长卷。",
+      "unit": "面板",
+      "advance": [
+        "vertical-scroll-to-horizontal"
+      ],
+      "nav": "底部横向进度条，点击跳到面板",
+      "fit": {
+        "explainer": "mid",
+        "launch": "mid",
+        "prototype": "low",
+        "datastory": "mid"
+      },
+      "carriers": {
+        "desktop_web": true,
+        "mobile_web": "native-scroll: overflow-x: auto 加 scroll-snap，不用 pin",
+        "miniprogram": "native-scroll: scroll-view 横向，不用 pin"
+      },
+      "gear_note": "",
+      "chapter_range": [
+        5,
+        8
+      ],
+      "chars_per_unit": null,
+      "chapter_overflow": "超过 8 个面板时分成两条轨，中间插一个纵向段",
+      "mechanism": [
+        "scrolltrigger-pin",
+        "translate-x-track",
+        "scrub",
+        "snap",
+        "scroller-proxy-lenis"
+      ],
+      "libs": [
+        {
+          "name": "gsap",
+          "ver": "3.15.0",
+          "verified": true
+        },
+        {
+          "name": "lenis",
+          "ver": "1.3.26",
+          "verified": true
+        }
+      ],
+      "expressions": [
+        "pin-scrub",
+        "scroll-story",
+        "lenis-webgl-sync",
+        "parallax-25d"
+      ],
+      "reduce_motion": "取消 pin，面板用原生横向滚动，可手动滑，保留进度条。",
+      "no_js_fallback": "面板纵向堆叠，每个面板带标题和编号，保留顶部目录。",
+      "a11y": "键盘：左右键切面板。轨道要有 role=\"region\" 和 aria-label。必须同时提供上一个、下一个按钮。移动端不用 pin。",
+      "overshoot_risk": [
+        "scroll-hijack",
+        "cannot-reach-footer"
+      ],
+      "overshoot_limit": "横向段不超过 4 屏高。先建横向触发器，再建其他触发器，窗口缩放后 ScrollTrigger.refresh()。",
+      "examples": [
+        {
+          "url": "https://tympanus.net/codrops/2026/02/19/creating-a-smooth-horizontal-parallax-gallery-from-dom-to-webgl/",
+          "visited": "2026-10-16",
+          "evidence": "snippet",
+          "learn": "2026-02-19，先 DOM 后 WebGL，自写 lerp 循环"
+        },
+        {
+          "url": "https://www.awwwards.com/websites/horizontal-scrolling/",
+          "visited": "2026-10-16",
+          "evidence": "listing",
+          "learn": "列有 Horizonte Village 等，机制未验。WebFetch 读 Horizonte 首页只见 Scroll Down 提示，未见横向证据"
+        }
+      ],
+      "homogeneity": {
+        "common_cluster": "一排等宽的项目大图，标题叠在图上，鼠标悬停放大。",
+        "avoid": "面板宽度不等，面板之间有连续的线或地形，把“过程”画成连续的东西。"
+      },
+      "acts_template": [
+        "幕号",
+        "对应章",
+        "相机或舞台状态",
+        "视觉主体",
+        "停留方式"
+      ],
+      "not_recommended_reason": null,
+      "vs_pure_waterfall": null
+    },
+    {
+      "id": "P05",
+      "status": "p1",
+      "name_zh": "全屏分幕翻页",
+      "name_en": "Scene Snap",
+      "one_liner": "每次滚动换一整屏。像翻幻灯片，但每一幕有自己的布景。",
+      "unit": "幕",
+      "advance": [
+        "scroll-snap",
+        "swipe",
+        "keyboard"
+      ],
+      "nav": "右侧幕点，点击跳转",
+      "fit": {
+        "explainer": "mid",
+        "launch": "high",
+        "prototype": "low",
+        "datastory": "low"
+      },
+      "carriers": {
+        "desktop_web": true,
+        "mobile_web": "conditional: 只在每幕内容不超过一屏时可用",
+        "miniprogram": "swiper: 纵向 swiper"
+      },
+      "gear_note": "",
+      "chapter_range": [
+        6,
+        10
+      ],
+      "chars_per_unit": 50,
+      "chapter_overflow": "任一幕内容超过一屏时，该幕改为普通滚动，不吸附",
+      "mechanism": [
+        "css-scroll-snap",
+        "100svh",
+        "intersection-observer",
+        "gsap-entrance"
+      ],
+      "libs": [
+        {
+          "name": "gsap",
+          "ver": "3.15.0",
+          "verified": true
+        }
+      ],
+      "expressions": [
+        "scroll-story",
+        "kinetic-type",
+        "editorial-type"
+      ],
+      "reduce_motion": "取消入场动画，保留吸附和右侧幕点。",
+      "no_js_fallback": "纯 CSS 方案本身不需要 JS，仍可吸附。若吸附也禁用，则每幕变成普通分区，保留右侧幕点锚点。",
+      "a11y": "用 100svh，幕内容过多时取消吸附。固定页头用 scroll-padding-top 补偿。键盘：PageDown 与空格生效。",
+      "overshoot_risk": [
+        "scroll-hijack"
+      ],
+      "overshoot_limit": "用 proximity，或每幕内容不溢出。mandatory 加溢出是最常见陷阱。",
+      "examples": [
+        {
+          "url": "https://heronaiapp.com/",
+          "visited": "2026-10-16",
+          "evidence": "r2",
+          "learn": "SOTD 2026-10-12，GSAP + Canvas API，Scrolling、Storytelling"
+        }
+      ],
+      "homogeneity": {
+        "common_cluster": "每屏一个大标题、一句话、一个渐变背景，像 PPT。",
+        "avoid": "每幕有不同的构图原则（满版图、留白、拼贴、数据），幕与幕之间有一个共有的物体在移动。"
+      },
+      "acts_template": [
+        "幕号",
+        "对应章",
+        "相机或舞台状态",
+        "视觉主体",
+        "停留方式"
+      ],
+      "not_recommended_reason": null,
+      "vs_pure_waterfall": null
+    },
+    {
+      "id": "P06",
+      "status": "p2",
+      "name_zh": "地图与平面图导航",
+      "name_en": "Map Navigator",
+      "one_liner": "读者看一张地图或平面图。点热点，相机飞到那里，展开讲解。",
+      "unit": "地点",
+      "advance": [
+        "click-hotspot",
+        "scroll-flyto"
+      ],
+      "nav": "地图本身就是目录，加一个地点列表",
+      "fit": {
+        "explainer": "high",
+        "launch": "mid",
+        "prototype": "mid",
+        "datastory": "high"
+      },
+      "carriers": {
+        "desktop_web": true,
+        "mobile_web": "two-finger-pan: 两指平移，详情卡用底部抽屉",
+        "miniprogram": "native-map: 原生 map 组件或静态平面图加热点"
+      },
+      "gear_note": "",
+      "chapter_range": [
+        6,
+        15
+      ],
+      "chars_per_unit": null,
+      "chapter_overflow": "超过 15 个热点时做聚合或分层。单位为地点，不等于章",
+      "mechanism": [
+        "mapbox-flyto",
+        "svg-floorplan-hotspots",
+        "css-mask-spotlight",
+        "p01-camera-transform"
+      ],
+      "libs": [
+        {
+          "name": "mapbox-gl",
+          "ver": "3.33.0",
+          "verified": false,
+          "note": "Mapbox 文档示例页引用，发布日期未核，需要 token"
+        },
+        {
+          "name": "gsap",
+          "ver": "3.15.0",
+          "verified": true
+        }
+      ],
+      "expressions": [
+        "generative-data",
+        "isometric",
+        "scroll-story"
+      ],
+      "reduce_motion": "flyTo 改 jumpTo。",
+      "no_js_fallback": "显示静态地图图片，叠加编号，下方是编号对应的地点列表。",
+      "a11y": "地图热点必须是 button，有名称。键盘：Tab 遍历热点，Enter 展开。移动端用两指平移。",
+      "overshoot_risk": [
+        "first-content-time"
+      ],
+      "overshoot_limit": "首屏先画静态底图（瓦片加载慢）。",
+      "examples": [
+        {
+          "url": "https://docs.mapbox.com/mapbox-gl-js/example/scroll-fly-to/",
+          "visited": "2026-10-16",
+          "evidence": "read",
+          "learn": "滚动章节触发 flyTo"
+        },
+        {
+          "url": "https://labs.mapbox.com/education/impact-tools/interactive-storytelling",
+          "visited": "2026-10-16",
+          "evidence": "snippet",
+          "learn": "章节各绑定一个地图视图，输出纯 HTML，嵌入 iframe 会失效"
+        }
+      ],
+      "homogeneity": {
+        "common_cluster": "默认深色底图加发光点。",
+        "avoid": "用题材专属的底图风格或手绘平面图，热点形状与题材相关（不全是圆点）。"
+      },
+      "acts_template": [
+        "幕号",
+        "对应章",
+        "相机或舞台状态",
+        "视觉主体",
+        "停留方式"
+      ],
+      "not_recommended_reason": null,
+      "vs_pure_waterfall": null
+    },
+    {
+      "id": "P07",
+      "status": "not-recommended",
+      "name_zh": "立体书与折页",
+      "name_en": "Pop-up Book",
+      "one_liner": "内容装在一本书或一张折页里。翻页或展开时，纸面像实物一样转动。",
+      "unit": "页",
+      "advance": [
+        "click",
+        "drag-corner",
+        "keyboard"
+      ],
+      "nav": "书脊上的页签",
+      "fit": {
+        "explainer": "low",
+        "launch": "mid",
+        "prototype": "low",
+        "datastory": "low"
+      },
+      "carriers": {
+        "desktop_web": "double-page: 双页展开",
+        "mobile_web": "single-page: 单页翻",
+        "miniprogram": "single-page: 单页翻，用 transform 做简化"
+      },
+      "gear_note": "",
+      "chapter_range": [
+        8,
+        12
+      ],
+      "chars_per_unit": 80,
+      "chapter_overflow": "",
+      "mechanism": [
+        "css-3d-perspective",
+        "rotateY",
+        "radio-input",
+        "three-custom-vertex-shader-optional"
+      ],
+      "libs": [
+        {
+          "name": "three",
+          "ver": "0.186.0",
+          "verified": true
+        }
+      ],
+      "expressions": [
+        "editorial-type",
+        "webgl-scene"
+      ],
+      "reduce_motion": "翻页改为淡入换页，保留页签。",
+      "no_js_fallback": "用 radio 输入的纯 CSS 版本仍可翻页。再退一步：页纵向堆叠，保留页签锚点。",
+      "a11y": "翻页需要上一页、下一页按钮，不只靠拖拽。不翻到的页用 inert，不用 display: none。移动端用单页。",
+      "overshoot_risk": [
+        "same-screen-motion",
+        "readability"
+      ],
+      "overshoot_limit": "翻页动画不超过 0.8 秒。",
+      "examples": [
+        {
+          "url": "https://freefrontend.com/css-book-effects/",
+          "visited": "2026-10-16",
+          "evidence": "snippet",
+          "learn": "纯 CSS 翻书，perspective 加 rotateY；代码示例，不是成品站"
+        },
+        {
+          "url": "https://freefrontend.com/code/interactive-3d-flip-book-gallery-2026-03-18/",
+          "visited": "2026-10-16",
+          "evidence": "snippet",
+          "learn": "2026-03-18，1000 px 透视，错开的过渡延迟；代码示例"
+        }
+      ],
+      "homogeneity": {
+        "common_cluster": "一本深色封面的电子书，带 skeuomorphic 阴影。",
+        "avoid": "纸张质感要和题材一致，翻页要承担叙事（例如“折开才看到下一层”），不只是装饰。"
+      },
+      "not_recommended_reason": "翻页成本高，不利于跳读。讲解页适合度低。仅在画册、邀请函类发布页作例外。",
+      "acts_template": [
+        "幕号",
+        "对应章",
+        "相机或舞台状态",
+        "视觉主体",
+        "停留方式"
+      ],
+      "vs_pure_waterfall": null
+    },
+    {
+      "id": "P08",
+      "status": "p2",
+      "name_zh": "时间轴轨道",
+      "name_en": "Timeline Rail",
+      "one_liner": "一条轨道上排着节点。读者沿轨道移动，看每个节点上发生了什么。",
+      "unit": "节点",
+      "advance": [
+        "drag",
+        "scroll",
+        "click-tick"
+      ],
+      "nav": "顶部或侧边的刻度尺，带当前位置",
+      "fit": {
+        "explainer": "mid",
+        "launch": "mid",
+        "prototype": "low",
+        "datastory": "high"
+      },
+      "carriers": {
+        "desktop_web": "horizontal: 横向轨道",
+        "mobile_web": "vertical: 纵向轨道，节点单侧排列",
+        "miniprogram": "vertical: 纵向轨道"
+      },
+      "gear_note": "",
+      "chapter_range": [
+        8,
+        20
+      ],
+      "chars_per_unit": null,
+      "chapter_overflow": "超过 20 个节点时分段并给出缩放层级（年、月）。单位为节点，不等于章",
+      "mechanism": [
+        "svg-or-css-rail",
+        "scrolltrigger-or-scrollama",
+        "d3-zoom-time-scale",
+        "time-datetime"
+      ],
+      "libs": [
+        {
+          "name": "gsap",
+          "ver": "3.15.0",
+          "verified": true
+        },
+        {
+          "name": "scrollama",
+          "ver": "3.2.0",
+          "verified": false,
+          "note": "npm latest 2026-10-16，发布日期未核；S5 使用前核日期，晚于 2026-10-02 则改用上一版本"
+        },
+        {
+          "name": "d3-zoom",
+          "ver": "3.0.0",
+          "verified": false,
+          "note": "npm latest 2026-10-16，发布日期未核"
+        }
+      ],
+      "expressions": [
+        "scroll-story",
+        "generative-data"
+      ],
+      "reduce_motion": "轨道瞬移，无补间。",
+      "no_js_fallback": "有序列表 ol，每项带日期和正文，顶部年份锚点。",
+      "a11y": "用 ol 表达顺序，节点用 time 元素带 datetime。键盘：左右键移动节点。拖拽要有按钮替代。",
+      "overshoot_risk": [
+        "same-screen-motion"
+      ],
+      "overshoot_limit": "只有当前节点和相邻节点有动。",
+      "examples": [
+        {
+          "url": "https://www.awwwards.com/websites/timeline/",
+          "visited": "2026-10-16",
+          "evidence": "listing",
+          "learn": "列有 Art Timeline、Hanwag 100 Years Timeline 等。读 Art Timeline 首页只见 Explore 按钮，导航方式未验证"
+        }
+      ],
+      "homogeneity": {
+        "common_cluster": "中轴线加左右交替的白卡，圆点节点。",
+        "avoid": "轨道本身要有题材形状（河流、刻度尺、胶片、地层），节点大小按重要度变化。"
+      },
+      "acts_template": [
+        "幕号",
+        "对应章",
+        "相机或舞台状态",
+        "视觉主体",
+        "停留方式"
+      ],
+      "not_recommended_reason": null,
+      "vs_pure_waterfall": null
+    },
+    {
+      "id": "P09",
+      "status": "not-recommended",
+      "name_zh": "卡组与桌面",
+      "name_en": "Card Table",
+      "one_liner": "内容是一副卡牌或一堆桌面物件。读者拖动、翻牌、归类。",
+      "unit": "卡",
+      "advance": [
+        "drag",
+        "click-flip",
+        "group"
+      ],
+      "nav": "卡堆侧边的分类标签，“重新洗牌”按钮",
+      "fit": {
+        "explainer": "mid",
+        "launch": "low",
+        "prototype": "mid",
+        "datastory": "low"
+      },
+      "carriers": {
+        "desktop_web": true,
+        "mobile_web": "tap-place: 拖拽改为点选后放置",
+        "miniprogram": "tap-place: 用点选，不用拖拽"
+      },
+      "gear_note": "",
+      "chapter_range": [
+        8,
+        24
+      ],
+      "chars_per_unit": 100,
+      "chapter_overflow": "每张不超过 40 字正面加 60 字背面（chars_per_unit 为合计）。单位为卡，不等于章",
+      "mechanism": [
+        "pointer-events-drag",
+        "gsap-draggable",
+        "gsap-flip",
+        "css-3d-flip"
+      ],
+      "libs": [
+        {
+          "name": "gsap",
+          "ver": "3.15.0",
+          "verified": true
+        }
+      ],
+      "expressions": [
+        "cursor-magnetic",
+        "bento"
+      ],
+      "reduce_motion": "翻转瞬切，拖拽无惯性。",
+      "no_js_fallback": "卡片网格，每张卡正反面文字都显示。",
+      "a11y": "拖拽必须有键盘替代：选中卡，用方向键移动或按 Enter 放入分组。卡是 button。触屏用拖动手柄。",
+      "overshoot_risk": [
+        "usability"
+      ],
+      "overshoot_limit": "每次拖拽必须改变读者能看到的内容分组。",
+      "examples": [
+        {
+          "url": "https://whimsical.com/learn/get-started/infinite-canvas",
+          "visited": "2026-10-16",
+          "evidence": "snippet",
+          "learn": "产品内缩放到光标；工具示例，不是讲解页"
+        },
+        {
+          "url": "https://konvajs.org/docs/sandbox/Infinite_Canvas.html",
+          "visited": "2026-10-16",
+          "evidence": "snippet",
+          "learn": "滚动缩放向光标，拖背景平移；工具示例。未找到可核的卡组式讲解站"
+        }
+      ],
+      "homogeneity": {
+        "common_cluster": "一排等大圆角卡，悬停上抬。",
+        "avoid": "卡的尺寸、旋转角、叠放有散落感，翻面内容和正面信息不重复。"
+      },
+      "not_recommended_reason": "拖拽易沦为玩具。仅限概念集合类讲解（术语、角色、风险）或产品原型看板。",
+      "acts_template": [
+        "幕号",
+        "对应章",
+        "相机或舞台状态",
+        "视觉主体",
+        "停留方式"
+      ],
+      "vs_pure_waterfall": null
+    },
+    {
+      "id": "P10",
+      "status": "p2",
+      "name_zh": "分屏并行对照",
+      "name_en": "Split Compare",
+      "one_liner": "屏幕分成两半。两半同时讲同一件事的两种情况。",
+      "unit": "对",
+      "advance": [
+        "scroll",
+        "drag-divider"
+      ],
+      "nav": "对的目录，当前对高亮",
+      "fit": {
+        "explainer": "mid",
+        "launch": "mid",
+        "prototype": "low",
+        "datastory": "high"
+      },
+      "carriers": {
+        "desktop_web": "left-right: 左右分屏",
+        "mobile_web": "top-bottom: 上下分屏，或单屏加切换",
+        "miniprogram": "top-bottom: 上下分屏"
+      },
+      "gear_note": "",
+      "chapter_range": [
+        3,
+        6
+      ],
+      "chars_per_unit": 50,
+      "chapter_overflow": "单位为对，两侧各不超过 50 字",
+      "mechanism": [
+        "css-grid-two-col",
+        "sticky",
+        "clip-path-inset",
+        "input-range-css-var",
+        "scrollama"
+      ],
+      "libs": [
+        {
+          "name": "scrollama",
+          "ver": "3.2.0",
+          "verified": false,
+          "note": "npm latest 2026-10-16，发布日期未核；S5 使用前核日期，晚于 2026-10-02 则改用上一版本"
+        }
+      ],
+      "expressions": [
+        "css-scroll-timeline",
+        "generative-data"
+      ],
+      "reduce_motion": "取消同步擦洗，分隔线固定在中间。",
+      "no_js_fallback": "每对上下排列，A 在上、B 在下，带标签，保留对的目录。",
+      "a11y": "分隔线是 input range，有 aria-label，键盘可调。两侧要有文字等价物，不只靠图差异。",
+      "overshoot_risk": [
+        "readability"
+      ],
+      "overshoot_limit": "任一时刻只有一半在动。",
+      "examples": [
+        {
+          "url": "https://www.awwwards.com/websites/split-screen/",
+          "visited": "2026-10-16",
+          "evidence": "listing",
+          "learn": "列有 Bobalu Berries - Split Screen 等，机制未验"
+        },
+        {
+          "url": "https://speckyboy.com/snippets-split-screen-layouts/",
+          "visited": "2026-10-16",
+          "evidence": "snippet",
+          "learn": "鼠标移动或滚动时两半分开并显示下一图；参考，非成品对照页"
+        }
+      ],
+      "homogeneity": {
+        "common_cluster": "左文右图的 50/50 分栏，每章重复。",
+        "avoid": "分屏要承担“对照”功能（同一坐标、同一比例），不承担装饰。"
+      },
+      "acts_template": [
+        "幕号",
+        "对应章",
+        "相机或舞台状态",
+        "视觉主体",
+        "停留方式"
+      ],
+      "not_recommended_reason": null,
+      "vs_pure_waterfall": null
+    },
+    {
+      "id": "P11",
+      "status": "p1",
+      "name_zh": "展厅与房间切换",
+      "name_en": "Gallery Rooms",
+      "one_liner": "站点是一座展厅。每个房间是一个独立页面，走门进入下一间。",
+      "unit": "房间",
+      "advance": [
+        "click-door",
+        "cross-document-transition"
+      ],
+      "nav": "展厅平面图加返回，浏览器后退键有效",
+      "fit": {
+        "explainer": "high",
+        "launch": "high",
+        "prototype": "mid",
+        "datastory": "mid"
+      },
+      "carriers": {
+        "desktop_web": true,
+        "mobile_web": "true: Chrome 与 Safari 有转场，Firefox 无转场但可用，注意转场白屏",
+        "miniprogram": "page-stack: 用页面栈和自定义转场"
+      },
+      "gear_note": "协调者 2026-10-16 把最低档从 mixed 改为 clear：页面栈加 View Transitions 在 clear 档可用，R5 速查表也在 clear 原型场景推荐它。",
+      "chapter_range": [
+        5,
+        12
+      ],
+      "chars_per_unit": null,
+      "chapter_overflow": "每间内部可使用 P03、P12 等形态。超过 12 间时分区。适合 9 章以上、每章自成体系",
+      "mechanism": [
+        "cross-document-view-transitions",
+        "@view-transition-navigation-auto",
+        "view-transition-name",
+        "same-origin-mpa"
+      ],
+      "libs": [],
+      "expressions": [
+        "view-transitions",
+        "cross-doc-view-transition"
+      ],
+      "reduce_motion": "在 prefers-reduced-motion: reduce 里关闭转场伪元素动画。",
+      "no_js_fallback": "此形态本来就是多页链接，不依赖 JS。Firefox：无转场，整页刷新，内容仍完整。",
+      "a11y": "每页有独立的 title 和 h1。浏览器后退键有效。转场后焦点回到页面顶部。",
+      "overshoot_risk": [
+        "first-content-time"
+      ],
+      "overshoot_limit": "房间共用已缓存的字体与脚本，转场不超过 0.6 秒。",
+      "examples": [
+        {
+          "url": "https://developer.chrome.com/docs/web-platform/view-transitions/cross-document",
+          "visited": "2026-10-16",
+          "evidence": "read",
+          "learn": "跨文档转场文档，含 MPA 栈式导航演示，需要 Chrome 126 或更高；演示页未打开"
+        },
+        {
+          "url": "https://bruno-simon.com",
+          "visited": "2026-10-16",
+          "evidence": "read",
+          "learn": "可驾驶的三维开放世界，是“房间”思路的空间版本，不是跨页转场"
+        }
+      ],
+      "homogeneity": {
+        "common_cluster": "每页只是换了个标题的同一模板，转场是淡入淡出。",
+        "avoid": "每个房间有自己的构图与主色变化，共享元素（一个物体、一条线）在房间之间连续移动。"
+      },
+      "acts_template": [
+        "幕号",
+        "对应章",
+        "相机或舞台状态",
+        "视觉主体",
+        "停留方式"
+      ],
+      "not_recommended_reason": null,
+      "vs_pure_waterfall": null
+    },
+    {
+      "id": "P12",
+      "status": "p1",
+      "name_zh": "剧场式单屏状态机",
+      "name_en": "Single-Screen State Machine",
+      "one_liner": "整页只有一个固定画面。点击或按键后，画面里的内容变成下一个状态。",
+      "unit": "状态",
+      "advance": [
+        "click",
+        "keyboard",
+        "swipe"
+      ],
+      "nav": "顶部步骤条，可跳到任一状态，可回退",
+      "fit": {
+        "explainer": "high",
+        "launch": "mid",
+        "prototype": "high",
+        "datastory": "mid"
+      },
+      "carriers": {
+        "desktop_web": true,
+        "mobile_web": true,
+        "miniprogram": true
+      },
+      "gear_note": "最稳的形态",
+      "chapter_range": [
+        4,
+        10
+      ],
+      "chars_per_unit": null,
+      "chapter_overflow": "一个画面 4 到 10 个状态。超过时拆成两个画面，用 P11 或 P03 连接。单位为状态，不等于章",
+      "mechanism": [
+        "js-state-object",
+        "data-state-css",
+        "css-transition",
+        "same-document-view-transitions",
+        "url-hash-state"
+      ],
+      "libs": [
+        {
+          "name": "motion",
+          "ver": "13.5.1",
+          "verified": true
+        }
+      ],
+      "expressions": [
+        "view-transitions",
+        "isometric",
+        "lottie-rive"
+      ],
+      "reduce_motion": "状态瞬切，保留步骤条。",
+      "no_js_fallback": "所有状态按顺序展开，纵向排列，每个状态一个 section，保留步骤条锚点。",
+      "a11y": "状态变化后用 aria-live=\"polite\" 通报标题。焦点移到新状态标题。键盘：左右键前后。触屏：左右滑动加按钮。",
+      "overshoot_risk": [
+        "readability"
+      ],
+      "overshoot_limit": "每次转换只改变一个主体。",
+      "examples": [
+        {
+          "url": "https://ncase.me/trust/",
+          "visited": "2026-10-16",
+          "evidence": "read",
+          "learn": "读到标题与 ON/OFF 控件，内容未加载；状态机机制来自常识，未验证"
+        },
+        {
+          "url": "https://pudding.cool",
+          "visited": "2026-10-16",
+          "evidence": "read",
+          "learn": "交互式数据可视文章；形式是否为状态机未验"
+        }
+      ],
+      "homogeneity": {
+        "common_cluster": "一个居中的卡片加“下一步”按钮，像问卷。",
+        "avoid": "画面是一个有空间感的场景，状态变化是场景里的物体在动，不是卡片换文字。"
+      },
+      "acts_template": [
+        "幕号",
+        "对应章",
+        "相机或舞台状态",
+        "视觉主体",
+        "停留方式"
+      ],
+      "not_recommended_reason": null,
+      "vs_pure_waterfall": null
+    },
+    {
+      "id": "P13",
+      "status": "p1",
+      "name_zh": "沿途舞台混合",
+      "name_en": "Waterfall with Stages",
+      "one_liner": "保留纵向长页。但每隔一两章，页面会进入一个舞台，有相机、固定画面或空间变化。",
+      "unit": "章加舞台",
+      "advance": [
+        "vertical-scroll"
+      ],
+      "nav": "左侧章目录，标出哪些章是舞台章",
+      "fit": {
+        "explainer": "high",
+        "launch": "mid",
+        "prototype": "low",
+        "datastory": "mid"
+      },
+      "carriers": {
+        "desktop_web": true,
+        "mobile_web": true,
+        "miniprogram": "simplified: 舞台章用 P03 或 P12 的简化版"
+      },
+      "gear_note": "",
+      "chapter_range": [
+        8,
+        14
+      ],
+      "chars_per_unit": null,
+      "chapter_overflow": "其中舞台章占一半或以上。超过 14 章时转用 P11",
+      "mechanism": [
+        "main-scroll-container",
+        "scrolltrigger-pin-or-sticky",
+        "connector-object-between-chapters"
+      ],
+      "libs": [
+        {
+          "name": "gsap",
+          "ver": "3.15.0",
+          "verified": true
+        }
+      ],
+      "expressions": [
+        "scroll-story",
+        "pin-scrub",
+        "parallax-25d",
+        "webgl-scene"
+      ],
+      "reduce_motion": "舞台章取消 pin 与擦洗，显示静态舞台图加文字，保留左侧章目录。",
+      "no_js_fallback": "舞台章显示静态图，目录保留。",
+      "a11y": "阅读章与舞台章的 DOM 顺序等于视觉顺序。舞台章对键盘和读屏要有文字替代。",
+      "overshoot_risk": [
+        "homogeneity"
+      ],
+      "overshoot_limit": "一页内同一种舞台手法不超过 2 次。",
+      "vs_pure_waterfall": "用三问判定。P13 必须在 Q1（骨架不全相同）、Q2（至少一半章节的滚动不只是位移）、Q3（章目录显示结构）上至少两项答“否”。",
+      "examples": [
+        {
+          "url": "https://neutomni.com/",
+          "visited": "2026-10-16",
+          "evidence": "r2",
+          "learn": "SOTD 2026-10-13，Scrolling、Storytelling"
+        },
+        {
+          "url": "https://sobha-privy-collection.com/",
+          "visited": "2026-10-16",
+          "evidence": "r2",
+          "learn": "SOTD 2026-09-23，Parallax、Three.js，滚动驱动的缩放转场"
+        }
+      ],
+      "homogeneity": {
+        "common_cluster": "一个 3D 背景贯穿全页，文字块在上面淡入。这仍是瀑布流。",
+        "avoid": "舞台章必须有自己的舞台，且章与章的舞台不同。"
+      },
+      "acts_template": [
+        "幕号",
+        "对应章",
+        "相机或舞台状态",
+        "视觉主体",
+        "停留方式"
+      ],
+      "not_recommended_reason": null
+    },
+    {
+      "id": "P14",
+      "status": "not-recommended",
+      "name_zh": "仪表盘自由布局",
+      "name_en": "Dashboard Canvas",
+      "one_liner": "一个可配置的面板网格。读者自己决定看什么。",
+      "unit": "面板",
+      "advance": [
+        "user-choice"
+      ],
+      "nav": "侧栏和过滤器",
+      "fit": {
+        "explainer": "low",
+        "launch": "low",
+        "prototype": "high",
+        "datastory": "mid"
+      },
+      "carriers": {
+        "desktop_web": true,
+        "mobile_web": "single-column: 单列堆叠",
+        "miniprogram": "single-column: 单列卡片"
+      },
+      "gear_note": "",
+      "chapter_range": [
+        4,
+        12
+      ],
+      "chars_per_unit": null,
+      "chapter_overflow": "单位为面板",
+      "mechanism": [
+        "css-grid"
+      ],
+      "libs": [],
+      "expressions": [
+        "bento",
+        "generative-data"
+      ],
+      "reduce_motion": "取消图表入场动画。",
+      "no_js_fallback": "面板按固定顺序堆叠，图表用静态 SVG 或表格。",
+      "a11y": "面板有标题和 region 角色。图表有数据表替代。",
+      "overshoot_risk": [
+        "information-density"
+      ],
+      "overshoot_limit": "不用 3D。图表规则见 dataviz skill。",
+      "examples": [],
+      "homogeneity": {
+        "common_cluster": "深色卡片、霓虹折线、顶部四个 KPI。",
+        "avoid": "本形态不是讲解页的选项，这里仅记录排除理由。"
+      },
+      "not_recommended_reason": "入口 skill 说明“仪表盘与后台表单”不在适用范围。仅用于产品原型的展示壳，不作主形态。",
+      "acts_template": [
+        "幕号",
+        "对应章",
+        "相机或舞台状态",
+        "视觉主体",
+        "停留方式"
+      ],
+      "vs_pure_waterfall": null
+    },
+    {
+      "id": "P15",
+      "status": "p1-show",
+      "name_zh": "影片式卷轴",
+      "name_en": "Scrubbed Film Reel",
+      "one_liner": "滚动像拖动一段影片的时间轴。画面是预渲染的帧序列，文字在关键帧出现。",
+      "unit": "镜头",
+      "advance": [
+        "scroll-scrub-frames"
+      ],
+      "nav": "镜头点，点击跳到该镜头起始帧",
+      "fit": {
+        "explainer": "mid",
+        "launch": "high",
+        "prototype": "low",
+        "datastory": "low"
+      },
+      "carriers": {
+        "desktop_web": true,
+        "mobile_web": "reduced: 减帧，缩小尺寸，分辨率减半，按需分段加载",
+        "miniprogram": "video: 改为视频加进度条，或 P03 换图"
+      },
+      "gear_note": "mixed 档只在 hero 用",
+      "chapter_range": [
+        3,
+        6
+      ],
+      "chars_per_unit": null,
+      "chapter_overflow": "总帧数 120 到 180，桌面 1920×1080，WebP 质量约 80，总量 2 到 4 MB（第三方指南，未核）。单位为镜头",
+      "mechanism": [
+        "blender-render-frames",
+        "canvas-draw",
+        "gsap-imageSequence-helper",
+        "sticky-container"
+      ],
+      "libs": [
+        {
+          "name": "gsap",
+          "ver": "3.15.0",
+          "verified": true
+        }
+      ],
+      "expressions": [
+        "image-sequence",
+        "blender-headless-glb",
+        "scroll-story"
+      ],
+      "reduce_motion": "不擦洗。显示每个镜头的关键帧静态图，保留镜头点。",
+      "no_js_fallback": "每个镜头一张关键帧加正文，保留目录。",
+      "a11y": "canvas 要有 role=\"img\" 和文字说明。移动端帧序列分辨率减半，按需分段加载。",
+      "overshoot_risk": [
+        "first-content-time",
+        "bandwidth"
+      ],
+      "overshoot_limit": "首帧作为海报立即显示，其余帧后台加载。画到 canvas，不换 img 的 src。",
+      "examples": [
+        {
+          "url": "https://gsap.com/docs/v3/HelperFunctions/helpers/imageSequenceScrub",
+          "visited": "2026-10-16",
+          "evidence": "read",
+          "learn": "imageSequence 辅助函数：urls、canvas、scrollTrigger、fps 默认 30，帧索引变化才重绘"
+        },
+        {
+          "url": "https://www.apple.com/airpods-pro/",
+          "visited": "2026-10-16",
+          "evidence": "read",
+          "learn": "弱证据：资源名有 hero_startframe、hero_endframe，暗示帧序列，未证实与滚动绑定"
+        }
+      ],
+      "homogeneity": {
+        "common_cluster": "一个白底产品在黑底上旋转。",
+        "avoid": "帧序列表达的是“过程”（拆开、生长、流动），不是旋转展示。"
+      },
+      "acts_template": [
+        "幕号",
+        "对应章",
+        "相机或舞台状态",
+        "视觉主体",
+        "停留方式"
+      ],
+      "not_recommended_reason": null,
+      "vs_pure_waterfall": null
+    }
+  ]
+}
