@@ -30,7 +30,7 @@
 
 退回有 7 种类型：`over_budget`、`wont_fit`、`form_mismatch`、`missing_source`、`term_conflict`、`incomplete`、`gear_conflict`。契约见 `references/blueprint-template.md` 与对侧的 `visual-motion-design/references/handoff.md`。改契约时两边同改。
 
-蓝图里的 `gear_suggestion` 取 `clear`、`mixed`、`show` 之一。它只是建议，由视觉侧和用户裁决。档位含义见 [`visual-motion-design`](../visual-motion-design/README.md)。
+蓝图里的 `reader_mode` 取 `读`、`读看`、`看` 之一。它只提示读者主要怎么用这页，不是分级。视觉氛围与动效预算由 [`visual-motion-design`](../visual-motion-design/README.md) 在设计阶段决定。
 
 ## 目录
 

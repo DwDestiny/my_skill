@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>机制示例：跨文档转场（第 2 页）</title>
+<!-- 第 2 页：与 index.html 同规则、同 view-transition-name。机制说明见 index.html 文件头。 -->
+<style>
+:root{--bg:#d8d8d8;--fg:#151515;--mute:#3a3a3a;--acc:#c2410c}
+@media (prefers-color-scheme:dark){:root{--bg:#161616;--fg:#eee;--mute:#bbb;--acc:#fb923c}}
+@view-transition{navigation:auto}
+@supports (view-transition-name:none){
+  .hero{view-transition-name:hero-card}
+  .hero h1{view-transition-name:hero-title}
+}
+@media (prefers-reduced-motion:reduce){
+  ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation-duration:0s!important}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.7 system-ui,"PingFang SC","Noto Sans CJK SC",sans-serif}
+.hero{padding:max(16px,6vw);min-height:50vh;background:var(--acc);color:#111;display:flex;align-items:flex-end}
+.hero h1{margin:0;font-size:clamp(2rem,8vw,4rem);display:inline-block}
+main{padding:max(16px,6vw)}
+a{color:var(--fg)}
+p{color:var(--mute);max-width:34rem}
+</style>
+</head>
+<body>
+<div class="hero"><h1>共享卡片</h1></div>
+<main><p>第 2 页：详情。卡片已变形为头图。The card morphed into the hero.</p><a href="index.html">返回第 1 页 Back</a></main>
+</body>
+</html>

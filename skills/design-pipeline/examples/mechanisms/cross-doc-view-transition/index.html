@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>机制示例：跨文档转场（第 1 页）</title>
+<!--
+机制：两个 HTML 文档都写 @view-transition { navigation: auto }。两页上的卡片有同一个 view-transition-name，跳转时浏览器让它变形，其余内容交叉淡入。
+来自技术卡：T15（research/R4-visual-tech.md）。
+适合 / 不适合：适合多页站点的列表到详情。不适合单页应用（用同文档 document.startViewTransition）。
+依赖与固定版本：无库。Chromium 126 以上与 Safari 18.2 以上支持跨文档。同源页面才生效。
+Reduce Motion 退路：@media (prefers-reduced-motion) 把 ::view-transition-group(*) 与 old、new 的动画时长设 0。
+@supports 退路：不支持时是普通跳转，页面完全可用。@view-transition 在不支持的浏览器里被忽略。命名规则包在 @supports (view-transition-name:none) 内。
+已知限制：自动化截图只能验收终态，转场中间帧难截。必须用 http 服务，file:// 不触发。
+不可照抄的部分：颜色、版式、文案。只抄 @view-transition 包法与共享命名。
+接入方法：
+1. 两页都复制 @view-transition 规则。
+2. 两页的共享元素用同一个 view-transition-name，页内唯一。
+3. 保持 reduced-motion 块。
+-->
+<style>
+:root{--bg:#d8d8d8;--fg:#151515;--mute:#3a3a3a;--acc:#c2410c}
+@media (prefers-color-scheme:dark){:root{--bg:#161616;--fg:#eee;--mute:#bbb;--acc:#fb923c}}
+@view-transition{navigation:auto}
+@supports (view-transition-name:none){
+  .card{view-transition-name:hero-card}
+  .card h1{view-transition-name:hero-title}
+}
+@media (prefers-reduced-motion:reduce){
+  ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation-duration:0s!important}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.7 system-ui,"PingFang SC","Noto Sans CJK SC",sans-serif}
+main{min-height:100vh;padding:max(16px,6vw)}
+.card{display:block;width:min(100%,18rem);padding:1rem;background:var(--acc);color:#111;text-decoration:none;border-radius:6px}
+.card h1{margin:0;font-size:1.3rem;display:inline-block}
+.card p{margin:.4rem 0 0}
+p.note{color:var(--mute);max-width:32rem}
+</style>
+</head>
+<body>
+<main>
+<p class="note">第 1 页：列表。点击卡片进入第 2 页，卡片会变形为大头图。Click the card.</p>
+<a class="card" href="page-2.html"><h1>共享卡片</h1><p>点击进入详情 Open</p></a>
+</main>
+</body>
+</html>

@@ -18,9 +18,9 @@
  *   data-split="lines|words|chars"     文字遮罩逐行/逐词/逐字入场（中文按字切分）
  *   data-intro                         随页面开场播放，不等滚动（hero 用）
  *   data-delay="0.2"                   额外延迟，秒
- *   data-parallax="0.1"                滚动漂移，元素高度的比例（mixed 档上限 0.08，show 档 0.15）
- *   data-magnetic="0.35"               元素向指针微移（仅 show 档，仅精细指针）
- *   data-counter="214" data-decimals="1" data-suffix="%"   真实数字计数一次
+ *   data-parallax="0.1"                滚动漂移，元素高度的比例（mixed 预设上限 0.08，show 预设 0.15）
+ *   data-magnetic="0.35"               元素向指针微移（仅 show 预设，仅精细指针）
+ *   data-counter="214" data-decimals="1" data-suffix="%"   真实数字计数一次。加 data-grouping="false" 关闭千分位
  *   data-progress                      阅读进度条（scaleX 0..1）
  *   data-toc                           目录容器，内部 a[href^="#"] 随当前章节加 aria-current
  *   data-scrub                         元素从视口底部进入到其底边升至视口 40% 高度时，写入 CSS 变量 --p（0..1）；减少动效时 --p=1
@@ -43,7 +43,7 @@ export const ease = {
   spring: 'cubic-bezier(0.34, 1.56, 0.64, 1)', // 只给反馈类小物件，结构类不用
 };
 
-// ---------- 档位预算（与 references/gears.md 一致；改预算先改文档） ----------
+// ---------- 预算预设（clear|mixed|show，起点而非分级；与 references/gears.md 一致；改预算先改文档） ----------
 export const GEARS = {
   clear: { loader: false, split: false, parallax: 0, magnetic: false, idle: false, reveal: [400, 700], stagger: 60 },
   mixed: { loader: 'short', split: true, parallax: 0.08, magnetic: false, idle: 'signature', reveal: [500, 900], stagger: 70 },
@@ -243,7 +243,7 @@ function initCounters() {
     const end = parseFloat(el.dataset.counter);
     const decimals = parseInt(el.dataset.decimals || '0', 10);
     const suffix = el.dataset.suffix || '';
-    const fmt = new Intl.NumberFormat('zh-CN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    const fmt = new Intl.NumberFormat('zh-CN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: el.dataset.grouping !== 'false' });
     const write = (v) => { el.textContent = fmt.format(v) + suffix; };
     if (prefersReducedMotion()) { write(end); return; }
     write(0);
@@ -307,7 +307,7 @@ function initScrub() {
 // ---------- 驱动模块（一个变量驱动全部承载概念的视觉） ----------
 /**
  * driver(map, apply)：map(progress 0..1) 返回离散状态，apply(state, drift) 把状态写到 DOM。
- * 页面可用 [data-state="0.6"] 钉住某个状态。空闲输入 drift 只在 show 档且允许动效时非零。
+ * 页面可用 [data-state="0.6"] 钉住某个状态。空闲输入 drift 只在 show 预设且允许动效时非零。
  */
 export function driver(map, apply, { idle = false } = {}) {
   const pinned = () => { const v = document.querySelector('[data-state-pin]')?.dataset.statePin; return v ? parseFloat(v) : null; };
@@ -320,7 +320,7 @@ export function driver(map, apply, { idle = false } = {}) {
   return () => { offScroll(); offIdle?.(); };
 }
 
-// ---------- 加载器（跟随真实进度；下限 1.1 秒，上限 2.6 秒） ----------
+// ---------- 加载器（跟随真实进度；最短 1.1 秒，最长 2.6 秒） ----------
 let loaderFormat = (p) => String(Math.round(p)).padStart(3, '0');
 let loaderExit = null;
 /** 自定义计数文字，p 0→100（可以是年份、时间、进度）。 */

@@ -1,0 +1,6 @@
+- id：cross-doc-view-transition
+- 机制：两个文档都写 @view-transition { navigation: auto }，共享元素用同名 view-transition-name，转场由浏览器完成。
+- 依赖（固定版本）：无库，Chromium 126 以上与 Safari 18.2 以上
+- 文件体积：index.html 2584 字节，page-2.html 约 1.5 KB
+- Reduce Motion 行为：reduce 时 ::view-transition-group/old/new 的 animation-duration 设 0。
+- 已验证项：1440 与 390 两页截图已看（第 2 页终态），console 0 error。转场中间帧未验证，跳转后的终态未用点击验证。

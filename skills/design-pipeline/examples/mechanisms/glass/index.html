@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>机制示例：玻璃浮层</title>
+<!--
+机制：backdrop-filter 模糊加饱和，配一圈高光边和内阴影，浮在程序化背景上。
+适合 / 不适合：只适合浮在内容之上的层，例如菜单、提示、悬浮工具条。不适合内容层、长文本容器或整页卡片墙。
+依赖与固定版本：无。纯 CSS。
+来源与许可：自写，MIT。
+Reduce Motion 退路：本示例的悬停位移在 reduce 下关闭。透明度退路单独处理：prefers-reduced-transparency 与 prefers-contrast: more 下改为实色，无模糊。
+性能预算：同屏 backdrop-filter 元素不超过 3 个，模糊半径不超过 24px，无 JS。
+不可照抄的部分：背景图形、配色、圆角、字体、版式。只抄 .glass 规则和两段退路媒体查询。
+接入方法：
+1. 复制 .glass 与最后两段 @media 到样式表。
+2. 只给浮层元素加 class="glass"，内容层不加。
+3. 在 --glass-bg 里选一个不透明度，使文字对比度保持在 4.5:1 以上，再用实际背景检查。
+-->
+<style>
+:root{
+  --bg1:#c9ced0; --bg2:#8d979b; --accent:#2f6f73; --fg:#101514;
+  --glass-bg:rgba(255,255,255,.55); --glass-edge:rgba(255,255,255,.8); --solid:#f1f3f3;
+}
+@media (prefers-color-scheme:dark){:root{--bg1:#3a4244;--bg2:#1c2123;--fg:#f2f4f4;--glass-bg:rgba(30,36,38,.55);--glass-edge:rgba(255,255,255,.3);--solid:#242b2d}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;color:var(--fg);font:17px/1.65 system-ui,-apple-system,"Segoe UI","PingFang SC","Noto Sans CJK SC",sans-serif;
+ background:
+  radial-gradient(circle at 20% 25%,var(--accent) 0 12%,transparent 12.2%),
+  radial-gradient(circle at 78% 70%,var(--fg) 0 9%,transparent 9.2%),
+  repeating-linear-gradient(115deg,transparent 0 38px,rgba(127,127,127,.35) 38px 40px),
+  linear-gradient(160deg,var(--bg1),var(--bg2))}
+.page{max-width:44rem;margin:0 auto;padding:10vh 16px}
+h1{font-size:1.9rem;margin:0 0 1rem;border-left:6px solid var(--accent);padding-left:.75rem;background:var(--solid)}
+.note{background:var(--solid);padding:1rem 1.25rem;margin:0 0 2rem}
+/* 玻璃浮层：只给浮在内容之上的元素 */
+.glass{position:relative;padding:1.25rem 1.5rem;border-radius:18px;
+ background:var(--glass-bg);
+ -webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);
+ border:1px solid var(--glass-edge);
+ box-shadow:inset 0 1px 0 var(--glass-edge),0 12px 32px rgba(0,0,0,.18);
+ transition:transform .3s ease}
+.glass:hover{transform:translateY(-4px)}
+.layer{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr))}
+.glass h2{margin:0 0 .4rem;font-size:1.1rem}
+.glass p{margin:0}
+@media (prefers-reduced-motion:reduce){.glass{transition:none}.glass:hover{transform:none}}
+/* 退路：用户要求少透明或高对比时改实色 */
+@media (prefers-reduced-transparency:reduce){.glass{background:var(--solid);-webkit-backdrop-filter:none;backdrop-filter:none}}
+@media (prefers-contrast:more){.glass{background:var(--solid);-webkit-backdrop-filter:none;backdrop-filter:none;border-color:var(--fg)}}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.glass{background:var(--solid)}}
+</style>
+</head>
+<body>
+<div class="page">
+<h1>玻璃浮层</h1>
+<p class="note">这是机制示例，只演示技术，不带最终配色与版式。规则：玻璃只用于浮层，不用于内容层。下面两块浮在程序化背景上，说明文字在实色块里。</p>
+<div class="layer">
+ <div class="glass" role="note"><h2>浮层 A</h2><p>背景的圆和斜线透过模糊层可见，边缘有一圈高光。</p></div>
+ <div class="glass" role="note"><h2>浮层 B</h2><p>开启系统“减少透明度”或“更高对比度”后，这里变成实色。</p></div>
+</div>
+</div>
+</body>
+</html>

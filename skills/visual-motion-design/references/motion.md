@@ -1,6 +1,6 @@
 # 动效：引擎、编排、炫技
 
-先读 `gears.md` 定档位。本文讲怎么做。
+先读 `gears.md` 选预算预设。本文讲怎么做。
 
 ## 1. 原则
 
@@ -14,7 +14,7 @@
 
 ## 2. 引擎
 
-文件：`assets/engine/motion-engine.js`、`engine.css`、`head-flag.html`。零依赖，离线可开，是 `clear` 档的引擎和 GSAP 引擎的回退。来源与许可见 `assets/engine/LICENSE-MIT.txt`。
+文件：`assets/engine/motion-engine.js`、`engine.css`、`head-flag.html`。零依赖，离线可开，是 预设 `clear`的引擎和 GSAP 引擎的回退。来源与许可见 `assets/engine/LICENSE-MIT.txt`。
 
 接入步骤：
 
@@ -24,11 +24,11 @@
 4. 用数据属性标记元素。属性清单见引擎文件头部注释。
 5. 需要自定义加载器或驱动模块时，在 `boot({ setup })` 的 `setup` 里注册。
 
-引擎按档位自动限制：`clear` 不拆字、不漂移、不磁吸、无加载器；`mixed` 漂移上限 0.08、加载器 ≤1.2 秒；`show` 全开。改预算先改 `gears.md`，再改 `GEARS` 常量。
+引擎按预算预设自动限制：`gear` 参数取 `clear`、`mixed`、`show`，这是预设标识。`clear` 不拆字、不漂移、不磁吸、无加载器；`mixed` 漂移上限 0.08、加载器 ≤1.2 秒；`show` 全开。改预算先改 `gears.md`，再改 `GEARS` 常量。
 
 ### 选引擎
 
-| 档位 | 引擎 | 说明 |
+| 预算预设 | 引擎 | 说明 |
 |---|---|---|
 | clear | `motion-engine.js`（零依赖） | 不用 GSAP。离线可开 |
 | mixed | `motion-engine-gsap.js` | GSAP + ScrollTrigger。Lenis 可选（`boot({ lenis: true })`）。固定舞台（`data-pin`）≤1 个 |
@@ -53,7 +53,7 @@
 | hover | 150 到 200ms | ease |
 | 菜单、弹层 | 150 到 250ms | out |
 | 折叠、抽屉 | 240 到 320ms | out |
-| 区块入场 | 400 到 1300ms（按档位） | out |
+| 区块入场 | 400 到 1300ms（按预算预设） | out |
 | 文字逐行 | 700 到 1300ms，错开 60 到 100ms | out |
 | 图片 clip | 900 到 1600ms | out / inOut |
 | 幕布、页面转场 | 800 到 1100ms 每向 | inOut |
@@ -88,7 +88,7 @@ hover 规则：写在 `@media (hover: hover)` 内；每个 hover 状态在 `:foc
 
 ### 5.4 空闲动效
 
-只有 `show` 档允许明显的空闲动效，`mixed` 只允许签名物微动。规则：由概念物承担，幅度几像素或几度；离屏暂停；减少动效下为零；显眼的循环（大面积视频、全屏场景）配可见的暂停按钮。不加"漂浮的形状"来凑数。
+只有 预设 `show`允许明显的空闲动效，`mixed` 只允许签名物微动。规则：由概念物承担，幅度几像素或几度；离屏暂停；减少动效下为零；显眼的循环（大面积视频、全屏场景）配可见的暂停按钮。不加"漂浮的形状"来凑数。
 
 ### 5.5 WebGL 与 3D
 
@@ -96,7 +96,7 @@ WebGL 只用于线画不出的连续场（光、水、雾、材质）。能删�
 
 ### 5.6 加载器
 
-仅在页面有真实加载工作（字体、关键图、GL）时使用。进度跟随真实任务。出场动画与 hero 首帧衔接：加载器最后一帧等于 hero 第一帧。`show` 档 1.1 到 2.6 秒，`mixed` 档 ≤1.2 秒，`clear` 档无。
+仅在页面有真实加载工作（字体、关键图、GL）时使用。进度跟随真实任务。出场动画与 hero 首帧衔接：加载器最后一帧等于 hero 第一帧。预设 `show` 1.1 到 2.6 秒，预设 `mixed` ≤1.2 秒，预设 `clear`无。
 
 ## 6. 减少动效
 

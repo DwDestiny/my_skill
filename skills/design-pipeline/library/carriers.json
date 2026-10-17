@@ -1,0 +1,320 @@
+{
+  "version": "2026-10-16",
+  "source": "research/R1-carriers.md",
+  "src_legend": {
+    "S<n>": "R1 第 5 节来源编号，有来源",
+    "unverified": "R1 标 [记]，来自记忆，未核原文",
+    "inferred": "R1 标 [推]，推断值，不是平台原文",
+    "not_found": "R1 未找到来源，值为 null，不要当事实用"
+  },
+  "note": "不含外框图形。原型按载体视口直接出页面。视口与窗口尺寸指页面可用区域。",
+  "carriers": [
+    {
+      "id": "wechat-mini",
+      "name_zh": "微信小程序",
+      "viewport": {"width_css_px": [375, 390], "height_css_px": 844, "note": "设计稿 375 固定布局，390 响应式。750rpx 等于页面宽。高度 844 为 [记]", "src": "S1,S3", "height_src": "unverified"},
+      "safe_area": {"top": "胶囊占右上角，需避让", "bottom": null, "capsule_px": [87, 32], "note": "胶囊位置不可改，真机用 wx.getMenuButtonBoundingClientRect() 读取。87x32 为 [记]", "src": "S1", "capsule_src": "unverified"},
+      "nav_height": {"value": null, "note": "无固定值，用胶囊坐标计算。HTML 里按 44 px 顶栏占位", "src": "not_found", "placeholder_src": "unverified"},
+      "primary_nav": {"value": "Tab 栏 2 到 5 个，建议不超过 4 个，位置 bottom 或 top，top 时不显示图标，一页只放一个", "src": "S1,S3c"},
+      "back": {"value": "二级页左上角返回", "src": "S1"},
+      "type_scale": {"body": 17, "secondary": 15, "caption": 12, "title": 22, "also": [14], "unit": "pt", "src": "S1"},
+      "font_stack": {"value": "-apple-system, \"PingFang SC\", \"Helvetica Neue\", sans-serif", "note": "系统字体", "src": "S1"},
+      "min_font": {"value": 12, "unit": "pt", "note": "Caption 档", "src": "S1"},
+      "min_hit": {"value": "约 7-9 mm。小元素热区不小于 40x40 pt，大按钮不小于 44 pt", "px": 40, "unit": "pt", "src": "S1,S5b"},
+      "hover": false,
+      "dark_mode": {"value": "app.json 设 darkmode: true，用 theme.json 的 light / dark 变量", "src": "S3b"},
+      "motion_norm": {"value": "加载动画简单。成功 Toast 1.5 s 自动消失。一页只放一个加载动画", "src": "S1"},
+      "reduce_motion_setting": {"value": "无统一开关。HTML 里仍写 prefers-reduced-motion 回退", "src": "S1"},
+      "brand_color_limits": {"value": "顶栏文字只能 black 或 white。顶栏背景为 hex 纯色，不能渐变或放图", "src": "S3c"},
+      "flash_typical": "动效少，靠版式、插画、Lottie",
+      "platform_discourages": ["整页阻塞加载", "顶栏用渐变、图片或视频", "错误提示用 Toast", "一页放多个 Tab 栏或多个加载动画"],
+      "html_substitute": {
+        "shell": "390 宽，顶部 44 高导航条加右上胶囊占位 87x32 (87x32 为 [记])。按 390x844 视口直接出页面",
+        "components": "WeUI (https://github.com/Tencent/weui)，绿色主色，顶栏纯色",
+        "gesture": "手势用点击或按钮代替",
+        "hover": ":active 代替",
+        "src": "S1,S22"
+      },
+      "gear_defaults": {
+        "clear": "版式清楚，一张插画或一个 Lottie 小动画，不加顶栏效果",
+        "mixed": "主体区用入场淡入、卡片错落、一个主视觉动画，顶栏保持纯色",
+        "show": "顶栏被锁死，冲击全放在页面主体：大插画、Lottie 序列、滚动联动的主体区，不做顶栏渐变或视频顶栏"
+      }
+    },
+    {
+      "id": "alipay-mini",
+      "name_zh": "支付宝小程序",
+      "viewport": {"width_css_px": 375, "note": "R1 未找到来源。按 375 设计稿，标待核", "src": "not_found", "fallback_src": "unverified"},
+      "safe_area": {"value": null, "src": "not_found"},
+      "nav_height": {"value": null, "src": "not_found"},
+      "primary_nav": {"value": "TabBar 组件 (antd-mini)", "src": "S21"},
+      "back": {"value": null, "src": "not_found"},
+      "type_scale": {"body": null, "secondary": null, "caption": null, "title": null, "unit": "pt", "note": "R1 建议先用微信同底线并标待核", "src": "not_found"},
+      "font_stack": {"value": "系统字体，写法同微信小程序", "src": "inferred"},
+      "min_font": {"value": null, "src": "not_found"},
+      "min_hit": {"value": null, "note": "先用微信底线 40x40 并标待核", "src": "not_found"},
+      "hover": false,
+      "dark_mode": {"value": null, "src": "not_found"},
+      "motion_norm": {"value": null, "src": "not_found"},
+      "reduce_motion_setting": {"value": null, "src": "not_found"},
+      "brand_color_limits": {"value": null, "src": "not_found"},
+      "flash_typical": "动效少，靠版式、插画、Lottie (同微信)",
+      "platform_discourages": [],
+      "html_substitute": {
+        "shell": "同微信：390 宽，顶部 44 高导航条，按 390x844 视口出页面。待核",
+        "components": "antd-mini 外观 (https://ant-design-mini.antgroup.com)。不复用 WeUI 绿色，改用 Ant 蓝占位，页面标待核",
+        "gesture": "手势用点击或按钮代替",
+        "hover": ":active 代替",
+        "src": "S21"
+      },
+      "gear_defaults": {
+        "clear": "版式清楚，一个插画或小动画，参数标待核",
+        "mixed": "主体区入场动效加一个主视觉动画，参数标待核",
+        "show": "同微信：冲击放在页面主体，顶栏保持常规，参数标待核"
+      }
+    },
+    {
+      "id": "ios",
+      "name_zh": "iOS / iPadOS",
+      "viewport": {"width_css_px": 393, "height_css_px": 852, "note": "iPhone 15/16 级。iPad 按 size class 自适应", "src": "unverified", "adaptive_src": "S6"},
+      "safe_area": {"value": "内容避开状态栏、Tab 栏、Dynamic Island、底部手势条", "top_pt": [47, 59], "bottom_note": "Tab 栏 49 pt 加底部安全区", "src": "S6", "numbers_src": "unverified"},
+      "nav_height": {"value": 44, "unit": "pt", "note": "导航栏。HIG 页面未给数值", "src": "unverified"},
+      "primary_nav": {"value": "底部 Tab 栏，只做导航不放操作，不隐藏不禁用，避免溢出到“更多”。iPad 可转侧栏", "src": "S8"},
+      "back": {"value": "左上返回加边缘右滑", "src": "unverified"},
+      "type_scale": {"body": 17, "minimum": 11, "unit": "pt", "note": "避免 Ultralight、Thin、Light 字重", "src": "S5"},
+      "font_stack": {"value": "-apple-system, \"SF Pro Text\", \"PingFang SC\", sans-serif", "src": "S5", "cjk_src": "S5 弱"},
+      "min_font": {"value": 11, "unit": "pt", "src": "S5"},
+      "min_hit": {"value": 28, "default": 44, "unit": "pt", "note": "默认 44x44，最小 28x28，控件间约留 12 pt", "src": "S6b"},
+      "hover": false,
+      "hover_note": "触控无。iPad 接指针时有悬停",
+      "dark_mode": {"value": "跟随系统。两种外观都测，并测增强对比度与降低透明度", "src": "S11"},
+      "motion_norm": {"value": "动效有目的才加，可取消，不阻塞，不给高频交互加动效，不能是唯一信息通道", "src": "S7b"},
+      "reduce_motion_setting": {"value": "设置 > 辅助功能 > 动态效果", "src": "S19b"},
+      "brand_color_limits": {"value": "避免与内容层背景相近的标签色。内容彩色时工具栏保持单色，主操作只放一个在尾侧，分组不超过 3 个", "src": "S8,S10c"},
+      "flash_typical": "Liquid Glass 浮层、弹簧、材质",
+      "platform_discourages": ["在内容层用玻璃", "叠玻璃", "高频交互加动效", "让人等动画结束", "隐藏或禁用 Tab 按钮"],
+      "html_substitute": {
+        "shell": "393 宽，顶部状态栏加 44 高导航条，底部 Tab 栏 49 加手势条留白。按 393x852 视口直接出页面 (数值为 [记])",
+        "components": "Framework7 iOS 主题 (MIT) 或 Konsta UI iOS 主题 (MIT)。Liquid Glass 自写：backdrop-filter: blur() saturate() 加半透明底，只用在悬浮的底栏和顶栏，并给 prefers-reduced-transparency 与 prefers-contrast 的实色回退",
+        "gesture": "手势用点击和按钮代替，保留返回按钮",
+        "hover": "不依赖 hover，用 :active",
+        "src": "S23,S24,S7"
+      },
+      "gear_defaults": {
+        "clear": "标准材质、系统弹簧、克制的 Tab 栏和工具栏",
+        "mixed": "悬浮玻璃底栏加弹簧转场，内容层保持标准材质",
+        "show": "Liquid Glass 浮层、弹簧、材质变化。玻璃只放控件与导航层，不叠玻璃，clear 变体加压暗层"
+      }
+    },
+    {
+      "id": "android",
+      "name_zh": "Android (Material 3)",
+      "viewport": {"width_css_px": 412, "height_css_px": 915, "note": "窗口宽度类：Compact 小于 600 dp，Medium 600-839，Expanded 840 以上", "src": "unverified", "class_src": "S12 弱"},
+      "safe_area": {"value": "边到边：内容画到系统栏后面，再用 insets 加内边距。键盘弹出时移动输入框，不要遮住", "src": "S13"},
+      "nav_height": {"value": 64, "unit": "dp", "note": "底栏高度，激活指示器 56 dp。其他栏高度 R1 未给", "src": "S14b"},
+      "primary_nav": {"value": "Compact 用底栏，Medium 用导轨，Expanded 用抽屉", "src": "S12 弱"},
+      "back": {"value": "系统返回手势或返回键。HTML 里用左上返回按钮", "src": "unverified"},
+      "type_scale": {"body": 16, "unit": "sp", "src": "unverified"},
+      "font_stack": {"value": "Roboto, \"Noto Sans SC\", sans-serif", "src": "unverified"},
+      "min_font": {"value": null, "src": "not_found"},
+      "min_hit": {"value": 48, "unit": "dp", "src": "unverified"},
+      "hover": false,
+      "dark_mode": {"value": "跟随系统", "src": "unverified"},
+      "motion_norm": {
+        "value": "6 种弹簧。Standard cubic-bezier(0.2, 0, 0, 1)。Emphasized decelerate (0.05, 0.7, 0.1, 1)。Emphasized accelerate (0.3, 0, 0.8, 0.15)。时长 Short1 50 ms，Medium2 300 ms，Long2 500 ms",
+        "springs": {
+          "FastSpatial": {"damping": 0.9, "stiffness": 1400},
+          "FastEffects": {"damping": 1, "stiffness": 3800},
+          "DefaultSpatial": {"damping": 0.9, "stiffness": 700},
+          "DefaultEffects": {"damping": 1, "stiffness": 1600},
+          "SlowSpatial": {"damping": 0.9, "stiffness": 300},
+          "SlowEffects": {"damping": 1, "stiffness": 800}
+        },
+        "src": "S14"
+      },
+      "reduce_motion_setting": {"value": "设置 > 辅助功能 > 移除动画", "src": "S19b"},
+      "brand_color_limits": {"value": "动态取色", "src": "unverified"},
+      "flash_typical": "M3 Expressive：形变、弹簧、大色块",
+      "platform_discourages": ["在所有场景都用 Expressive (R1 转述自已撤回博文，临时信息)"],
+      "html_substitute": {
+        "shell": "412 宽。按 412x915 视口直接出页面，顶部系统栏留白，底栏 64 高 (数值为 [记])",
+        "components": "Konsta UI Material 主题 (MIT) 或 Framework7 Material 主题 (MIT)。弹簧用 CSS linear() 近似或 Motion / GSAP，参数取 motion_norm.springs",
+        "gesture": "系统返回手势用左上返回按钮代替",
+        "hover": "不用 hover，用 :active",
+        "src": "S14,S23,S24"
+      },
+      "gear_defaults": {
+        "clear": "标准缓动、底栏、克制的色块",
+        "mixed": "弹簧转场加动态取色，局部形变",
+        "show": "M3 Expressive：形变、弹簧物理、大色块、强字体对比。官方提醒不是所有场景适用"
+      }
+    },
+    {
+      "id": "harmony",
+      "name_zh": "鸿蒙 NEXT",
+      "viewport": {"width_css_px": 360, "height_css_px": 780, "note": "以目标机型为准。断点 sm 小于 600 vp，md 600-840，lg 840 以上。另有 XS 小于 320 的写法，两种不一致", "src": "unverified", "breakpoint_src": "S20 弱"},
+      "safe_area": {"value": null, "src": "not_found"},
+      "nav_height": {"value": null, "src": "not_found"},
+      "primary_nav": {"value": "底部 Tab 或侧栏", "src": "unverified"},
+      "back": {"value": "系统返回手势", "src": "unverified"},
+      "type_scale": {"body": null, "unit": "fp", "note": "字号表未找到。fp 随字体设置，vp 随屏幕密度", "src": "not_found"},
+      "font_stack": {"value": "\"HarmonyOS Sans SC\", \"PingFang SC\", \"Noto Sans SC\", sans-serif", "note": "HarmonyOS Sans 网络字体授权未核", "src": "unverified"},
+      "min_font": {"value": null, "src": "not_found"},
+      "min_hit": {"value": null, "src": "not_found"},
+      "hover": false,
+      "dark_mode": {"value": "跟随系统", "src": "unverified"},
+      "motion_norm": {"value": null, "src": "not_found"},
+      "reduce_motion_setting": {"value": null, "src": "not_found"},
+      "brand_color_limits": {"value": null, "src": "not_found"},
+      "flash_typical": null,
+      "flash_typical_src": "not_found",
+      "platform_discourages": [],
+      "html_substitute": {
+        "shell": "360 宽。按 360x780 视口直接出页面。页面标“鸿蒙参数待核”",
+        "components": "无现成开源 HTML 库。用 Konsta UI 或自写令牌。栅格参考 ArkUI GridRow / GridCol 12 列",
+        "gesture": "手势用点击或按钮代替",
+        "hover": "不用 hover，用 :active",
+        "src": "S20 弱"
+      },
+      "gear_defaults": {
+        "clear": "R1 未找到来源。按 Android 清晰档做法占位并标待核",
+        "mixed": "R1 未找到来源。按 Android 混合档做法占位并标待核",
+        "show": "R1 未找到来源。按 Android 展示档做法占位并标待核"
+      }
+    },
+    {
+      "id": "mobile-web",
+      "name_zh": "移动端 Web",
+      "viewport": {"width_css_px": [360, 430], "main": 390, "height_css_px": 844, "note": "meta viewport 用 width=device-width, initial-scale=1, viewport-fit=cover。高度用 dvh 不用 vh", "src": "inferred", "meta_src": "S19 弱"},
+      "safe_area": {"value": "env(safe-area-inset-top|right|bottom|left)，矩形视口时为 0。底部固定栏用 padding-bottom: calc(1em + env(safe-area-inset-bottom))", "src": "S19"},
+      "nav_height": {"value": null, "note": "浏览器自带，页面自定", "src": "not_found"},
+      "primary_nav": {"value": "底部 Tab 或汉堡菜单，自己做", "src": "inferred"},
+      "back": {"value": "浏览器返回", "src": "inferred"},
+      "type_scale": {"body": 16, "unit": "px", "src": "inferred"},
+      "font_stack": {"value": "-apple-system, \"PingFang SC\", \"Noto Sans SC\", sans-serif", "note": "字体栈，R1 未给具体写法", "src": "inferred"},
+      "min_font": {"value": 12, "unit": "px", "note": "R1 未给，按 Windows 最低线与微信 Caption 取 12 并标推断", "src": "inferred"},
+      "min_hit": {"value": 24, "recommended": 44, "unit": "CSS px", "note": "24 为 WCAG 2.2 SC 2.5.8 底线，44 为建议", "src": "S18w", "recommended_src": "inferred"},
+      "hover": false,
+      "hover_note": "不可依赖。不把任何信息或操作放在 hover 后面",
+      "dark_mode": {"value": "prefers-color-scheme", "src": "inferred"},
+      "motion_norm": {"value": "CSS 动效。缩放、大范围平移易引发前庭不适，用淡入淡出替代", "src": "S19b"},
+      "reduce_motion_setting": {"value": "CSS @media (prefers-reduced-motion: reduce)", "src": "S19b"},
+      "brand_color_limits": {"value": "无", "src": "inferred"},
+      "flash_typical": "滚动叙事、3D、WebGL",
+      "platform_discourages": ["无硬性限制，但受 WCAG 约束", "手机上不控制 GPU 与电量", "把信息放在 hover 后面"],
+      "html_substitute": {
+        "shell": "不需要壳。按 390x844 真实视口出页面。agent-browser 设视口 390 844 截图",
+        "components": "自写令牌。可选 Ionic (MIT)",
+        "gesture": "手势提供按钮替代",
+        "hover": "不写 hover，用 :active",
+        "src": "S26"
+      },
+      "gear_defaults": {
+        "clear": "单列版式、克制入场、一个主视觉",
+        "mixed": "滚动叙事分屏、粒子或小型 3D，控制 GPU 与电量",
+        "show": "滚动叙事、3D、WebGL、粒子。手机上要限帧、限粒子数，并给 Reduce Motion 回退"
+      }
+    },
+    {
+      "id": "desktop-web",
+      "name_zh": "桌面 Web",
+      "viewport": {"width_css_px": [1280, 1920], "main": [1440, 900], "test_widths": [1280, 1440, 1536, 1920], "note": "内容最大宽度建议封顶 1200-1440 并居中", "src": "inferred"},
+      "safe_area": {"value": "无", "src": "inferred"},
+      "nav_height": {"value": null, "note": "页面自定", "src": "not_found"},
+      "primary_nav": {"value": "顶栏或左侧栏", "src": "inferred"},
+      "back": {"value": "浏览器返回", "src": "inferred"},
+      "type_scale": {"body": [14, 16], "unit": "px", "src": "inferred"},
+      "font_stack": {"value": "Web 字体加系统回退栈，如 \"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif", "src": "inferred"},
+      "min_font": {"value": 12, "unit": "px", "note": "R1 未给，取 12 并标推断", "src": "inferred"},
+      "min_hit": {"value": 24, "unit": "CSS px", "note": "WCAG 底线。鼠标用户可更小，但要保留 hover、focus、pressed、disabled 四态", "src": "S18w"},
+      "hover": true,
+      "hover_note": "可作增强，不能作唯一入口。焦点环必须可见",
+      "dark_mode": {"value": "prefers-color-scheme", "src": "inferred"},
+      "motion_norm": {"value": "尊重 prefers-reduced-motion", "src": "S19b"},
+      "reduce_motion_setting": {"value": "CSS @media (prefers-reduced-motion: reduce)", "src": "S19b"},
+      "brand_color_limits": {"value": "无", "src": "inferred"},
+      "flash_typical": "滚动叙事、3D、WebGL，最自由",
+      "platform_discourages": ["无硬性限制。约束来自性能、对比度、可达性"],
+      "html_substitute": {
+        "shell": "不需要壳。主截图 1440x900，另测 1280 和 1920",
+        "components": "自写令牌或任意库",
+        "gesture": "鼠标与键盘为主，全部功能可仅用键盘到达",
+        "hover": "写全四态：hover、focus、pressed、disabled",
+        "src": "S18w"
+      },
+      "gear_defaults": {
+        "clear": "大字排版、清楚栅格、克制的入场",
+        "mixed": "滚动驱动动画、分屏叙事、局部 3D 或视频",
+        "show": "滚动驱动动画、WebGL、视频背景、大字排版、流体。最自由，约束只来自性能、对比度、可达性"
+      }
+    },
+    {
+      "id": "macos",
+      "name_zh": "macOS 原生 App",
+      "viewport": {"width_css_px": 1200, "height_css_px": 760, "note": "窗口可任意缩放。1200x760 为窗口内容约值", "src": "unverified", "resizable_src": "S9"},
+      "safe_area": {"value": "无刘海约束，有菜单栏。HTML 里顶部画 24 px 菜单栏占位", "menubar_px": 24, "src": "S9", "menubar_src": "unverified"},
+      "nav_height": {"value": 52, "unit": "px", "note": "工具栏区。标题栏、红绿灯固定高度 R1 未找到", "src": "unverified"},
+      "primary_nav": {"value": "侧栏加菜单栏加工具栏。侧栏最多两级，可隐藏，宽 220-260 px。所有命令都要在菜单栏可达", "src": "S9,S10", "sidebar_width_src": "unverified"},
+      "back": {"value": "无统一返回，用工具栏按钮", "src": "unverified"},
+      "type_scale": {"body": 13, "minimum": 10, "unit": "pt", "src": "S5"},
+      "font_stack": {"value": "-apple-system, \"SF Pro Text\", \"PingFang SC\", sans-serif", "src": "S5 弱"},
+      "min_font": {"value": 10, "unit": "pt", "src": "S5"},
+      "min_hit": {"value": 20, "default": 28, "unit": "pt", "note": "默认 28x28，最小 20x20", "src": "S6b"},
+      "hover": true,
+      "dark_mode": {"value": "同 iOS：两种外观都测，含增强对比度与降低透明度", "src": "S11"},
+      "motion_norm": {"value": "系统转场。动效要有目的，勿滥用", "src": "S7b"},
+      "reduce_motion_setting": {"value": "macOS 26：系统设置 > 辅助功能 > 动态效果 > 减弱动态效果。macOS 15 及以前在“显示”下", "src": "S19b"},
+      "brand_color_limits": {"value": "同 iOS", "src": "S11"},
+      "flash_typical": "玻璃侧栏、窗口材质",
+      "platform_discourages": ["动效滥用", "在内容层用玻璃"],
+      "html_substitute": {
+        "shell": "窗口内容区约 1200x760，顶部 24 高菜单栏占位，下接 52 高工具栏区。按该视口直接出页面",
+        "components": "无成熟 macOS HTML 组件库，自写令牌。正文 13 px。侧栏 220-260 px 宽，半透明加 backdrop-filter",
+        "gesture": "鼠标与键盘，必须有快捷键提示",
+        "hover": "hover 态要做",
+        "src": "S9,S10"
+      },
+      "gear_defaults": {
+        "clear": "系统转场、清楚的侧栏与工具栏",
+        "mixed": "玻璃侧栏加窗口材质，局部弹簧转场",
+        "show": "玻璃侧栏浮在内容之上、窗口材质、内容延伸到侧栏下。玻璃只放控件与导航层"
+      }
+    },
+    {
+      "id": "windows",
+      "name_zh": "Windows 原生 App",
+      "viewport": {"width_css_px": 1280, "height_css_px": 800, "note": "窗口可任意缩放，单位 epx。1280x800 为窗口内容约值", "src": "unverified", "resizable_src": "S16"},
+      "safe_area": {"value": "无", "src": "inferred"},
+      "nav_height": {"value": 32, "unit": "px", "note": "标题栏高度", "src": "unverified"},
+      "primary_nav": {"value": "NavigationView：随窗口宽度在 LeftMinimal、LeftCompact、Left 间切换。有二级层级时用 Left-Expanded 或 Top", "src": "S17"},
+      "back": {"value": "标题栏返回按钮", "src": "unverified"},
+      "type_scale": {"caption": "12/16", "body": "14/20", "body_large": "18/24", "subtitle": "20/28", "title": "28/36", "unit": "px", "src": "S15"},
+      "font_stack": {"value": "\"Segoe UI Variable\", \"Segoe UI\", \"Microsoft YaHei UI\", sans-serif", "src": "S15", "cjk_src": "unverified"},
+      "min_font": {"value": 12, "unit": "px", "note": "12 px 常规或 14 px 半粗", "src": "S15"},
+      "min_hit": {"value": 40, "unit": "px", "note": "触控约 7.5 mm 见方，135 PPI 1.0x 下 40x40 px", "src": "S16"},
+      "hover": true,
+      "dark_mode": {"value": "主题资源加高对比主题。不要写死颜色", "src": "S18"},
+      "motion_norm": {
+        "value": "ControlNormal 250 ms，ControlFast 167 ms，ControlFaster 83 ms。进入 cubic-bezier(0, 0, 0, 1)，退出 cubic-bezier(1, 0, 1, 1)",
+        "src": "S15b"
+      },
+      "reduce_motion_setting": {"value": "设置 > 辅助功能 > 视觉效果 > 动画效果", "src": "S19b"},
+      "brand_color_limits": {"value": "Mica 带桌面底色，作窗口底层。Acrylic 只用于临时面。Smoke 用于模态对话框下的压暗", "src": "S17b"},
+      "flash_typical": "Mica / Acrylic，Fluent 动效",
+      "platform_discourages": ["把 Acrylic 用于常驻面", "写死颜色导致高对比主题无法覆盖"],
+      "html_substitute": {
+        "shell": "窗口内容区 1280x800，顶部 32 高标题栏。按该视口直接出页面",
+        "components": "Fluent UI Web Components 或 Fluent UI React (许可与版本未核)。WinUI 3 Gallery 当参照",
+        "gesture": "鼠标与键盘，快捷键和右键菜单常见",
+        "hover": "hover 态要做",
+        "extra": "Mica 用纯色加轻微着色模拟，不用大面积 blur。Acrylic 只用于弹出菜单。间距 8/12/16 epx",
+        "src": "S15,S16c,S17b"
+      },
+      "gear_defaults": {
+        "clear": "Fluent 类型阶梯、83-250 ms 短动效、纯色 Mica",
+        "mixed": "Mica 底层加弹出菜单 Acrylic，Fluent 进出场动效",
+        "show": "Mica / Acrylic 材质层次、Fluent 动效。Acrylic 只放临时面，不放常驻面"
+      }
+    }
+  ]
+}

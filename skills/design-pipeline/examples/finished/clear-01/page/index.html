@@ -1,0 +1,686 @@
+<!doctype html>
+<!--
+  E3 社区活动报名小程序三页原型 · S5 制作 · 2026-10-16
+  起手：S3.5 首屏（列表页）。本文件在首屏上继续，加详情、报名登记、成功态与取消确认层。
+  令牌来自 02-方向单/direction.md v0.2.1。版式与纸件按 03-页面规划.md 第 1 节与第 7 节协调者裁定。
+  所有活动、地点、人数、姓名、编号都是示例（虚构）。无外部依赖：字体用系统栈，数字用 tabular-nums。
+  路由：#/list、#/detail/:id、#/signup/:id、#/signup/:id/done。取消确认层不改路由。
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>社区活动报名</title>
+<style>
+:root {
+  /* 色板：一色一义（方向单 v0.2） */
+  --board: #E9EDF0;   /* 公告板底 */
+  --paper: #FFFFFF;   /* 告示纸、行底、横格纸、小票 */
+  --ink: #14202B;     /* 正文、主按钮底、满员方块、已报格、对勾 */
+  --ink-2: #34434F;   /* 次要文字 */
+  --line: #B9C3CB;    /* 1 px 格线，不承载文字 */
+  --red: #93250E;     /* 只给红纸日期条 */
+  --press: #DDE3E8;   /* 按下态 */
+  --ok: #1B5E33;      /* 有位置 */
+  --warn: #7A4300;    /* 快满 */
+  --scrim: rgba(20, 32, 43, .5); /* 确认层遮罩：墨色 50% */
+  --font: -apple-system, "PingFang SC", "Helvetica Neue", "Noto Sans CJK SC", sans-serif;
+  /* 4 px 网格 */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px;
+  --bar-h: 44px;
+  --tag-w: 76px;
+  --btn-h: 48px;
+  --vt-ms: 220ms;
+  --grid-ms: 480ms;
+  --ticket-ms: 720ms;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  /* 投影两档：告示纸 1 层，小票 2 层 */
+  --shadow-1: 0 1px 3px rgba(20, 32, 43, .22);
+  color-scheme: light;
+}
+@media (prefers-reduced-motion: reduce) { :root { --vt-ms: 0ms; --grid-ms: 0ms; --ticket-ms: 0ms; } }
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--board); color: var(--ink);
+  font-family: var(--font); font-size: 17px; line-height: 1.45;
+}
+.num { font-variant-numeric: tabular-nums; }
+a { color: inherit; }
+.mk { font-weight: 400; color: var(--ink-2); }   /* "示例""未知"标记，不小于 14 px */
+.print-h { display: none; }
+
+/* 小程序画面：390 列，桌面打开时居中 */
+.app { max-width: 390px; min-height: 100vh; margin: 0 auto; background: var(--board); overflow-x: clip; }
+
+/* 顶栏 44 px：返回、页名、右上胶囊占位 87x32 */
+.bar {
+  position: sticky; top: 0; z-index: 10; height: var(--bar-h);
+  display: grid; grid-template-columns: 95px 1fr 95px; align-items: center;
+  background: var(--paper); border-bottom: 1px solid var(--line);
+}
+.bar .back {
+  width: 44px; height: 44px; margin-left: var(--s1); display: grid; place-items: center;
+  border: 0; background: none; color: var(--ink); text-decoration: none;
+}
+.bar .back:active { background: var(--press); }
+.bar .back:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
+.bar .back[hidden] { display: none; }
+.bar .ttl { margin: 0; text-align: center; font-size: 17px; font-weight: 700; }
+.bar .capsule {
+  justify-self: end; margin-right: 7px; width: 87px; height: 32px;
+  border: 1px solid var(--line); border-radius: 16px;
+}
+
+/* 按钮：墨底白字主按钮，墨色描边次按钮。四态：常态、按下、焦点、禁用 */
+.btn {
+  display: flex; align-items: center; justify-content: center; width: 100%;
+  height: var(--btn-h); padding: 0 var(--s4); border: 2px solid var(--ink); border-radius: 4px;
+  background: var(--ink); color: var(--paper); font: inherit; font-size: 17px; font-weight: 700;
+  text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.btn:active { background: var(--ink-2); border-color: var(--ink-2); }
+.btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.btn.line { background: var(--paper); color: var(--ink); }
+.btn.line:active { background: var(--press); border-color: var(--ink); }
+.btn:disabled { background: var(--press); border-color: var(--press); color: var(--ink-2); cursor: not-allowed; }
+
+/* 固定底栏：80 px（单按钮）或 128 px（双按钮） */
+.dock {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 9;
+  width: min(390px, 100%); padding: var(--s4); display: grid; gap: var(--s2);
+  background: var(--paper); border-top: 1px solid var(--line);
+}
+.dock.two { padding: var(--s3) var(--s4); }
+
+/* ===== 幕 1 · 列表 ===== */
+.lead {
+  margin: 0; padding: var(--s3) var(--s4) var(--s3);
+  background: var(--paper); border-bottom: 2px solid var(--ink);
+  font-size: 17px; font-weight: 700;
+}
+.lead small { font-size: 17px; font-weight: 400; color: var(--ink-2); }
+
+/* 红纸日期条（左 76 px）加横格活动行。日期组之间露 4 px 板底 */
+.day + .day { margin-top: var(--s1); }
+.day {
+  display: grid; grid-template-columns: var(--tag-w) 1fr;
+  background: var(--paper); border-bottom: 2px solid var(--ink);
+}
+.tag { background: var(--red); color: #FFFFFF; }
+.tag-in {
+  position: sticky; top: var(--bar-h);
+  padding: var(--s3) var(--s2) var(--s3) var(--s3);
+}
+.tag em { display: block; font-style: normal; font-size: 14px; line-height: 1.2; }
+.tag b { display: block; font-size: 28px; font-weight: 900; line-height: 1.15; letter-spacing: 0; }
+.tag span { display: block; margin-top: var(--s1); font-size: 14px; line-height: 1.2; }
+
+.rows { display: flex; flex-direction: column; min-width: 0; }
+.row {
+  display: grid; gap: 2px; min-height: 100px;
+  padding: var(--s3) var(--s4) var(--s3) var(--s3);
+  text-decoration: none; color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+}
+.row + .row { border-top: 1px solid var(--line); }
+.row:active { background: var(--press); }
+.row:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
+.row .t { font-size: 22px; font-weight: 700; line-height: 1.2; }
+.row .n { font-size: 17px; font-weight: 700; line-height: 1.35; word-break: keep-all; overflow-wrap: anywhere; }
+.row .p { font-size: 17px; color: var(--ink-2); line-height: 1.35; }
+
+/* 名额状态（s2）：形状加文字，不只靠颜色 */
+.st { display: flex; align-items: center; gap: var(--s2); margin-top: var(--s1); font-size: 17px; font-weight: 700; line-height: 1.35; }
+.st svg { flex: none; width: 22px; height: 22px; }
+.st.ok { color: var(--ok); } .st.warn { color: var(--warn); }
+.st.full, .st.info, .st.mine { color: var(--ink); }
+
+.foot { margin: 0; padding: var(--s4) var(--s4) var(--s6); color: var(--ink-2); }
+.foot b { display: block; font-size: 17px; color: var(--ink); }
+.foot span { display: block; margin-top: var(--s1); font-size: 14px; }
+
+.view[hidden], .form-sec[hidden], .done-sec[hidden] { display: none; }
+
+/* ===== 幕 2 · 详情：告示纸（1 层投影，磁贴压在板上） ===== */
+.v-detail { padding: var(--s4) var(--s4) 104px; }
+.sheet {
+  position: relative; background: var(--paper); box-shadow: var(--shadow-1);
+  padding: var(--s6) var(--s5) var(--s5);
+}
+.sheet::before, .sheet::after {   /* 两枚磁贴 */
+  content: ""; position: absolute; top: -6px; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--ink);
+}
+.sheet::before { left: var(--s4); } .sheet::after { right: var(--s4); }
+.d-title { margin: 0 0 var(--s3); font-size: 22px; font-weight: 700; line-height: 1.3; }
+.fields { margin: 0; display: grid; grid-template-columns: 52px 1fr; }
+.fields dt, .fields dd { margin: 0; padding: var(--s2) 0; border-top: 1px solid var(--line); line-height: 1.4; }
+.fields dt { color: var(--ink-2); font-size: 17px; }
+.fields dd { font-size: 17px; font-weight: 700; }
+.fields dd .mk { font-size: 17px; }
+
+.quota { margin-top: var(--s4); padding-top: var(--s4); border-top: 2px solid var(--ink); }
+.q-big { margin: 0; font-size: 28px; line-height: 1.2; }
+.q-big.st svg { width: 26px; height: 26px; }
+.q-sub { margin: var(--s1) 0 var(--s3); font-size: 17px; color: var(--ink-2); }
+.grid-svg { display: block; }
+.grid-svg .f rect { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; }
+.grid-svg .f path { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.grid-svg .e { fill: none; stroke: var(--ink-2); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.grid-svg text { font-family: var(--font); font-size: 14px; fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+.grid-svg .w { fill: url(#hatch); stroke: var(--ink); stroke-width: 1.5; }
+.grid-svg.anim .f { animation: cell-in 120ms linear both; }
+@keyframes cell-in { from { opacity: 0; } }
+.wait { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s3); padding-left: var(--s3); border-left: 2px solid var(--ink); font-size: 17px; font-weight: 700; }
+.q-note { margin: var(--s3) 0 0; font-size: 17px; }
+.legend { display: flex; gap: var(--s4); margin: var(--s3) 0 0; padding: 0; list-style: none; font-size: 14px; color: var(--ink-2); }
+.legend li { display: flex; align-items: center; gap: 6px; }
+.legend svg { width: 14px; height: 14px; }
+
+.notes { margin-top: var(--s4); padding-top: var(--s4); border-top: 2px solid var(--ink); }
+.notes h3 { margin: 0 0 var(--s2); font-size: 17px; }
+.notes ul { margin: 0; padding: 0; list-style: none; }
+.notes li { position: relative; padding: 6px 0 6px 20px; font-size: 17px; }
+.notes li::before { content: ""; position: absolute; left: 2px; top: 16px; width: 8px; height: 8px; background: var(--ink); }
+.notes li.key { font-weight: 700; }
+
+/* ===== 幕 3a · 登记：横格纸，无投影，铺到底栏 ===== */
+.v-signup { display: flex; flex-direction: column; min-height: calc(100vh - var(--bar-h)); padding-bottom: 80px; }
+.v-signup.is-done { padding-bottom: 140px; }
+.form-sec { flex: 1; display: flex; flex-direction: column; }
+.sum { padding: var(--s3) var(--s4); }
+.sum { margin: 0; font-size: 17px; font-weight: 700; }
+.ruled .info { height: auto; min-height: 56px; padding-top: var(--s2); padding-bottom: var(--s2); align-items: baseline; }
+.ruled .info span:nth-child(2) { font-size: 17px; color: var(--ink-2); line-height: 1.4; }
+.ruled { flex: 1; display: flex; flex-direction: column; margin: 0; background: var(--paper); border-top: 2px solid var(--ink); }
+.ruled .ln {
+  display: grid; grid-template-columns: 112px 1fr auto; align-items: center; gap: var(--s2);
+  height: 56px; padding: 0 var(--s4); border-bottom: 1px solid var(--line);
+}
+.ruled label, .ruled .info span:first-child { font-size: 17px; color: var(--ink-2); }
+.ruled input {
+  width: 100%; min-width: 0; height: var(--btn-h); padding: 0 var(--s1); border: 0; border-radius: 0;
+  background: transparent; color: var(--ink); font: inherit; font-size: 17px; font-weight: 700;
+}
+.ruled input:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
+.ruled .mk { font-size: 17px; }
+.step { display: flex; align-items: center; gap: var(--s3); }
+.step button {
+  width: 44px; height: 44px; display: grid; place-items: center; padding: 0;
+  border: 2px solid var(--ink); border-radius: 4px; background: var(--paper); color: var(--ink); cursor: pointer;
+}
+.step button:active { background: var(--press); }
+.step button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.step button:disabled { border-color: var(--line); color: var(--line); cursor: not-allowed; }
+.step output { min-width: 40px; text-align: center; font-size: 17px; font-weight: 700; }
+.ruled .hint { margin: 0; padding: 0 var(--s4); min-height: 56px; display: flex; align-items: center; border-bottom: 1px solid var(--line); font-size: 17px; }
+.ruled .err { gap: var(--s2); font-weight: 700; }
+.ruled .err svg { flex: none; width: 22px; height: 22px; }
+/* 纸尾续线：1 px #B9C3CB，间距 56 px，无文字 */
+.tail { flex: 1; min-height: 56px; background: repeating-linear-gradient(to bottom, transparent 0 55px, var(--line) 55px 56px); }
+
+/* ===== 幕 3b · 成功态：出票口墨缝加号码小票（2 层投影，锯齿顶边，齿孔虚线） ===== */
+.done-sec { padding: 0 var(--s4); }
+.reg-line { margin: 0 calc(-1 * var(--s4)); padding: var(--s4); background: var(--paper); border-bottom: 1px solid var(--line); font-size: 17px; line-height: 1.4; }
+.slot { height: 4px; margin: var(--s4) calc(-1 * var(--s1)) 0; background: var(--ink); border-radius: 2px; }
+.tk {
+  margin-top: 2px;
+  filter: drop-shadow(0 1px 1px rgba(20, 32, 43, .24)) drop-shadow(0 10px 18px rgba(20, 32, 43, .16));
+}
+.tk.out { animation: tk-out var(--ticket-ms) var(--ease) both; }
+@keyframes tk-out {
+  from { transform: translateY(-100%); clip-path: inset(100% -24px -48px -24px); }
+  to   { transform: none;              clip-path: inset(0 -24px -48px -24px); }
+}
+.teeth { display: block; width: 100%; height: 8px; }
+.teeth path { fill: var(--paper); }
+.tk-paper { background: var(--paper); padding: var(--s3) var(--s5) var(--s5); }
+.tk-ok { display: flex; align-items: center; gap: var(--s2); margin: 0; font-size: 22px; font-weight: 700; }
+.tk-ok svg { width: 28px; height: 28px; }
+.tk-k { margin: var(--s3) 0 0; font-size: 17px; color: var(--ink-2); }
+.tk-no { margin: 0; font-size: 44px; font-weight: 900; line-height: 1.15; letter-spacing: .02em; }
+.tk-n { margin: var(--s2) 0 0; font-size: 17px; font-weight: 700; }
+.tk-d { margin: 0; font-size: 17px; }
+.perf { position: relative; margin: var(--s4) calc(-1 * var(--s5)); border-top: 2px dashed var(--line); }
+.perf::before, .perf::after { content: ""; position: absolute; top: -9px; width: 16px; height: 16px; border-radius: 50%; background: var(--board); }
+.perf::before { left: -8px; } .perf::after { right: -8px; }
+.stub p { margin: 0; font-size: 17px; }
+.stub .k { font-size: 14px; color: var(--ink-2); }
+.stub b { font-size: 17px; }
+
+/* ===== 幕 3c · 取消确认层：遮罩加底部白纸，无投影 ===== */
+.scrim { position: fixed; inset: 0; z-index: 20; background: var(--scrim); }
+.drawer {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 21;
+  width: min(390px, 100%); padding: var(--s5) var(--s4) var(--s4); background: var(--paper);
+  border-top: 2px solid var(--ink);
+}
+.drawer h2 { margin: 0 0 var(--s2); font-size: 22px; }
+.drawer p { margin: 0 0 var(--s2); font-size: 17px; }
+.drawer .btns { display: grid; gap: var(--s2); margin-top: var(--s4); }
+.scrim[hidden], .drawer[hidden] { display: none; }
+
+/* 页间转场：前进右推 24 px，返回反向；Reduce Motion 时长为 0 */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: var(--vt-ms); animation-timing-function: var(--ease); }
+html.fwd::view-transition-new(root) { animation-name: in-r; }
+html.fwd::view-transition-old(root) { animation-name: out-l; }
+html.back::view-transition-new(root) { animation-name: in-l; }
+html.back::view-transition-old(root) { animation-name: out-r; }
+@keyframes in-r { from { transform: translateX(24px); opacity: 0; } }
+@keyframes out-l { to { transform: translateX(-24px); opacity: 0; } }
+@keyframes in-l { from { transform: translateX(-24px); opacity: 0; } }
+@keyframes out-r { to { transform: translateX(24px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+  .grid-svg.anim .f, .tk.out { animation: none; }
+}
+
+/* 打印 A4：三页各一张，隐藏胶囊与底栏，红纸条保留底色 */
+@media print {
+  @page { size: A4; margin: 8mm; }
+  /* 列表收紧行距，让 8 场放进一张 A4；字号不变 */
+  .row { min-height: 0; padding: var(--s1) var(--s3); gap: 0; }
+  .row .st { margin-top: 0; }
+  .lead { padding: 6px var(--s4); }
+  .foot { padding: var(--s2) var(--s4); }
+  body, .app { background: #FFFFFF; max-width: none; }
+  .bar, .dock, .scrim, .drawer, .tail { display: none !important; }
+  .view, .view[hidden], .form-sec, .done-sec { display: block !important; }
+  .view + .view { break-before: page; }
+  .print-h { display: block; margin: 0 0 var(--s2); font-size: 22px; }
+  .tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .tag-in { position: static; }
+  .v-detail, .v-signup { padding: 0; min-height: 0; }
+  .done-sec { margin-top: var(--s4); break-inside: avoid; }
+  .tk { animation: none !important; clip-path: none !important; }
+}
+</style>
+</head>
+<body>
+<!-- 名额格的候补斜线图案 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#FFFFFF"/><path d="M0 0v6" stroke="#14202B" stroke-width="2.5"/></pattern>
+</defs></svg>
+
+<div class="app">
+  <header class="bar">
+    <a class="back" href="#/list" aria-label="返回" hidden>
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"/></svg>
+    </a>
+    <span class="slot-l" aria-hidden="true"></span>
+    <h1 class="ttl" id="ttl">最近活动</h1>
+    <span class="capsule" aria-hidden="true"></span>
+  </header>
+
+  <!-- 幕 1 · #/list（蓝图 s1、s2） -->
+  <main class="view" data-view="list">
+    <section data-chapter="s1" data-layout="date-rail" id="ch-s1">
+      <h2 class="print-h">活动列表</h2>
+      <p class="lead">最近两周的活动，点一场看详情。<small>（示例数据）</small></p>
+      <!-- 首屏视觉主体（A01）：红纸日期条与状态图形。状态图形用下方符号表 -->
+      <div id="days" data-hero-visual>
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+          <symbol id="i-ok" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="none" stroke="currentColor" stroke-width="2.5"/></symbol>
+          <symbol id="i-warn" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M11 2a9 9 0 0 1 0 18z" fill="currentColor"/></symbol>
+          <symbol id="i-full" viewBox="0 0 22 22"><rect x="3" y="3" width="16" height="16" fill="currentColor"/></symbol>
+          <symbol id="i-info" viewBox="0 0 22 22"><path d="M3 11h16" stroke="currentColor" stroke-width="3"/></symbol>
+          <symbol id="i-mine" viewBox="0 0 22 22"><path d="M3 11.5 9 17 19 5" fill="none" stroke="currentColor" stroke-width="3"/></symbol>
+        </defs></svg>
+        <div id="days-in"></div>
+      </div>
+      <p class="foot"><b>以上活动全部是示例数据。</b><span>活动名、地点、人数不对应真实活动。周三上午与周六下午两场复用了示例活动名，是加开的场次。</span></p>
+    </section>
+  </main>
+
+  <!-- 幕 2 · #/detail/:id（蓝图 s3、s4、s5） -->
+  <main class="view v-detail" data-view="detail" hidden>
+    <h2 class="print-h">活动详情</h2>
+    <article class="sheet">
+      <section data-chapter="s3" data-layout="notice-sheet" id="ch-s3">
+        <h2 class="d-title" id="d-title"></h2>
+        <dl class="fields">
+          <dt>主办</dt><dd>居民服务站 <span class="mk">（名称未知）</span></dd>
+          <dt>时间</dt><dd class="num" id="d-time"></dd>
+          <dt>地点</dt><dd id="d-place"></dd>
+          <dt>面向</dt><dd id="d-who"></dd>
+        </dl>
+      </section>
+      <section class="quota" data-chapter="s4" data-layout="sign-grid" id="ch-s4" aria-label="名额"></section>
+      <section class="notes" data-chapter="s5" data-layout="notice-sheet" id="ch-s5">
+        <h3>注意事项 <span class="mk">（示例）</span></h3>
+        <ul>
+          <li>带水杯。</li>
+          <li>穿运动鞋。</li>
+          <li>到场先签到。</li>
+          <li class="key">迟到 15 分钟视为放弃。</li>
+        </ul>
+      </section>
+    </article>
+    <div class="dock" id="d-dock"></div>
+  </main>
+
+  <!-- 幕 3a、3b · #/signup/:id 与 #/signup/:id/done（蓝图 s6、s7、s8） -->
+  <main class="view v-signup" data-view="signup" hidden>
+    <section class="form-sec" data-chapter="s6" data-layout="ruled-form" id="ch-s6">
+      <h2 class="print-h">报名登记与凭证</h2>
+      <p class="sum">只填前三行，就能报名。</p>
+      <form class="ruled" id="f" novalidate>
+        <div class="ln"><label for="f-name">姓名</label><input id="f-name" name="name" value="居民 A" autocomplete="off"><span class="mk">示例</span></div>
+        <div class="ln"><label for="f-phone">手机号后四位</label><input id="f-phone" name="phone" value="0000" inputmode="numeric" maxlength="4" autocomplete="off"><span class="mk">示例</span></div>
+        <div class="ln"><label id="l-comp">同行人数</label>
+          <div class="step" role="group" aria-labelledby="l-comp">
+            <button type="button" id="c-minus" aria-label="同行人数减 1"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h14" stroke="currentColor" stroke-width="3"/></svg></button>
+            <output id="c-val" class="num" aria-live="polite">1 人</output>
+            <button type="button" id="c-plus" aria-label="同行人数加 1"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h14M10 3v14" stroke="currentColor" stroke-width="3"/></svg></button>
+          </div><span></span>
+        </div>
+        <div id="s-info"></div>
+        <p class="hint" id="f-hint" aria-live="polite">只填这三项。示例值可以直接提交。</p>
+        <div class="tail" aria-hidden="true"></div>
+      </form>
+    </section>
+    <section class="done-sec" data-chapter="s7" data-layout="ticket" id="ch-s7" hidden>
+      <p class="reg-line" id="t-reg"></p>
+      <div class="slot" aria-hidden="true"></div>
+      <div class="tk" id="tk">
+        <svg class="teeth" viewBox="0 0 358 8" preserveAspectRatio="none" aria-hidden="true"><path id="teeth-p"/></svg>
+        <div class="tk-paper">
+          <p class="tk-ok"><svg viewBox="0 0 22 22" aria-hidden="true"><path d="M3 11.5 9 17 19 5" fill="none" stroke="currentColor" stroke-width="3"/></svg>报名成功</p>
+          <p class="tk-k">报名编号 <span class="mk">（示例格式）</span></p>
+          <p class="tk-no num" id="t-no"></p>
+          <p class="tk-n" id="t-name"></p>
+          <p class="tk-d num" id="t-time"></p>
+          <p class="tk-d" id="t-place"></p>
+          <div class="perf" aria-hidden="true"></div>
+          <div class="stub">
+            <p class="k">存根</p>
+            <p><b>到场出示此编号签到。</b></p>
+            <p>迟到 15 分钟视为放弃。</p>
+          </div>
+          <div class="perf" aria-hidden="true"></div>
+          <div class="stub">
+            <p class="k">存根联：取消</p>
+            <p><b>取消截止时间：未知</b></p>
+            <p>要取消，点下方“取消报名”，会再确认一次。取消后名额退回。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <div class="dock" id="s-dock"></div>
+  </main>
+
+  <!-- 幕 3c · 取消确认层（蓝图 s8），路由不变 -->
+  <div class="scrim" id="scrim" hidden></div>
+  <section class="drawer" id="drawer" data-chapter="s8" data-layout="bottom-drawer" role="dialog" aria-modal="true" aria-labelledby="dr-h" hidden>
+    <h2 id="dr-h">确认取消这场报名？</h2>
+    <p>取消截止时间：<b>未知</b></p>
+    <p>取消后，名额退回，列表恢复原来的名额状态。</p>
+    <div class="btns">
+      <button class="btn" type="button" id="dr-yes">确认取消</button>
+      <button class="btn line" type="button" id="dr-no">不取消</button>
+    </div>
+  </section>
+</div>
+
+<script>
+// 示例数据，来自 evals/E3/input/委托方口述.md（虚构）。A7、A8 复用 A1、A2 的活动名，改了时间与人数，也是示例
+const ACTS = [
+  { id: 'A1', day: '周二', pre: '',     time: '09:30–11:00', name: '老年人手机课：微信视频通话', place: '服务站二楼活动室', cap: 20,   n: 18, who: '60 岁以上' },
+  { id: 'A7', day: '周三', pre: '',     time: '09:30–11:00', name: '老年人手机课：微信视频通话', place: '服务站二楼活动室', cap: 20,   n: 9,  who: '60 岁以上' },
+  { id: 'A2', day: '周三', pre: '',     time: '15:00–16:30', name: '亲子手工：纸艺灯笼',         place: '服务站一楼大厅',   cap: 16,   n: 16, who: '家庭', wait: 3 },
+  { id: 'A3', day: '周四', pre: '',     time: '14:00–15:00', name: '健康讲座：血压自测',         place: '服务站二楼活动室', cap: 40,   n: 22, who: '全体居民' },
+  { id: 'A4', day: '周六', pre: '',     time: '09:00–12:00', name: '周末集市：旧物交换',         place: '中心广场',         cap: null, n: 57, who: '全体居民' },
+  { id: 'A8', day: '周六', pre: '',     time: '14:00–15:30', name: '亲子手工：纸艺灯笼',         place: '服务站一楼大厅',   cap: 16,   n: 14, who: '家庭' },
+  { id: 'A5', day: '周日', pre: '',     time: '08:30–10:30', name: '志愿服务：楼道清理',         place: '3 号楼',           cap: 12,   n: 5,  who: '全体居民' },
+  { id: 'A6', day: '周二', pre: '下周', time: '09:30–11:00', name: '老年人手机课：挂号与缴费',   place: '服务站二楼活动室', cap: 20,   n: 3,  who: '60 岁以上' }
+];
+const reg = new Map();      // 已报名：id -> { name, phone, comp, no }（只改前端状态）
+const gridShown = new Set(); // 签名格已播过填格的活动，只播一次
+let ticketPending = false;   // 只在提交那一刻出票一次
+let focusRow = '';           // 回列表时滚到这一行
+let comp = 1;                // 同行人数
+let compFor = '';            // 同行人数属于哪一场
+const $ = s => document.querySelector(s);
+const rm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const act = id => ACTS.find(a => a.id === id) || ACTS[0];
+const when = a => `${a.pre}${a.day} ${a.time}`;
+const icon = k => `<svg viewBox="0 0 22 22" aria-hidden="true"><use href="#i-${k}"/></svg>`;
+
+// 名额状态（不看是否已报名）
+function quota(a) {
+  if (a.cap == null) return ['info', `不限名额，已报 <span class="num">${a.n}</span> 人`];
+  const left = a.cap - a.n;
+  if (left <= 0) return ['full', `已满员，候补 <span class="num">${a.wait || 0}</span> 人`];
+  if (left <= a.cap * 0.15) return ['warn', `快满了，还剩 <span class="num">${left}</span> 个`];
+  return ['ok', `还剩 <span class="num">${left}</span> 个`];
+}
+const status = a => reg.has(a.id) ? ['mine', '已报名'] : quota(a);
+
+/* ---------- 幕 1 · 列表 ---------- */
+function renderList() {
+  const groups = [];
+  ACTS.forEach(a => {
+    const key = a.pre + a.day;
+    let g = groups.find(x => x.key === key);
+    if (!g) groups.push(g = { key, pre: a.pre, day: a.day, items: [] });
+    g.items.push(a);
+  });
+  $('#days-in').innerHTML = groups.map(g => `
+    <section class="day" aria-label="${g.key}，${g.items.length} 场">
+      <div class="tag"><div class="tag-in">${g.pre ? `<em>${g.pre}</em>` : ''}<b>${g.day}</b>${g.items.length > 1 ? `<span class="num">${g.items.length} 场</span>` : ''}</div></div>
+      <div class="rows">${g.items.map(a => {
+        const [k, txt] = status(a);
+        return `<a class="row" href="#/detail/${a.id}" data-id="${a.id}">
+          <span class="t num">${a.time}</span>
+          <span class="n">${a.name}</span>
+          <span class="p">${a.place}</span>
+          <span class="st ${k}">${icon(k)}<span>${txt}</span></span>
+        </a>`;
+      }).join('')}</div>
+    </section>`).join('');
+}
+
+/* ---------- 幕 2 · 详情：告示纸与签名格 ---------- */
+// 签名笔迹：4 种静态折线，按格序轮换（自绘，不是真实签名）
+const SIGN = [
+  'M26 27 q4 -14 8 -2 t8 -4 q3 8 7 -6 l4 10 q6 -8 14 -6',
+  'M24 25 c6 -12 10 8 14 -4 s6 -6 9 4 q4 -10 8 -2 l10 -6',
+  'M28 28 l5 -14 l3 12 q5 -10 9 -2 c4 6 8 -8 12 -4 l6 2',
+  'M25 22 q5 10 10 -4 q2 12 8 2 q6 -12 10 2 q4 6 12 -6'
+];
+// 签到表：4 列，每格 72x36，格内左上角写序号 01、02 …
+function gridSvg(a, animate) {
+  const C = 4, SW = 72, SH = 36, G = 6, rows = Math.ceil(a.cap / C);
+  const w = C * SW + (C - 1) * G, h = rows * SH + (rows - 1) * G;
+  const filled = Math.min(a.n, a.cap), step = filled ? Math.round(360 / filled) : 0;
+  let cells = '';
+  for (let i = 0; i < a.cap; i++) {
+    const x = (i % C) * (SW + G), y = Math.floor(i / C) * (SH + G), no = String(i + 1).padStart(2, '0');
+    cells += i < filled
+      ? `<g class="f" transform="translate(${x} ${y})" style="animation-delay:${i * step}ms"><rect x=".75" y=".75" width="${SW - 1.5}" height="${SH - 1.5}"/><text x="5" y="15">${no}</text><path d="${SIGN[i % 4]}"/></g>`
+      : `<g transform="translate(${x} ${y})"><rect class="e" x=".75" y=".75" width="${SW - 1.5}" height="${SH - 1.5}"/><text x="5" y="15">${no}</text></g>`;
+  }
+  return `<svg class="grid-svg${animate ? ' anim' : ''}" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="名额 ${a.cap} 格，已签 ${filled} 格">${cells}</svg>`;
+}
+function renderDetail(a) {
+  $('#d-title').textContent = a.name;
+  $('#d-time').textContent = when(a);
+  $('#d-place').innerHTML = `${a.place} <span class="mk">（示例）</span>`;
+  $('#d-who').textContent = a.who;
+  const [k] = quota(a), q = $('#ch-s4');
+  if (a.cap == null) {
+    q.innerHTML = `<p class="q-big st info">${icon('info')}<span>不限名额</span></p>
+      <p class="q-sub">已报 <span class="num">${a.n}</span> 人。</p>`;
+  } else {
+    const left = a.cap - a.n, animate = !gridShown.has(a.id) && !rm();
+    gridShown.add(a.id);
+    const big = left <= 0 ? '已满员' : `还剩 <span class="num">${left}</span> 个名额`;
+    q.innerHTML = `<p class="q-big st ${k}">${icon(k)}<span>${big}</span></p>
+      <p class="q-sub">名额 <span class="num">${a.cap}</span> 人，已报 <span class="num">${a.n}</span> 人。一格是一人。</p>
+      ${gridSvg(a, animate)}
+      ${a.wait ? `<div class="wait"><svg width="82" height="24" viewBox="0 0 82 24" aria-hidden="true" class="grid-svg">${[0, 1, 2].map(i => `<rect class="w" x="${i * 29 + .75}" y=".75" width="22.5" height="22.5"/>`).join('')}</svg><span>候补 <span class="num">${a.wait}</span> 人</span></div>
+        <p class="q-note">满员了，现在不能直接报名。候补怎么排、怎么通知：<b>未知</b>。</p>` : ''}
+      <ul class="legend">
+        <li><svg viewBox="0 0 14 14" aria-hidden="true"><rect x=".75" y=".75" width="12.5" height="12.5" fill="none" stroke="#14202B" stroke-width="1.5"/><path d="M3 10 l2.5 -6 l2 5 l2 -4 l1.5 3" fill="none" stroke="#14202B" stroke-width="1.5"/></svg>已报</li>
+        <li><svg viewBox="0 0 14 14" aria-hidden="true"><rect x=".75" y=".75" width="12.5" height="12.5" fill="none" stroke="#34434F" stroke-width="1.5" stroke-dasharray="3 2"/></svg>剩余</li>
+        ${a.wait ? `<li><svg viewBox="0 0 14 14" aria-hidden="true"><rect x=".75" y=".75" width="12.5" height="12.5" fill="url(#hatch)" stroke="#14202B" stroke-width="1.5"/></svg>候补</li>` : ''}
+      </ul>`;
+  }
+  const full = a.cap != null && a.cap - a.n <= 0;
+  $('#d-dock').innerHTML = reg.has(a.id)
+    ? `<a class="btn" href="#/signup/${a.id}/done">已报名，查看报名编号</a>`
+    : full ? `<button class="btn" type="button" disabled>已满员，不能直接报名</button>`
+    : `<a class="btn" href="#/signup/${a.id}">报名这场活动</a>`;
+}
+
+/* ---------- 幕 3a、3b · 登记与成功态 ---------- */
+function maxComp(a) { return a.cap == null ? 9 : Math.max(0, a.cap - a.n - 1); }
+function paintComp(a) {
+  comp = Math.max(0, Math.min(comp, maxComp(a)));
+  $('#c-val').textContent = `${comp} 人`;
+  $('#c-minus').disabled = comp <= 0;
+  $('#c-plus').disabled = comp >= maxComp(a);
+}
+function renderSignup(a, done) {
+  const r = reg.get(a.id);
+  const isDone = done && !!r;
+  $('.v-signup').classList.toggle('is-done', isDone);
+  $('#ch-s6').hidden = isDone;
+  $('#ch-s7').hidden = !isDone;
+  const seats = a.cap == null ? `不限名额，已报 ${a.n} 人` : `还剩 ${Math.max(0, a.cap - a.n)} 个`;
+  $('#s-info').innerHTML = [['活动', a.name], ['时间', when(a)], ['地点', `${a.place}（示例）`], ['名额', seats]]
+    .map(([k, v]) => `<div class="ln info"><span>${k}</span><span class="num">${v}</span><span></span></div>`).join('');
+  if (!isDone) {
+    if (compFor !== a.id) { compFor = a.id; comp = 1; }   // 换一场活动，同行人数回到默认 1
+    paintComp(a);
+    const hint = $('#f-hint');
+    hint.className = 'hint';
+    hint.textContent = `同行最多 ${maxComp(a)} 人。示例值可以直接提交。`;
+    $('#s-dock').className = 'dock';
+    $('#s-dock').innerHTML = `<button class="btn" type="submit" form="f">提交报名</button>`;
+    return;
+  }
+  $('#t-reg').innerHTML = `${r.name} <span class="mk">（示例）</span>，同行 <span class="num">${r.comp}</span> 人，已提交`;
+  $('#t-no').textContent = r.no;
+  $('#t-name').textContent = a.name;
+  $('#t-time').textContent = when(a);
+  $('#t-place').innerHTML = `${a.place} <span class="mk">（示例）</span>`;
+  const tk = $('#tk');
+  tk.classList.remove('out');
+  if (ticketPending && !rm()) { void tk.offsetWidth; tk.classList.add('out'); }
+  ticketPending = false;
+  $('#s-dock').className = 'dock two';
+  $('#s-dock').innerHTML = `<button class="btn" type="button" id="to-list">回到活动列表</button>
+    <button class="btn line" type="button" id="to-cancel">取消报名</button>`;
+}
+// 小票锯齿顶边：齿宽 12 px
+(function () {
+  let d = 'M0 8';
+  for (let x = 0; x <= 358; x += 12) d += ` L${x + 6} 1 L${Math.min(x + 12, 358)} 8`;
+  $('#teeth-p').setAttribute('d', d + ' Z');
+})();
+
+$('#c-minus').addEventListener('click', () => { comp--; paintComp(act(R.id)); });
+$('#c-plus').addEventListener('click', () => { comp++; paintComp(act(R.id)); });
+$('#f').addEventListener('submit', e => {
+  e.preventDefault();
+  const a = act(R.id), name = $('#f-name').value.trim(), phone = $('#f-phone').value.trim();
+  if (a.cap != null && a.cap - a.n <= 0) {   // 满员不能直接报名（候补规则未知）
+    $('#f-hint').className = 'hint err';
+    $('#f-hint').innerHTML = `${icon('full')}<span>这场已满员，不能直接报名。</span>`;
+    return;
+  }
+  if (!name || !/^\d{4}$/.test(phone)) {
+    const hint = $('#f-hint');
+    hint.className = 'hint err';
+    hint.innerHTML = `${icon('info')}<span>请填姓名，手机号后四位填 4 个数字。</span>`;
+    (name ? $('#f-phone') : $('#f-name')).focus();
+    return;
+  }
+  a.n += 1 + comp;
+  reg.set(a.id, { name, phone, comp, no: `${a.id}-${String(a.n).padStart(3, '0')}` });
+  ticketPending = true;
+  // 提交后替换历史记录：后退不会回到已填的表单
+  history.replaceState(null, '', `#/signup/${a.id}/done`);
+  hist[hist.length - 1] = location.hash;
+  apply(parse());
+});
+document.addEventListener('click', e => {
+  const t = e.target.closest('button');
+  if (!t) return;
+  if (t.id === 'to-list') { focusRow = R.id; go('#/list'); }
+  if (t.id === 'to-cancel') openLayer();
+  if (t.id === 'dr-no') closeLayer();
+  if (t.id === 'dr-yes') {
+    const a = act(R.id), r = reg.get(a.id);
+    if (r) { a.n -= 1 + r.comp; reg.delete(a.id); }
+    closeLayer(); focusRow = ''; go('#/list');
+  }
+});
+
+/* ---------- 幕 3c · 取消确认层 ---------- */
+function openLayer() {
+  $('#scrim').hidden = false; $('#drawer').hidden = false;
+  $('#dr-no').focus();
+}
+function closeLayer() {
+  $('#scrim').hidden = true; $('#drawer').hidden = true;
+  const c = $('#to-cancel'); if (c) c.focus();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#drawer').hidden) closeLayer(); });
+$('#scrim').addEventListener('click', closeLayer);
+
+/* ---------- hash 路由 ---------- */
+const TITLES = { list: '最近活动', detail: '活动详情', signup: '报名登记', done: '报名凭证' };
+const ORDER = { list: 0, detail: 1, signup: 2, done: 3 };
+const BACK = { detail: () => '#/list', signup: id => `#/detail/${id}`, done: () => '#/list' };
+const hist = [];            // 本页内的路由记录，供返回键判断用 history.back 还是跳转
+let cur = '', R = { view: 'list', id: '', key: 'list' };
+function parse() {
+  const m = location.hash.match(/^#\/(list|detail|signup)(?:\/(A\d))?(\/done)?$/);
+  if (!m || (m[1] !== 'list' && !m[2])) return { view: 'list', id: '', key: 'list' };
+  const key = m[1] === 'signup' && m[3] ? 'done' : m[1];
+  return { view: m[1], id: m[2] || '', key };
+}
+function apply(r) {
+  R = r;
+  const a = act(r.id || 'A1');
+  renderList(); renderDetail(a); renderSignup(a, r.key === 'done');
+  document.querySelectorAll('.view').forEach(v => { v.hidden = v.dataset.view !== r.view; });
+  const k = r.key === 'done' && !reg.has(a.id) ? 'signup' : r.key;
+  $('#ttl').textContent = TITLES[k];
+  const back = $('.bar .back');
+  back.hidden = r.view === 'list';
+  if (r.view !== 'list') back.setAttribute('href', BACK[k](a.id));
+  $('.bar .slot-l').hidden = r.view !== 'list';
+  let y = 0;
+  if (r.view === 'list' && focusRow) {
+    const row = document.querySelector(`.row[data-id="${focusRow}"]`);
+    if (row) y = Math.max(0, row.closest('.day').offsetTop - 44);
+    focusRow = '';
+  }
+  window.scrollTo(0, y);
+  cur = r.key;
+}
+function route() {
+  const h = location.hash || '#/list';
+  if (hist[hist.length - 2] === h) hist.pop(); else if (hist[hist.length - 1] !== h) hist.push(h);
+  const r = parse();
+  const dir = ORDER[r.key] >= ORDER[cur] ? 'fwd' : 'back';
+  if (!document.startViewTransition || rm() || r.key === cur) { apply(r); return; }
+  document.documentElement.classList.remove('fwd', 'back');
+  document.documentElement.classList.add(dir);
+  document.startViewTransition(() => apply(r));
+}
+function go(h) {
+  if (hist[hist.length - 2] === h) history.back(); else location.hash = h;
+}
+$('.bar .back').addEventListener('click', e => { e.preventDefault(); go(e.currentTarget.getAttribute('href')); });
+addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>

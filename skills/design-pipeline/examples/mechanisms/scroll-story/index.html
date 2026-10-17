@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>机制示例：滚动分章舞台</title>
+<!--
+机制：GSAP ScrollTrigger 固定（pin）一个舞台。三章文字切换，内联 SVG 随章节切换状态，scrub 进度写入 CSS 变量 --p。
+适合 / 不适合：适合 3 到 4 章的因果或步骤讲解。不适合章节超过 5 个，也不适合内容需要被检索或打印的页面。
+依赖与固定版本：gsap 3.15.0 与 ScrollTrigger（同版本），经 jsDelivr 加载。
+来源与许可：自写，MIT。GSAP 使用其免费标准许可。
+Reduce Motion 退路：不创建 ScrollTrigger。三章按顺序静态显示，--p 置 1。CSS 与 JS 都检查。库加载失败时同样走静态版。
+性能预算：pin 总高 2 屏（200vh 滚动距离），只改 opacity、transform 和一个 CSS 变量。自有代码约 4 KB，gsap 加 ScrollTrigger 约 110 KB（CDN）。
+不可照抄的部分：SVG 图形、章节文案、颜色、字体、版式。只抄 pin、章节时间线和 --p 的写法。
+接入方法：
+1. 复制 .stage、三个 .chap、SVG 的 data-s 状态规则和脚本。
+2. 把 SVG 换成你的图，用 .stage[data-s="n"] 选择器切换状态。
+3. 保持 end:"+=200%"，pin 总高不超过 2 屏。
+-->
+<style>
+:root{--bg:#e6e9e9;--fg:#141a1b;--mute:#4d5a5c;--accent:#2f6f73;--line:#8a9698;--p:0}
+@media (prefers-color-scheme:dark){:root{--bg:#161b1c;--fg:#eef1f1;--mute:#a9b4b6;--accent:#6fb3b8;--line:#4a5658}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.7 system-ui,-apple-system,"Segoe UI","PingFang SC","Noto Sans CJK SC",sans-serif}
+.intro,.outro{max-width:40rem;margin:0 auto;padding:14vh 16px}
+h1{font-size:2rem;line-height:1.25;margin:0 0 1rem}
+.stage{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:center;max-width:70rem;margin:0 auto;padding:0 16px}
+.texts{position:relative;min-height:12rem}
+.chap{position:absolute;inset:0;opacity:0}
+.chap h2{margin:0 0 .5rem;font-size:1.5rem}
+.chap p{margin:0;color:var(--mute)}
+.chap:first-child{opacity:1}
+svg{width:100%;max-height:60vh}
+.bar{height:6px;background:var(--line);margin-top:1rem}
+.bar i{display:block;height:100%;background:var(--accent);transform-origin:left;transform:scaleX(var(--p))}
+/* SVG 状态：由 data-s 驱动 */
+.a,.b,.c{transition:opacity .4s,transform .4s;transform-box:fill-box;transform-origin:center}
+.a{fill:var(--accent);opacity:1}
+.b{fill:none;stroke:var(--fg);stroke-width:3;opacity:.15}
+.c{fill:var(--fg);opacity:.15}
+.stage[data-s="1"] .a{transform:scale(.5);opacity:.4}
+.stage[data-s="1"] .b{opacity:1}
+.stage[data-s="2"] .a{transform:scale(.5);opacity:.4}
+.stage[data-s="2"] .b{opacity:.5}
+.stage[data-s="2"] .c{opacity:1;transform:scale(1.15)}
+/* 减少动态：三章顺序静态显示 */
+@media (prefers-reduced-motion:reduce){
+ .stage{min-height:0;padding:4rem 16px}
+ .texts{min-height:0}.chap{position:static;opacity:1;margin-bottom:1.5rem}
+ .a,.b,.c{opacity:1;transition:none}.a{transform:none}.bar{display:none}
+}
+@media (max-width:700px){.stage{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<section class="intro"><h1>滚动分章舞台</h1><p>这是机制示例，只演示技术，不带最终配色与版式。向下滚动：舞台固定约 2 屏，三章文字依次切换，右侧图形随章节变化，底部进度条由 CSS 变量 <code>--p</code> 驱动。</p></section>
+<section class="stage" id="stage" data-s="0">
+ <div class="texts">
+  <div class="chap"><h2>第一章：一个整体</h2><p>起点是一个完整的圆。</p></div>
+  <div class="chap"><h2>第二章：拆成环</h2><p>圆缩小，外面出现轮廓环。</p></div>
+  <div class="chap"><h2>第三章：落到方块</h2><p>环淡出，方块成为最终状态。</p><div class="bar"><i></i></div></div>
+ </div>
+ <svg viewBox="0 0 300 300" role="img" aria-label="图形从圆变为环再变为方块">
+  <rect class="c" x="95" y="95" width="110" height="110"/>
+  <circle class="b" cx="150" cy="150" r="110"/>
+  <circle class="a" cx="150" cy="150" r="70"/>
+ </svg>
+</section>
+<section class="outro"><p>舞台结束。后续内容正常向下滚动。</p></section>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"></script>
+<script>
+(()=>{
+const root=document.documentElement,stage=document.getElementById('stage'),chaps=[...stage.querySelectorAll('.chap')];
+const rm=matchMedia('(prefers-reduced-motion: reduce)');
+let st=null,ctx=null;
+function staticMode(){ // 无动画：全部章节可见，--p=1
+  root.style.setProperty('--p',1);stage.dataset.s=2;
+  chaps.forEach(c=>c.style.opacity='');
+}
+function setup(){
+  if(st){ctx.revert();st=null}
+  if(rm.matches||!window.gsap||!window.ScrollTrigger){staticMode();return}
+  gsap.registerPlugin(ScrollTrigger);
+  root.style.setProperty('--p',0);stage.dataset.s=0;
+  ctx=gsap.context(()=>{
+    st=ScrollTrigger.create({trigger:stage,start:'top top',end:'+=200%',pin:true,scrub:true,
+      onUpdate:s=>{
+        root.style.setProperty('--p',s.progress.toFixed(3));
+        const i=Math.min(2,Math.floor(s.progress*3));
+        if(stage.dataset.s!=i){stage.dataset.s=i;chaps.forEach((c,k)=>gsap.to(c,{opacity:k===i?1:0,duration:.3,overwrite:true}))}
+      }});
+  });
+}
+setup();rm.addEventListener('change',setup);
+})();
+</script>
+</body>
+</html>
