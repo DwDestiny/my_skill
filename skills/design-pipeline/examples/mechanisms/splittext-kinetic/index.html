@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>机制示例：SplitText 动态字</title>
+<!--
+机制：gsap SplitText 把标题按字（chars）分割，ScrollTrigger 触发逐字位移与旋转入场。另一段文字放在 SVG textPath 上，startOffset 随滚动 scrub 变化。
+来自技术卡：T21（research/R4-visual-tech.md）。
+适合 / 不适合：适合标题与短句。不适合整页正文。入场总时长要小于 3 秒，标题不能长时间不可读。
+依赖与固定版本：gsap、ScrollTrigger、SplitText 均为 3.15.0，经 jsDelivr。SplitText 默认给原元素加 aria-label。
+Reduce Motion 退路：不分割，不创建动画。标题直接显示，路径文字停在 startOffset 10%。库加载失败时同样走终态。
+性能预算：只改 transform 与 opacity，以及一个 SVG 属性。自有代码约 3 KB。
+已知限制：中文按字分割正常。字体加载后再分割更准，示例用 document.fonts.ready。
+不可照抄的部分：颜色、路径形状、文案。只抄 SplitText 调用、fonts.ready 等待与 startOffset scrub。
+接入方法：
+1. 在 document.fonts.ready 后调用 SplitText.create(el,{type:'chars'})。
+2. 用 gsap.from(self.chars,{...scrollTrigger}) 做入场。
+3. 保持 reduced-motion 与库缺失分支。
+-->
+<style>
+:root{--bg:#d8d8d8;--fg:#151515;--mute:#3a3a3a;--acc:#c2410c}
+@media (prefers-color-scheme:dark){:root{--bg:#161616;--fg:#eee;--mute:#bbb;--acc:#fb923c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.7 system-ui,"PingFang SC","Noto Sans CJK SC",sans-serif;overflow-x:hidden}
+section{min-height:100vh;padding:0 max(16px,6vw);display:flex;flex-direction:column;justify-content:center}
+h1{margin:0;font-size:clamp(2.4rem,9vw,6rem);line-height:1.1}
+p{color:var(--mute);max-width:34rem}
+svg{width:100%;height:auto;display:block}
+text{fill:var(--acc);font:700 28px system-ui,"PingFang SC","Noto Sans CJK SC",sans-serif}
+path{fill:none;stroke:var(--mute);stroke-width:1;stroke-dasharray:4 6}
+</style>
+</head>
+<body>
+<section>
+<h1 id="t">逐字入场 Kinetic Type</h1>
+<p>标题按字分割，每个字有位移和旋转。向下滚动看文字沿曲线流动。</p>
+</section>
+<section>
+<svg viewBox="0 0 800 300" role="img" aria-label="文字沿曲线流动">
+<path id="p" d="M20 240 C 200 20, 400 20, 520 150 S 720 280, 780 60"/>
+<text><textPath href="#p" id="tp" startOffset="10%">沿着路径滚动 · text on a path · 沿着路径滚动</textPath></text>
+</svg>
+</section>
+<section style="min-height:50vh"><p>终点。End.</p></section>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/SplitText.min.js"></script>
+<script>
+(function(){
+  var rm=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(rm||!window.gsap||!window.ScrollTrigger||!window.SplitText)return;
+  gsap.registerPlugin(ScrollTrigger,SplitText);
+  document.fonts.ready.then(function(){
+    var s=SplitText.create('#t',{type:'chars'});
+    gsap.from(s.chars,{y:60,rotation:function(i){return i%2?-25:25},opacity:0,duration:.7,stagger:.04,ease:'back.out(1.6)',
+      scrollTrigger:{trigger:'#t',start:'top 85%',once:true}});
+    gsap.fromTo('#tp',{attr:{startOffset:'-60%'}},{attr:{startOffset:'60%'},ease:'none',
+      scrollTrigger:{trigger:'svg',start:'top bottom',end:'bottom top',scrub:true}});
+  });
+})();
+</script>
+</body>
+</html>

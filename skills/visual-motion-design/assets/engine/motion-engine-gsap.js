@@ -1,5 +1,5 @@
 /*!
- * motion-engine-gsap.js  GSAP + ScrollTrigger + Lenis 适配器（mixed / show 档的默认引擎）
+ * motion-engine-gsap.js  GSAP + ScrollTrigger + Lenis 适配器（mixed / show 预算预设的默认引擎）
  *
  * 数据属性 API、boot({ gear, setup }) 入口、html.motion 门控与减少动效行为，
  * 与 motion-engine.js 完全相同。本文件只把 reveal / split / scrub / parallax 的实现
@@ -16,10 +16,10 @@
  *   </script>
  *
  * 新增的可选属性：
- *   data-pin="120"   把元素固定在视口内，持续 120% 视口高度（mixed 档只认第一个）。同时写 --p。
+ *   data-pin="120"   把元素固定在视口内，持续 120% 视口高度（mixed 预设只认第一个）。同时写 --p。
  *
  * 安全回退（任一条成立就改用 motion-engine.js 的零依赖实现，内容照常可见）：
- *   - gear 为 clear（clear 档不使用 GSAP）
+ *   - gear 为 clear（clear 预设不使用 GSAP）
  *   - 用户要求减少动效（不请求 CDN，不加 html.motion）
  *   - CDN 在 CDN_TIMEOUT 毫秒内没加载完
  * 回退时 <html data-engine="fallback">；成功时 data-engine="gsap"。

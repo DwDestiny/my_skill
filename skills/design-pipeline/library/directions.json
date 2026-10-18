@@ -1,0 +1,632 @@
+{
+  "_meta": {
+    "note": "自研非营销方向卡。字段沿用 tasteskill library/directions.json（MIT，Leonxlnx/taste-skill，id name sectors tones needs idea composition typography typeClasses colour paletteTags imagery sectionTags motion richness pitfalls seenIn allow），新增 medium mode form gear_floor taboo refs axes topics audience source。",
+    "attribution": "字段结构取自 tasteskill（MIT）。卡片内容为自研。",
+    "mixed_note_doc": "可选字段 mixed_note。卡的构图与档位下限有张力时，写处理办法。",
+    "axes_doc": {
+      "paper_band": "底色带：light-cool light-white mid-field mid-grey dark-slate",
+      "display_style": "标题字风格",
+      "accent_hue": "强调色相名，none 表示无强调色",
+      "layout_family": "版式家族",
+      "stage_kind": "舞台类型"
+    }
+  },
+  "directions": [
+    {
+      "id": "evidence-ledger",
+      "name": "证据台账页",
+      "mixed_note": "mixed 及以上档首屏要有与页面对象相关的视觉主体。台账从首屏的那张图开始，不从空白开始。",
+      "topics": [
+        "讲解",
+        "证据"
+      ],
+      "audience": [
+        "业务人员",
+        "评审人",
+        "管理者"
+      ],
+      "sectors": [
+        "explainer",
+        "research",
+        "consulting"
+      ],
+      "tones": [
+        "technical",
+        "quiet"
+      ],
+      "medium": [
+        "web-desktop",
+        "web-mobile"
+      ],
+      "mode": "read",
+      "form": [
+        "editorial-type",
+        "scroll-story"
+      ],
+      "idea": "整页是一张可滚动的台账。每一行是一条结论，行内固定三列：结论一句话、证据编号与出处、可信度。读者先扫第一列得全貌，再按需展开证据。点子来自审计底稿：结论不能悬空，每行必须挂证据。换成任何没有证据的题材，这个版式就不成立。",
+      "composition": "首屏：左侧 4/12 栏放标题（clamp 40-64px）与一句范围说明（18px），右侧 8/12 栏直接开始前 5 行台账，不设英雄图。台账三列宽比 5:4:2，行高 72-96px，行间 1px 细线。结论列 22px 半粗，证据列 15px，可信度列 15px 且数字右对齐。每 8 行插一条 40px 高的分组横栏。展开行用 grid 0fr 到 1fr，时长 240ms。窄屏：三列堆成一张卡，结论在上，证据与可信度同行。页脚给全部证据的汇总表。",
+      "typography": "标题用窄体无衬线粗字重，行距 1.0，字距 -0.01em。结论与证据同一字族。数字用等宽数字（tabular-nums）。全页字号只用 4 档：56、22、15、13。",
+      "typeClasses": [
+        "grotesk-tight",
+        "condensed-heavy"
+      ],
+      "colour": "底色 L 0.97 偏冷灰，墨色 L 0.20。主色一个青蓝（色相 200 度，L 0.50，C 0.11），只用于证据编号与当前展开行。可信度用三档灰度加符号，不用红黄绿。",
+      "paletteTags": [
+        "light-neutral",
+        "mono-accent"
+      ],
+      "imagery": "无照片。证据缩略图 96x64px，灰阶处理，放在展开行内，最多 3 张。",
+      "sectionTags": [
+        "type-led",
+        "table",
+        "quiet"
+      ],
+      "motion": "fold-grid",
+      "richness": "密度与秩序。一屏可见 5 行以上，读者在 5 秒内知道有几条结论、哪几条证据最弱。",
+      "pitfalls": "不要给每行加图标。不要把证据编号做成彩色胶囊。不要让分组横栏变成装饰。证据缺失的行写“未知”，不用常识补。",
+      "taboo": "代价：首屏没有情绪画面，适合读者带着问题来的页面，不适合需要第一眼被打动的发布场合。",
+      "refs": [
+        {
+          "name": "Chladni · A Geometry of Sound",
+          "url": "https://chladni-plate-experiment.vercel.app/",
+          "year": 2026,
+          "what": "章节式推进的物理讲解结构",
+          "verified": true
+        },
+        {
+          "name": "Boc.Studio",
+          "url": "https://boc.studio/",
+          "year": 2026,
+          "what": "大字标题与克制版面的关系",
+          "verified": true
+        }
+      ],
+      "axes": {
+        "paper_band": "light-cool",
+        "display_style": "grotesk-condensed",
+        "accent_hue": "teal",
+        "layout_family": "ledger-rows",
+        "stage_kind": "table"
+      },
+      "seenIn": [],
+      "source": "design-pipeline",
+      "needs": [],
+      "allow": []
+    },
+    {
+      "id": "mechanism-one-figure",
+      "name": "一张图讲机制",
+      "topics": [
+        "讲解",
+        "机制",
+        "流程"
+      ],
+      "audience": [
+        "业务人员",
+        "学生",
+        "新同事"
+      ],
+      "sectors": [
+        "explainer",
+        "education",
+        "saas"
+      ],
+      "tones": [
+        "technical",
+        "playful"
+      ],
+      "medium": [
+        "web-desktop"
+      ],
+      "mode": "read",
+      "form": [
+        "isometric",
+        "pin-scrub"
+      ],
+      "idea": "整页只有一张图，滚动时图从一个状态变到下一个状态，文字在左侧逐段换。图是主角，文字是图的图例。点子是“一个舞台讲完一件事”：把机制画成一台可观察的机器，每个章节让一个部件亮起。题材换成没有因果链的内容，这张图就画不出来。",
+      "composition": "整页高 5 个屏高：首屏 1 屏标题加静态全图，pin 区 3 屏，收尾 1 屏。pin 区左 4/12 栏放章节文字（标题 32px，正文 17px，每章不超过 60 字），右 8/12 栏放等轴测图，图高 70vh。图含 6-9 个部件，每章只高亮 1 个，其余降到 35% 不透明度。左侧顶部放 4 格进度刻度，每格 24px 宽。pin 区总高不超过 3 屏。窄屏取消 pin，图缩到 100% 栏宽，章节顺序平铺，每章后跟一张图的当前状态。",
+      "typography": "标题用人文无衬线半粗，正文同族常规。部件标签 13px，全页字号 4 档：48、32、17、13。图内标签与页面字体一致。",
+      "typeClasses": [
+        "humanist-sans"
+      ],
+      "colour": "底色为蓝灰色场（L 0.88，C 0.02，色相 240 度）。图用同一色相的四档明度做面，亮部 L 0.97，暗部 L 0.55。琥珀色（色相 75 度，L 0.78，C 0.15）只给当前高亮部件。",
+      "paletteTags": [
+        "mono-accent",
+        "mid-tone"
+      ],
+      "imagery": "不用照片。全部为手绘 SVG 等轴测，部件有厚度，四调着色。",
+      "sectionTags": [
+        "diagram",
+        "pinned",
+        "explainer"
+      ],
+      "motion": "sticky-stage",
+      "richness": "一个部件亮起的瞬间。高亮切换 480ms，缓动 ease-out，其他部件同时降亮度。",
+      "pitfalls": "不要超过 9 个部件。不要让图在 pin 区外也动。进度刻度要和章节数一致。减少动效时取消 pin，保留分章。",
+      "taboo": "代价：要画一张高质量图，工时大。没有明确因果链的题材不适合。手机上降级为平铺。",
+      "refs": [
+        {
+          "name": "Sobha Privy Collection",
+          "url": "https://sobha-privy-collection.com/",
+          "year": 2026,
+          "what": "滚动驱动的画面变换节奏",
+          "verified": true
+        },
+        {
+          "name": "Chladni · A Geometry of Sound",
+          "url": "https://chladni-plate-experiment.vercel.app/",
+          "year": 2026,
+          "what": "滚动 scrub 章节",
+          "verified": true
+        }
+      ],
+      "axes": {
+        "paper_band": "mid-field",
+        "display_style": "humanist-sans",
+        "accent_hue": "amber",
+        "layout_family": "split-sticky",
+        "stage_kind": "svg-pin-stage"
+      },
+      "seenIn": [],
+      "source": "design-pipeline",
+      "needs": [],
+      "allow": []
+    },
+    {
+      "id": "layered-map",
+      "name": "分层地图页",
+      "topics": [
+        "讲解",
+        "体系",
+        "全景"
+      ],
+      "audience": [
+        "管理者",
+        "合作方",
+        "评审人"
+      ],
+      "sectors": [
+        "explainer",
+        "consulting",
+        "platform"
+      ],
+      "tones": [
+        "bold",
+        "technical"
+      ],
+      "medium": [
+        "web-desktop",
+        "web-mobile"
+      ],
+      "mode": "read",
+      "form": [
+        "scroll-story",
+        "editorial-type"
+      ],
+      "idea": "把一个体系画成上下叠放的 4 到 5 层横带，每层一个色场。读者从上往下读，每层回答一个问题（谁用、做什么、靠什么、数据在哪）。滚动时当前层展开到全屏，其他层压成 48px 的窄条。点子是“体系即地层”：层与层的边界就是责任边界。",
+      "composition": "首屏：5 层横带占满视口，每层高 20vh，层名 40px 粗体靠左，一句话 17px 靠右栏。点击或滚动到某层，该层高度变为 70vh，显示 3 个要点（每点 15-20 字）和一张 8/12 栏宽的示意图。其余层各缩为 48px。层间边界是 2px 实线。页宽 12 栏，层内左 3 栏放层号与层名，右 9 栏放内容。窄屏：层纵向堆叠，点击展开，一次只展开 1 层。",
+      "typography": "层名用扩展宽度的无衬线，字重 700，行距 1.0。要点用同族 400。字号 4 档：40、24、17、13。",
+      "typeClasses": [
+        "extended-heavy",
+        "grotesk-tight"
+      ],
+      "colour": "深色蓝灰底（L 0.20，C 0.03，色相 250 度）。每层的色场取同一色相的明度梯度（L 0.28 到 0.62），不加第二个色相。文字 L 0.95。状态色不使用，状态靠文字。",
+      "paletteTags": [
+        "dark-neutral",
+        "color-field"
+      ],
+      "imagery": "每层 1 张线稿示意图，线宽 1.5px，单色。无照片。",
+      "sectionTags": [
+        "layers",
+        "poster",
+        "type-led"
+      ],
+      "motion": "chapter-bg",
+      "richness": "层的展开与压缩。展开 520ms，其余层同时压到 48px，读者始终看见整个体系的位置。",
+      "pitfalls": "不要超过 5 层。不要让层色相各不相同，那会变成彩虹。窄条上的层名保持可读，不小于 13px。",
+      "taboo": "代价：深色场不适合打印和在强光下阅读。层数多于 5 时结构崩掉。",
+      "refs": [
+        {
+          "name": "Boc.Studio",
+          "url": "https://boc.studio/",
+          "year": 2026,
+          "what": "整屏色块与大字的分段方式",
+          "verified": true
+        },
+        {
+          "name": "Neutomni",
+          "url": "https://neutomni.com/",
+          "year": 2026,
+          "what": "滚动叙事与编辑式字体",
+          "verified": true
+        }
+      ],
+      "axes": {
+        "paper_band": "dark-slate",
+        "display_style": "extended-sans",
+        "accent_hue": "none",
+        "layout_family": "stacked-bands",
+        "stage_kind": "layered-svg"
+      },
+      "seenIn": [],
+      "source": "design-pipeline",
+      "needs": [],
+      "allow": []
+    },
+    {
+      "id": "judgment-sheet",
+      "name": "一页判断书",
+      "topics": [
+        "报告",
+        "判断",
+        "决策"
+      ],
+      "audience": [
+        "管理者",
+        "评审人",
+        "出资方"
+      ],
+      "sectors": [
+        "report",
+        "consulting",
+        "finance"
+      ],
+      "tones": [
+        "editorial",
+        "quiet"
+      ],
+      "medium": [
+        "web-desktop",
+        "web-mobile"
+      ],
+      "mode": "read",
+      "form": [
+        "editorial-type",
+        "generative-data"
+      ],
+      "idea": "整页像一份带批注的判断书：主栏写判断与依据，右侧窄栏放批注、反面证据和改判条件。读者在 30 秒内读完主栏结论，需要质疑时读批注。点子是“判断必须带着它的反面”：每条结论旁边必须有一条反面论据，没有就不能发布。",
+      "composition": "页宽 12 栏。主栏占 7 栏，页边距 96px。批注栏占 3 栏，间隔 2 栏留白。首屏：标题 clamp 44-72px，下接 3 行结论（每行 26px，行距 1.35），右侧批注 3 条对应 3 行结论。结论与批注在同一水平线上。正文 18px，行宽 62-70 字。内嵌图表宽 7 栏，高 240px，只用线与点，无背景网格。每节末尾一行“什么条件会改判”，13px 加粗前缀。窄屏：批注折叠到结论下方，缩进 16px。",
+      "typography": "标题用有对比的过渡衬线，粗 600，字距 -0.02em。正文无衬线 400。批注用同一无衬线 14px。字号 4 档：64、26、18、14。",
+      "typeClasses": [
+        "serif-display",
+        "grotesk-tight"
+      ],
+      "colour": "底色纯白（L 1.0），墨色 L 0.18。蓝色（色相 255 度，L 0.45，C 0.15）只用于批注线与图表主线。反面证据的批注用 ink 色加左边框 3px，不用红色。",
+      "paletteTags": [
+        "light-neutral",
+        "mono-accent"
+      ],
+      "imagery": "无照片。图表为 SVG，线宽 2px，直接标注，无图例。",
+      "sectionTags": [
+        "report",
+        "margin-notes",
+        "quiet"
+      ],
+      "motion": "progress-toc",
+      "richness": "结论与反面证据同线并排。读者一眼看到“判断”和“它可能错在哪”。",
+      "pitfalls": "不要把批注做成气泡。不要在图表里加渐变和阴影。不要把全部批注堆到页尾。反面证据缺失时写“未找到”。",
+      "taboo": "代价：版面安静，没有首屏冲击，适合严肃汇报，不适合发布和招募场合。",
+      "refs": [
+        {
+          "name": "Boc.Studio",
+          "url": "https://boc.studio/",
+          "year": 2026,
+          "what": "版面留白与大标题的比例",
+          "verified": true
+        },
+        {
+          "name": "Extremists on Both Sides",
+          "url": "https://both-sides.the7eye.org.il/",
+          "year": 2026,
+          "what": "数据叙事里证据与观点的并置",
+          "verified": true
+        }
+      ],
+      "axes": {
+        "paper_band": "light-white",
+        "display_style": "transitional-serif",
+        "accent_hue": "blue",
+        "layout_family": "margin-notes",
+        "stage_kind": "inline-chart"
+      },
+      "seenIn": [],
+      "source": "design-pipeline",
+      "needs": [],
+      "allow": []
+    },
+    {
+      "id": "data-field-matrix",
+      "name": "数据现场矩阵页",
+      "topics": [
+        "报告",
+        "数据",
+        "监测"
+      ],
+      "audience": [
+        "分析师",
+        "管理者",
+        "运营"
+      ],
+      "sectors": [
+        "report",
+        "analytics",
+        "monitoring"
+      ],
+      "tones": [
+        "technical",
+        "bold"
+      ],
+      "medium": [
+        "web-desktop"
+      ],
+      "mode": "read",
+      "form": [
+        "generative-data",
+        "scroll-story"
+      ],
+      "idea": "首屏就是一块 4x3 的小图矩阵（small multiples），12 个格子用同一坐标轴画 12 个对象的同一指标。读者用眼睛比较，而不是读数字。滚动后矩阵按对象展开成单页细节。点子是“比较先于解释”：先让读者看到谁异常，再告诉原因。",
+      "composition": "页宽 12 栏，页边距 48px。首屏：标题 36px 一行，下接矩阵占 80vh。每格 3 栏宽、24vh 高，含对象名 14px、折线图（线宽 1.5px）和末值（20px，右对齐，等宽数字）。异常格子用绿色边线 2px 标出，最多标 2 格。所有格子共享 y 轴范围，范围写在矩阵下方一行 13px。第二屏开始：点击格子，展开为 8 栏宽的大图加 4 栏宽的备注。窄屏：矩阵改 2x6，大图占满宽度。",
+      "typography": "标题用等宽数字的无衬线 600。数字全部 tabular-nums。字号 4 档：36、20、14、12。",
+      "typeClasses": [
+        "grotesk-tight"
+      ],
+      "colour": "底色灰（L 0.88，C 0.005）。线为墨色 L 0.25。绿色（色相 150 度，L 0.55，C 0.14）只表示“需要看”的格子。其余全灰阶。",
+      "paletteTags": [
+        "mid-tone",
+        "mono-accent"
+      ],
+      "imagery": "无照片。全部为数据生成的 SVG。",
+      "sectionTags": [
+        "data",
+        "grid",
+        "small-multiples"
+      ],
+      "motion": "counter-once",
+      "richness": "12 个格子同时可比。一屏之内读者能指出最异常的 2 个。",
+      "pitfalls": "不要给每格独立的 y 轴范围，那会让比较失效。不要用 3D 柱状图。不要让所有数字同时跳动。数据缺失的格子留空并标“无数据”。",
+      "taboo": "代价：必须有真实数据。没有同口径的 12 个对象时，矩阵没有意义。编造数据是红线。",
+      "refs": [
+        {
+          "name": "Extremists on Both Sides",
+          "url": "https://both-sides.the7eye.org.il/",
+          "year": 2026,
+          "what": "数据可视化加滚动叙事",
+          "verified": true
+        },
+        {
+          "name": "CoMinVi",
+          "url": "https://www.cominvi.com.mx/",
+          "year": 2026,
+          "what": "数据元素的页内处理",
+          "verified": true
+        }
+      ],
+      "axes": {
+        "paper_band": "mid-grey",
+        "display_style": "tabular-grotesk",
+        "accent_hue": "green",
+        "layout_family": "small-multiples",
+        "stage_kind": "chart-matrix"
+      },
+      "seenIn": [],
+      "source": "design-pipeline",
+      "needs": [],
+      "allow": []
+    },
+    {
+      "id": "mp-task-flow",
+      "name": "小程序任务三页流",
+      "topics": [
+        "原型",
+        "操作",
+        "小程序"
+      ],
+      "audience": [
+        "一线执行人",
+        "普通用户"
+      ],
+      "sectors": [
+        "prototype",
+        "service",
+        "field-work"
+      ],
+      "tones": [
+        "quiet",
+        "warm"
+      ],
+      "medium": [
+        "mp-weixin",
+        "web-mobile"
+      ],
+      "mode": "operate",
+      "form": [
+        "view-transitions"
+      ],
+      "idea": "三页走完一件事：任务列表、任务详情、提交结果。每页只有一个主操作，主操作固定在拇指区。点子是“进度即页头”：页头不放标题，放“第几步、还差什么”。换成没有明确步骤的功能，三页流程不成立。",
+      "composition": "画布 375x812pt，安全区按 iOS 刘海与 Home 条留出。页 1 列表：顶部 56px 状态条（待办数，36px 数字），下接卡片行高 88px，每行左 12px 色条表示状态，右侧时间 13px。页 2 详情：顶部 3 格进度条，信息区行高 52px，键值两列比 4:6。页 3 提交：表单项高 56px，间距 12px，底部主按钮高 48px、宽 343px、距底 34px。三页主按钮位置完全一致。页间转场用 220ms 横向滑入。",
+      "typography": "系统无衬线，粗体用于数字与主按钮。字号 4 档：36、17、15、12。最小触控目标 44pt。",
+      "typeClasses": [
+        "system-sans"
+      ],
+      "colour": "底色冷灰白（L 0.97，色相 230 度）。朱红（色相 30 度，L 0.55，C 0.20）只用于主按钮与逾期状态。其余灰阶。",
+      "paletteTags": [
+        "light-neutral",
+        "mono-accent"
+      ],
+      "imagery": "无照片。图标为线性 24px，线宽 1.5px，不超过 6 个。",
+      "sectionTags": [
+        "list",
+        "form",
+        "mobile"
+      ],
+      "motion": "progress-toc",
+      "richness": "主按钮三页不动，读者形成肌肉记忆。进度条每步前进一格。",
+      "pitfalls": "不要在列表页放浮动按钮。不要让三页的页头样式各不相同。不要用渐变按钮。",
+      "taboo": "代价：视觉很克制，演示时要靠真实数据与流程说服，不靠画面冲击。",
+      "refs": [
+        {
+          "name": "微信小程序设计指南",
+          "url": "https://developers.weixin.qq.com/miniprogram/design/",
+          "year": 2026,
+          "what": "尺寸、安全区与触控规范（未在本次核对）",
+          "verified": false
+        }
+      ],
+      "axes": {
+        "paper_band": "light-cool",
+        "display_style": "system-bold",
+        "accent_hue": "vermilion",
+        "layout_family": "list-detail-form",
+        "stage_kind": "none"
+      },
+      "seenIn": [],
+      "source": "design-pipeline",
+      "needs": [],
+      "allow": []
+    },
+    {
+      "id": "ios-sheet-flow",
+      "name": "底部抽屉三步流",
+      "topics": [
+        "原型",
+        "操作",
+        "App"
+      ],
+      "audience": [
+        "普通用户",
+        "会员"
+      ],
+      "sectors": [
+        "prototype",
+        "consumer-app",
+        "service"
+      ],
+      "tones": [
+        "playful",
+        "warm"
+      ],
+      "medium": [
+        "app-ios",
+        "mp-weixin"
+      ],
+      "mode": "operate",
+      "form": [
+        "view-transitions",
+        "lottie-rive"
+      ],
+      "idea": "主界面永远可见，三个步骤都在底部抽屉里完成。抽屉有三个停靠高度：30%、60%、90%。点子是“不离开上下文”：用户办事时仍然看着自己的数据。没有可视的主界面时，这个结构不成立。",
+      "composition": "画布 393x852pt。主界面占上部：卡片列表，行高 80px。抽屉圆角 24px，顶部有 36x5px 把手。步骤 1 抽屉停 30%：选择项 3 个，每项高 64px。步骤 2 停 60%：表单 4 项，项高 52px。步骤 3 停 90%：确认摘要加主按钮（高 52px，距底 34px）。抽屉上方主界面变暗到 40%。抽屉移动用弹簧曲线，时长 360ms。成功时用一次 Lottie 勾选动画，时长 900ms，减少动效时显示终帧。",
+      "typography": "圆体无衬线（系统圆体）。字号 4 档：34、20、16、12。数字用等宽数字。",
+      "typeClasses": [
+        "rounded-sans"
+      ],
+      "colour": "底色浅蓝色场（L 0.90，C 0.04，色相 230 度）。黄色（色相 95 度，L 0.85，C 0.17）只给主按钮，按钮上的字用 ink 色。其余蓝灰阶。",
+      "paletteTags": [
+        "mid-tone",
+        "mono-accent"
+      ],
+      "imagery": "列表缩略图 56px 圆形。成功态使用一个矢量动画。",
+      "sectionTags": [
+        "sheet",
+        "mobile",
+        "playful"
+      ],
+      "motion": "reveal-block",
+      "richness": "抽屉的三段停靠与弹簧手感。读者始终看得到背景里的数据。",
+      "pitfalls": "不要让抽屉遮住主按钮。不要超过 3 个停靠高度。不要在抽屉内再开抽屉。",
+      "taboo": "代价：要做弹簧手势，原型里用 CSS 转场只能近似。无障碍上需要提供不拖动也能完成的按钮。",
+      "refs": [
+        {
+          "name": "Apple Human Interface Guidelines: Sheets",
+          "url": "https://developer.apple.com/design/human-interface-guidelines/sheets",
+          "year": 2026,
+          "what": "抽屉停靠与关闭规则（本次未核对）",
+          "verified": false
+        }
+      ],
+      "axes": {
+        "paper_band": "mid-field",
+        "display_style": "rounded-sans",
+        "accent_hue": "yellow",
+        "layout_family": "bottom-sheet",
+        "stage_kind": "none"
+      },
+      "seenIn": [],
+      "source": "design-pipeline",
+      "needs": [],
+      "allow": []
+    },
+    {
+      "id": "android-stepper",
+      "name": "安卓分步表单流",
+      "topics": [
+        "原型",
+        "操作",
+        "App"
+      ],
+      "audience": [
+        "一线执行人",
+        "店员"
+      ],
+      "sectors": [
+        "prototype",
+        "field-work",
+        "retail"
+      ],
+      "tones": [
+        "bold",
+        "technical"
+      ],
+      "medium": [
+        "app-android",
+        "mp-weixin",
+        "web-mobile"
+      ],
+      "mode": "operate",
+      "form": [
+        "view-transitions"
+      ],
+      "idea": "顶部一条分步条，三页对应三步：录入、核对、提交。每步只问一类信息，错误在当步就拦下。点子是“一步一类错误”：录入拦格式，核对拦逻辑，提交拦权限。换成不会出错的流程，分步就是多余的。",
+      "composition": "画布 412x915dp。顶部应用栏高 64dp，下接分步条高 48dp，三段等宽，当前段下划线 3dp。第 1 页录入：输入框高 56dp，间距 16dp，最多 5 项。第 2 页核对：键值行高 48dp，可点击改动，改动项左侧 4dp 竖线。第 3 页提交：摘要卡加底部主按钮（高 52dp，通栏减边距 16dp）。步骤间转场用共享轴，时长 250ms。错误提示写在输入框下，13sp，含修正动作。",
+      "typography": "几何无衬线，标题粗 700。字号 4 档：28、18、16、13。标签与输入同字号体系。",
+      "typeClasses": [
+        "geometric-sans"
+      ],
+      "colour": "底色纯白。洋红（色相 350 度，L 0.50，C 0.20）只用于当前步骤与主按钮。错误用深红文字加图标，不靠颜色单独表达。",
+      "paletteTags": [
+        "light-neutral",
+        "mono-accent"
+      ],
+      "imagery": "无照片。图标 24dp 线性，最多 5 个。",
+      "sectionTags": [
+        "stepper",
+        "form",
+        "mobile"
+      ],
+      "motion": "progress-toc",
+      "richness": "分步条给出位置感。每步拦下的错误类型固定，用户学会预期。",
+      "pitfalls": "不要把三步合成一页长表单。不要在核对页再放输入框。不要用浮动按钮代替主按钮。",
+      "taboo": "代价：步骤多时用户会觉得慢。字段少于 5 个时分步没有必要。",
+      "refs": [
+        {
+          "name": "Material Design 3: Navigation",
+          "url": "https://m3.material.io/",
+          "year": 2026,
+          "what": "尺寸与触控规范，只借尺寸不借配色（本次未核对）",
+          "verified": false
+        }
+      ],
+      "axes": {
+        "paper_band": "light-white",
+        "display_style": "geometric-sans",
+        "accent_hue": "magenta",
+        "layout_family": "stepper-form",
+        "stage_kind": "none"
+      },
+      "seenIn": [],
+      "source": "design-pipeline",
+      "needs": [],
+      "allow": []
+    }
+  ]
+}

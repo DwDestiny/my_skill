@@ -1,0 +1,7 @@
+interface:
+  display_name: "设计流水线"
+  short_description: "四个阶段把一句委托做成设计过的页面：内容蓝图、视觉氛围、组件创意（案例库）、design.md。核心是创意与案例库"
+  default_prompt: "Use $design-pipeline to turn this request into a designed page: blueprint the content, decide the atmosphere, deal component ideas from the case library, write design.md, build, then review real screenshots."
+
+policy:
+  allow_implicit_invocation: true

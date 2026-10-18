@@ -1,0 +1,5903 @@
+{
+ "_meta": {
+  "source": "component-patterns.json 29 张转换加本库已做出的机制示例、成品范例与评测页面做法",
+  "checked": "2026-10-18",
+  "note": "案例只写思路、结构与机制，不带皮肤。皮肤取 design.md 变量。how_checked 三值：亲核打开 / 本库已做出 / 二手摘要。 2026-10-17 探索 B 从 reactbits.dev 补 14 条薄槽案例，同源；同一页面选用时注意 X17。 2026-10-18 并入用户收集的设计资源（A 组件库站、B 整页氛围、C 提示词与 skill、D 3D）；二手摘要居多，待亲核条目见 verify_note。",
+  "case_count": 140,
+  "slots": [
+   "cards",
+   "cursor",
+   "footer",
+   "form",
+   "gallery",
+   "hero",
+   "loader",
+   "nav",
+   "overlay",
+   "page",
+   "panel",
+   "pricing",
+   "rows",
+   "steps",
+   "testimonial",
+   "transition"
+  ]
+ },
+ "cases": [
+  {
+   "id": "nav-01",
+   "slot": "nav",
+   "purpose": "让读者在窄屏随时知道在第几章并能跳章",
+   "name": "吸顶目录条",
+   "why": "章节号横滑带把目录压成一行，当前章底线表示位置，读者不用展开菜单就能定位",
+   "seen_at": [
+    {
+     "site": "本库 mixed-01",
+     "url": "examples/finished/mixed-01/page/src/page.css 第 255 到 262 行",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    },
+    {
+     "site": "Mobbin 移动导航合集",
+     "url": "",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸",
+    "屏幕"
+   ],
+   "carriers": [
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "章节号在本页是什么单位（周、站、步）？",
+    "“总图”钮在本页回到哪一屏？"
+   ],
+   "reduce_motion": "无动效，条与当前项底线保持不变",
+   "risks": "可读性：项超过 12 个时需横滑，首项外的项不可见",
+   "avoids": [
+    "X10",
+    "X11"
+   ],
+   "structure": "高 44 px；单项最小宽 44 px；当前项底线 2 px；左端“总图”钮宽 52 px；横滑吸附到项起点",
+   "mechanism": "position: sticky、scroll-snap-type: x mandatory、aria-current",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "mixed-01"
+   ]
+  },
+  {
+   "id": "nav-02",
+   "slot": "nav",
+   "purpose": "让读者在桌面端看到当前章并一键跳章",
+   "name": "下划线进度顶栏",
+   "why": "固定顶栏的章名锚点加底线划入，把“现在在哪”变成随滚动更新的反馈",
+   "seen_at": [
+    {
+     "site": "本库 E2",
+     "url": "evals/E2/runs/20261016/04-页面/index.html 第 58 到 70 行",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    },
+    {
+     "site": "Creative Bloq 吸顶栏指南",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸",
+    "钢",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "顶栏锚点在本页对应哪几章？",
+    "底线划入由滚动位置还是点击触发？"
+   ],
+   "reduce_motion": "底线直接出现，无划入，当前章仍有标记",
+   "risks": "可读性：固定栏遮住锚点，须设 scroll-padding-top",
+   "avoids": [
+    "X4",
+    "X14"
+   ],
+   "structure": "顶栏高取变量 --bar；项行高 44 px、水平内边距 14 px；底线高 2 px，scaleX 0 到 1，时长取方向单变量",
+   "mechanism": "position: fixed、transform: scaleX、aria-current、IntersectionObserver",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "E2"
+   ]
+  },
+  {
+   "id": "nav-03",
+   "slot": "nav",
+   "purpose": "让顶栏在滚动后让出阅读空间但不消失",
+   "name": "收缩吸顶栏",
+   "why": "顶栏收缩后保留定位信息并让出垂直空间，滚动越深正文越多",
+   "seen_at": [
+    {
+     "site": "Parallel HQ 吸顶栏文章",
+     "url": "",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Creative Bloq 吸顶栏指南",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "玻璃",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "收缩前后各保留哪些元素？",
+    "本页的 1 px 底线表示什么？"
+   ],
+   "reduce_motion": "直接切换到收后高度，不过渡",
+   "risks": "Reduce Motion 退化：收缩改为瞬切，logo 可能跳一下",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "初始 64 px，收后 48 px；触发阈值 80 px；过渡 200 ms；总高不超 70 px",
+   "mechanism": "position: sticky、animation-timeline: scroll()、IntersectionObserver 加类作退路",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "nav-04",
+   "slot": "nav",
+   "purpose": "让导航本身成为一次大字排版的展示",
+   "name": "全屏菜单幕",
+   "why": "全屏菜单把导航词放大成版面，打开菜单即是一个独立的注意力时刻",
+   "seen_at": [
+    {
+     "site": "Awwwards 站点获奖页",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Godly 收录",
+     "url": "",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "导航词在本页是哪几个名词？",
+    "菜单打开时背景页是冻结、模糊还是退场？"
+   ],
+   "reduce_motion": "整层 150 ms 淡入，无逐行",
+   "risks": "可读性：焦点未困在层内、关闭路径不清",
+   "avoids": [
+    "X3",
+    "X4"
+   ],
+   "structure": "层高 100dvh；导航词 clamp(48px,9vw,128px)，行距 0.95；关闭钮 44 px；展开 600 ms，词逐行间隔 60 ms",
+   "mechanism": "dialog、clip-path、view-transition、aria-expanded",
+   "impl": null,
+   "tasteskill_id": "menu-column-sticky-photo",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "hero-01",
+   "slot": "hero",
+   "purpose": "让首屏第一眼看到舞台主体且标题可读",
+   "name": "舞台压字首屏",
+   "why": "标题块与舞台主体分区摆放，文字不压主体，3 秒内同时读到标题和物件",
+   "seen_at": [
+    {
+     "site": "本库 E2",
+     "url": "evals/E2/runs/20261016/04-页面/index.html 第 74 到 89 行",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸",
+    "钢"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "舞台主体在本页是什么物件？",
+    "标题块放在主体的哪一侧才不遮挡？"
+   ],
+   "reduce_motion": "文案块不做入场动画，静态显示",
+   "risks": "可读性：图亮度变化压低标题对比，须测 4.5:1",
+   "avoids": [
+    "X4",
+    "X16"
+   ],
+   "structure": "高 100dvh，下限 640 px、上限 1080 px；标题块宽 min(40%,560px)，距顶栏 48 px；图 object-fit: cover",
+   "mechanism": "position: absolute 分层、100dvh、对比保护层",
+   "impl": null,
+   "tasteskill_id": "film-title-on-bottom-edge",
+   "added": "2026-10-17",
+   "used_in": [
+    "E2"
+   ]
+  },
+  {
+   "id": "hero-02",
+   "slot": "hero",
+   "purpose": "让大字成为首屏的主视觉并与图产生层次",
+   "name": "巨字压图",
+   "why": "标题字号随视口缩放，图从行间穿过，文字与图形成前后层",
+   "seen_at": [
+    {
+     "site": "Awwwards 站点获奖页",
+     "url": "",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Apple iPhone 18 Pro 产品页首屏",
+     "url": "https://www.apple.com/iphone-18-pro/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸",
+    "纸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "图从哪两行字之间穿过？",
+    "窄屏下大字换行后图怎么走？"
+   ],
+   "reduce_motion": "字与图静止显示",
+   "risks": "可读性：移动端断词；图遮挡关键字",
+   "avoids": [
+    "X4",
+    "X13"
+   ],
+   "structure": "标题 clamp(72px,16vw,240px)，行距 0.88；图夹在两行之间；首屏 3 秒内出可读文字；字符逐个上滑 700 ms，间隔 30 ms",
+   "mechanism": "clamp()、mix-blend-mode、分词 span",
+   "impl": null,
+   "tasteskill_id": "object-splits-the-headline",
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "首屏是占满宽度的巨型 PRO 字，手机横置压在字上，物件在前、巨字在后形成前后层；标题可读靠字号而非摆位。此条替换 hero-02 中 Godly/Awwwards 的任一条来源。"
+  },
+  {
+   "id": "hero-03",
+   "slot": "hero",
+   "purpose": "让读者用指针或滚动把玩一个主体物件",
+   "name": "三维物件舞台",
+   "why": "单个三维物件对指针或滚动即时响应，读者通过操作理解物件形状",
+   "seen_at": [
+    {
+     "site": "Apple 产品页",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Family 官网",
+     "url": "",
+     "year": 2023,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸",
+    "钢",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页的三维物件是什么名词？",
+    "指针不可用时（触屏、减少动效）显示哪个静帧？"
+   ],
+   "reduce_motion": "停在海报帧，物件仍可见",
+   "risks": "性能：加载慢、低端机掉帧，须有静帧退路",
+   "avoids": [
+    "X16"
+   ],
+   "structure": "画布 100dvh；物件占高 60%；指针视差 ±8°；滚动 1 屏转 90°；2 秒内出静帧海报",
+   "mechanism": "three.js、glTF、IntersectionObserver 暂停渲染",
+   "impl": null,
+   "tasteskill_id": "single-object-on-plinth",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "hero-04",
+   "slot": "hero",
+   "purpose": "让首屏直接展示产品真正的界面行为",
+   "name": "活体界面首屏",
+   "why": "首屏放真实可操作的界面片段，读者先用后读，省去解释",
+   "seen_at": [
+    {
+     "site": "Linear 首页首屏",
+     "url": "https://linear.app/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    },
+    {
+     "site": "Raycast 官网",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "界面片段在本页演示哪一个操作？",
+    "片段里的数据来自哪份样例？"
+   ],
+   "reduce_motion": "状态直接切换，数字直接替换",
+   "risks": "可读性：片段数据是示例却像真的，须标“示例”",
+   "avoids": [
+    "X4",
+    "X16"
+   ],
+   "structure": "片段宽 560 到 720 px；3 个可点状态；标题在左，片段在右，错位 24 px；状态切换 240 ms",
+   "mechanism": "原生 HTML、tabular-nums、aria-live",
+   "impl": null,
+   "tasteskill_id": "showcase-live-demo-with-controls",
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "标题下方首屏露出的是真 DOM 的应用界面（侧栏、议题详情、右侧代理面板，非图片，页面有 82 个运行中动画），读者不读文字也能看到产品形态；该界面能否点击操作未核。"
+  },
+  {
+   "id": "cards-01",
+   "slot": "cards",
+   "purpose": "让一组图卡随进入视口逐张摊开",
+   "name": "滚动摊开托盘",
+   "why": "滚动进度驱动卡片从叠放到展开，读者感到“一摞东西被摊在桌上”",
+   "seen_at": [
+    {
+     "site": "本库 E2",
+     "url": "evals/E2/runs/20261016/04-页面/index.html 第 106 到 121 行",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    },
+    {
+     "site": "Flavio Copes 滚动驱动动画教程",
+     "url": "",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "纸",
+    "钢"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页的“托盘”和“卡”各是什么名词？",
+    "展开顺序按时间、重要度还是类别？"
+   ],
+   "reduce_motion": "图卡直接展开为静态网格",
+   "risks": "Reduce Motion 退化：摊开改为静态 4 列，仍可读",
+   "avoids": [
+    "X3",
+    "X14"
+   ],
+   "structure": "4 列网格，间距 14 px；主图占满 1 行，比例 16:10，其余 4:3；视口入口 20% 到 100% 内完成摊开；托盘透视 2200 px",
+   "mechanism": "animation-timeline: view()、animation-range、perspective、@supports 兜底",
+   "impl": null,
+   "tasteskill_id": "features-mosaic-of-unlike-tiles",
+   "added": "2026-10-17",
+   "used_in": [
+    "E2"
+   ]
+  },
+  {
+   "id": "cards-02",
+   "slot": "cards",
+   "purpose": "让一组卡不排成整齐的三列",
+   "name": "不等宽砖墙",
+   "why": "卡宽卡高混排打破重复节奏，用大小表达重要度",
+   "seen_at": [
+    {
+     "site": "Godly 收录",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Awwwards 站点获奖页",
+     "url": "",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "哪一张卡最重要，需要最大尺寸？",
+    "窄屏下大小差怎么保留？"
+   ],
+   "reduce_motion": "无动效；入场位移 24 px 取消",
+   "risks": "可读性：密排后阅读顺序混乱，须保证 DOM 顺序",
+   "avoids": [
+    "X3",
+    "X7"
+   ],
+   "structure": "12 列网格，卡宽取 3、4、5 列；行高 2 种；间距 20 px；窄屏 640 px 以下单列",
+   "mechanism": "CSS grid、grid-auto-flow: dense",
+   "impl": null,
+   "tasteskill_id": "work-giant-title-uneven-wall",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "cards-03",
+   "slot": "cards",
+   "purpose": "让读者知道这一行可以横滑",
+   "name": "横拖卡带",
+   "why": "露出下一张卡的边缘给出可滑信号，拇指横拖即可浏览",
+   "seen_at": [
+    {
+     "site": "Chrome I/O 滚动捕捉事件",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Mobbin 移动卡片合集",
+     "url": "",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸",
+    "屏幕"
+   ],
+   "carriers": [
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "卡带里每张卡是什么名词？",
+    "吸附到卡首还是自由停靠？"
+   ],
+   "reduce_motion": "无惯性动画，原生滚动吸附",
+   "risks": "可读性：隐藏滚动条后用户不知可滑",
+   "avoids": [
+    "X3"
+   ],
+   "structure": "卡宽 min(78vw,360px)；间距 16 px；两侧留 24 px；进度线高 3 px",
+   "mechanism": "scroll-snap-type: x mandatory、overflow-x: auto、scrollsnapchange",
+   "impl": null,
+   "tasteskill_id": "gallery-drag-row-mixed-modules",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "rows-01",
+   "slot": "rows",
+   "purpose": "让拇指能点中列表中的任意一行",
+   "name": "整行触控行",
+   "why": "整行作为点击区，高度满足拇指，点击目标不需瞄准文字",
+   "seen_at": [
+    {
+     "site": "本库 clear-01",
+     "url": "examples/finished/clear-01/page/ 第 121 到 135 行",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    },
+    {
+     "site": "Apple 人机界面规范 列表",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸"
+   ],
+   "carriers": [
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "一行里最重要的一个信息是什么？",
+    "点击后进入哪一页？"
+   ],
+   "reduce_motion": "按下态无渐变，直接换底",
+   "risks": "可读性：说明文字过长会撑高行",
+   "avoids": [
+    "X7",
+    "X10"
+   ],
+   "structure": "行最小高 100 px；行间 1 px 线；按下态整行底色；焦点环 3 px 内缩；标题与说明两层",
+   "mechanism": "grid、:active、:focus-visible、-webkit-tap-highlight-color",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "clear-01"
+   ]
+  },
+  {
+   "id": "rows-02",
+   "slot": "rows",
+   "purpose": "让补充证据不抢主结论的位置",
+   "name": "折叠补充表",
+   "why": "补充内容收进折叠，标题写明内容与编号，读者需要时再展开",
+   "seen_at": [
+    {
+     "site": "本库 mixed-01",
+     "url": "examples/finished/mixed-01/page/index.html 第 410 到 419 行",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    },
+    {
+     "site": "本库 E2",
+     "url": "evals/E2/runs/20261016/04-页面/index.html 第 338 到 341 行",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "哪些内容属于补充而非主结论？",
+    "折叠标题怎么写才不用展开就知道里面有什么？"
+   ],
+   "reduce_motion": "展开无高度动画，直接显示",
+   "risks": "可读性：折叠过多会藏住关键证据",
+   "avoids": [
+    "X7"
+   ],
+   "structure": "折叠标题行高 44 px；展开区内含一张表；同页折叠不超 7 个；顶部分隔线 1 px",
+   "mechanism": "details、summary、单 table 保持语义",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "mixed-01",
+    "E2"
+   ]
+  },
+  {
+   "id": "rows-03",
+   "slot": "rows",
+   "purpose": "让读者在长表中始终知道列与行的含义",
+   "name": "吸顶表头表",
+   "why": "表头与首列固定，数字右对齐，滚到哪里都能对上列名",
+   "seen_at": [
+    {
+     "site": "Stanford 无障碍表格指南",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "LogRocket 响应式表格",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "CSS-Tricks 表格数字对齐",
+     "url": "",
+     "year": 2023,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "首列在本页是什么标识？",
+    "哪些列必须是数字且右对齐？"
+   ],
+   "reduce_motion": "无动效",
+   "risks": "可读性：拆成两张表会破坏读屏关联",
+   "avoids": [
+    "X7"
+   ],
+   "structure": "行高 44 px；表头 sticky top: 0；首列 sticky left: 0；表头下 1 px 线",
+   "mechanism": "position: sticky、font-variant-numeric: tabular-nums、单 table",
+   "impl": null,
+   "tasteskill_id": "stats-column-aligned-on-the-decimal",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "rows-04",
+   "slot": "rows",
+   "purpose": "让读者扫一眼就看到每行的走向",
+   "name": "行内迷你线",
+   "why": "每行末尾放迷你趋势线，把一列数字变成可比较的形状",
+   "seen_at": [
+    {
+     "site": "Vercel 控制台",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Stripe 控制台",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "迷你线画什么指标和多长的时间？",
+    "数据不足时这一格显示什么？"
+   ],
+   "reduce_motion": "无悬停读数，首末值常显",
+   "risks": "可读性：曲线无刻度会误导，须配首末值",
+   "avoids": [
+    "X16"
+   ],
+   "structure": "迷你图宽 96 px、高 24 px；线宽 1.5 px；末点直径 4 px；悬停读数 120 ms",
+   "mechanism": "内联 SVG、path、tabular-nums",
+   "impl": null,
+   "tasteskill_id": "stats-quiet-figure-lines",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "steps-01",
+   "slot": "steps",
+   "purpose": "让读者边读步骤边看场景随步变化",
+   "name": "钉住场景步进",
+   "why": "场景钉在一侧不动，文字逐步滚过，场景状态按步切换，读者读到哪、看到哪",
+   "seen_at": [
+    {
+     "site": "本库 E2",
+     "url": "evals/E2/runs/20261016/04-页面/index.html 第 209 到 212 行",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    },
+    {
+     "site": "Apple 产品页",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸",
+    "钢"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "钉住的场景在本页是什么物件？",
+    "每一步场景改变的是哪个状态？"
+   ],
+   "reduce_motion": "场景分步静帧，不钉住",
+   "risks": "性能：钉住区含 WebGL 时须只开一个画布",
+   "avoids": [
+    "X10",
+    "X14"
+   ],
+   "structure": "钉住区高 100vh；总高 300 到 400vh；8 步各约 37.5vh；步数 3 到 6 较佳；当前步左线 2 px",
+   "mechanism": "position: sticky、animation-timeline: view()、IntersectionObserver",
+   "impl": null,
+   "tasteskill_id": "how-it-works-pinned-fragment-changing-state",
+   "added": "2026-10-17",
+   "used_in": [
+    "E2"
+   ]
+  },
+  {
+   "id": "steps-02",
+   "slot": "steps",
+   "purpose": "让读者在手机上准确增减数量",
+   "name": "加减步进钮",
+   "why": "左右两枚大按钮加居中数值，避开小步进器的误触",
+   "seen_at": [
+    {
+     "site": "本库 clear-01",
+     "url": "examples/finished/clear-01/page/ 第 210 到 216 行",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    },
+    {
+     "site": "Apple 人机界面规范 步进器",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸"
+   ],
+   "carriers": [
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "被增减的数量在本页是什么单位？",
+    "上下限到达时按钮怎么表示？"
+   ],
+   "reduce_motion": "按下无动画，值直接更新",
+   "risks": "可读性：按钮过小触控易错",
+   "avoids": [
+    "X7",
+    "X12"
+   ],
+   "structure": "按钮 44 x 44 px；边线 2 px；间距 16 px；按下态换底；焦点环 3 px",
+   "mechanism": "button、aria-live、:active",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "clear-01"
+   ]
+  },
+  {
+   "id": "steps-03",
+   "slot": "steps",
+   "purpose": "让读者看见流程随进度一路被画出",
+   "name": "绘线时间线",
+   "why": "一条线随滚动画出，节点到点时亮起，进度与位置对应",
+   "seen_at": [
+    {
+     "site": "Flavio Copes 滚动驱动动画教程",
+     "url": "",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Chrome I/O 滚动驱动动画",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "呼吸",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "线在本页代表时间、距离还是阶段？",
+    "节点亮起时同时出现什么内容？"
+   ],
+   "reduce_motion": "整条线直接显示",
+   "risks": "可读性：事件少于 3 个时没必要",
+   "avoids": [
+    "X10",
+    "X14"
+   ],
+   "structure": "竖线 2 px；节点直径 12 px；文字栏宽 32 em；日期 tabular-nums；线随进度 0 到 1",
+   "mechanism": "SVG stroke-dashoffset、animation-timeline: view()",
+   "impl": null,
+   "tasteskill_id": "how-it-works-lines-that-step-across",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "steps-04",
+   "slot": "steps",
+   "purpose": "把多阶段压成一眼可见的进度并可跳转",
+   "name": "进度条步骤",
+   "why": "一根可拖的进度条加可点阶段点，总览和跳转合一",
+   "seen_at": [
+    {
+     "site": "Stripe 流程页",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Mobbin 进度合集",
+     "url": "",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "wechat-mini",
+    "ios"
+   ],
+   "adapt": [
+    "阶段点在本页各叫什么？",
+    "拖动时是否同步更新下方内容？"
+   ],
+   "reduce_motion": "点直接跳位",
+   "risks": "Reduce Motion 退化：跳位无过渡，阶段说明须同步",
+   "avoids": [
+    "X10"
+   ],
+   "structure": "条高 8 px；阶段点 20 px；阶段不超 6 个；点间移动 240 ms；键盘左右步进",
+   "mechanism": "input type=range 或 role=slider、aria-valuetext",
+   "impl": null,
+   "tasteskill_id": "how-it-works-stages-as-one-bar",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "panel-01",
+   "slot": "panel",
+   "purpose": "让读者一屏只做一个决定",
+   "name": "底部抽屉",
+   "why": "底部抽屉加遮罩把当前决定框出来，背后内容退为背景",
+   "seen_at": [
+    {
+     "site": "本库 clear-01",
+     "url": "examples/finished/clear-01/page/ 第 256 到 264 行",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    },
+    {
+     "site": "Apple 人机界面规范 表单页",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸",
+    "屏幕"
+   ],
+   "carriers": [
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "抽屉里要做的那一个决定是什么？",
+    "关闭抽屉后焦点回到哪里？"
+   ],
+   "reduce_motion": "无滑入，直接出现",
+   "risks": "可读性：长内容撑出屏高，须限高后内部滚动",
+   "avoids": [
+    "X7"
+   ],
+   "structure": "宽 min(390px,100%)；顶边线 2 px；内边距上 40 px；按钮纵排间距 8 px；遮罩铺满",
+   "mechanism": "position: fixed、role=dialog、aria-modal、hidden",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "clear-01"
+   ]
+  },
+  {
+   "id": "panel-02",
+   "slot": "panel",
+   "purpose": "让读者按需要拉出不同信息量的面板",
+   "name": "多停靠面板",
+   "why": "3 个停靠高度对应概览、详情、全屏，速度带吸附",
+   "seen_at": [
+    {
+     "site": "Vaul 抽屉库",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Apple detents 文档",
+     "url": "",
+     "year": 2022,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Lucian UX/UI Prompt（元素 336，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#336",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "驱动",
+    "玻璃"
+   ],
+   "carriers": [
+    "mobile-web",
+    "wechat-mini",
+    "ios"
+   ],
+   "adapt": [
+    "3 个停靠高度各显示什么？",
+    "面板在最低停靠时遮挡什么？"
+   ],
+   "reduce_motion": "无弹性，线性 150 ms",
+   "risks": "可读性：内容滚动与面板拖动冲突，须设锁定间隔",
+   "avoids": [
+    "X7"
+   ],
+   "structure": "停靠点 30%、60%、92% 屏高；拖柄 36 x 4 px；超 0.5 px/ms 跳下一档；60% 以上才可内滚",
+   "mechanism": "Pointer Events、Vaul snapPoints、iOS detents；越界橡皮筋阻尼；全开时背景缩小变暗",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "panel-03",
+   "slot": "panel",
+   "purpose": "让桌面读者看详情的同时保持列表上下文",
+   "name": "不遮罩侧抽屉",
+   "why": "详情抽屉从右侧滑入且不遮罩，读者可对照列表继续操作",
+   "seen_at": [
+    {
+     "site": "Linear 详情抽屉",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Vercel 控制台",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "抽屉详情和列表行如何一一对应？",
+    "抽屉打开时列表里选中项怎么标记？"
+   ],
+   "reduce_motion": "淡入 120 ms",
+   "risks": "可读性：抽屉遮住所选行",
+   "avoids": [
+    "X7"
+   ],
+   "structure": "宽 420 px；贴右；仅 1 px 左线；滑入 260 ms；Esc 关闭",
+   "mechanism": "dialog 非模态 show()、popover、inert",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "panel-04",
+   "slot": "panel",
+   "purpose": "让输入框的标签既占位又不丢失",
+   "name": "浮动标签输入",
+   "why": "标签在框内起占位作用，聚焦后上浮缩小，输入时仍能看到字段名",
+   "seen_at": [
+    {
+     "site": "Mobbin 表单合集",
+     "url": "",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Smashing Magazine 表单",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "wechat-mini",
+    "ios"
+   ],
+   "adapt": [
+    "这个字段的标签怎么写才不用提示文字？",
+    "出错时错误信息放标签旁还是框下？"
+   ],
+   "reduce_motion": "直接定位，无上浮",
+   "risks": "可读性：占位与标签重复",
+   "avoids": [
+    "X8"
+   ],
+   "structure": "输入高 56 px；标签 16 px 上浮后 12 px；错误文字 12 px 在下；上浮 160 ms",
+   "mechanism": "placeholder-shown、:focus-within、aria-describedby",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "overlay-01",
+   "slot": "overlay",
+   "purpose": "让读者感到页面在向前走和向后退",
+   "name": "页间转场推移",
+   "why": "新页从右推入、返回反向，位移方向表达导航层级",
+   "seen_at": [
+    {
+     "site": "本库 clear-01",
+     "url": "examples/finished/clear-01/page/ 第 266 到 275 行",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    },
+    {
+     "site": "Chrome I/O 视图转场",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸",
+    "纸"
+   ],
+   "carriers": [
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "本页的层级有哪几级？",
+    "返回时上一页恢复到哪个滚动位置？"
+   ],
+   "reduce_motion": "时长归 0，页直接切换",
+   "risks": "Reduce Motion 退化：切换无过渡，方向感消失",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "位移 24 px；时长取变量；返回方向反；两个关键帧对",
+   "mechanism": "view-transition、::view-transition-old、::view-transition-new",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "clear-01"
+   ]
+  },
+  {
+   "id": "overlay-02",
+   "slot": "overlay",
+   "purpose": "让多条通知不盖满屏幕",
+   "name": "堆叠通知",
+   "why": "通知叠成一摞，悬停展开，滑动清除，数量多时仍占固定区域",
+   "seen_at": [
+    {
+     "site": "Emil Kowalski 构建 Toast 组件",
+     "url": "",
+     "year": 2023,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Sonner 官方站",
+     "url": "https://sonner.emilkowal.ski/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    },
+    {
+     "site": "affectUI Notification Stack",
+     "url": "https://affectui.com/components/notification-stack",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "玻璃",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "ios"
+   ],
+   "adapt": [
+    "通知在本页代表什么事件？",
+    "超过几条后合并？"
+   ],
+   "reduce_motion": "不叠，只淡入淡出",
+   "risks": "可读性：错误通知不应自动消失",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "同时可见 3 条；叠层缩放每级 0.95、位移 12 px；自动消失 4 s；叠放 300 ms",
+   "mechanism": "Sonner 思路、transform、aria-live=polite",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "连点 5 次 Render a toast，5 个 toast 的 top 相同、按序号逐层缩小（scale 为 1 - 序号×0.05），收成一摞占一个 toast 的位置；悬停展开与滑动清除因 toast 自动消失太快未核。"
+  },
+  {
+   "id": "overlay-03",
+   "slot": "overlay",
+   "purpose": "让提示紧贴触发它的元素",
+   "name": "锚定气泡",
+   "why": "气泡锚定触发元素并在碰边时翻转，读者不用在屏幕上找提示",
+   "seen_at": [
+    {
+     "site": "Chrome 锚点定位 API",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Chrome Popover API",
+     "url": "",
+     "year": 2023,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Frontend Masters 菜单与提示",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "玻璃",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "气泡触发元素是什么？",
+    "气泡内容超长时怎么处理？"
+   ],
+   "reduce_motion": "只淡入",
+   "risks": "性能：旧浏览器无锚点定位，须有定位退路",
+   "avoids": [
+    "X7"
+   ],
+   "structure": "宽不超 280 px；距触发 8 px；箭头 8 px；出现 120 ms；Esc 关闭",
+   "mechanism": "popover 属性、CSS anchor positioning、position-try-fallbacks",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "footer-01",
+   "slot": "footer",
+   "purpose": "让声明与来源在页脚清楚可读",
+   "name": "文字版权页脚",
+   "why": "正文式页脚按受控行宽排版，来源和声明像正文一样可读",
+   "seen_at": [
+    {
+     "site": "本库 mixed-01",
+     "url": "examples/finished/mixed-01/page/src/page.css 第 265 到 266 行",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "页脚必须写的声明有哪几条？",
+    "来源按什么顺序排？"
+   ],
+   "reduce_motion": "无动效",
+   "risks": "可读性：信息过少显得空",
+   "avoids": [
+    "X8",
+    "X9"
+   ],
+   "structure": "内边距上 s5、下 s6 取变量；顶线 1 px；段宽不超 60 em；行距 1.7",
+   "mechanism": "原生 footer、max-width: 60em",
+   "impl": null,
+   "tasteskill_id": "footer-single-quiet-line",
+   "added": "2026-10-17",
+   "used_in": [
+    "mixed-01"
+   ]
+  },
+  {
+   "id": "footer-02",
+   "slot": "footer",
+   "purpose": "让页脚成为品牌的最后一个记忆点",
+   "name": "裁切巨字页脚",
+   "why": "被裁掉一半的巨字压在页尾，其上一行链接，页尾有一个视觉收束",
+   "seen_at": [
+    {
+     "site": "Awwwards 页脚合集",
+     "url": "",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Godly 收录",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "basement.studio",
+     "url": "https://basement.studio/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "巨字写什么？",
+    "链接行保留哪几个链接？",
+    "顶部导航要不要以大字号在字标下再列一遍？"
+   ],
+   "reduce_motion": "巨字静止",
+   "risks": "可读性：裁切后读不出品牌名",
+   "avoids": [
+    "X4",
+    "X8"
+   ],
+   "structure": "巨字 clamp(96px,22vw,320px)，下半被裁；链接 3 到 4 列；上升 600 ms",
+   "mechanism": "overflow: hidden、animation-timeline: view()",
+   "impl": null,
+   "tasteskill_id": "footer-invitation-over-cropped-wordmark",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "footer-03",
+   "slot": "footer",
+   "purpose": "让读者读到页尾时就能采取下一步",
+   "name": "邀请式页脚",
+   "why": "页脚之前先放一段邀请加一个动作，多列链接退为次要收尾",
+   "seen_at": [
+    {
+     "site": "Stripe 页脚",
+     "url": "",
+     "year": 2024,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Linear 首页底部",
+     "url": "https://linear.app/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "邀请的下一步动作是什么？",
+    "动作按钮在本页指向哪里？"
+   ],
+   "reduce_motion": "按钮悬停换色 120 ms，无其他",
+   "risks": "可读性：邀请句空泛",
+   "avoids": [
+    "X12"
+   ],
+   "structure": "邀请句 40 px 一行；按钮高 48 px；链接 14 px 一行；法务 12 px",
+   "mechanism": "mailto、:focus-visible",
+   "impl": null,
+   "tasteskill_id": "cta-plain-sentence-one-action",
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "两站都在多列链接页脚之前放一段邀请加按钮（Linear：Built for the future. Available today. + Get started / Contact sales；Stripe：Ready to get started? + Start now / Contact sales）。注意：邀请段是页脚上方的独立收尾区，页脚本体仍是纯链接列，case 的“页脚首位”应改读为"
+  },
+  {
+   "id": "hero-05",
+   "slot": "hero",
+   "purpose": "让首屏的三维主体随滚动被推近看清层次",
+   "name": "分层板片相机推镜",
+   "why": "板片分层加相机推近，滚动距离即观察距离，读者通过靠近理解层叠关系",
+   "seen_at": [
+    {
+     "site": "本库机制示例 hero-05",
+     "url": "examples/mechanisms/hero-05/index.html",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸",
+    "钢",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "板片在本页代表什么层？",
+    "相机推近的终点停在哪一层？"
+   ],
+   "reduce_motion": "停自转与漂移，只在滚动和缩放时重画一帧",
+   "risks": "性能：同屏只放 1 个 WebGL 画布，低端机会掉帧",
+   "avoids": [
+    "X4"
+   ],
+   "structure": null,
+   "mechanism": "three 场景、鼠标视差、滚动推镜头",
+   "impl": "examples/mechanisms/hero-05",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "hero-06",
+   "slot": "hero",
+   "purpose": "让首屏背景有缓慢流动的环境动效但不压正文",
+   "name": "全屏噪声流体背景",
+   "why": "片元着色器噪声场由 CSS 变量取色，文字放在实色面板上，背景动效与阅读区分层",
+   "seen_at": [
+    {
+     "site": "本库机制示例 hero-06",
+     "url": "examples/mechanisms/hero-06/index.html",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "沉浸",
+    "颗粒"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "流体的颜色取自 design.md 的哪几个变量？",
+    "正文面板盖住背景的哪块区域？"
+   ],
+   "reduce_motion": "冻结时间，只画一帧",
+   "risks": "可读性：背景对比度过低时压正文，需页内实测",
+   "avoids": [
+    "X15",
+    "X6"
+   ],
+   "structure": null,
+   "mechanism": "WebGL2 片元着色器 fbm 噪声，uniform 取 CSS 变量",
+   "impl": "examples/mechanisms/hero-06",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "hero-07",
+   "slot": "hero",
+   "purpose": "让展示页首屏有可信的体积感而不用三维模型文件",
+   "name": "光线步进背景",
+   "why": "SDF 光线步进在单个全屏着色器里生成体块，不需要模型文件，只在指针或滚动后短时运行",
+   "seen_at": [
+    {
+     "site": "本库机制示例 hero-07",
+     "url": "examples/mechanisms/hero-07/index.html",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "沉浸",
+    "玻璃",
+    "钢"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "体块形状在本页对应什么物件？",
+    "动画在哪个动作后运行 2.5 秒？"
+   ],
+   "reduce_motion": "time 固定，渲染一帧后停止",
+   "risks": "性能：真机帧率未验证，步数上限 40 步",
+   "avoids": [
+    "X15"
+   ],
+   "structure": null,
+   "mechanism": "WebGL1 SDF 光线步进，640 乘 360 渲染",
+   "impl": "examples/mechanisms/hero-07",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "transition-01",
+   "slot": "transition",
+   "purpose": "让指针在页面上留下可见的轨迹以回应动作",
+   "name": "指针染料拖尾",
+   "why": "双缓冲染料场按指针速度扩散，指针每次移动都得到视觉回应，文字放在实色面板上",
+   "seen_at": [
+    {
+     "site": "本库机制示例 transition-01",
+     "url": "examples/mechanisms/transition-01/index.html",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸",
+    "颗粒"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "染料颜色取哪个 design.md 变量？",
+    "触屏上指针轨迹用什么替代？"
+   ],
+   "reduce_motion": "预置染料，推进 30 步后画一帧并停止",
+   "risks": "性能：全屏双缓冲占显存，需限制分辨率",
+   "avoids": [
+    "X14"
+   ],
+   "structure": null,
+   "mechanism": "WebGL2 染料双缓冲，curl noise，指针速度回溯采样",
+   "impl": "examples/mechanisms/transition-01",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "transition-02",
+   "slot": "transition",
+   "purpose": "让两个页面之间的共享元素连续变形",
+   "name": "跨文档共享元素转场",
+   "why": "浏览器为同名元素生成转场，页面切换时读者看见同一个物件从一页到另一页",
+   "seen_at": [
+    {
+     "site": "本库机制示例 transition-02",
+     "url": "examples/mechanisms/transition-02/index.html",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "纸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "两页共享的元素是什么名词？",
+    "不支持的浏览器直接切换时是否仍可读？"
+   ],
+   "reduce_motion": "转场动画时长设 0，直接切换",
+   "risks": "可读性：旧浏览器不支持，只退为无转场，不影响内容",
+   "avoids": [
+    "X14"
+   ],
+   "structure": null,
+   "mechanism": "@view-transition navigation auto，view-transition-name",
+   "impl": "examples/mechanisms/transition-02",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "page-01",
+   "slot": "page",
+   "purpose": "让一个舞台随滚动在三章之间切换状态",
+   "name": "滚动固定舞台三章",
+   "why": "舞台固定、文字逐章滚过、进度变量驱动舞台，读者读到哪章舞台就到哪状态",
+   "seen_at": [
+    {
+     "site": "本库机制示例 page-01",
+     "url": "examples/mechanisms/page-01/index.html",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "钢",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "舞台在本页是什么物件？",
+    "每章舞台改变的是哪个状态？"
+   ],
+   "reduce_motion": "不建 ScrollTrigger，三章顺序静态显示",
+   "risks": "可读性：pin 过长会让读者失去页内位置，合计不超过 5 屏",
+   "avoids": [
+    "X14"
+   ],
+   "structure": null,
+   "mechanism": "GSAP ScrollTrigger pin 与 scrub，--p 变量",
+   "impl": "examples/mechanisms/page-01",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "page-02",
+   "slot": "page",
+   "purpose": "让读者在滚动时沿一条路径穿过几个站点",
+   "name": "相机沿路径穿行",
+   "why": "相机沿样条曲线穿过站点，滚动进度即路径位置，HTML 文字叠在站点上",
+   "seen_at": [
+    {
+     "site": "本库机制示例 page-02",
+     "url": "examples/mechanisms/page-02/index.html",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "沉浸",
+    "钢"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "站点在本页各叫什么？",
+    "路径的起点和终点分别是什么？"
+   ],
+   "reduce_motion": "不绑滚动，用按钮切换 4 个静态视图",
+   "risks": "性能：三维场景加长 pin，需要站点导航保证可达",
+   "avoids": [
+    "X14"
+   ],
+   "structure": null,
+   "mechanism": "three CatmullRomCurve3 相机路径，pin 3 屏",
+   "impl": "examples/mechanisms/page-02",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "page-03",
+   "slot": "page",
+   "purpose": "让一段连续变化随滚动前进或后退",
+   "name": "滚动序列帧",
+   "why": "canvas 按滚动进度画序列帧，读者控制播放速度，不被动看视频",
+   "seen_at": [
+    {
+     "site": "本库机制示例 page-03",
+     "url": "examples/mechanisms/page-03/index.html",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "序列帧画的是什么过程？",
+    "低端机降到多少帧？"
+   ],
+   "reduce_motion": "显示最后一帧",
+   "risks": "性能：帧数多会占内存，低端机要降帧",
+   "avoids": [
+    "X14"
+   ],
+   "structure": null,
+   "mechanism": "canvas 序列帧，预加载，进度映射",
+   "impl": "examples/mechanisms/page-03",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "page-05",
+   "slot": "page",
+   "purpose": "让入场与进度条不用 JS 就随滚动运行",
+   "name": "零脚本滚动时间线",
+   "why": "CSS 动画绑定滚动或视口进度，动效跟随读者位置而非时钟",
+   "seen_at": [
+    {
+     "site": "本库机制示例 page-04",
+     "url": "examples/mechanisms/page-04/index.html",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "驱动",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "哪些元素需要随滚动入场？",
+    "不支持时终态是什么？"
+   ],
+   "reduce_motion": "animation none，显示终态",
+   "risks": "可读性：不支持的浏览器直接显示终态，无风险",
+   "avoids": [
+    "X14"
+   ],
+   "structure": null,
+   "mechanism": "animation-timeline view() 与 scroll()，@supports",
+   "impl": "examples/mechanisms/page-04",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "page-04",
+   "slot": "page",
+   "purpose": "让读者随滚动看见一个物件被拆成部件",
+   "name": "固定舞台三维拆解",
+   "why": "一屏 pin 住，滚动驱动旋转、分解、相机推进三段，文字按段切换，读者看着物件被拆开",
+   "seen_at": [
+    {
+     "site": "本库机制示例 page-05",
+     "url": "examples/mechanisms/page-05/index.html",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸",
+    "钢"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "物件在本页是什么，拆成几块？",
+    "三段文字各讲哪一段？"
+   ],
+   "reduce_motion": "不 pin，3 个按钮切换终态一帧",
+   "risks": "可读性：中间段与暗色模式未验证",
+   "avoids": [
+    "X14"
+   ],
+   "structure": null,
+   "mechanism": "ScrollTrigger pin 与 scrub，three，data-pin-screens",
+   "impl": "examples/mechanisms/page-05",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "page-06",
+   "slot": "page",
+   "purpose": "让多个章节各有三维舞台但全页只占一个 WebGL 画布",
+   "name": "单渲染器三区裁切",
+   "why": "一个画布用 scissor 切成三个区域，各章把自己的区域对准文字栏，读者看到多个舞台而浏览器只付一份上下文代价",
+   "seen_at": [
+    {
+     "site": "本库 E2 页面规划",
+     "url": "evals/E2/runs/20261016/03-页面规划.md",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸",
+    "钢"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "各章的三维舞台在本页是同一个物件的哪几个视角？",
+    "画布固定在页面哪一层，区域跟随哪些章节？"
+   ],
+   "reduce_motion": "每个区域显示同一物件渲染的一帧静态图",
+   "risks": "性能：区域多时每帧重画面积变大，需只画可见区域",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "全页 1 个 WebGL 上下文；3 个裁切区域；仅在 4 章显示；支持 ?export 参数输出确定性静帧",
+   "mechanism": "renderer.setScissor、setViewport、按章可见性绘制；URL 参数 ?export 冻结时间并输出静帧",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "E2"
+   ]
+  },
+  {
+   "id": "steps-05",
+   "slot": "steps",
+   "purpose": "让读者随滚动沿机器逐站看见每一步留下的东西",
+   "name": "相机推轨逐站拆层",
+   "why": "相机沿机身水平推轨，每过一站拆出一层并标站名，滚动距离等于步骤序号",
+   "seen_at": [
+    {
+     "site": "本库 E2 页面规划",
+     "url": "evals/E2/runs/20261016/03-页面规划.md",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸",
+    "钢"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页的“站”和“层”各是什么名词？",
+    "步骤间的镜头距离按等距还是按内容量分配？"
+   ],
+   "reduce_motion": "3 屏变 8 行竖排站点，每行一张静态渲染小图",
+   "risks": "可读性：pin 3 屏占用大，需限制其余 pin 总量不超 5 屏",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "pin 3 屏；scrub 驱动；相机距离 18.6 缩到 9；每站约 37.5vh",
+   "mechanism": "ScrollTrigger pin 与 scrub，相机 lookAt 沿 x 轴推进",
+   "impl": "examples/mechanisms/pinned-3d-scrub",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "E2"
+   ]
+  },
+  {
+   "id": "hero-08",
+   "slot": "hero",
+   "purpose": "让首屏的签名时刻是“几层东西被压成一件成品”",
+   "name": "悬层压实首屏",
+   "why": "多层透明片悬在主体上方，加载后压实，一眼看见“多步骤叠成一个结果”",
+   "seen_at": [
+    {
+     "site": "本库 E2 方向单",
+     "url": "evals/E2/runs/20261016/02-方向单/direction.md",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "沉浸",
+    "钢",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "悬着的“层”在本页代表什么？",
+    "压实完成后停在哪个构图，标题放哪一侧？"
+   ],
+   "reduce_motion": "显示压实后的一帧静态渲染图",
+   "risks": "可读性：标题必须 0.8 秒内可读，压实最晚 2.0 秒开始",
+   "avoids": [
+    "X4"
+   ],
+   "structure": "标题可读 ≤0.8 s；压实 ≤2.0 s 开始；静帧 ≤100 KB；文字区宽 ≤40% 画面",
+   "mechanism": "three 模型加载；叠片间距补间；超时改为首次滚动触发",
+   "impl": "examples/mechanisms/gltf-model-stage",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "E2"
+   ]
+  },
+  {
+   "id": "panel-05",
+   "slot": "panel",
+   "purpose": "让读者看见“人点头”这一步是一个物理动作",
+   "name": "夹具合上确认",
+   "why": "一次性机器动作把确认变成可见的夹紧，读者感到这一步被锁住",
+   "seen_at": [
+    {
+     "site": "本库 E2 页面规划",
+     "url": "evals/E2/runs/20261016/03-页面规划.md",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "钢"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页的“确认”在现实里是什么动作？",
+    "确认后哪些内容变成不可改？"
+   ],
+   "reduce_motion": "夹具直接显示合上的终态",
+   "risks": "浮夸：只在 1 个章播放 1 次，重复播放会变成装饰",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "行程 0.25 个门架净高；时长 400 ms；一次",
+   "mechanism": "SVG 面板；CSS transform 单次过渡",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "E2"
+   ]
+  },
+  {
+   "id": "nav-05",
+   "slot": "nav",
+   "purpose": "让读者在一页内看到“现在到哪一站”且全页只有一个高亮",
+   "name": "当前站牌",
+   "why": "只有当前站牌被标出，其余站牌保持同一中性，高亮随滚动移动",
+   "seen_at": [
+    {
+     "site": "本库 E2 页面规划",
+     "url": "evals/E2/runs/20261016/03-页面规划.md",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸",
+    "钢"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页的站有几个？当前站用什么表示？",
+    "高亮是否同时用于其他含义？"
+   ],
+   "reduce_motion": "当前站标记保持，无移动动画",
+   "risks": "可读性：高亮若同时表示别的含义（如关口），读者会误读",
+   "avoids": [
+    "X10"
+   ],
+   "structure": "全页 1 个高亮；其余站同一中性",
+   "mechanism": "滚动位置映射站号，aria-current",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "E2"
+   ]
+  },
+  {
+   "id": "hero-09",
+   "slot": "hero",
+   "purpose": "让首屏用一次水流落入容器的动作交代“进度会被累积”",
+   "name": "水柱落壶",
+   "why": "水柱落入壶中，液面抬高一格，首屏就演示了页面后面“进度=液面”的规则",
+   "seen_at": [
+    {
+     "site": "本库冷启动页面规划",
+     "url": "evals/coldstart-full-20261017/run/03-页面规划.md",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "驱动",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页的“进度”在现实里是什么被累积的东西？",
+    "水柱在标题行之间的哪个缝隙落下才不压字？"
+   ],
+   "reduce_motion": "显示液面已抬高一格的静态壶",
+   "risks": "可读性：水柱位于标题行之间，不压字",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "签名时刻全页 1 次；水柱在标题行间",
+   "mechanism": "SVG 路径描边与 clipPath 液面；一次性",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "coldstart-full"
+   ]
+  },
+  {
+   "id": "steps-06",
+   "slot": "steps",
+   "purpose": "让读者在读步骤时一直看到整体已完成多少",
+   "name": "粘顶容器液面即进度",
+   "why": "容器粘在一侧，液面随当前步骤升高，步骤号和液面高度是同一份数据",
+   "seen_at": [
+    {
+     "site": "本库冷启动页面规划",
+     "url": "evals/coldstart-full-20261017/run/03-页面规划.md",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "呼吸",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页的容器和液体各是什么名词？",
+    "390 宽时容器放在顶部占多少高度？"
+   ],
+   "reduce_motion": "液面直接显示当前章的静态高度",
+   "risks": "可读性：390 宽下容器占 34dvh，正文区不得被挤出首屏",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "桌面左容器右步骤；390 下容器粘顶 34dvh；每步 ≤60 字",
+   "mechanism": "position: sticky；液面 clip-path 或高度由滚动进度映射",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "coldstart-full"
+   ]
+  },
+  {
+   "id": "nav-06",
+   "slot": "nav",
+   "purpose": "让读者在大画布上随时知道全局并能跳到任一区域",
+   "name": "常驻小地图",
+   "why": "小地图常驻一角，悬停展开显示图名，当前视口在小地图上有框，点击即跳",
+   "seen_at": [
+    {
+     "site": "本库 E1 方向单",
+     "url": "evals/E1/runs/20261016/02-方向单/direction.md",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页画布的全局是什么，视口框代表什么？",
+    "“回总览”的按钮放在小地图旁还是顶栏？"
+   ],
+   "reduce_motion": "小地图静态显示，点击直接跳转",
+   "risks": "可读性：小地图命中区过小时误点，最小 32 乘 40 px",
+   "avoids": [
+    "X10"
+   ],
+   "structure": "小地图 160 x 95 px；展开 320 x 189 px；最小命中区 32 x 40 px；常驻“总图”钮 44 x 44 px",
+   "mechanism": "SVG 缩略图；视口框由相机状态映射",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "mixed-01"
+   ]
+  },
+  {
+   "id": "page-07",
+   "slot": "page",
+   "purpose": "让每一章都像一张有编号的图纸，读者通过图签知道自己在哪张图",
+   "name": "图幅外框与图签",
+   "why": "每章套外框并带图签，编号、图名、版次是固定位置的元信息，章与章之间有统一的识别点",
+   "seen_at": [
+    {
+     "site": "本库 mixed-01",
+     "url": "examples/finished/mixed-01/README.md",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页每章的“图号”对应什么编号体系？",
+    "图签里哪几项是内容、哪几项是装饰？"
+   ],
+   "reduce_motion": "外框与图签为静态元素",
+   "risks": "可读性：图签太大会挤掉正文列，正文列 ≤70% 视口",
+   "avoids": [
+    "X10"
+   ],
+   "structure": "图签宽 440 px；距内框 8 px 贴右下；正文列 ≤70% 视口",
+   "mechanism": "CSS 外框与图签网格",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "mixed-01"
+   ]
+  },
+  {
+   "id": "page-08",
+   "slot": "page",
+   "purpose": "让整页是一张大图，读者在图上移动镜头而不是向下滚",
+   "name": "相机在大画布上缩放平移",
+   "why": "相机对数缩放加按比例平移，换排时中途拉远，读者在章与章之间看到空间关系",
+   "seen_at": [
+    {
+     "site": "本库 mixed-01",
+     "url": "examples/finished/mixed-01/README.md",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页的“大图”是什么，每章是图上的什么位置？",
+    "换排时相机拉远到多大比例？"
+   ],
+   "reduce_motion": "章按顺序静态排列，保留章号跳转",
+   "risks": "可读性：缩小时文字不可读，需把轴号按 0.7/scale 反向放大",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "总览比例 0.268；最大缩放比 3.73；停靠表四个舞台停靠点",
+   "mechanism": "缩放对数插值；平移按 1/s 加权；舞台按距离挂载销毁",
+   "impl": "examples/finished/mixed-01/page/src/camera.js",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "mixed-01"
+   ]
+  },
+  {
+   "id": "hero-10",
+   "slot": "hero",
+   "purpose": "让首屏的签名时刻是一枚章落在纸上并渗开",
+   "name": "章落定并渗印",
+   "why": "章先落定后墨向外渗，一次性事件让页面有“盖章生效”的重量",
+   "seen_at": [
+    {
+     "site": "本库 mixed-01",
+     "url": "examples/finished/mixed-01/page/src/ink.js",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "沉浸",
+    "纸",
+    "颗粒"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页盖的“章”在现实里表示什么？",
+    "章落在哪个位置不遮挡标题？"
+   ],
+   "reduce_motion": "终态转为静态图片，不播放",
+   "risks": "性能：着色器用后释放上下文，且渗印画布 ≥256 px",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "章 ≥72 px；渗印画布 ≥256 px；渗出半径 ≥0.4 章宽；终态透明度 ≥0.45；三拍：标题、图签、章",
+   "mechanism": "原生 WebGL1 全屏三角带；结束后转静态图并释放上下文",
+   "impl": "examples/finished/mixed-01/page/src/ink.js",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "mixed-01"
+   ]
+  },
+  {
+   "id": "rows-05",
+   "slot": "rows",
+   "purpose": "让读者按日期扫列表且同日多项不重复写日期",
+   "name": "同日合并日期条",
+   "why": "同日多项合在一张日期条下，条吸顶，读者向下滑时始终知道当前日期",
+   "seen_at": [
+    {
+     "site": "本库 clear-01",
+     "url": "examples/finished/clear-01/README.md",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸"
+   ],
+   "carriers": [
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "本页的分组键是日期还是别的？",
+    "同组超过几项时折叠？"
+   ],
+   "reduce_motion": "无动效，吸顶保持",
+   "risks": "可读性：日期条过多吸顶堆叠时需只留当前一条",
+   "avoids": [
+    "X10"
+   ],
+   "structure": "日期条吸顶；同日项之间 4 px 缝分张",
+   "mechanism": "position: sticky；.day + .day 缝",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "clear-01"
+   ]
+  },
+  {
+   "id": "cards-04",
+   "slot": "cards",
+   "purpose": "让提交成功的结果像一张可保存的小票",
+   "name": "三段凭证小票",
+   "why": "主票、存根、存根联三段加齿孔，读者拿到的是一个可截图的凭证物件",
+   "seen_at": [
+    {
+     "site": "本库 clear-01",
+     "url": "examples/finished/clear-01/README.md",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸",
+    "纸"
+   ],
+   "carriers": [
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "本页的“凭证”现实里是什么票据？",
+    "三段分别放什么信息？"
+   ],
+   "reduce_motion": "小票直接显示完成态",
+   "risks": "可读性：凭证语义不成立的流程（如问卷）不能用",
+   "avoids": [
+    "X3"
+   ],
+   "structure": "出票 720 ms 一次；两层投影；齿孔用渐变遮罩",
+   "mechanism": "radial-gradient 遮罩齿孔；单次出票动画",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "clear-01"
+   ]
+  },
+  {
+   "id": "form-01",
+   "slot": "form",
+   "purpose": "让读者填写时看到摘要与剩余空位",
+   "name": "横格纸登记表",
+   "why": "登记页铺横格纸到底，摘要搬进横格行，空线最多 3 条，读者看到还差几项",
+   "seen_at": [
+    {
+     "site": "本库 clear-01",
+     "url": "examples/finished/clear-01/README.md",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸"
+   ],
+   "carriers": [
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "本页要填几项，摘要有哪几行？",
+    "空线几条才不显得空？"
+   ],
+   "reduce_motion": "无动效，表单静态",
+   "risks": "可读性：空线超过 3 条显得空，字段多时需分页",
+   "avoids": [
+    "X10"
+   ],
+   "structure": "空线 ≤3 条；摘要与字段同行",
+   "mechanism": "重复背景线加行高对齐",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "clear-01"
+   ]
+  },
+  {
+   "id": "cards-50",
+   "slot": "cards",
+   "purpose": "让读者在读多条能力时始终看到总标题",
+   "name": "固定标题加经过的能力块",
+   "why": "左侧总标题保持不动，右侧能力块从旁边经过，读者读每块时总主题始终在视野里",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 opl-protip-marketing",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "纸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "总标题在本页是哪个名词？",
+    "能力块有几条，超过 6 条时怎么分组？"
+   ],
+   "reduce_motion": "标题与能力块按顺序排成一列，标题在最前",
+   "risks": "性能：低。移动端并栏会挤，需改为标题在上",
+   "avoids": [
+    "X3",
+    "X14"
+   ],
+   "mechanism": "position: sticky 的左栏加右栏自然滚动",
+   "impl": "examples/mechanisms/css-scroll-timeline",
+   "tasteskill_id": "features-pinned-heading-passing-rows",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "cards-51",
+   "slot": "cards",
+   "purpose": "把三到五条能力做成层层覆盖的叠页",
+   "name": "层叠色页",
+   "why": "每页是整宽色块，新页从下滑上来盖住旧页并留出旧页的标题带，读者同时知道已读几条、还剩几条",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 aww-hilden-kaira",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "每页的标题带在本页写什么名词？",
+    "页数超过 5 时怎么收？"
+   ],
+   "reduce_motion": "页按顺序竖排，各自完整显示",
+   "risks": "可读性：被盖页只剩标题带，正文不可回看",
+   "avoids": [
+    "X3",
+    "X7",
+    "X14"
+   ],
+   "mechanism": "position: sticky 加递增的 top 偏移",
+   "impl": "examples/mechanisms/css-scroll-timeline",
+   "tasteskill_id": "features-stacking-colour-sheets",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "cards-52",
+   "slot": "cards",
+   "purpose": "把多个项目收成一叠带标签的文件夹",
+   "name": "层叠文件夹标签",
+   "why": "色带逐条堆叠，每条留出一段露在上面，标签凸起可点，读者用文件夹的现成经验理解切换",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 aww-mosbys-files",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "每个文件夹在本页对应哪类对象？",
+    "标签上写对象名还是类别？"
+   ],
+   "reduce_motion": "色带竖排，标签保留",
+   "risks": "可读性：被盖带只露标签",
+   "avoids": [
+    "X3",
+    "X7"
+   ],
+   "mechanism": "position: sticky 的递增偏移加 clip-path 标签",
+   "tasteskill_id": "work-stacked-folders-tabs",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "cards-53",
+   "slot": "cards",
+   "purpose": "让上层卡盖住下层并让下层退到背景",
+   "name": "原生粘性叠卡",
+   "why": "卡片依次粘住，被盖的卡缩小，读者感到深度顺序，全部用样式完成无需脚本",
+   "seen_at": [
+    {
+     "site": "scroll-driven-animations.style stacking-cards（CSS 版）",
+     "url": "https://scroll-driven-animations.style/demos/stacking-cards/css/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    },
+    {
+     "site": "Lucian UX/UI Prompt（元素 223，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#223",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "每张卡在本页是什么单位？",
+    "被盖的卡退到什么程度？"
+   ],
+   "reduce_motion": "卡片竖排完整显示",
+   "risks": "可读性：被盖卡内容不可读。浏览器支持需检查",
+   "avoids": [
+    "X3",
+    "X14"
+   ],
+   "mechanism": "position: sticky 的内层加 animation-timeline: view()；被盖的卡同时变暗",
+   "impl": "examples/mechanisms/css-scroll-timeline",
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "页面有 4 个 sticky 元素和 4 个 ViewTimeline 动画，关键帧只含 transform（缩放）。未见 filter 或不透明度关键帧，因此 why 里“变暗”一项与该演示不符，建议改成“缩小”。"
+  },
+  {
+   "id": "cards-54",
+   "slot": "cards",
+   "purpose": "让列表项随滚动从裁切状态展开成完整卡",
+   "name": "滚动解裁切展开",
+   "why": "卡片初始被裁切、缩小、旋转，滚到触发点时解裁切、放大、转正，读者看到列表一项项被打开",
+   "seen_at": [
+    {
+     "site": "FreeFrontend 的 GSAP ScrollTrigger List Expansion",
+     "url": "https://freefrontend.com/code/gsap-scrolltrigger-list-expansion-2026-03-20/",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "每张卡展开后要读的是什么？",
+    "裁切形状在本页是什么？"
+   ],
+   "reduce_motion": "卡片直接完整显示",
+   "risks": "可读性：展开前内容不可读",
+   "avoids": [
+    "X14"
+   ],
+   "mechanism": "ScrollTrigger scrub 驱动 CSS 变量",
+   "impl": "gsap@固定版本",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "cursor-50",
+   "slot": "cursor",
+   "purpose": "让光标在靠近可点元素时被吸住",
+   "name": "磁吸光标",
+   "why": "指针接近按钮时按钮和光标一起向对方偏移，读者先感到可点再点击",
+   "seen_at": [
+    {
+     "site": "Webflow Custom Dark Magic 与 Codrops Custom Cursor Effects",
+     "url": "https://tympanus.net/codrops/2019/01/31/custom-cursor-effects/",
+     "year": 2019,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "呼吸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "哪几个元素值得被吸住？",
+    "触屏设备没有光标时保留什么？"
+   ],
+   "reduce_motion": "系统光标，按钮无位移",
+   "risks": "可读性：吸附幅度过大会让点击偏移。仅桌面",
+   "avoids": [
+    "X8"
+   ],
+   "mechanism": "mousemove 算偏移，弹簧回位",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "cursor-51",
+   "slot": "cursor",
+   "purpose": "让卡片在指针经过的位置亮起",
+   "name": "光斑跟随卡面",
+   "why": "一团径向亮区跟着指针在卡面移动，读者感到卡片是有表面的，可点范围被暗示",
+   "seen_at": [
+    {
+     "site": "Framer MagnetInteractButton 与 21st.dev 磁吸按钮",
+     "url": "https://21st.dev/@ashwarya19/components/magnetic-cursor-button-attraction-effect",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "亮区在本页代表什么（注意力、可点）？",
+    "卡面是什么材质？"
+   ],
+   "reduce_motion": "卡面无光斑，边框悬停变化保留",
+   "risks": "性能：低。亮度过高会压正文",
+   "avoids": [
+    "X7",
+    "X15"
+   ],
+   "mechanism": "pointermove 写 CSS 变量 --x --y 到径向渐变",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "footer-50",
+   "slot": "footer",
+   "purpose": "让页尾既是邀请又是署名",
+   "name": "邀请加裁切巨字署名",
+   "why": "全屏反色场里上方一句邀请和一个按钮，下方署名放大到被页边裁切，读者最后看到的是一个明确动作和一个记忆点",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 aww-nothin",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "邀请句在本页只做哪一个动作？",
+    "署名词在本页是什么？"
+   ],
+   "reduce_motion": "静态页尾",
+   "risks": "可读性：署名被裁过多时认不出",
+   "avoids": [
+    "X4",
+    "X12"
+   ],
+   "mechanism": "vw 单位字号加 overflow hidden",
+   "tasteskill_id": "footer-invitation-over-cropped-wordmark",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "footer-51",
+   "slot": "footer",
+   "purpose": "让整页最后一个动作大到不可能漏看",
+   "name": "整带巨字按钮",
+   "why": "整条色带是一个链接，一个四到八个字的动词占满宽度，指到时色带反转，读者没有第二个选择",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 aww-lacoste-ace-breaker",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Palette",
+     "url": "https://askpalette.com/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "驱动"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "这个动词是哪个动作？",
+    "点击后去哪里？",
+    "全页颜色稀缺，色带只在终点出现，前面各章是否让出这份稀缺？"
+   ],
+   "reduce_motion": "静态色带，悬停反转保留",
+   "risks": "可读性：词长超过 8 个字时撑不满",
+   "avoids": [
+    "X4",
+    "X12"
+   ],
+   "mechanism": "a 包整带加 clamp() 字号",
+   "tasteskill_id": "cta-giant-word-is-the-button",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "footer-52",
+   "slot": "footer",
+   "purpose": "让页尾像幕布被拉开",
+   "name": "幕布页尾加巨字蒙版",
+   "why": "页面内容像幕布上滑，露出底下早已就位的页尾，页尾含巨字与反向滚动的字带，读者感到有一个收口",
+   "seen_at": [
+    {
+     "site": "21st.dev Motion Footer 组件",
+     "url": "https://21st.dev/@easemize/components/motion-footer.md",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "呼吸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "页尾巨字写什么？",
+    "字带的方向代表什么？"
+   ],
+   "reduce_motion": "静态页尾",
+   "risks": "性能：低。移动端效果弱",
+   "avoids": [
+    "X12"
+   ],
+   "mechanism": "ScrollTrigger 视差加 position: fixed 页尾",
+   "impl": "gsap@固定版本",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "form-50",
+   "slot": "form",
+   "purpose": "让读者填写时感觉是在补全一句话",
+   "name": "句中空格即表单",
+   "why": "结尾句里有一个空，空就是输入框，读者填完这句话即完成提交，表单与文案合一",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 opl-shelf",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "句子的空填什么（邮箱、城市、日期）？",
+    "提交后这句话怎么变？"
+   ],
+   "reduce_motion": "静态句子，输入框保留",
+   "risks": "可读性：窄屏句子折行时空位置漂移",
+   "avoids": [
+    "X4",
+    "X12"
+   ],
+   "mechanism": "inline input 与基线对齐",
+   "tasteskill_id": "cta-blank-in-the-sentence",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "gallery-50",
+   "slot": "gallery",
+   "purpose": "让图片像印刷品落在标题上形成层次",
+   "name": "相纸落在大标题上",
+   "why": "两张带白边的竖图压在超大标题上，图遮住部分字，读者先读到字形再读到图，层叠关系替代了网格",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 aww-decathlon-yestalgia",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "落在标题上的图在本页是哪两件物？",
+    "被遮住的字还能读出标题吗？"
+   ],
+   "reduce_motion": "同样的静态叠放",
+   "risks": "可读性：图遮字过多时标题读不出",
+   "avoids": [
+    "X3",
+    "X13"
+   ],
+   "mechanism": "绝对定位加旋转，z-index 叠放",
+   "tasteskill_id": "gallery-prints-over-headline",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "gallery-51",
+   "slot": "gallery",
+   "purpose": "用一个固定画框承载多张图依次替换",
+   "name": "一框换内容",
+   "why": "画框位置不动，里面的图随滚动或点击换，读者的视线不用移动，差异在同一位置对比",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 opl-archiv",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "画框里依次出现的是同一物的哪几种状态？",
+    "换图由滚动还是点击触发？"
+   ],
+   "reduce_motion": "显示第一张，其余以缩略图列出",
+   "risks": "性能：图多时需预加载",
+   "avoids": [
+    "X3",
+    "X14"
+   ],
+   "mechanism": "sticky 画框加按进度切换 opacity",
+   "tasteskill_id": "gallery-one-frame-changing",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "gallery-52",
+   "slot": "gallery",
+   "purpose": "让图片墙无尽延伸并可拖可滚",
+   "name": "无限视差网格",
+   "why": "网格用数学无缝平铺，滚轮与拖拽都推动，每层按不同速度移动形成视差，读者感到内容无边界",
+   "seen_at": [
+    {
+     "site": "Codrops 无限视差网格教程",
+     "url": "https://tympanus.net/codrops/2025/06/11/building-an-infinite-parallax-grid-with-gsap-and-seamless-tiling/",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "格子里放的是本页哪类作品？",
+    "如何让读者知道总量？"
+   ],
+   "reduce_motion": "普通网格，有限数量",
+   "risks": "性能：图多时内存。可读性：无尽导致无终点",
+   "avoids": [
+    "X3"
+   ],
+   "mechanism": "GSAP 无缝平铺加多层速度",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "gallery-53",
+   "slot": "gallery",
+   "purpose": "让散落的图片无限循环并点开成详情",
+   "name": "错落无限带加 Flip 展开",
+   "why": "图片各以不同速度飘过，点中的一张用 Flip 形变展开成详情，读者的视线跟着同一个物件进入细节",
+   "seen_at": [
+    {
+     "site": "Codrops 无限 GSAP 滚动画廊教程",
+     "url": "https://tympanus.net/codrops/2026/07/30/building-an-infinite-gsap-scroll-gallery-with-parallax-and-flip-transitions/",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "详情里要读到什么？",
+    "关闭后回到哪个位置？"
+   ],
+   "reduce_motion": "普通网格，点击进入详情页",
+   "risks": "性能：同上。需确认教程日期",
+   "avoids": [
+    "X3"
+   ],
+   "mechanism": "GSAP Flip 加循环定位",
+   "impl": "gsap@固定版本",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "gallery-54",
+   "slot": "gallery",
+   "purpose": "让悬停的图像带着手感变形",
+   "name": "着色器悬停位移",
+   "why": "指针经过时图像按位移贴图扭曲再回到原样，读者的指针被图像回应",
+   "seen_at": [
+    {
+     "site": "Codrops WebGL Distortion Hover Effects 与 2025 年 WebGL 图像过渡文章",
+     "url": "https://tympanus.net/codrops/2018/04/10/webgl-distortion-hover-effects/",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "扭曲代表图像的什么属性？",
+    "触屏用什么触发？"
+   ],
+   "reduce_motion": "图像无扭曲",
+   "risks": "性能：每图一个 WebGL 上下文，需限制数量",
+   "avoids": [
+    "X14"
+   ],
+   "mechanism": "three.js 固定版本的着色器与位移贴图",
+   "impl": "examples/mechanisms/depth-parallax-image",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "hero-50",
+   "slot": "hero",
+   "purpose": "让首屏标题本身就是可操作的演示",
+   "name": "可输入的标题",
+   "why": "首屏标题是一个真输入框，预填一个真实例子，读者改字立刻看到产品响应，演示即标题",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 opl-shelf",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "预填的例子在本页是什么？",
+    "输入后下方什么随之变？"
+   ],
+   "reduce_motion": "预填内容的静态标题",
+   "risks": "可读性：低。输入框需有可访问标签",
+   "avoids": [
+    "X4",
+    "X13"
+   ],
+   "mechanism": "input 的字号与行距按标题设定",
+   "tasteskill_id": "showcase-headline-you-can-type",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "hero-51",
+   "slot": "hero",
+   "purpose": "让首屏用一条接缝把标题分成上下两个世界",
+   "name": "水位线标题",
+   "why": "两块平色在半高相接，标题恰好压住接缝，读者看到的是一条线两侧的对照，无需图",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 opl-juggle",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "接缝上下各代表什么对照？",
+    "标题在接缝处的字两侧都能读吗？"
+   ],
+   "reduce_motion": "静态双色场",
+   "risks": "可读性：低。标题跨接缝需确认两侧对比度都过",
+   "avoids": [
+    "X4",
+    "X13"
+   ],
+   "mechanism": "两个 50vh 平色块加居中标题",
+   "tasteskill_id": "waterline-headline",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "hero-52",
+   "slot": "hero",
+   "purpose": "让首屏标题揭示一段视频",
+   "name": "文字遮罩视频",
+   "why": "大号文字当遮罩，滚动时遮罩放大直至视频铺满，读者先读到字再被视频接管",
+   "seen_at": [
+    {
+     "site": "Framer Text Video Reveal 与 Awwwards Interactive Text Mask 灵感页",
+     "url": "https://www.framer.com/marketplace/components/text-video-reveal/",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "遮罩的词在本页是什么？",
+    "视频内容与这个词是什么关系？"
+   ],
+   "reduce_motion": "显示遮罩内静帧加完整标题",
+   "risks": "性能：视频解码。可读性：遮罩词需 3 秒内可读",
+   "avoids": [
+    "X4",
+    "X13",
+    "X16"
+   ],
+   "mechanism": "CSS mask 或 SVG clipPath 加滚动进度缩放",
+   "impl": "examples/mechanisms/css-scroll-timeline",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "hero-53",
+   "slot": "hero",
+   "purpose": "让读者看着产品被拆开来理解结构",
+   "name": "滚动拆解产品",
+   "why": "产品位于中央，随滚动分解为部件并在章节停靠点重新组合，读者用位置关系理解内部结构",
+   "seen_at": [
+    {
+     "site": "XO3D 的滚动 3D 动画服务与 superdesign Exploded View 素材",
+     "url": "https://app.superdesign.dev/library/exploded-view-assembly",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "沉浸",
+    "驱动",
+    "钢"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "要拆的物件在本页是什么名词？",
+    "每个部件的名字是什么？"
+   ],
+   "reduce_motion": "显示拆解后的静图并带标注",
+   "risks": "性能：3D 模型或序列帧体积需预算",
+   "avoids": [
+    "X4",
+    "X16"
+   ],
+   "mechanism": "three.js 固定版本或 canvas 序列帧",
+   "impl": "examples/mechanisms/pinned-3d-scrub",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "hero-54",
+   "slot": "hero",
+   "purpose": "让首屏标题随指针靠近而改变字重",
+   "name": "指针邻近字重标题",
+   "why": "每个字符的字重随指针距离变化，指针移近处变粗，读者的动作直接在字形上看到回应",
+   "seen_at": [
+    {
+     "site": "21st.dev Proximity Type 与 Variable Proximity 组件",
+     "url": "https://21st.dev/@rmahammad/components/proximity-type.md",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "哪个词值得被指针触及？",
+    "触屏设备由什么替代指针？"
+   ],
+   "reduce_motion": "字重固定在中间值",
+   "risks": "可读性：字重过大时换行。需可变字体文件",
+   "avoids": [
+    "X13"
+   ],
+   "mechanism": "font-variation-settings 随距离在 rAF 中写入",
+   "impl": "examples/mechanisms/variable-font-axis",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "hero-55",
+   "slot": "hero",
+   "purpose": "让读者用滚动当播放键看一段连续画面",
+   "name": "滚动擦洗序列帧",
+   "why": "一组导出的帧按滚动进度绘到画布上，画面随滚动前进后退，读者控制节奏",
+   "seen_at": [
+    {
+     "site": "claudskills 的 scroll-animation 与 GSAP 论坛的序列帧写法",
+     "url": "https://claudskills.com/skills/scroll-animation/SKILL.md",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "帧里是哪一个连续过程？",
+    "帧数和分辨率的预算是多少？"
+   ],
+   "reduce_motion": "显示最后一帧",
+   "risks": "性能：帧数大时下载与内存。需分档降帧",
+   "avoids": [
+    "X4"
+   ],
+   "mechanism": "canvas 绘帧，进度映射帧号，pin 固定",
+   "impl": "examples/mechanisms/image-sequence",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "loader-50",
+   "slot": "loader",
+   "purpose": "让加载过程自己成为进场",
+   "name": "计数器接入首图",
+   "why": "百分比计数走到 100 后，加载层淡出，首图放大到位，读者的等待被转成进场动作",
+   "seen_at": [
+    {
+     "site": "Framer Counter Preloader 组件",
+     "url": "https://framer.com/marketplace/components/counter-preloader",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "呼吸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "计数代表真实进度还是装饰？",
+    "首图放大到哪个位置？"
+   ],
+   "reduce_motion": "跳过加载层，直接显示页面",
+   "risks": "可读性：低。假进度会延迟首屏，3 秒内必须可读",
+   "avoids": [
+    "X14",
+    "X16"
+   ],
+   "mechanism": "计数 tween 加首图缩放",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "loader-51",
+   "slot": "loader",
+   "purpose": "让加载层以形状覆盖再揭开",
+   "name": "形状展开的加载",
+   "why": "三个形状依次从中心扩张覆盖全屏，最后一层结束后露出页面，读者看到一个有节奏的开场",
+   "seen_at": [
+    {
+     "site": "Framer Haytham Preloader",
+     "url": "https://www.framer.com/marketplace/components/haytham-preloader-12/",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "形状来自本页哪个物件？",
+    "总时长是否小于 2 秒？"
+   ],
+   "reduce_motion": "跳过加载层",
+   "risks": "可读性：时长过长延迟首屏",
+   "avoids": [
+    "X14"
+   ],
+   "mechanism": "SVG 形状 scale 序列",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "nav-50",
+   "slot": "nav",
+   "purpose": "让导航在滚动后缩成一枚胶囊并让出屏幕",
+   "name": "收成胶囊的导航",
+   "why": "向下滚动时整条导航收成只显示当前项的胶囊，向上滚动再展开，读者阅读时屏幕被让出来，需要时又在手边",
+   "seen_at": [
+    {
+     "site": "Framer neo pill nav 与 21st.dev glass-nav 组件",
+     "url": "https://www.framer.com/marketplace/components/neo-pill-nav/",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Lucian UX/UI Prompt（元素 212，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#212",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "胶囊里显示什么当前状态？",
+    "展开后有几项？"
+   ],
+   "reduce_motion": "导航保持展开，无收缩",
+   "risks": "性能：背景模糊开销大。锚点会落在条下",
+   "avoids": [
+    "X1",
+    "X15"
+   ],
+   "mechanism": "滚动方向检测加宽度过渡；累计滚动差值超过阈值才改变方向状态，防抖",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "nav-51",
+   "slot": "nav",
+   "purpose": "让读者在长页中随时知道在哪一节并能跳转",
+   "name": "滚动锚点坞",
+   "why": "一个贴边的小坞按当前章节高亮并可点击跳转，章节多时也只占一条边",
+   "seen_at": [
+    {
+     "site": "Framer Scroll Anchor Dock",
+     "url": "https://www.framer.com/marketplace/components/scroll-anchor-dock/",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "坞里每一格对应本页哪一节？",
+    "当前节如何标记？"
+   ],
+   "reduce_motion": "静态坞，仍可点击",
+   "risks": "可读性：节过多时格子太小",
+   "avoids": [
+    "X10"
+   ],
+   "mechanism": "IntersectionObserver 驱动 aria-current",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "overlay-50",
+   "slot": "overlay",
+   "purpose": "让缩略图原地长成详情",
+   "name": "缩略图形变展开",
+   "why": "小卡片扩张成详情视图，读者保持对同一物体的追踪，不会在两页之间迷路",
+   "seen_at": [
+    {
+     "site": "Octet Design 的 2025 页面转场汇总",
+     "url": "https://octet.design/journal/best-page-transition-examples",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "呼吸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "缩略图和详情共享哪一个元素？",
+    "关闭时回到哪里？"
+   ],
+   "reduce_motion": "直接显示详情",
+   "risks": "可读性：形变中途内容错位。需处理焦点",
+   "avoids": [
+    "X14"
+   ],
+   "mechanism": "View Transitions 或 Flip",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "panel-50",
+   "slot": "panel",
+   "purpose": "让读者用自己的数字得到结果",
+   "name": "滑块决定的大数字",
+   "why": "页面提问，一个真实控件放在下面，读者拖动滑块，大数字随之重算，结果是读者自己的而不是我方的承诺",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 本库未记站点",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页的计算公式有真实来源吗？",
+    "滑块的单位和范围是什么？"
+   ],
+   "reduce_motion": "显示默认值的静态数字",
+   "risks": "可读性：低。公式不真实时会误导",
+   "avoids": [
+    "X16"
+   ],
+   "mechanism": "input range 事件重算并写入 tabular-nums 数字",
+   "tasteskill_id": "stats-figure-set-by-a-slider",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "pricing-50",
+   "slot": "pricing",
+   "purpose": "让价格像账单一样可核对",
+   "name": "清单式小票",
+   "why": "价格由基础价加选项逐行列出，底边锯齿像一张纸，读者像看收据一样逐项核对",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 opl-poetry-camera",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页的价格由哪几项相加？",
+    "纸的底边在本页是什么形状？"
+   ],
+   "reduce_motion": "静态小票",
+   "risks": "可读性：行数超过 8 行时过长",
+   "avoids": [
+    "X3",
+    "X7"
+   ],
+   "mechanism": "clip-path: polygon() 做锯齿边",
+   "tasteskill_id": "pricing-itemised-receipt",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "pricing-51",
+   "slot": "pricing",
+   "purpose": "让价格像一张可撕的票",
+   "name": "带票根的票",
+   "why": "一张两段式面板，两段交界处上下各咬出半圆缺口，主体放价格，票根放条件，读者靠物件经验分清主次",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 本库未记站点",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "票根在本页放什么条件？",
+    "缺口位置对应哪一条分隔？"
+   ],
+   "reduce_motion": "静态票",
+   "risks": "可读性：低。缺口在窄屏需改为横置",
+   "avoids": [
+    "X3",
+    "X7"
+   ],
+   "mechanism": "grid 加两个与背景同色的圆",
+   "tasteskill_id": "pricing-ticket-with-stub",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "rows-50",
+   "slot": "rows",
+   "purpose": "让读者扫一列名字并立刻看到所指项目的预览",
+   "name": "大名字索引带固定预览",
+   "why": "名字本身是目录，当前名全墨色，其余降低透明度，指到哪行右侧预览就换成哪项，不用点进去就能比较",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 opl-belen-jones",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "每行名字在本页是项目、角色还是章节？",
+    "触屏没有悬停时由什么触发预览？"
+   ],
+   "reduce_motion": "名字列表保留，预览改为点击展开",
+   "risks": "可读性：触屏无悬停，需改点击",
+   "avoids": [
+    "X3",
+    "X14"
+   ],
+   "mechanism": "hover 与 focus 切换 aria-current，预览按 data-id 换图",
+   "tasteskill_id": "work-big-names-fixed-preview",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "rows-51",
+   "slot": "rows",
+   "purpose": "在一条横带里放下几十个名字的完整索引",
+   "name": "书脊索引",
+   "why": "名字旋转成竖排书脊并排，指到哪条哪条抽出，二三十项压进一行高度，读者仍能扫完全部",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 opl-adam-ho",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "书脊在本页是哪类名字？",
+    "项超过 40 时怎么分层？"
+   ],
+   "reduce_motion": "书脊并排保持，悬停抽出改为点击",
+   "risks": "可读性：竖排文字长名难读",
+   "avoids": [
+    "X3"
+   ],
+   "mechanism": "writing-mode: vertical-rl 加悬停宽度变化",
+   "tasteskill_id": "work-book-spine-index",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "steps-50",
+   "slot": "steps",
+   "purpose": "让读者看着同一个界面片段随步骤改变状态",
+   "name": "固定舞台随语句换态",
+   "why": "右侧舞台固定一个真实界面片段，左侧每句话滚到时片段切到对应状态，步骤与结果在同一位置对照",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 opl-juggle",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "舞台里放本页哪个真实界面片段？",
+    "每一步片段改变哪一个字段？"
+   ],
+   "reduce_motion": "舞台显示最终状态，语句竖排并各配一张状态静图",
+   "risks": "性能：低。语句块高度不够时状态来不及读",
+   "avoids": [
+    "X10",
+    "X14"
+   ],
+   "mechanism": "sticky 舞台加 IntersectionObserver 切换 data-state",
+   "impl": "examples/mechanisms/scroll-story",
+   "tasteskill_id": "how-it-works-pinned-fragment-changing-state",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "steps-51",
+   "slot": "steps",
+   "purpose": "让读者按自己的节奏横向翻过一串时刻",
+   "name": "可拖拽时刻带",
+   "why": "一行比屏幕宽的大图条，下方一根进度条显示已滑到哪里，读者既能拖也能点前后钮，位置感不丢",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 opl-sarah-matt-wedding",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "一个时刻在本页是哪种事件？",
+    "进度条的终点代表什么？"
+   ],
+   "reduce_motion": "原生横向滚动保留，无动效",
+   "risks": "可读性：横滑可发现性低，需露出下一项边缘",
+   "avoids": [
+    "X3",
+    "X14"
+   ],
+   "mechanism": "overflow-x、scroll-snap、scroll 事件算进度",
+   "impl": "原生 CSS scroll-snap",
+   "tasteskill_id": "how-it-works-drag-row-of-moments",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "steps-52",
+   "slot": "steps",
+   "purpose": "让读者看着一条线把步骤连起来",
+   "name": "滚动绘线时间线",
+   "why": "路径随滚动被画出，终点圆点沿路径移动，读者用线的长度感知已走到第几步",
+   "seen_at": [
+    {
+     "site": "Codrops 滚动驱动 SVG 地图动画教程",
+     "url": "https://tympanus.net/codrops/2026/05/21/creating-scroll-driven-svg-map-animations-with-gsap",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "呼吸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "线连的是本页哪几个节点？",
+    "终点圆点在本页代表什么？"
+   ],
+   "reduce_motion": "路径完整画出，圆点在终点",
+   "risks": "性能：低。路径太复杂时在移动端掉帧",
+   "avoids": [
+    "X10",
+    "X14"
+   ],
+   "mechanism": "stroke-dashoffset 加 ScrollTrigger scrub",
+   "impl": "gsap@固定版本",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "steps-53",
+   "slot": "steps",
+   "purpose": "让纵向滚动带着读者横向走过一排章节",
+   "name": "固定舞台横移",
+   "why": "一个高区块里的内容被固定，滚动距离换算成横向位移，读者用习惯的滚动方向读一排内容",
+   "seen_at": [
+    {
+     "site": "scroll-driven-animations.style horizontal-section（CSS 版）",
+     "url": "https://scroll-driven-animations.style/demos/horizontal-section/css/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "横排里有几节？",
+    "读者怎么知道已滚完这排？"
+   ],
+   "reduce_motion": "节竖排",
+   "risks": "可读性：被劫持的滚动令人烦，需控制长度",
+   "avoids": [
+    "X14"
+   ],
+   "mechanism": "view timeline 绑定 sticky 区块的 translateX",
+   "impl": "examples/mechanisms/css-scroll-timeline",
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "高 2885px 的外层里有一个 sticky 的 pin-wrap-sticky，1 个 ViewTimeline 动画把内容从 none 推到 translateX(-100% + 视口宽)，纵向滚动换算成横向位移。"
+  },
+  {
+   "id": "testimonial-50",
+   "slot": "testimonial",
+   "purpose": "让证言像产品里的真实评论一样可信",
+   "name": "放大的评论组件",
+   "why": "把产品里的评论组件整体放大后当证言，保留头像与时间等原有元素，读者认出这是产品界面而不是排版",
+   "seen_at": [
+    {
+     "site": "tasteskill 库记的站点 opl-ohhmydesign",
+     "url": "",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页产品里的哪个组件能装证言？",
+    "证言来源是否有授权？"
+   ],
+   "reduce_motion": "静态组件",
+   "risks": "可读性：低。需有真实证言来源",
+   "avoids": [
+    "X3"
+   ],
+   "mechanism": "em 单位组件加根字号放大",
+   "tasteskill_id": "testimonial-quote-as-comment-thread",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "transition-50",
+   "slot": "transition",
+   "purpose": "让两个页面间一个元素保持同一身份",
+   "name": "跨文档共享元素转场",
+   "why": "两页各给元素同名标记，浏览器自己完成位移与缩放，读者认为是同一物体从一页走到另一页",
+   "seen_at": [
+    {
+     "site": "MDN 与 frontendchecklist 的 View Transitions 说明",
+     "url": "https://frontendchecklist.io/rules/css/view-transitions",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "驱动"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "哪个元素需要跨页保持身份？",
+    "不支持的浏览器直接跳转可接受吗？"
+   ],
+   "reduce_motion": "直接跳转",
+   "risks": "可读性：低。名字重复会出错",
+   "avoids": [
+    "X14"
+   ],
+   "mechanism": "@view-transition 加 view-transition-name",
+   "impl": "examples/mechanisms/cross-doc-view-transition",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "transition-51",
+   "slot": "transition",
+   "purpose": "让页面切换像一幅遮罩揭开",
+   "name": "蒙版揭示转场",
+   "why": "新页以形状蒙版从旧页之上揭开，读者感到进入了另一处空间",
+   "seen_at": [
+    {
+     "site": "Awwwards 灵感页 Mask Reveal Page Transition（Amaterasu）",
+     "url": "https://www.awwwards.com/inspiration/mask-reveal-page-transition-amaterasu",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "蒙版形状来自本页哪个物件？",
+    "转场时长是多少？"
+   ],
+   "reduce_motion": "即时切换",
+   "risks": "性能：低。时长超过 700 ms 令人烦",
+   "avoids": [
+    "X14"
+   ],
+   "mechanism": "clip-path 动画或 SVG 蒙版",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "transition-52",
+   "slot": "transition",
+   "purpose": "让同一个元素跨状态形变而不跳切",
+   "name": "同名元素形变",
+   "why": "给元素一个共享标识，状态变化时它的位置、尺寸、圆角一起平滑过渡，读者不会在两个状态间失去它",
+   "seen_at": [
+    {
+     "site": "Motion 库 layout 与 layoutId 文档",
+     "url": "https://www.mintlify.com/motiondivision/motion/guides/layout-transitions",
+     "year": 2025,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "驱动"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "哪个元素在状态间保持身份？",
+    "形变中内容文字怎么处理？"
+   ],
+   "reduce_motion": "状态直接切换",
+   "risks": "性能：低。形变中文字被拉伸",
+   "avoids": [
+    "X14"
+   ],
+   "mechanism": "Motion layout 与 layoutId，FLIP 原理",
+   "impl": "motion@固定版本",
+   "added": "2026-10-17",
+   "used_in": []
+  },
+  {
+   "id": "page-09",
+   "slot": "page",
+   "purpose": "让多章页面靠同一个实体的不同机位换章，而不是靠分隔线",
+   "name": "一台机器多个机位",
+   "why": "章节过渡用镜头距离表达：全景、中景、近景、舞台、平面图、记录单。读者记住一个物体，不是七张卡",
+   "seen_at": [
+    {
+     "site": "本库 show-01",
+     "url": "examples/finished/show-01/page/index.html",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "钢",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "你的内容里有没有一个实体，能被走近、拆开、画成图纸？",
+    "哪两章之间的机位跳得最远，中间要不要补一个过渡机位？",
+    "安静章用这个实体的哪种\"图纸\"语体？"
+   ],
+   "reduce_motion": "机位切换变成静止的六张不同距离的画面，顺序不变",
+   "risks": "一致性：实体与内容结构不对应时，机位换章变成硬套；性能：多个实时 3D 机位在无 GPU 机器上要合并渲染器",
+   "avoids": [
+    "X3",
+    "X17"
+   ],
+   "structure": "机位 5 到 7 个；相邻机位距离比不超过 4 倍；安静章 1 到 2 个",
+   "mechanism": "同一模型工厂、单渲染器 setScissor 分区、安静章用导出静帧或 SVG 平面图",
+   "impl": "examples/finished/show-01/page/index.html",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "show-01"
+   ]
+  },
+  {
+   "id": "panel-06",
+   "slot": "panel",
+   "purpose": "让一个\"从 A 到 B\"的物理决定在低端机上也能被看见",
+   "name": "双帧静帧动作",
+   "why": "同一模型导出张开帧与合上帧，滚入后停 300 ms 交叉淡入。一次动作说明一个决定，成本是两张图，手机与无 GPU 机器同样可见",
+   "seen_at": [
+    {
+     "site": "本库 show-01",
+     "url": "examples/finished/show-01/page/index.html",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "钢"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "这一章的决定能否用一个\"从 A 到 B\"的物理动作表示？",
+    "A 帧与 B 帧之间只差一个零件吗？多于一个就拆成两组",
+    "淡入之后读者接着看什么？"
+   ],
+   "reduce_motion": "直接显示 B 帧（终态），A 帧不出现",
+   "risks": "可读性：两帧差异小于画面 10% 时读者看不出动作；一致性：帧与实时 3D 章的光向或底色不同会断开",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "帧 960×600；每帧 ≤60 KB；停 300 ms；淡入 400 ms；第 2 组延迟 160 ms",
+   "mechanism": "<picture> 两层叠放 + IntersectionObserver 一次性 class 切换 + opacity transition",
+   "impl": "examples/finished/show-01/page/index.html",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "show-01"
+   ]
+  },
+  {
+   "id": "rows-06",
+   "slot": "rows",
+   "purpose": "让八条以上的清单一眼读完，细看的人再展开",
+   "name": "三组短句加折叠全文",
+   "why": "三组短句立在舞台旁，滚动高亮当前组，全文进折叠。读者先得到三句必须记住的话，高亮跟着舞台上的物体走",
+   "seen_at": [
+    {
+     "site": "本库 show-01",
+     "url": "examples/finished/show-01/page/index.html",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "静"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "八条以上的清单里，哪三句是委托人必须记住的？",
+    "高亮的组和舞台上的哪个物体对应？",
+    "折叠的标题用读者的话怎么说？"
+   ],
+   "reduce_motion": "三组全部常显，无高亮推进，折叠仍可点开",
+   "risks": "可读性：分组后每组说明超过 2 行就失去\"一眼读完\"；一致性：高亮进度与舞台进度不同步时读者困惑",
+   "avoids": [
+    "X3",
+    "X10"
+   ],
+   "structure": "3 组；短句 1 行；说明 ≤2 行；折叠默认收起；高亮按滚动进度分 3 段",
+   "mechanism": "details/summary + 滚动进度分段 class",
+   "impl": "examples/finished/show-01/page/index.html",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "show-01"
+   ]
+  },
+  {
+   "id": "testimonial-01",
+   "slot": "testimonial",
+   "purpose": "让\"改好了\"变成外部人打出的可读数字，不用形容词",
+   "name": "前后评分刻度",
+   "why": "一条刻度、两个圆点、一条及格虚线、一句\"评分人只看页面\"。前后对比由位置差表达，读者自己读出进步幅度",
+   "seen_at": [
+    {
+     "site": "本库 show-01",
+     "url": "examples/finished/show-01/page/index.html",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "wechat-mini",
+    "print"
+   ],
+   "adapt": [
+    "你的成果有没有一个外部人打出的前后数字？",
+    "及格线在你的领域叫什么？",
+    "评分人是谁，一句话说清他不看什么？"
+   ],
+   "reduce_motion": "无动效，刻度即终态",
+   "risks": "可信度：数字来源不写清时读者当成自夸；可读性：刻度少于 5 格时位置差看不出",
+   "avoids": [
+    "X12",
+    "X16"
+   ],
+   "structure": "刻度 5 格；圆点直径 ≥12 px；及格线虚线 1 px；注 14 px",
+   "mechanism": "内联 SVG",
+   "impl": "examples/finished/show-01/page/index.html",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "show-01"
+   ]
+  },
+  {
+   "id": "page-10",
+   "slot": "page",
+   "purpose": "让安静章收声时仍是同一个实体",
+   "name": "同一实体的工程平面图",
+   "why": "把 3D 章里的实体画成工程平面图，禁区用红虚线框标位置。换图纸语体换口气，与 3D 章是同一物体，不是另一套插图",
+   "seen_at": [
+    {
+     "site": "本库 show-01",
+     "url": "examples/finished/show-01/page/index.html",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸",
+    "钢"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "print"
+   ],
+   "adapt": [
+    "哪一章该收声？",
+    "收声时还能不能是同一个实体？",
+    "平面图上标的位置与 3D 章的哪个部位对应？"
+   ],
+   "reduce_motion": "无动效",
+   "risks": "一致性：平面图比例与 3D 章不一致时读者对不上；可读性：窄屏下框内注记要退成数字编号",
+   "avoids": [
+    "X3",
+    "X7"
+   ],
+   "structure": "1 张平面图；禁区 ≤4 个；≤480 px 时框内只留 1 位数字",
+   "mechanism": "内联 SVG，红虚线 stroke-dasharray",
+   "impl": "examples/finished/show-01/page/index.html",
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "show-01"
+   ]
+  },
+  {
+   "id": "panel-07",
+   "slot": "panel",
+   "purpose": "让读者看到一个处理前后的变化并比较两档结果",
+   "name": "翻正加看片镜",
+   "why": "同一张图先以处理前状态出现，滚入或点击后翻成处理后状态；一枚放大镜按两档参数的比例取样，差别由镜内颗粒粗细直接显示，不用文字解释",
+   "seen_at": [
+    {
+     "site": "本库 冷启动 v2 胶片冲扫页",
+     "url": "evals/coldstart-v2-20261017/run/04-页面/index.html",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "本库已做出"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "纸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "本页的'处理前'和'处理后'分别是什么实物？",
+    "两档的差别能不能用一个可量化的比例表示（像素、粒度、时间）？",
+    "放大镜取样的位置是读者选还是固定？"
+   ],
+   "reduce_motion": "直接显示处理后状态，放大镜静止在固定位置，两档切换无过渡",
+   "risks": "可读性：示意图没有照片质感时读者把'处理后'当成插画；一致性：放大镜比例与真实参数不符会误导",
+   "avoids": [
+    "X3",
+    "X14"
+   ],
+   "structure": "图 16:10；放大镜直径 0.25 图宽；翻转 600 ms 一次；两档切换 200 ms",
+   "mechanism": "CSS filter: invert 加色罩过渡；clip-path 圆形取样；按钮切换 data-grade",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [
+    "coldstart-v2"
+   ]
+  },
+  {
+   "id": "form-02",
+   "slot": "form",
+   "purpose": "让读者用一次长按确认不可撤销的提交",
+   "name": "长按填充确认钮",
+   "why": "按住时填充从一侧升起，松手即退回，读者用按住的时长表达确认，误触不会提交",
+   "seen_at": [
+    {
+     "site": "React Bits 组件库",
+     "url": "https://reactbits.dev/micro/hold-button",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "钢"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "这个提交在本页是什么动作，值得按住多久？",
+    "填充升起的方向对应本页的什么物理意象（水位、进度、封口）？",
+    "完成后文案换成什么已发生的事实？"
+   ],
+   "reduce_motion": "未核：站点未验证。建议去掉动效后改为按住 2000 ms 的纯文字倒计时，完成态文案不变",
+   "risks": "可读性：触屏上长按与系统菜单冲突，按住时长超过 2 秒时读者以为按钮失灵",
+   "avoids": [
+    "X7",
+    "X12"
+   ],
+   "structure": "高 44 px；圆角 14 px；按住 2000 ms 填满；完成后文字模糊过渡为“已删除”对勾态",
+   "mechanism": "pointerdown 计时、clip 或 transform 填充、完成后文字交叉模糊",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "亲眼见到按住时填充升起、松手退回；Reduce Motion 未核"
+  },
+  {
+   "id": "form-03",
+   "slot": "form",
+   "purpose": "让读者用一次滑动完成付款或提交，并看见处理中到完成的状态",
+   "name": "滑动提交柄",
+   "why": "把手沿轨道滑到头才提交，处理中把手变旋转态，完成后展开成状态条，读者在同一个物件上看到整个过程",
+   "seen_at": [
+    {
+     "site": "React Bits 组件库",
+     "url": "https://reactbits.dev/micro/slide-commit",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "钢",
+    "屏幕"
+   ],
+   "carriers": [
+    "mobile-web",
+    "wechat-mini",
+    "ios"
+   ],
+   "adapt": [
+    "滑动的距离对应本页的什么承诺？",
+    "失败时轨道回到起点还是停在错误态，读者怎么重试？",
+    "完成态展开成什么信息（金额、单号）？"
+   ],
+   "reduce_motion": "未核：站点未验证。建议去掉动效后保留一个二次确认按钮，状态文案分三态：待提交、处理中、已完成",
+   "risks": "可读性：读屏用户无法拖动，需要键盘或按钮替代路径，否则提交被锁死",
+   "avoids": [
+    "X7"
+   ],
+   "structure": "轨道高约 56 px、宽约 280 px；把手直径约 48 px；模拟延迟 1200 ms；成功态与失败态各有独立文案",
+   "mechanism": "pointer 拖动、translateX 限位、状态机三态",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "打开了组件页，只见静态界面与参数面板，动效未见；Reduce Motion 未核"
+  },
+  {
+   "id": "form-04",
+   "slot": "form",
+   "purpose": "让读者输入一次性验证码并减少手输错误",
+   "name": "弹入式验证码槽",
+   "why": "每位数字弹入各自的槽，支持粘贴与短信自动填充，读者看到一位一位被接住，错一位只改一位",
+   "seen_at": [
+    {
+     "site": "React Bits 组件库",
+     "url": "https://reactbits.dev/micro/code-slots",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "屏幕"
+   ],
+   "carriers": [
+    "mobile-web",
+    "wechat-mini",
+    "ios"
+   ],
+   "adapt": [
+    "验证码在本页是几位，槽间距怎么表达分组？",
+    "出错时哪一槽提示，其余槽保留吗？",
+    "粘贴整串时是否逐位弹入，还是一次到位？"
+   ],
+   "reduce_motion": "未核：站点未验证。建议去掉动效后保留槽位与光标，数字直接出现",
+   "risks": "可读性：自动填充与粘贴时动画排队，6 位总时长超过 600 ms 会让读者以为卡住",
+   "avoids": [
+    "X7"
+   ],
+   "structure": "槽数 4 到 6；单槽宽高相等；弹入单位 60 到 80 ms 错开",
+   "mechanism": "聚焦管理、input autocomplete=one-time-code、弹簧位移",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "打开了该组件页，只读到站方描述，演示在 18 秒内没渲染出来；Reduce Motion 未核"
+  },
+  {
+   "id": "pricing-01",
+   "slot": "pricing",
+   "purpose": "让读者领取或兑换一个有期限的权益，并感到权益已被兑现",
+   "name": "可撕票根",
+   "why": "票根沿穿孔线被手撕下并掉落，读者的撕动作等于兑换动作，权益的开始有一个不可逆的物理事件",
+   "seen_at": [
+    {
+     "site": "React Bits 组件库",
+     "url": "https://reactbits.dev/micro/tear-ticket",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "票根撕下后读者得到什么（优惠码、入场资格、试用期）？",
+    "撕下前后主体面板显示什么变化？",
+    "票面倾斜多少度才不让文字变难读？"
+   ],
+   "reduce_motion": "未核：站点未验证。建议去掉动效后用一个“领取”按钮，领取后票根区变灰并显示已领取日期",
+   "risks": "可读性：票面倾斜时小字变难读，票根字号低于 12 px 时尤其明显",
+   "avoids": [
+    "X3",
+    "X7"
+   ],
+   "structure": "票面横向约 460 px、高约 250 px；倾斜约 3 度；票根约占宽度 25%；穿孔点沿竖线排列",
+   "mechanism": "pointer 拖动进度驱动撕裂路径、纤维粒子",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "打开了组件页，只见静态界面与参数面板，动效未见；Reduce Motion 未核"
+  },
+  {
+   "id": "testimonial-02",
+   "slot": "testimonial",
+   "purpose": "让读者在同一张卡上看到一句评价与说话人的身份凭据",
+   "name": "双面翻转证言卡",
+   "why": "卡片正面放评价，背面放说话人与结果数据，读者用一次点击或拖动在同一位置对照说法与凭据",
+   "seen_at": [
+    {
+     "site": "React Bits 组件库",
+     "url": "https://reactbits.dev/micro/flip-card",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "背面是什么凭据（项目、数据、日期、原始来源）？",
+    "翻转的触发是点击还是拖动，触屏上哪个更不易误触？",
+    "一屏放几张，多张时翻转状态互相独立吗？"
+   ],
+   "reduce_motion": "未核：站点未验证。建议去掉动效后正反面上下堆叠，同时可见",
+   "risks": "可读性：背面内容在不翻转时读者看不到，关键凭据不应只放背面",
+   "avoids": [
+    "X3",
+    "X7",
+    "X10"
+   ],
+   "structure": "单卡宽高比约 3:4；翻转用弹簧落定；一屏卡数不超过 3",
+   "mechanism": "transform-style: preserve-3d、rotateY、弹簧",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "打开了该组件页，只读到站方描述，演示在 18 秒内没渲染出来；Reduce Motion 未核"
+  },
+  {
+   "id": "cursor-01",
+   "slot": "cursor",
+   "purpose": "让读者的指针被目标物锁定，知道哪里可点",
+   "name": "吸附目标的准星光标",
+   "why": "光标四角括号在进入目标时收拢成目标的形状，读者知道指针已经识别对象，可点范围由括号轮廓表达",
+   "seen_at": [
+    {
+     "site": "React Bits 组件库",
+     "url": "https://reactbits.dev/animations/target-cursor",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "页面里哪些元素算目标，哪些不算？",
+    "括号收拢的形状对应目标的圆角吗？",
+    "触屏上光标不存在，目标态用什么替代？"
+   ],
+   "reduce_motion": "未核：站点未验证。建议去掉动效后用目标自身的聚焦环代替括号",
+   "risks": "性能：指针移动每帧改多个括号位置，低端机上滞后超过 100 ms 时读者感到粘滞",
+   "avoids": [
+    "X7"
+   ],
+   "structure": "括号 4 个；每角长度约 10 px；收拢过渡 100 到 200 ms",
+   "mechanism": "pointermove 追踪、getBoundingClientRect 吸附、CSS 变量",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "打开了该组件页，只读到站方描述，演示在 18 秒内没渲染出来；Reduce Motion 未核"
+  },
+  {
+   "id": "cursor-02",
+   "slot": "cursor",
+   "purpose": "让读者的指针在页面上留下一格一格的轨迹，并映出页面的网格",
+   "name": "指针点亮网格格",
+   "why": "指针经过的格子亮起再逐格淡出，读者的每一次移动都被网格量化成可读的足迹，网格本身成为背景结构",
+   "seen_at": [
+    {
+     "site": "React Bits 组件库",
+     "url": "https://reactbits.dev/animations/cursor-grid",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "页面的网格单位在本页是什么，格子尺寸与它对齐吗？",
+    "足迹淡出多长，是否会盖住正文？",
+    "点击时的脉冲回应什么？"
+   ],
+   "reduce_motion": "未核：站点未验证。建议去掉动效后保留静态网格底纹，无足迹",
+   "risks": "可读性：格子亮度叠在正文下时会降低对比，正文区需要排除或降透明度",
+   "avoids": [
+    "X14",
+    "X15"
+   ],
+   "structure": "格边长 24 到 48 px；淡出 400 到 800 ms；点击脉冲一圈",
+   "mechanism": "canvas 或 CSS 格、pointermove 采样、衰减",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "打开了该组件页，只读到站方描述，演示在 18 秒内没渲染出来；Reduce Motion 未核"
+  },
+  {
+   "id": "loader-01",
+   "slot": "loader",
+   "purpose": "让读者在等待一个无法预估时长的任务时知道它仍在工作",
+   "name": "点阵波加计时器",
+   "why": "3×3 点阵按轨道顺序依次变亮，旁边的秒表实时走数，读者看到节奏和已等待的时间，两者共同说明任务没有卡住",
+   "seen_at": [
+    {
+     "site": "React Bits 组件库",
+     "url": "https://reactbits.dev/micro/lattice-loader",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "任务状态有几种（工作中、完成、出错），每种点阵怎么变？",
+    "计时器显示到什么单位（秒、分）？",
+    "点阵尺寸与旁边文字的字高对齐吗？"
+   ],
+   "reduce_motion": "未核：站点未验证。建议去掉动效后点阵静止、保留文字与秒表",
+   "risks": "可读性：任务超过 60 秒时秒表读数需要换单位，否则读者无法比较时长",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "点阵 3×3；单点 6 px；点距 2 px；行内与文字基线对齐",
+   "mechanism": "grid 点阵、延迟错开的亮度动画、requestAnimationFrame 计时",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "打开了组件页，只见静态界面与参数面板，动效未见；Reduce Motion 未核"
+  },
+  {
+   "id": "overlay-04",
+   "slot": "overlay",
+   "purpose": "让读者收到操作反馈，并能撤销或下滑清除",
+   "name": "带保险丝倒计时的轻提示",
+   "why": "提示条底边有一根随剩余时间缩短的细线，读者看见还能撤销多久，下滑手势清除，不用找关闭钮",
+   "seen_at": [
+    {
+     "site": "React Bits 组件库",
+     "url": "https://reactbits.dev/micro/swipe-toast",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "提示里的操作是什么，撤销窗口多长是合理的？",
+    "细线缩短的方向与读者的时间感一致吗？",
+    "同时出现多条提示时怎么排布？"
+   ],
+   "reduce_motion": "未核：站点未验证。建议去掉动效后细线改为静态文字“还剩 N 秒”，提示条直接淡入淡出",
+   "risks": "可读性：倒计时线过细时在小屏上看不见，线粗低于 2 px 时依赖颜色区分",
+   "avoids": [
+    "X7"
+   ],
+   "structure": "宽 356 px；圆角 12 px；进出位移 400 ms；停留约 4 到 6 秒",
+   "mechanism": "pointer 下滑关闭、scaleX 倒计时线、位移进出",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "打开了组件页，只见静态界面与参数面板，动效未见；Reduce Motion 未核"
+  },
+  {
+   "id": "overlay-05",
+   "slot": "overlay",
+   "purpose": "让读者连续查看一排图标的说明而不用反复等待",
+   "name": "暖启动提示组",
+   "why": "第一个提示等待一小段延迟，之后相邻图标的提示在暖态内立即打开，读者扫过一排时不再被延迟打断",
+   "seen_at": [
+    {
+     "site": "React Bits 组件库",
+     "url": "https://reactbits.dev/micro/warm-tooltip",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "这一排图标有几个，需要提示的是哪几个？",
+    "暖态在离开多久后重置？",
+    "提示的位置是否会遮住下一个图标？"
+   ],
+   "reduce_motion": "未核：站点未验证。建议去掉动效后提示直接出现，无淡入",
+   "risks": "可读性：触屏无悬停，提示内容需要另一条路径（长按或标签文字）",
+   "avoids": [
+    "X7"
+   ],
+   "structure": "首次延迟 300 到 500 ms；暖态内延迟 0；暖态保持 500 到 1000 ms",
+   "mechanism": "共享计时器上下文、悬停与聚焦双触发",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "打开了该组件页，只读到站方描述，演示在 18 秒内没渲染出来；Reduce Motion 未核"
+  },
+  {
+   "id": "gallery-01",
+   "slot": "gallery",
+   "purpose": "让读者在一圈图片里滑到想看的一张并点中放大",
+   "name": "三维图环",
+   "why": "图片排成一个可拖动的三维环，释放后带动量并吸附到最近一张，点击聚焦，读者靠手感而不是按钮选图",
+   "seen_at": [
+    {
+     "site": "React Bits 组件库",
+     "url": "https://reactbits.dev/components/circular-carousel",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "沉浸",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "环上放几张图，数量少于 6 时环是否太空？",
+    "聚焦后的详情去哪里（本位放大还是跳转）？",
+    "没有拖动能力的读者用什么选图？"
+   ],
+   "reduce_motion": "未核：站点未验证。建议去掉动效后改成水平吸附滚动列，当前项居中",
+   "risks": "性能：3D 变换与弯曲卡面在中低端手机上掉帧，图数超过 12 张时更明显",
+   "avoids": [
+    "X3",
+    "X7"
+   ],
+   "structure": "环半径约 1.5 倍卡宽；吸附动量衰减 400 到 800 ms；可见图 5 到 7 张",
+   "mechanism": "CSS 3D 或 WebGL、pointer 动量、吸附",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "打开了该组件页，只读到站方描述，演示在 18 秒内没渲染出来；Reduce Motion 未核"
+  },
+  {
+   "id": "gallery-02",
+   "slot": "gallery",
+   "purpose": "让读者在一张图上用指针把印刷网点显影成真实照片",
+   "name": "网点显影",
+   "why": "图先以半色调网点呈现，指针下的网点膨胀融合成原图，读者用指针决定哪一块变清晰",
+   "seen_at": [
+    {
+     "site": "React Bits 组件库",
+     "url": "https://reactbits.dev/animations/halftone-reveal",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "颗粒",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "网点图与原图在本页各代表什么（草稿与定稿、旧照与新照）？",
+    "显影半径多大，离开后是否退回网点？",
+    "触屏上用什么触发显影（点按或自动扫过）？"
+   ],
+   "reduce_motion": "未核：站点未验证。建议去掉动效后直接显示原图，网点图作为缩略态",
+   "risks": "性能：画布逐点绘制，图尺寸超过 1600 px 宽时每帧耗时增加，读者看到掉帧",
+   "avoids": [
+    "X7",
+    "X15"
+   ],
+   "structure": "网点间距 6 到 10 px；显影半径 80 到 160 px；还原 300 到 600 ms",
+   "mechanism": "canvas 网点、指针半径内半径插值",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "打开了该组件页，只读到站方描述，演示在 18 秒内没渲染出来；Reduce Motion 未核"
+  },
+  {
+   "id": "transition-03",
+   "slot": "transition",
+   "purpose": "让读者从一个有边框的预览平滑进入全幅沉浸内容",
+   "name": "滚动展开的全幅框",
+   "why": "圆角媒体框随滚动从屏幕的一部分扩张到全幅，圆角同步归零，读者的滚动量直接换成沉浸感",
+   "seen_at": [
+    {
+     "site": "React Bits 组件库",
+     "url": "https://reactbits.dev/animations/scroll-expand",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Lucian UX/UI Prompt（元素 231，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#231",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "沉浸",
+    "驱动"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "框里的内容在本页是什么，展开到全幅后接什么章节？",
+    "展开期间标题是否留在框上？",
+    "展开所需滚动距离多长，读者会不会中途停住？",
+    "哪一块数据在界面站直后才填充，分成先形体后数据两拍？"
+   ],
+   "reduce_motion": "未核：站点未验证。建议去掉动效后框直接为全幅，圆角为 0",
+   "risks": "可读性：标题压在媒体之上时对比度随图变化，需要叠一层遮罩",
+   "avoids": [
+    "X4",
+    "X14"
+   ],
+   "structure": "起始宽 42%、高 58%；起始圆角 24 px，结束 0；媒体缩放 1.35；滚动距离 1.2 屏；平滑 0.1 s；遮罩 0.45",
+   "mechanism": "滚动进度驱动 clip-path 或尺寸、position: sticky",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "打开了组件页，只见静态界面与参数面板，动效未见；Reduce Motion 未核"
+  },
+  {
+   "id": "transition-04",
+   "slot": "transition",
+   "purpose": "让读者看到新内容从指针进入的位置向外一格一格生长出来",
+   "name": "指针起点像素生长",
+   "why": "新内容以像素块从指针进入点向四周弹簧式扩散出现，读者的进入位置成为变化的起点，变化有来源",
+   "seen_at": [
+    {
+     "site": "React Bits 组件库",
+     "url": "https://reactbits.dev/animations/pixel-swap",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    },
+    {
+     "site": "Lucian UX/UI Prompt（元素 219，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#219",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "颗粒",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "旧内容与新内容在本页是什么对应关系（原图与标注图、前与后）？",
+    "像素块多大才不会像马赛克故障？",
+    "触屏没有悬停，什么动作触发？",
+    "变化的圆心取哪个控件的坐标？"
+   ],
+   "reduce_motion": "未核：站点未验证。建议去掉动效后新旧内容用淡入淡出切换",
+   "risks": "性能：像素块数量随容器面积增加，块边长小于 16 px 且容器超过 800 px 宽时每帧耗时增加",
+   "avoids": [
+    "X7",
+    "X14"
+   ],
+   "structure": "像素边长 48 px；块间距 0；圆角 0%；触发为悬停；图案为指针起点波",
+   "mechanism": "canvas 或 CSS 网格、距离延迟、弹簧",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "打开了组件页，只见静态界面与参数面板，动效未见；Reduce Motion 未核"
+  },
+  {
+   "id": "page-11",
+   "slot": "page",
+   "purpose": "把整页做成按章着色的横向色带，让章节索引本身成为页面骨架",
+   "name": "五色带章节页",
+   "why": "每个业务类别占一条整宽色带，左侧是该类别的色场和大标题，右侧约 28% 宽是该类别的图，带上有 n / 5 的位置计数，读者滚动时每过一带就换一个色场，不用菜单也知道自己在第几类",
+   "seen_at": [
+    {
+     "site": "Awwwards 当日站 LPAS",
+     "url": "https://lpas.com/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "页面有几个并列类别，各自对应哪一块色场？",
+    "右侧图换成你的哪一种物件证据？",
+    "首带展开而其余折叠的规则，在你的内容里由什么触发？"
+   ],
+   "reduce_motion": "本条主体是静态色带，去掉动效后结构完整；展开与折叠的触发未核",
+   "risks": "可读性：色带多于 6 条时色场辨识度下降，浅色带上的小字需单独核对比度",
+   "avoids": [
+    "X3",
+    "X7",
+    "X14"
+   ],
+   "structure": {
+    "bands": 5,
+    "band_height_px": 275,
+    "image_width_ratio_pct": 28
+   },
+   "mechanism": "整宽色带加右侧定宽图列，缩略图用多边形裁切缺角",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "滚动 y=0 到 1800 亲眼看到五带依次出现，每带高度固定，图与色带同步移动，无固定层"
+  },
+  {
+   "id": "hero-11",
+   "slot": "hero",
+   "purpose": "让首屏用缩写词逐字展开讲出做事流程",
+   "name": "缩写展开首屏",
+   "why": "页面先以四个大写字母出现，再展开成四个完整单词（听、规划、分析、成形），读者在首屏就拿到公司的做事顺序，之后每一章都能回指这四个词",
+   "seen_at": [
+    {
+     "site": "Awwwards 当日站 LPAS",
+     "url": "https://lpas.com/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "你的流程能缩成几个首字母，每个字母展开后是什么动词？",
+    "展开完成后这四个词在后面哪一章再出现？"
+   ],
+   "reduce_motion": "未核；DOM 里单词已拆成首字母加剩余字母，可直接显示完整词",
+   "risks": "可读性：展开期间标题不完整，慢速设备上停留过长会挡住后面内容",
+   "avoids": [
+    "X4",
+    "X13"
+   ],
+   "structure": {
+    "letters": 4,
+    "intro_screens": 1
+   },
+   "mechanism": "单词拆成首字母与余下字母两个节点，余下字母按时间展开",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "只亲眼看到展开中的一帧（Listen Plan 在左，Analyze Shape 在右，分两行摆放），触发是加载时间，具体时长未量"
+  },
+  {
+   "id": "rows-07",
+   "slot": "rows",
+   "purpose": "让巨字目录的每个词既是入口又是详情开关",
+   "name": "巨字悬停目录",
+   "why": "服务类别用整屏级大字竖排，指针停在一个词上时其余词变灰，该词右侧展开子项标签，读者靠明暗对比读出当前项，目录本身承担了导航和详情两件事",
+   "seen_at": [
+    {
+     "site": "Recent 收录站 Displace Agency",
+     "url": "https://displace.agency/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "你的目录词有几个，每个词展开后是列表、标签还是一句话？",
+    "触屏上没有悬停，改成点击还是滚动到哪一位置触发？"
+   ],
+   "reduce_motion": "未核；展开内容是普通文本，去掉过渡后仍可读",
+   "risks": "可读性：触屏无悬停，必须配点击路径；词多于 6 个时竖向占屏过长",
+   "avoids": [
+    "X3",
+    "X7",
+    "X10"
+   ],
+   "structure": {
+    "words": 5,
+    "word_height_px": 90
+   },
+   "mechanism": "词为链接，悬停时同组其余词降不透明度，并显示该词的详情块",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "亲手把指针移到第三个词上，其余词变灰，右侧出现每周与每月检查两组标签"
+  },
+  {
+   "id": "overlay-06",
+   "slot": "overlay",
+   "purpose": "让一个固定入口同时提供文字、语音与估价三种联系方式",
+   "name": "多通道固定入口坞",
+   "why": "页面右下角常驻一个深色入口坞，标题是“Talk to us”，副标写明聊天、语音、估价三种通道，读者点一次进入而不用先判断该找谁，入口坞不随滚动消失，也不盖住正文主体",
+   "seen_at": [
+    {
+     "site": "Recent 收录站 Displace Agency",
+     "url": "https://displace.agency/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "静"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "你的页面有哪几种读者想做的下一步，能合并成一个入口吗？",
+    "入口坞占屏多少，在窄屏上折成什么？"
+   ],
+   "reduce_motion": "静态固定元素，不依赖动效",
+   "risks": "可读性：窄屏下会遮盖正文底部，需在手机宽度上单独检查",
+   "avoids": [
+    "X4",
+    "X12"
+   ],
+   "structure": {
+    "width_px": 260,
+    "height_px": 70,
+    "screen_ratio_pct": 3
+   },
+   "mechanism": "position: fixed 的右下角块",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "首屏与滚动到第二屏两张截图里入口坞位置不变；语音与估价通道点击后的行为未核"
+  },
+  {
+   "id": "loader-02",
+   "slot": "loader",
+   "purpose": "让加载过程用一个进度条加一个大计数同时报告进度",
+   "name": "条加滚动计数加载",
+   "why": "屏中央一条白色长条按进度变长，左下角用超大字号的三位数显示百分比，数字位在换值时纵向滚动，读者同时从形状和数字两个通道读到进度，等待期间有东西可看",
+   "seen_at": [
+    {
+     "site": "工作室站 Lusion",
+     "url": "https://lusion.co/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "你的资源加载量大到值得做加载页吗，不够就不要做",
+    "计数写在哪个角，它和进度条各表达什么"
+   ],
+   "reduce_motion": "未核；去掉滚动后仍可显示数字加条",
+   "risks": "性能：整页 WebGL 站在软件渲染下加载超过 30 秒，加载页本身会变成障碍，需设上限",
+   "avoids": [
+    "X6",
+    "X16"
+   ],
+   "structure": {
+    "digits": 3,
+    "bar_width_px": 210,
+    "bar_height_px": 42
+   },
+   "mechanism": "宽度随进度变化的条加按位滚动的数字",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "两次截图分别看到 076 和 09 加半截数字（换位滚动中），条宽随之变长；后续页面因机器负载高未加载完，页间换场未核"
+  },
+  {
+   "id": "form-05",
+   "slot": "form",
+   "purpose": "让读者按住一个实体控件来切换主题并同时看见结果",
+   "name": "按住启灯主题切换",
+   "why": "引导页中间是一个仿打字机压纸杆的横向控件，按住任一侧会向上投出光束照亮纸上的字，随后整套界面切到亮色，读者通过“按住”这个动作理解主题开关，控件本身就是说明",
+   "seen_at": [
+    {
+     "site": "60fps 动效集 Platen 引导页",
+     "url": "https://60fps.design/shots/platen-typewriter-intro-how-to-interaction",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "纸"
+   ],
+   "carriers": [
+    "ios",
+    "android",
+    "mobile-web"
+   ],
+   "adapt": [
+    "你的二选一设置对应现实中哪一个有手感的物件？",
+    "按住多久生效，松开后是否保持？",
+    "屏幕阅读器用户怎么触发同一个设置？"
+   ],
+   "reduce_motion": "未核；应保留一个普通开关作为同功能入口",
+   "risks": "可读性：只提供按住手势时，不便操作的读者无法切换；需配备普通开关",
+   "avoids": [
+    "X7",
+    "X14"
+   ],
+   "structure": {
+    "control_width_px": 190
+   },
+   "mechanism": "长按手势驱动光束动画，动画结束后切换主题变量",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-17",
+   "used_in": [],
+   "verify_note": "看的是 60fps 收录的手机应用短片，不是可操作页面；这是 60fps 收录的手机应用短片，不是可操作的网页；亲眼看到的是视频里的控件与引导文案"
+  },
+  {
+   "id": "nav-52",
+   "slot": "nav",
+   "purpose": "让读者在选项间切换时看见从哪到哪",
+   "name": "分段控件拉伸选中块",
+   "why": "选中块的两条边用不同时长，移动中被拉长再收回，读者从形变读出方向与速度，100 ms 内确认点中",
+   "seen_at": [
+    {
+     "site": "affectUI Segmented Control",
+     "url": "https://affectui.com/components/segmented-control",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    },
+    {
+     "site": "EasyUI SlidePagination",
+     "url": "https://easyui.site/components/slide-pagination",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页的“选项”是什么名词，最多几个？",
+    "先动哪条边，由方向决定还是固定？",
+    "每项是否有加粗版文字叠放以免宽度跳动？"
+   ],
+   "reduce_motion": "选中块直接出现在新位置，无拉伸；aria-checked 与方向键行为不变",
+   "risks": "选项超过 6 个或标签很长时拉伸量过大",
+   "avoids": [],
+   "structure": "左边缘 270 ms，右边缘 400 ms，同一缓出曲线；中途宽度约为终点的 140%；约 380 ms 到位",
+   "mechanism": "left 与 right 分开过渡、data-dir、roving tabindex、双层文字叠放；页码滑块同源：共享 layoutId 的绝对定位指示块沿路径走，前 80 ms 走完一半",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": []
+  },
+  {
+   "id": "rows-52",
+   "slot": "rows",
+   "purpose": "让读者展开一行时看到箭头、高度、内容同步到位",
+   "name": "同弹簧折叠",
+   "why": "箭头旋转、高度增长、内容上移共用一条弹簧，三者同起同止",
+   "seen_at": [
+    {
+     "site": "EasyUI UnfoldAccordion",
+     "url": "https://easyui.site/components/unfold-accordion",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页折叠项的内容有多长，最长多高？",
+    "箭头旋转与高度增长是否共用同一条弹簧曲线？",
+    "一次只开一项还是可多开？"
+   ],
+   "reduce_motion": "高度与箭头直接到终态，内容正常显示",
+   "risks": "内容很长时高度弹簧来回抖",
+   "avoids": [],
+   "structure": "高度 53 到 111 px 约 300 ms；箭头 180°；内容位移约 29 px",
+   "mechanism": "同一弹簧驱动 height、rotate、translateY；aria-expanded",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "箭头是否过冲待亲核（采样间隔 16 ms），亲核后再写回。"
+  },
+  {
+   "id": "form-51",
+   "slot": "form",
+   "purpose": "让读者切换开关时从形变读出质量与方向",
+   "name": "液态开关",
+   "why": "行进中滴被沿运动轴拉长约 20%，垂直压扁约 6%，读者读到质量感；ON/OFF 文字另给不依赖形变的状态",
+   "seen_at": [
+    {
+     "site": "EasyUI Liquid Toggle",
+     "url": "https://easyui.site/components/liquid-toggle",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "开关切换的是什么设置，错切的代价多大？",
+    "形变期间状态是否首帧就能读出？",
+    "触屏下点击区域是否不低于 44 px？"
+   ],
+   "reduce_motion": "滴直接到终位，ON/OFF 文字直接切换，role=switch 保持",
+   "risks": "状态需一眼可读的设置页，形变期间约 400 ms 状态不确定；形变期间状态不确定，首帧给结果色",
+   "avoids": [],
+   "structure": "88×44 px；滴宽 35 到 42 再回 35；约 430 ms 稳定；文字交叉淡变约 200 ms",
+   "mechanism": "SVG 形变、role=switch、aria-checked",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": []
+  },
+  {
+   "id": "overlay-51",
+   "slot": "overlay",
+   "purpose": "让读者打开菜单时知道它属于哪个按钮",
+   "name": "原点感知下拉",
+   "why": "菜单以触发器边缘为变换原点，从 0.967 倍缩放加 7 px 位移长出来，透明度比缩放慢，先出形状后出内容",
+   "seen_at": [
+    {
+     "site": "EasyUI OriginDropdown",
+     "url": "https://easyui.site/components/origin-dropdown",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "触发器在页面哪一侧，原点要换到哪个角？",
+    "菜单项多到溢出时怎么处理？",
+    "Escape 关闭后焦点回到哪里？"
+   ],
+   "reduce_motion": "菜单直接出现，无缩放与位移；role=menu 保持",
+   "risks": "触发器在右侧或底部而原点没换边，菜单像从错误的角长出",
+   "avoids": [],
+   "structure": "起始比例 0.967；位移 7 px；缩放约 300 ms；透明度约 450 ms；菜单在触发器下 8 px",
+   "mechanism": "transform-origin 取触发器侧、scale 加 translate、opacity 分开时长",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": []
+  },
+  {
+   "id": "form-52",
+   "slot": "form",
+   "purpose": "让读者聚焦输入框时 100 ms 内得到回应",
+   "name": "向内收拢的聚焦环",
+   "why": "聚焦环用独立覆盖层从 0.94 倍向内收到 1，像扣上，不改布局也不被裁切；136 ms 已到 71% 透明度",
+   "seen_at": [
+    {
+     "site": "EasyUI LockInput",
+     "url": "https://easyui.site/components/lock-input",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "输入框在本页是单个还是成组？",
+    "环的粗细在两种主题下是否都能看见？",
+    "出错时环如何换成错误状态？"
+   ],
+   "reduce_motion": "环直接出现不缩放，聚焦指示保持可见",
+   "risks": "环与外层 overflow 裁切冲突时被切掉（覆盖层需放在裁切层内）",
+   "avoids": [],
+   "structure": "环 2 px；比例 0.94 到 1；透明度 0 到 1；约 380 ms；边框颜色 200 ms",
+   "mechanism": "绝对定位覆盖层、scale 加 opacity、peer 焦点状态、aria-hidden",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": []
+  },
+  {
+   "id": "form-53",
+   "slot": "form",
+   "purpose": "让读者悬停主按钮时看到动作含义",
+   "name": "胶囊扩满按钮",
+   "why": "静止时 36% 宽胶囊带箭头与文字，悬停时胶囊扩满、文字滑出、居中出现动作图标，终态直接说明动作",
+   "seen_at": [
+    {
+     "site": "EasyUI Book Call Button",
+     "url": "https://easyui.site/components/book-call-button",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页主按钮的动作是什么，图标能否一眼读懂？",
+    "触屏没有悬停时由哪个状态替代？",
+    "胶囊占多宽时静止态仍可读？"
+   ],
+   "reduce_motion": "胶囊保持静止宽度，悬停改为颜色变化",
+   "risks": "触屏无悬停，需要按下态替代；静止态带箭头，不能声称避开 X12",
+   "avoids": [],
+   "structure": "按钮 306×96 px；静止胶囊宽 36%；变换原点在左",
+   "mechanism": "transform-origin 左、scaleX、focus-visible 环",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：胶囊扩张时长；文字滑出与图标出现的先后；触屏下的替代。"
+  },
+  {
+   "id": "loader-52",
+   "slot": "loader",
+   "purpose": "让读者等待回答时看到每个阶段的真实名称",
+   "name": "阶段名滚动加载条",
+   "why": "一条小胶囊里的阶段名依次滚过并落在对勾上，每个阶段名是一次事实更新，等待变成进度",
+   "seen_at": [
+    {
+     "site": "affectUI Thinking Loader",
+     "url": "https://affectui.com/components/thinking-loader",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页等待的真实阶段有哪几个？",
+    "阶段是否来自真实状态而不是编造？",
+    "少于 0.5 秒的等待是否改为不显示？"
+   ],
+   "reduce_motion": "静态文字显示当前阶段名，结束时换成对勾",
+   "risks": "阶段名不是真实状态时信任下降",
+   "avoids": [],
+   "structure": "八线转轮；阶段名滚动；结束落在对勾",
+   "mechanism": "文字滚动、aria-live、状态机",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：阶段名是否绑定真实状态；短于 0.5 s 是否不出现。"
+  },
+  {
+   "id": "rows-53",
+   "slot": "rows",
+   "purpose": "让读者一眼看到工具调用的状态与用时并按需展开",
+   "name": "计时状态行",
+   "why": "一行内给出实时计时、状态与摘要，点开才见参数与结果，失败有重试，多个调用有汇总行",
+   "seen_at": [
+    {
+     "site": "affectUI Tool Call Card",
+     "url": "https://affectui.com/components/tool-call-card",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页的“调用”是什么对象？",
+    "汇总行是否给出失败数？",
+    "结果过长如何截断？"
+   ],
+   "reduce_motion": "计时数字静止显示，展开无动画",
+   "risks": "调用数很多而汇总行不给失败数时用户不知道要展开",
+   "avoids": [
+    "X7"
+   ],
+   "structure": "单行摘要；展开显示参数与结果；失败有重试",
+   "mechanism": "details/summary 或 aria-expanded、计时器",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：按原帖行为亲核。"
+  },
+  {
+   "slot": "hero",
+   "purpose": "让读者在首屏看到产品已嵌在一个有材质的场景里",
+   "name": "壁纸上的产品窗口首屏",
+   "why": "产品界面放进一块有材质的框并在折线处被裁断，框的作用是把界面变成被摆放的物件，读者先看到物件再看到功能，折线暗示下面还有内容",
+   "seen_at": [
+    {
+     "site": "WorkOS Atlas",
+     "url": "https://workos.com/atlas",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "屏幕",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页的\"产品界面\"是哪一块真实画面？",
+    "折线落在界面的哪一行，才让人想继续滚？",
+    "壁纸用本题材的哪种材料，而不是渐变？"
+   ],
+   "reduce_motion": "界面框与壁纸保持静态，对话内容直接显示为最终状态",
+   "risks": "浮夸：壁纸色相与页面其余部分不相干时，框像贴纸",
+   "avoids": [
+    "X4"
+   ],
+   "structure": "标题约 84 px、副标题约 18 px，字号比约 5；首屏文字元素共 3 个；产品框在 577 px 高视口中被下沿裁切",
+   "mechanism": "圆角容器内放渐变背景加界面截图或真实 DOM，容器高度大于首屏",
+   "added": "2026-10-18",
+   "used_in": [],
+   "id": "hero-56",
+   "verify_note": "动效时长未测。"
+  },
+  {
+   "slot": "hero",
+   "purpose": "让读者读到标题的同时读到产品或品牌的具体物件，也可用于阅读屏",
+   "name": "标题行内物件词",
+   "why": "标题里的一两个词位用图标或三维小物件替代，读者在读句子的节奏里同时认出对象，不需要另放一排图",
+   "seen_at": [
+    {
+     "site": "Mobbin",
+     "url": "https://mobbin.com/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    },
+    {
+     "site": "Butter Video",
+     "url": "https://www.butter.video/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页哪三个名词最该变成图形？",
+    "物件与字的基线怎么对齐，物件高度是几倍字高？",
+    "窄屏换行后物件会落在行首吗？"
+   ],
+   "reduce_motion": "物件静止在词位上，句子保持可读",
+   "risks": "可读性：物件过多或高于字高 1.2 倍时句子断裂，超过 3 个就像表情包",
+   "avoids": [
+    "X13"
+   ],
+   "structure": "标题约 80 px；行内物件约 1 个字高的圆角方块；每标题 3 个物件",
+   "mechanism": "inline-block 元素 vertical-align 对齐字中线；物件可为 img、svg 或小画布",
+   "added": "2026-10-18",
+   "used_in": [],
+   "id": "hero-57",
+   "verify_note": "动效时长未测。"
+  },
+  {
+   "slot": "page",
+   "purpose": "让读者逐词读完一句长陈述并停在重点词",
+   "name": "滚动逐词浮现陈述句",
+   "why": "长句的每个词按滚动进度从模糊淡色变清晰，读者的视线被迫跟着滚动速度走，读完一句才进入下一屏",
+   "seen_at": [
+    {
+     "site": "Butter Video",
+     "url": "https://www.butter.video/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    },
+    {
+     "site": "Lue Studio",
+     "url": "https://lue.studio/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    },
+    {
+     "site": "Lucian UX/UI Prompt（元素 260，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#260",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "驱动",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "这句陈述去掉哪些词仍然成立？",
+    "哪几个词需要最后才亮？",
+    "滚动一屏对应读几个词？"
+   ],
+   "reduce_motion": "整句直接显示为终态，无模糊",
+   "risks": "可读性：词亮得太慢时读者不耐烦，超过一屏高度以上的句子会被跳过；常见模板件，只用于全页 1 句宣言，≤25 字，快速滚动时整句模糊",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "句长约 20 词；模糊从强到 0；一句占 1 到 1.5 屏滚动距离；词可含内嵌物件",
+   "mechanism": "按词拆 span，滚动进度映射到 opacity 与 filter blur，或 animation-timeline: view()；sticky 固定整块，核心词变实时加强调",
+   "added": "2026-10-18",
+   "used_in": [],
+   "id": "page-12",
+   "verify_note": "并入 C-09：Lucian 元素 260 为二手摘要，读源码关键字，未在浏览器打开演示。 动效时长未测。"
+  },
+  {
+   "slot": "page",
+   "purpose": "让读者在高密度作品页里仍能一眼分出主次",
+   "name": "单一字号信息栅格",
+   "why": "全部文字取同一字号，层次只靠白与灰、位置与媒体块大小建立，读者的视线被媒体块吸引而不是被字号吸引",
+   "seen_at": [
+    {
+     "site": "Viktor Horváth 作品集",
+     "url": "https://www.viktorhor.com/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页要靠哪一块媒体做主角？",
+    "文字的两种明度分别指什么角色（标题、说明）？",
+    "实时信息（时钟、状态）放哪一格？"
+   ],
+   "reduce_motion": "栅格与时钟为静态，时钟仍每秒更新或改为静态时间",
+   "risks": "可读性：文字量超过一屏 25 条时失去主次；移动端字号 12 px 太小；手机 12 px 过小；细线栅格属 design-taste-frontend 第 3 类默认",
+   "avoids": [
+    "X3",
+    "X7"
+   ],
+   "structure": "首屏文字元素 25 个全为 12 px；单元格以 1 px 细线分隔；媒体块边到边无外边距；实时时钟含时区",
+   "mechanism": "CSS grid 加 gap 为 1 px 并以背景色露线；Date 每秒更新",
+   "added": "2026-10-18",
+   "used_in": [],
+   "id": "page-13",
+   "verify_note": "动效时长未测。"
+  },
+  {
+   "slot": "hero",
+   "purpose": "让读者在首屏明白这是一个由物件和字组成的有重量的场景",
+   "name": "悬挂三维物件穿过导航",
+   "why": "三维物件从视口顶部垂下，压过导航胶囊并停在标题之上，物件与标题的前后关系给整页一个深度，读者看到的是\"挂着的东西\"而不是平面",
+   "seen_at": [
+    {
+     "site": "Butter Video",
+     "url": "https://www.butter.video/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "钢",
+    "塑料"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页要挂的物件是什么实物？",
+    "物件在哪些层级里（导航之上还是之下）？",
+    "物件摆动幅度是几度，是否会遮住按钮？"
+   ],
+   "reduce_motion": "物件静止在垂下的姿势",
+   "risks": "性能：三维画布在低端设备上卡顿；遮挡导航点击",
+   "avoids": [
+    "X4"
+   ],
+   "structure": "标题约 88 px；背景灰度渐变；物件约 200 px 宽，从顶边进入；画布只一个",
+   "mechanism": "WebGL 画布加物理摆动，导航层级位于画布之上或之下",
+   "added": "2026-10-18",
+   "used_in": [],
+   "id": "hero-58",
+   "verify_note": "动效时长未测。"
+  },
+  {
+   "slot": "gallery",
+   "purpose": "让读者按脚本结构而非时间轴理解一个发布影片",
+   "name": "章节条标注的影片",
+   "why": "播放器下方列出钩子、演示、功能、互动、收尾几个章节，当前章亮显，读者在看之前就知道影片的结构并能按章跳到想看处",
+   "seen_at": [
+    {
+     "site": "LaunchVideos Gallery 影片页（Messagi）",
+     "url": "https://launchvideos.gallery/videos/bc522398-7693-4a3d-8ecb-de462dbdcb92",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页内容分哪几章，章名是动词还是名词？",
+    "当前章用什么单一变化标示？",
+    "章条是否可点击跳转？"
+   ],
+   "reduce_motion": "章条仅随时间切换高亮，无过渡",
+   "risks": "可读性：章过多时挤成两行；章名含糊则无助于定位",
+   "avoids": [],
+   "structure": "影片约 43 秒；5 个章节标签；当前章为实心色块，其余为灰底；标签条位于播放器画面下沿",
+   "mechanism": "按章起止时间切换 aria-current；点击设置 video.currentTime",
+   "added": "2026-10-18",
+   "used_in": [],
+   "id": "gallery-55",
+   "verify_note": "动效时长未测。"
+  },
+  {
+   "id": "rows-54",
+   "slot": "rows",
+   "purpose": "让列表行的悬停把对应的图带到指针旁，读者不点开就能预览",
+   "name": "悬停行带图跟随",
+   "why": "大字列表本身保持文字密度，图片只在指针旁短暂出现，读者用指针位置而不是点击来选择要看哪一行",
+   "seen_at": [
+    {
+     "site": "Lucian UX/UI Prompt（元素 276，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#276",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "纸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "列表行在本页是什么名词，它的预览图是什么物件？",
+    "没有指针的载体里，键盘聚焦或点按怎样触发同一张图？",
+    "图延迟跟随多少毫秒，才不挡住下一行的文字？"
+   ],
+   "reduce_motion": "取消跟随与倾斜，悬停或聚焦时图固定在行尾，列表本身照常可读",
+   "risks": "图遮住相邻行文字时，读者在行间移动会反复触发闪烁",
+   "avoids": [
+    "X3"
+   ],
+   "mechanism": "指针位置 lerp 跟随加运动方向倾斜；行切换时图条按行序号上下滑；键盘聚焦时图落在行尾",
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：按原帖行为亲核。原注：读了开源仓库 api/v1/en 目录里元素 276 的目录摘要与源码关键字（getBoundingClientRect、clip-path 等），没有在浏览器里打开演示。行为描述来自作者摘要，缺亲核。"
+  },
+  {
+   "id": "form-54",
+   "slot": "form",
+   "purpose": "提交失败时把读者带到第一个错处，并让错误数量随修正递减",
+   "name": "提交后跳到错处并计数递减",
+   "why": "提交失败的信息变成一个会随读者修正而变少的数字，读者不用自己找哪里错了，也不用重读整张表",
+   "seen_at": [
+    {
+     "site": "Lucian UX/UI Prompt（元素 244，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#244",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "表里哪几个字段会出错，错误提示是什么句子？",
+    "汇总条放在表单顶部还是粘在视口上沿？",
+    "全部修好后，完成态怎样接上下一步？"
+   ],
+   "reduce_motion": "错处不抖动，只显示红框与提示；滚动到第一个错处改为立即跳转，汇总数字仍递减",
+   "risks": "错字段在可视区外且表单很长时，滚动跳转可能让读者失去上下文",
+   "avoids": [],
+   "mechanism": "提交时汇总条下落并写入错误数；错字段抖动并展开提示；滚动到第一个错字段并聚焦；修正后提示折叠、汇总数减一；汇总项可点跳转",
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：滚动到错处的时长；聚焦是否落在输入框；错误数是否随修正递减。原注：读了开源仓库 api/v1/en 目录里元素 244 的目录摘要与源码关键字（getBoundingClientRect、clip-path 等），没有在浏览器里打开演示。行为描述来自作者摘要，缺亲核。"
+  },
+  {
+   "id": "form-55",
+   "slot": "form",
+   "purpose": "把单个入口按钮原地变成输入框，省去跳页或弹窗",
+   "name": "按钮原地展开成输入",
+   "why": "入口按钮横向展开成输入框，读者的视线与指针不用离开原位置，提交后同一个形状收成圆再展开成确认条",
+   "seen_at": [
+    {
+     "site": "Lucian UX/UI Prompt（元素 274，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#274",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "驱动",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "入口按钮的文案是什么？它展开后需要几个字段，超过一个还成立吗？",
+    "提交成功后这个形状停在哪个终态？",
+    "格式错误时用什么动作表示拒绝？"
+   ],
+   "reduce_motion": "按钮直接切换为输入框与确认条，无拉伸和旋转；错误用文字提示代替摇头",
+   "risks": "展开宽度大于窄屏容器时，输入框会被裁切",
+   "avoids": [],
+   "mechanism": "宽度过渡由按钮变为输入行；提交后收缩成圆环，环转动后画勾，再展开成确认胶囊；Esc 关闭",
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：宽度过渡是否引起布局移动；提交后圆环到勾的时序。原注：读了开源仓库 api/v1/en 目录里元素 274 的目录摘要与源码关键字（getBoundingClientRect、clip-path 等），没有在浏览器里打开演示。行为描述来自作者摘要，缺亲核。"
+  },
+  {
+   "id": "nav-53",
+   "slot": "nav",
+   "purpose": "在顶栏菜单项之间移动时，下拉面板滑动变形而不是关闭再打开",
+   "name": "变形下拉面板",
+   "why": "面板在菜单项之间滑动并改变尺寸，内容沿读者移动的方向滑入，读者能感到各菜单是同一块区域的不同页，而不是五个互不相干的弹窗",
+   "seen_at": [
+    {
+     "site": "Lucian UX/UI Prompt（元素 354，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#354",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "呼吸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "各菜单项的内容尺寸差多大，面板能不能承受最大的一个？",
+    "小箭头怎样跟随面板？",
+    "键盘 Tab 与 Enter 怎样进入同一面板？"
+   ],
+   "reduce_motion": "面板淡入淡出，不滑动，尺寸直接切换",
+   "risks": "面板内容高度差很大时，变形过程会让下方内容跳动",
+   "avoids": [],
+   "mechanism": "单一面板元素，用 CSS 变量写入宽高与位移；内容页按移动方向做左右位移加透明度；箭头独立位移",
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：面板尺寸过渡时长；内容是否按移动方向滑入；箭头是否独立移动。原注：读了开源仓库 api/v1/en 目录里元素 354 的目录摘要与源码关键字（getBoundingClientRect、clip-path 等），没有在浏览器里打开演示。行为描述来自作者摘要，缺亲核。"
+  },
+  {
+   "id": "cards-55",
+   "slot": "cards",
+   "purpose": "用不同尺寸的拼块介绍功能，每块悬停时播放自己那一小段场景",
+   "name": "悬停播放的拼块网格",
+   "why": "每块拼块各演一个与自己功能相符的小场景，读者通过悬停得到功能的证据，而不是读一句形容",
+   "seen_at": [
+    {
+     "site": "Lucian UX/UI Prompt（元素 214，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#214",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "驱动",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "每个拼块的小场景是什么真实操作？",
+    "触屏上用什么触发代替悬停？",
+    "哪一块是最大的，为什么？"
+   ],
+   "reduce_motion": "每块拼块显示场景的最终静态画面",
+   "risks": "每块都有不同动效时，同屏运动元素数容易超标；拼块网格本身是默认版式，同屏运动数须守 restraint.md 第 4 节",
+   "avoids": [],
+   "mechanism": "尺寸不一的网格；悬停时抬起并换边框，内部用各自的短脚本播放",
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：每块的小脚本是否离屏暂停；同屏运动数是否超 restraint.md 第 4 节。原注：读了开源仓库 api/v1/en 目录里元素 214 的目录摘要与源码关键字（getBoundingClientRect、clip-path 等），没有在浏览器里打开演示。行为描述来自作者摘要，缺亲核。"
+  },
+  {
+   "id": "form-56",
+   "slot": "form",
+   "purpose": "选定时间后让该时间的按钮收窄，旁边滑出确认键，避免一次点击就订下",
+   "name": "选中后分裂出确认",
+   "why": "选中的时间按钮收窄，旁边出现确认键，读者的选择与提交被分成两步，误点的代价降到一次撤销",
+   "seen_at": [
+    {
+     "site": "Lucian UX/UI Prompt（元素 279，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#279",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "哪些时间已满，怎样让它们变暗且不可点？",
+    "确认后的结果页要显示哪几项摘要？",
+    "取消选择的动作放在哪里？"
+   ],
+   "reduce_motion": "选中时按钮变为选中态，确认键直接出现，无滑出",
+   "risks": "确认键紧贴时间按钮时，窄屏上两者会互相挤压",
+   "avoids": [],
+   "mechanism": "选中按钮宽度缩到一半，确认键以位移加透明度出现；日期条切换时时间格依次升起",
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：收窄的比例；撤销路径；键盘能否完成。原注：读了开源仓库 api/v1/en 目录里元素 279 的目录摘要与源码关键字（getBoundingClientRect、clip-path 等），没有在浏览器里打开演示。行为描述来自作者摘要，缺亲核。"
+  },
+  {
+   "id": "hero-59",
+   "slot": "hero",
+   "purpose": "让一个短标题在一次按住动作里表现出引力，松手后恢复可读",
+   "name": "长按引力透镜",
+   "why": "每个像素改取另一处的背景色，扭曲量随到中心的距离连续变化，读者按住一次就看懂这是一个有中心的力场，松手后文字复原，阅读不被破坏",
+   "seen_at": [
+    {
+     "site": "阿哲Phil 黑洞帖",
+     "url": "https://x.com/Formulasearch/status/2106689571400700331",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要",
+     "verify_note": "读到三条原理（引力透镜、越近转越快、文字过捕获半径被吞并在松手后逐字重现），视频与提示词原文读不到。本组另做原型，WebGL 透镜在 SwiftShader Chromium 出图。"
+    }
+   ],
+   "atmosphere_fit": [
+    "沉浸",
+    "驱动",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "哪一个词值得被吸走又被还原？",
+    "“中心”在本页代表什么对象？",
+    "按住触发在触屏上用长按还是点击？"
+   ],
+   "reduce_motion": "不运行着色器，标题保持原样，中心处放一个静态圆环作为示意",
+   "risks": "可读性：扭曲区不得压在正文上。性能：全屏着色器在低端手机掉帧，渲染分辨率需降到一半。无 WebGL 时无此效果。",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "短标题先画进 canvas 当纹理，覆盖在原 DOM 标题上；按住时才显示 canvas；松手后 600 到 900 ms 内恢复",
+   "mechanism": "片元着色器反向采样：偏折量按 m 的平方除以 r，取纹理中另一处的颜色；半径小于捕获半径的像素取黑",
+   "impl": "路线一：WebGL 片元着色器透镜（原型待存档）；路线二：DOM 文字位移滤镜，SVG feImage 位移图加 feDisplacementMap 作用于真实 DOM 标题，scale 约 100 到 150，读屏与复制不受影响（Safari 支持待亲核）",
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：长按开始到字被吞的时长；松手后逐字重现的顺序；正文是否被压。"
+  }
+ ]
+}
