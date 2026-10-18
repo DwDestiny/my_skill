@@ -2,6 +2,7 @@
 
 > 何时读：阶段 2 的氛围已写进 `design.md` 第 1 节之后。
 > 读完做什么：为每一屏选一条最好的组件表达，写进 `design.md` 第 2 节。
+> 选案例前读 `references/why-good.md` 第 4、5 节。
 > 产物：`design.md` 第 2 节"每屏做法"。
 > 来自：旧 `references/component-patterns.md`、`prompts/S4-page-plan.md`、`references/page-plan.md`。
 
@@ -59,6 +60,8 @@ node toolbox/deal.mjs --set-components --project <项目名> --components <槽:i
 
 教训：登记页有 7 条空横格线，成功态小票下有 250 px 空灰底。填充率分别是 100% 和 71%，但评审都判"半页空纸"。
 
+3 到 5 条短事实的形式见 why-good 5.1。
+
 ## 4. 相邻与重复
 
 | 规则 | 数值 |
@@ -79,7 +82,7 @@ node toolbox/deal.mjs --set-components --project <项目名> --components <槽:i
 | 案例不带皮肤 | 案例只给结构与机制。色、字体、圆角取 `design.md` 变量 |
 | 本页怎么改 | 每条案例都写，回答它的 `adapt` 提问 |
 
-另有 X17：同一页面 3 条以上案例来自同一参照站点，即撞车。换案例。X1 到 X17 全文见 `references/anti-sameness.md`。案例里的数值是起点。它与载体最小字号或 `references/restraint.md` 的限制冲突时，以后者为准，并在"本页怎么改"写压到的值。
+另有 X17：同一页面 3 条以上案例来自同一参照站点，即撞车。换案例。X1 到 X20 全文见 `references/anti-sameness.md`。案例里的数值是起点。它与载体最小字号或 `references/restraint.md` 的限制冲突时，以后者为准，并在"本页怎么改"写压到的值。
 
 ## 6. 补库规则
 
@@ -103,14 +106,14 @@ node toolbox/deal.mjs --set-components --project <项目名> --components <槽:i
 |---|---|---|
 | `id` | 是 | `<slot>-<nn>` |
 | `slot`、`purpose` | 是 | `purpose` 是动词短语，1 句 |
-| `name`、`why` | 是 | `why` 一句，写体验原理或机制，不写外观形容词 |
+| `name`、`why` | 是 | `why` 一句，写体验原理或机制，按"触发 → 变化 → 终态"写，不写外观形容词 |
 | `seen_at` | 是 | 数组 `{site, url, year, verified, how_checked}`。`how_checked` 取值：亲核打开、本库已做出、二手摘要 |
 | `atmosphere_fit` | 是 | 数组。动效气质（静、呼吸、驱动、沉浸）加材质词（纸、钢、玻璃、织物、屏幕、颗粒）。是提示，不是过滤 |
 | `carriers` | 是 | desktop-web、mobile-web、wechat-mini、ios、android、print |
 | `adapt` | 是 | 2 到 3 个提问，强制改写。例："卡里的'物件'在本页是什么名词？" |
 | `reduce_motion` | 是 | 去掉动效后还剩什么，1 句 |
 | `risks` | 是 | 1 句：可读性、性能、浮夸哪一类，什么条件下发生 |
-| `avoids` | 是 | X 编号数组 |
+| `avoids` | 是 | X 编号数组，可空 |
 | `added`、`used_in` | 是 | 入库日期 `YYYY-MM-DD`。`used_in` 是项目数组，可空 |
 | `structure` | 否 | 数值起点，全是数字 |
 | `mechanism` | 否 | CSS 或 JS 机制名 |

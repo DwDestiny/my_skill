@@ -72,7 +72,7 @@ description: 设计流水线入口。四个阶段把一句委托做成设计过�
 1. 从任何网站取图或下载素材。
 2. 发布到公开画廊。发布 Artifact。
 
-其他红线：不自己另开对模型厂商的请求。不把项目源码、隐私、本机路径写进生图提示词。不复制 Anthropic / Claude 的品牌色、字体、logo。Defaults 反默认清单 X1 到 X17 见 `references/anti-sameness.md`。
+其他红线：不自己另开对模型厂商的请求。不把项目源码、隐私、本机路径写进生图提示词。不复制 Anthropic / Claude 的品牌色、字体、logo。Defaults 反默认清单 X1 到 X20 见 `references/anti-sameness.md`。
 
 ## 6. 补库与验证
 

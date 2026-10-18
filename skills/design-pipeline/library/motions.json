@@ -1,7 +1,8 @@
 {
  "_meta": {
   "source": "visual-motion-design/references/gears.md 第 5 节",
-  "forbidden_all_gears": "滚动劫持、隐藏原生光标、6 秒加载器、每个区块同款淡入上移、无意义的脉冲点和漂浮形状、为凑动效数量而加的抖动"
+  "forbidden_all_gears": "滚动劫持、隐藏原生光标、6 秒加载器、每个区块同款淡入上移、无意义的脉冲点和漂浮形状、为凑动效数量而加的抖动",
+  "tokens_ref": "references/why-good.md 第 6 节"
  },
  "motions": [
   {

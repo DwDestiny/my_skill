@@ -26,9 +26,9 @@ design.md 是交给实现的唯一文件。它在阶段 2 和阶段 3 已经写�
 
 实现按 design.md 做。用开源组件库或自研都可以，皮肤全部走 3.1 的变量。做完后：
 
-1. 每屏 1 张停靠点截图，首屏加 390 一张，Reduce Motion 一张。
+1. 每屏 1 张停靠点截图，390 宽也每屏 1 张（手机端的缩放、断行、标签字号只有逐屏看才看得到），Reduce Motion 一张。
 2. 对照 3.5 看图清单逐项填结果。用 Read 看真实截图，不凭门禁结果判断。
    看图发现一屏的密度与填充率没到第 2 节写的值，或一屏下半是空白，这是修改项，不是报告项。先改再拍，再填清单。"留白偏大"不能出现在报告里。
 3. 把截图与清单给 Fable 做视觉评审（用户 2026-10-12 全局规则）。
 4. 收口后补库：库外自拟的做法入 1 条案例，新亲核的参照入 1 条。规则见 `stages/3-components.md`。
-5. 可选工具：`toolbox/shots.py` 出截图清单，`toolbox/defaults-check.py` 查默认值 X1 到 X17。工艺细节见 `references/craft.md`。
+5. 可选工具：`toolbox/shots.py` 出截图清单，`toolbox/defaults-check.py` 查能 grep 的默认值（X18 到 X20 靠看截图）。工艺细节见 `references/craft.md`。

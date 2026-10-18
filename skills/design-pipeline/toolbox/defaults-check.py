@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""defaults-check.py 默认值检查（anti-sameness.md 第 2 节 X1 到 X17）。Python 3.12 标准库。
+"""defaults-check.py 默认值检查（anti-sameness.md 第 2 节 X1 到 X17，X18 到 X20 靠看截图）。Python 3.12 标准库。
 
 用途：对已构建的 HTML 页面查 X 清单里"grep 类"各项，并可与另一个页面比同质化。
   脚本查：X1 X2 X5 X6 X7 X8 X9 X11 X12 X14 X15。

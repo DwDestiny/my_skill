@@ -1,9 +1,9 @@
 {
  "_meta": {
   "source": "component-patterns.json 29 张转换加本库已做出的机制示例、成品范例与评测页面做法",
-  "checked": "2026-10-17",
-  "note": "案例只写思路、结构与机制，不带皮肤。皮肤取 design.md 变量。how_checked 三值：亲核打开 / 本库已做出 / 二手摘要。 2026-10-17 探索 B 从 reactbits.dev 补 14 条薄槽案例，同源；同一页面选用时注意 X17。",
-  "case_count": 119,
+  "checked": "2026-10-18",
+  "note": "案例只写思路、结构与机制，不带皮肤。皮肤取 design.md 变量。how_checked 三值：亲核打开 / 本库已做出 / 二手摘要。 2026-10-17 探索 B 从 reactbits.dev 补 14 条薄槽案例，同源；同一页面选用时注意 X17。 2026-10-18 并入用户收集的设计资源（A 组件库站、B 整页氛围、C 提示词与 skill、D 3D）；二手摘要居多，待亲核条目见 verify_note。",
+  "case_count": 140,
   "slots": [
    "cards",
    "cursor",
@@ -1015,6 +1015,13 @@
      "year": 2022,
      "verified": false,
      "how_checked": "二手摘要"
+    },
+    {
+     "site": "Lucian UX/UI Prompt（元素 336，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#336",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
     }
    ],
    "atmosphere_fit": [
@@ -1037,7 +1044,7 @@
     "X7"
    ],
    "structure": "停靠点 30%、60%、92% 屏高；拖柄 36 x 4 px；超 0.5 px/ms 跳下一档；60% 以上才可内滚",
-   "mechanism": "Pointer Events、Vaul snapPoints、iOS detents",
+   "mechanism": "Pointer Events、Vaul snapPoints、iOS detents；越界橡皮筋阻尼；全开时背景缩小变暗",
    "impl": null,
    "tasteskill_id": null,
    "added": "2026-10-17",
@@ -1206,6 +1213,13 @@
      "year": 2026,
      "verified": true,
      "how_checked": "亲核打开"
+    },
+    {
+     "site": "affectUI Notification Stack",
+     "url": "https://affectui.com/components/notification-stack",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
     }
    ],
    "atmosphere_fit": [
@@ -1351,6 +1365,13 @@
      "year": 2024,
      "verified": false,
      "how_checked": "二手摘要"
+    },
+    {
+     "site": "basement.studio",
+     "url": "https://basement.studio/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
     }
    ],
    "atmosphere_fit": [
@@ -1364,7 +1385,8 @@
    ],
    "adapt": [
     "巨字写什么？",
-    "链接行保留哪几个链接？"
+    "链接行保留哪几个链接？",
+    "顶部导航要不要以大字号在字标下再列一遍？"
    ],
    "reduce_motion": "巨字静止",
    "risks": "可读性：裁切后读不出品牌名",
@@ -2527,6 +2549,13 @@
      "year": 2026,
      "verified": true,
      "how_checked": "亲核打开"
+    },
+    {
+     "site": "Lucian UX/UI Prompt（元素 223，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#223",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
     }
    ],
    "atmosphere_fit": [
@@ -2547,7 +2576,7 @@
     "X3",
     "X14"
    ],
-   "mechanism": "position: sticky 的内层加 animation-timeline: view()",
+   "mechanism": "position: sticky 的内层加 animation-timeline: view()；被盖的卡同时变暗",
    "impl": "examples/mechanisms/css-scroll-timeline",
    "added": "2026-10-17",
    "used_in": [],
@@ -2711,6 +2740,13 @@
      "year": 2026,
      "verified": false,
      "how_checked": "二手摘要"
+    },
+    {
+     "site": "Palette",
+     "url": "https://askpalette.com/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
     }
    ],
    "atmosphere_fit": [
@@ -2723,7 +2759,8 @@
    ],
    "adapt": [
     "这个动词是哪个动作？",
-    "点击后去哪里？"
+    "点击后去哪里？",
+    "全页颜色稀缺，色带只在终点出现，前面各章是否让出这份稀缺？"
    ],
    "reduce_motion": "静态色带，悬停反转保留",
    "risks": "可读性：词长超过 8 个字时撑不满",
@@ -3308,6 +3345,13 @@
      "year": 2025,
      "verified": false,
      "how_checked": "二手摘要"
+    },
+    {
+     "site": "Lucian UX/UI Prompt（元素 212，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#212",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
     }
    ],
    "atmosphere_fit": [
@@ -3328,7 +3372,7 @@
     "X1",
     "X15"
    ],
-   "mechanism": "滚动方向检测加宽度过渡",
+   "mechanism": "滚动方向检测加宽度过渡；累计滚动差值超过阈值才改变方向状态，防抖",
    "added": "2026-10-17",
    "used_in": []
   },
@@ -4669,6 +4713,13 @@
      "year": 2026,
      "verified": false,
      "how_checked": "二手摘要"
+    },
+    {
+     "site": "Lucian UX/UI Prompt（元素 231，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#231",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
     }
    ],
    "atmosphere_fit": [
@@ -4682,7 +4733,8 @@
    "adapt": [
     "框里的内容在本页是什么，展开到全幅后接什么章节？",
     "展开期间标题是否留在框上？",
-    "展开所需滚动距离多长，读者会不会中途停住？"
+    "展开所需滚动距离多长，读者会不会中途停住？",
+    "哪一块数据在界面站直后才填充，分成先形体后数据两拍？"
    ],
    "reduce_motion": "未核：站点未验证。建议去掉动效后框直接为全幅，圆角为 0",
    "risks": "可读性：标题压在媒体之上时对比度随图变化，需要叠一层遮罩",
@@ -4711,6 +4763,13 @@
      "year": 2026,
      "verified": false,
      "how_checked": "二手摘要"
+    },
+    {
+     "site": "Lucian UX/UI Prompt（元素 219，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#219",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
     }
    ],
    "atmosphere_fit": [
@@ -4724,7 +4783,8 @@
    "adapt": [
     "旧内容与新内容在本页是什么对应关系（原图与标注图、前与后）？",
     "像素块多大才不会像马赛克故障？",
-    "触屏没有悬停，什么动作触发？"
+    "触屏没有悬停，什么动作触发？",
+    "变化的圆心取哪个控件的坐标？"
    ],
    "reduce_motion": "未核：站点未验证。建议去掉动效后新旧内容用淡入淡出切换",
    "risks": "性能：像素块数量随容器面积增加，块边长小于 16 px 且容器超过 800 px 宽时每帧耗时增加",
@@ -5004,6 +5064,840 @@
    "added": "2026-10-17",
    "used_in": [],
    "verify_note": "看的是 60fps 收录的手机应用短片，不是可操作页面；这是 60fps 收录的手机应用短片，不是可操作的网页；亲眼看到的是视频里的控件与引导文案"
+  },
+  {
+   "id": "nav-52",
+   "slot": "nav",
+   "purpose": "让读者在选项间切换时看见从哪到哪",
+   "name": "分段控件拉伸选中块",
+   "why": "选中块的两条边用不同时长，移动中被拉长再收回，读者从形变读出方向与速度，100 ms 内确认点中",
+   "seen_at": [
+    {
+     "site": "affectUI Segmented Control",
+     "url": "https://affectui.com/components/segmented-control",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    },
+    {
+     "site": "EasyUI SlidePagination",
+     "url": "https://easyui.site/components/slide-pagination",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页的“选项”是什么名词，最多几个？",
+    "先动哪条边，由方向决定还是固定？",
+    "每项是否有加粗版文字叠放以免宽度跳动？"
+   ],
+   "reduce_motion": "选中块直接出现在新位置，无拉伸；aria-checked 与方向键行为不变",
+   "risks": "选项超过 6 个或标签很长时拉伸量过大",
+   "avoids": [],
+   "structure": "左边缘 270 ms，右边缘 400 ms，同一缓出曲线；中途宽度约为终点的 140%；约 380 ms 到位",
+   "mechanism": "left 与 right 分开过渡、data-dir、roving tabindex、双层文字叠放；页码滑块同源：共享 layoutId 的绝对定位指示块沿路径走，前 80 ms 走完一半",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": []
+  },
+  {
+   "id": "rows-52",
+   "slot": "rows",
+   "purpose": "让读者展开一行时看到箭头、高度、内容同步到位",
+   "name": "同弹簧折叠",
+   "why": "箭头旋转、高度增长、内容上移共用一条弹簧，三者同起同止",
+   "seen_at": [
+    {
+     "site": "EasyUI UnfoldAccordion",
+     "url": "https://easyui.site/components/unfold-accordion",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页折叠项的内容有多长，最长多高？",
+    "箭头旋转与高度增长是否共用同一条弹簧曲线？",
+    "一次只开一项还是可多开？"
+   ],
+   "reduce_motion": "高度与箭头直接到终态，内容正常显示",
+   "risks": "内容很长时高度弹簧来回抖",
+   "avoids": [],
+   "structure": "高度 53 到 111 px 约 300 ms；箭头 180°；内容位移约 29 px",
+   "mechanism": "同一弹簧驱动 height、rotate、translateY；aria-expanded",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "箭头是否过冲待亲核（采样间隔 16 ms），亲核后再写回。"
+  },
+  {
+   "id": "form-51",
+   "slot": "form",
+   "purpose": "让读者切换开关时从形变读出质量与方向",
+   "name": "液态开关",
+   "why": "行进中滴被沿运动轴拉长约 20%，垂直压扁约 6%，读者读到质量感；ON/OFF 文字另给不依赖形变的状态",
+   "seen_at": [
+    {
+     "site": "EasyUI Liquid Toggle",
+     "url": "https://easyui.site/components/liquid-toggle",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "开关切换的是什么设置，错切的代价多大？",
+    "形变期间状态是否首帧就能读出？",
+    "触屏下点击区域是否不低于 44 px？"
+   ],
+   "reduce_motion": "滴直接到终位，ON/OFF 文字直接切换，role=switch 保持",
+   "risks": "状态需一眼可读的设置页，形变期间约 400 ms 状态不确定；形变期间状态不确定，首帧给结果色",
+   "avoids": [],
+   "structure": "88×44 px；滴宽 35 到 42 再回 35；约 430 ms 稳定；文字交叉淡变约 200 ms",
+   "mechanism": "SVG 形变、role=switch、aria-checked",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": []
+  },
+  {
+   "id": "overlay-51",
+   "slot": "overlay",
+   "purpose": "让读者打开菜单时知道它属于哪个按钮",
+   "name": "原点感知下拉",
+   "why": "菜单以触发器边缘为变换原点，从 0.967 倍缩放加 7 px 位移长出来，透明度比缩放慢，先出形状后出内容",
+   "seen_at": [
+    {
+     "site": "EasyUI OriginDropdown",
+     "url": "https://easyui.site/components/origin-dropdown",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "触发器在页面哪一侧，原点要换到哪个角？",
+    "菜单项多到溢出时怎么处理？",
+    "Escape 关闭后焦点回到哪里？"
+   ],
+   "reduce_motion": "菜单直接出现，无缩放与位移；role=menu 保持",
+   "risks": "触发器在右侧或底部而原点没换边，菜单像从错误的角长出",
+   "avoids": [],
+   "structure": "起始比例 0.967；位移 7 px；缩放约 300 ms；透明度约 450 ms；菜单在触发器下 8 px",
+   "mechanism": "transform-origin 取触发器侧、scale 加 translate、opacity 分开时长",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": []
+  },
+  {
+   "id": "form-52",
+   "slot": "form",
+   "purpose": "让读者聚焦输入框时 100 ms 内得到回应",
+   "name": "向内收拢的聚焦环",
+   "why": "聚焦环用独立覆盖层从 0.94 倍向内收到 1，像扣上，不改布局也不被裁切；136 ms 已到 71% 透明度",
+   "seen_at": [
+    {
+     "site": "EasyUI LockInput",
+     "url": "https://easyui.site/components/lock-input",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "输入框在本页是单个还是成组？",
+    "环的粗细在两种主题下是否都能看见？",
+    "出错时环如何换成错误状态？"
+   ],
+   "reduce_motion": "环直接出现不缩放，聚焦指示保持可见",
+   "risks": "环与外层 overflow 裁切冲突时被切掉（覆盖层需放在裁切层内）",
+   "avoids": [],
+   "structure": "环 2 px；比例 0.94 到 1；透明度 0 到 1；约 380 ms；边框颜色 200 ms",
+   "mechanism": "绝对定位覆盖层、scale 加 opacity、peer 焦点状态、aria-hidden",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": []
+  },
+  {
+   "id": "form-53",
+   "slot": "form",
+   "purpose": "让读者悬停主按钮时看到动作含义",
+   "name": "胶囊扩满按钮",
+   "why": "静止时 36% 宽胶囊带箭头与文字，悬停时胶囊扩满、文字滑出、居中出现动作图标，终态直接说明动作",
+   "seen_at": [
+    {
+     "site": "EasyUI Book Call Button",
+     "url": "https://easyui.site/components/book-call-button",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页主按钮的动作是什么，图标能否一眼读懂？",
+    "触屏没有悬停时由哪个状态替代？",
+    "胶囊占多宽时静止态仍可读？"
+   ],
+   "reduce_motion": "胶囊保持静止宽度，悬停改为颜色变化",
+   "risks": "触屏无悬停，需要按下态替代；静止态带箭头，不能声称避开 X12",
+   "avoids": [],
+   "structure": "按钮 306×96 px；静止胶囊宽 36%；变换原点在左",
+   "mechanism": "transform-origin 左、scaleX、focus-visible 环",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：胶囊扩张时长；文字滑出与图标出现的先后；触屏下的替代。"
+  },
+  {
+   "id": "loader-52",
+   "slot": "loader",
+   "purpose": "让读者等待回答时看到每个阶段的真实名称",
+   "name": "阶段名滚动加载条",
+   "why": "一条小胶囊里的阶段名依次滚过并落在对勾上，每个阶段名是一次事实更新，等待变成进度",
+   "seen_at": [
+    {
+     "site": "affectUI Thinking Loader",
+     "url": "https://affectui.com/components/thinking-loader",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页等待的真实阶段有哪几个？",
+    "阶段是否来自真实状态而不是编造？",
+    "少于 0.5 秒的等待是否改为不显示？"
+   ],
+   "reduce_motion": "静态文字显示当前阶段名，结束时换成对勾",
+   "risks": "阶段名不是真实状态时信任下降",
+   "avoids": [],
+   "structure": "八线转轮；阶段名滚动；结束落在对勾",
+   "mechanism": "文字滚动、aria-live、状态机",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：阶段名是否绑定真实状态；短于 0.5 s 是否不出现。"
+  },
+  {
+   "id": "rows-53",
+   "slot": "rows",
+   "purpose": "让读者一眼看到工具调用的状态与用时并按需展开",
+   "name": "计时状态行",
+   "why": "一行内给出实时计时、状态与摘要，点开才见参数与结果，失败有重试，多个调用有汇总行",
+   "seen_at": [
+    {
+     "site": "affectUI Tool Call Card",
+     "url": "https://affectui.com/components/tool-call-card",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页的“调用”是什么对象？",
+    "汇总行是否给出失败数？",
+    "结果过长如何截断？"
+   ],
+   "reduce_motion": "计时数字静止显示，展开无动画",
+   "risks": "调用数很多而汇总行不给失败数时用户不知道要展开",
+   "avoids": [
+    "X7"
+   ],
+   "structure": "单行摘要；展开显示参数与结果；失败有重试",
+   "mechanism": "details/summary 或 aria-expanded、计时器",
+   "impl": null,
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：按原帖行为亲核。"
+  },
+  {
+   "slot": "hero",
+   "purpose": "让读者在首屏看到产品已嵌在一个有材质的场景里",
+   "name": "壁纸上的产品窗口首屏",
+   "why": "产品界面放进一块有材质的框并在折线处被裁断，框的作用是把界面变成被摆放的物件，读者先看到物件再看到功能，折线暗示下面还有内容",
+   "seen_at": [
+    {
+     "site": "WorkOS Atlas",
+     "url": "https://workos.com/atlas",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "屏幕",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页的\"产品界面\"是哪一块真实画面？",
+    "折线落在界面的哪一行，才让人想继续滚？",
+    "壁纸用本题材的哪种材料，而不是渐变？"
+   ],
+   "reduce_motion": "界面框与壁纸保持静态，对话内容直接显示为最终状态",
+   "risks": "浮夸：壁纸色相与页面其余部分不相干时，框像贴纸",
+   "avoids": [
+    "X4"
+   ],
+   "structure": "标题约 84 px、副标题约 18 px，字号比约 5；首屏文字元素共 3 个；产品框在 577 px 高视口中被下沿裁切",
+   "mechanism": "圆角容器内放渐变背景加界面截图或真实 DOM，容器高度大于首屏",
+   "added": "2026-10-18",
+   "used_in": [],
+   "id": "hero-56",
+   "verify_note": "动效时长未测。"
+  },
+  {
+   "slot": "hero",
+   "purpose": "让读者读到标题的同时读到产品或品牌的具体物件，也可用于阅读屏",
+   "name": "标题行内物件词",
+   "why": "标题里的一两个词位用图标或三维小物件替代，读者在读句子的节奏里同时认出对象，不需要另放一排图",
+   "seen_at": [
+    {
+     "site": "Mobbin",
+     "url": "https://mobbin.com/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    },
+    {
+     "site": "Butter Video",
+     "url": "https://www.butter.video/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页哪三个名词最该变成图形？",
+    "物件与字的基线怎么对齐，物件高度是几倍字高？",
+    "窄屏换行后物件会落在行首吗？"
+   ],
+   "reduce_motion": "物件静止在词位上，句子保持可读",
+   "risks": "可读性：物件过多或高于字高 1.2 倍时句子断裂，超过 3 个就像表情包",
+   "avoids": [
+    "X13"
+   ],
+   "structure": "标题约 80 px；行内物件约 1 个字高的圆角方块；每标题 3 个物件",
+   "mechanism": "inline-block 元素 vertical-align 对齐字中线；物件可为 img、svg 或小画布",
+   "added": "2026-10-18",
+   "used_in": [],
+   "id": "hero-57",
+   "verify_note": "动效时长未测。"
+  },
+  {
+   "slot": "page",
+   "purpose": "让读者逐词读完一句长陈述并停在重点词",
+   "name": "滚动逐词浮现陈述句",
+   "why": "长句的每个词按滚动进度从模糊淡色变清晰，读者的视线被迫跟着滚动速度走，读完一句才进入下一屏",
+   "seen_at": [
+    {
+     "site": "Butter Video",
+     "url": "https://www.butter.video/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    },
+    {
+     "site": "Lue Studio",
+     "url": "https://lue.studio/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    },
+    {
+     "site": "Lucian UX/UI Prompt（元素 260，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#260",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "驱动",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "这句陈述去掉哪些词仍然成立？",
+    "哪几个词需要最后才亮？",
+    "滚动一屏对应读几个词？"
+   ],
+   "reduce_motion": "整句直接显示为终态，无模糊",
+   "risks": "可读性：词亮得太慢时读者不耐烦，超过一屏高度以上的句子会被跳过；常见模板件，只用于全页 1 句宣言，≤25 字，快速滚动时整句模糊",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "句长约 20 词；模糊从强到 0；一句占 1 到 1.5 屏滚动距离；词可含内嵌物件",
+   "mechanism": "按词拆 span，滚动进度映射到 opacity 与 filter blur，或 animation-timeline: view()；sticky 固定整块，核心词变实时加强调",
+   "added": "2026-10-18",
+   "used_in": [],
+   "id": "page-12",
+   "verify_note": "并入 C-09：Lucian 元素 260 为二手摘要，读源码关键字，未在浏览器打开演示。 动效时长未测。"
+  },
+  {
+   "slot": "page",
+   "purpose": "让读者在高密度作品页里仍能一眼分出主次",
+   "name": "单一字号信息栅格",
+   "why": "全部文字取同一字号，层次只靠白与灰、位置与媒体块大小建立，读者的视线被媒体块吸引而不是被字号吸引",
+   "seen_at": [
+    {
+     "site": "Viktor Horváth 作品集",
+     "url": "https://www.viktorhor.com/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页要靠哪一块媒体做主角？",
+    "文字的两种明度分别指什么角色（标题、说明）？",
+    "实时信息（时钟、状态）放哪一格？"
+   ],
+   "reduce_motion": "栅格与时钟为静态，时钟仍每秒更新或改为静态时间",
+   "risks": "可读性：文字量超过一屏 25 条时失去主次；移动端字号 12 px 太小；手机 12 px 过小；细线栅格属 design-taste-frontend 第 3 类默认",
+   "avoids": [
+    "X3",
+    "X7"
+   ],
+   "structure": "首屏文字元素 25 个全为 12 px；单元格以 1 px 细线分隔；媒体块边到边无外边距；实时时钟含时区",
+   "mechanism": "CSS grid 加 gap 为 1 px 并以背景色露线；Date 每秒更新",
+   "added": "2026-10-18",
+   "used_in": [],
+   "id": "page-13",
+   "verify_note": "动效时长未测。"
+  },
+  {
+   "slot": "hero",
+   "purpose": "让读者在首屏明白这是一个由物件和字组成的有重量的场景",
+   "name": "悬挂三维物件穿过导航",
+   "why": "三维物件从视口顶部垂下，压过导航胶囊并停在标题之上，物件与标题的前后关系给整页一个深度，读者看到的是\"挂着的东西\"而不是平面",
+   "seen_at": [
+    {
+     "site": "Butter Video",
+     "url": "https://www.butter.video/",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "钢",
+    "塑料"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页要挂的物件是什么实物？",
+    "物件在哪些层级里（导航之上还是之下）？",
+    "物件摆动幅度是几度，是否会遮住按钮？"
+   ],
+   "reduce_motion": "物件静止在垂下的姿势",
+   "risks": "性能：三维画布在低端设备上卡顿；遮挡导航点击",
+   "avoids": [
+    "X4"
+   ],
+   "structure": "标题约 88 px；背景灰度渐变；物件约 200 px 宽，从顶边进入；画布只一个",
+   "mechanism": "WebGL 画布加物理摆动，导航层级位于画布之上或之下",
+   "added": "2026-10-18",
+   "used_in": [],
+   "id": "hero-58",
+   "verify_note": "动效时长未测。"
+  },
+  {
+   "slot": "gallery",
+   "purpose": "让读者按脚本结构而非时间轴理解一个发布影片",
+   "name": "章节条标注的影片",
+   "why": "播放器下方列出钩子、演示、功能、互动、收尾几个章节，当前章亮显，读者在看之前就知道影片的结构并能按章跳到想看处",
+   "seen_at": [
+    {
+     "site": "LaunchVideos Gallery 影片页（Messagi）",
+     "url": "https://launchvideos.gallery/videos/bc522398-7693-4a3d-8ecb-de462dbdcb92",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页内容分哪几章，章名是动词还是名词？",
+    "当前章用什么单一变化标示？",
+    "章条是否可点击跳转？"
+   ],
+   "reduce_motion": "章条仅随时间切换高亮，无过渡",
+   "risks": "可读性：章过多时挤成两行；章名含糊则无助于定位",
+   "avoids": [],
+   "structure": "影片约 43 秒；5 个章节标签；当前章为实心色块，其余为灰底；标签条位于播放器画面下沿",
+   "mechanism": "按章起止时间切换 aria-current；点击设置 video.currentTime",
+   "added": "2026-10-18",
+   "used_in": [],
+   "id": "gallery-55",
+   "verify_note": "动效时长未测。"
+  },
+  {
+   "id": "rows-54",
+   "slot": "rows",
+   "purpose": "让列表行的悬停把对应的图带到指针旁，读者不点开就能预览",
+   "name": "悬停行带图跟随",
+   "why": "大字列表本身保持文字密度，图片只在指针旁短暂出现，读者用指针位置而不是点击来选择要看哪一行",
+   "seen_at": [
+    {
+     "site": "Lucian UX/UI Prompt（元素 276，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#276",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "纸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "列表行在本页是什么名词，它的预览图是什么物件？",
+    "没有指针的载体里，键盘聚焦或点按怎样触发同一张图？",
+    "图延迟跟随多少毫秒，才不挡住下一行的文字？"
+   ],
+   "reduce_motion": "取消跟随与倾斜，悬停或聚焦时图固定在行尾，列表本身照常可读",
+   "risks": "图遮住相邻行文字时，读者在行间移动会反复触发闪烁",
+   "avoids": [
+    "X3"
+   ],
+   "mechanism": "指针位置 lerp 跟随加运动方向倾斜；行切换时图条按行序号上下滑；键盘聚焦时图落在行尾",
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：按原帖行为亲核。原注：读了开源仓库 api/v1/en 目录里元素 276 的目录摘要与源码关键字（getBoundingClientRect、clip-path 等），没有在浏览器里打开演示。行为描述来自作者摘要，缺亲核。"
+  },
+  {
+   "id": "form-54",
+   "slot": "form",
+   "purpose": "提交失败时把读者带到第一个错处，并让错误数量随修正递减",
+   "name": "提交后跳到错处并计数递减",
+   "why": "提交失败的信息变成一个会随读者修正而变少的数字，读者不用自己找哪里错了，也不用重读整张表",
+   "seen_at": [
+    {
+     "site": "Lucian UX/UI Prompt（元素 244，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#244",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "表里哪几个字段会出错，错误提示是什么句子？",
+    "汇总条放在表单顶部还是粘在视口上沿？",
+    "全部修好后，完成态怎样接上下一步？"
+   ],
+   "reduce_motion": "错处不抖动，只显示红框与提示；滚动到第一个错处改为立即跳转，汇总数字仍递减",
+   "risks": "错字段在可视区外且表单很长时，滚动跳转可能让读者失去上下文",
+   "avoids": [],
+   "mechanism": "提交时汇总条下落并写入错误数；错字段抖动并展开提示；滚动到第一个错字段并聚焦；修正后提示折叠、汇总数减一；汇总项可点跳转",
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：滚动到错处的时长；聚焦是否落在输入框；错误数是否随修正递减。原注：读了开源仓库 api/v1/en 目录里元素 244 的目录摘要与源码关键字（getBoundingClientRect、clip-path 等），没有在浏览器里打开演示。行为描述来自作者摘要，缺亲核。"
+  },
+  {
+   "id": "form-55",
+   "slot": "form",
+   "purpose": "把单个入口按钮原地变成输入框，省去跳页或弹窗",
+   "name": "按钮原地展开成输入",
+   "why": "入口按钮横向展开成输入框，读者的视线与指针不用离开原位置，提交后同一个形状收成圆再展开成确认条",
+   "seen_at": [
+    {
+     "site": "Lucian UX/UI Prompt（元素 274，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#274",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "驱动",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "入口按钮的文案是什么？它展开后需要几个字段，超过一个还成立吗？",
+    "提交成功后这个形状停在哪个终态？",
+    "格式错误时用什么动作表示拒绝？"
+   ],
+   "reduce_motion": "按钮直接切换为输入框与确认条，无拉伸和旋转；错误用文字提示代替摇头",
+   "risks": "展开宽度大于窄屏容器时，输入框会被裁切",
+   "avoids": [],
+   "mechanism": "宽度过渡由按钮变为输入行；提交后收缩成圆环，环转动后画勾，再展开成确认胶囊；Esc 关闭",
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：宽度过渡是否引起布局移动；提交后圆环到勾的时序。原注：读了开源仓库 api/v1/en 目录里元素 274 的目录摘要与源码关键字（getBoundingClientRect、clip-path 等），没有在浏览器里打开演示。行为描述来自作者摘要，缺亲核。"
+  },
+  {
+   "id": "nav-53",
+   "slot": "nav",
+   "purpose": "在顶栏菜单项之间移动时，下拉面板滑动变形而不是关闭再打开",
+   "name": "变形下拉面板",
+   "why": "面板在菜单项之间滑动并改变尺寸，内容沿读者移动的方向滑入，读者能感到各菜单是同一块区域的不同页，而不是五个互不相干的弹窗",
+   "seen_at": [
+    {
+     "site": "Lucian UX/UI Prompt（元素 354，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#354",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "呼吸"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "各菜单项的内容尺寸差多大，面板能不能承受最大的一个？",
+    "小箭头怎样跟随面板？",
+    "键盘 Tab 与 Enter 怎样进入同一面板？"
+   ],
+   "reduce_motion": "面板淡入淡出，不滑动，尺寸直接切换",
+   "risks": "面板内容高度差很大时，变形过程会让下方内容跳动",
+   "avoids": [],
+   "mechanism": "单一面板元素，用 CSS 变量写入宽高与位移；内容页按移动方向做左右位移加透明度；箭头独立位移",
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：面板尺寸过渡时长；内容是否按移动方向滑入；箭头是否独立移动。原注：读了开源仓库 api/v1/en 目录里元素 354 的目录摘要与源码关键字（getBoundingClientRect、clip-path 等），没有在浏览器里打开演示。行为描述来自作者摘要，缺亲核。"
+  },
+  {
+   "id": "cards-55",
+   "slot": "cards",
+   "purpose": "用不同尺寸的拼块介绍功能，每块悬停时播放自己那一小段场景",
+   "name": "悬停播放的拼块网格",
+   "why": "每块拼块各演一个与自己功能相符的小场景，读者通过悬停得到功能的证据，而不是读一句形容",
+   "seen_at": [
+    {
+     "site": "Lucian UX/UI Prompt（元素 214，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#214",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "驱动",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "每个拼块的小场景是什么真实操作？",
+    "触屏上用什么触发代替悬停？",
+    "哪一块是最大的，为什么？"
+   ],
+   "reduce_motion": "每块拼块显示场景的最终静态画面",
+   "risks": "每块都有不同动效时，同屏运动元素数容易超标；拼块网格本身是默认版式，同屏运动数须守 restraint.md 第 4 节",
+   "avoids": [],
+   "mechanism": "尺寸不一的网格；悬停时抬起并换边框，内部用各自的短脚本播放",
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：每块的小脚本是否离屏暂停；同屏运动数是否超 restraint.md 第 4 节。原注：读了开源仓库 api/v1/en 目录里元素 214 的目录摘要与源码关键字（getBoundingClientRect、clip-path 等），没有在浏览器里打开演示。行为描述来自作者摘要，缺亲核。"
+  },
+  {
+   "id": "form-56",
+   "slot": "form",
+   "purpose": "选定时间后让该时间的按钮收窄，旁边滑出确认键，避免一次点击就订下",
+   "name": "选中后分裂出确认",
+   "why": "选中的时间按钮收窄，旁边出现确认键，读者的选择与提交被分成两步，误点的代价降到一次撤销",
+   "seen_at": [
+    {
+     "site": "Lucian UX/UI Prompt（元素 279，MIT）",
+     "url": "https://lucianlabs.dev/uxui-prompt/#279",
+     "year": 2026,
+     "verified": "2026-10-18",
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "呼吸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web",
+    "wechat-mini"
+   ],
+   "adapt": [
+    "哪些时间已满，怎样让它们变暗且不可点？",
+    "确认后的结果页要显示哪几项摘要？",
+    "取消选择的动作放在哪里？"
+   ],
+   "reduce_motion": "选中时按钮变为选中态，确认键直接出现，无滑出",
+   "risks": "确认键紧贴时间按钮时，窄屏上两者会互相挤压",
+   "avoids": [],
+   "mechanism": "选中按钮宽度缩到一半，确认键以位移加透明度出现；日期条切换时时间格依次升起",
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：收窄的比例；撤销路径；键盘能否完成。原注：读了开源仓库 api/v1/en 目录里元素 279 的目录摘要与源码关键字（getBoundingClientRect、clip-path 等），没有在浏览器里打开演示。行为描述来自作者摘要，缺亲核。"
+  },
+  {
+   "id": "hero-59",
+   "slot": "hero",
+   "purpose": "让一个短标题在一次按住动作里表现出引力，松手后恢复可读",
+   "name": "长按引力透镜",
+   "why": "每个像素改取另一处的背景色，扭曲量随到中心的距离连续变化，读者按住一次就看懂这是一个有中心的力场，松手后文字复原，阅读不被破坏",
+   "seen_at": [
+    {
+     "site": "阿哲Phil 黑洞帖",
+     "url": "https://x.com/Formulasearch/status/2106689571400700331",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要",
+     "verify_note": "读到三条原理（引力透镜、越近转越快、文字过捕获半径被吞并在松手后逐字重现），视频与提示词原文读不到。本组另做原型，WebGL 透镜在 SwiftShader Chromium 出图。"
+    }
+   ],
+   "atmosphere_fit": [
+    "沉浸",
+    "驱动",
+    "玻璃"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "哪一个词值得被吸走又被还原？",
+    "“中心”在本页代表什么对象？",
+    "按住触发在触屏上用长按还是点击？"
+   ],
+   "reduce_motion": "不运行着色器，标题保持原样，中心处放一个静态圆环作为示意",
+   "risks": "可读性：扭曲区不得压在正文上。性能：全屏着色器在低端手机掉帧，渲染分辨率需降到一半。无 WebGL 时无此效果。",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "短标题先画进 canvas 当纹理，覆盖在原 DOM 标题上；按住时才显示 canvas；松手后 600 到 900 ms 内恢复",
+   "mechanism": "片元着色器反向采样：偏折量按 m 的平方除以 r，取纹理中另一处的颜色；半径小于捕获半径的像素取黑",
+   "impl": "路线一：WebGL 片元着色器透镜（原型待存档）；路线二：DOM 文字位移滤镜，SVG feImage 位移图加 feDisplacementMap 作用于真实 DOM 标题，scale 约 100 到 150，读屏与复制不受影响（Safari 支持待亲核）",
+   "tasteskill_id": null,
+   "added": "2026-10-18",
+   "used_in": [],
+   "verify_note": "待亲核：长按开始到字被吞的时长；松手后逐字重现的顺序；正文是否被压。"
   }
  ]
 }

@@ -2,7 +2,7 @@
 
 把一句委托做成一张设计过的页面。四个阶段：内容蓝图、视觉氛围、组件创意、design.md。核心是创意与案例库，实现用开源组件库或自研。入口 `SKILL.md`。
 
-状态（2026-10-17）：按用户当日原话重定向为四阶段（见 `PLAN.md` 第 16 节）。成品范例 `mixed-01`（盲评 4）、`clear-01`（盲评 3），`show-01`（盲评 3、Fable 4）。案例库 `library/cases.json` 持续扩充。
+状态（2026-10-17）：按用户当日原话重定向为四阶段（见 `PLAN.md` 第 16 节）。成品范例 `mixed-01`（盲评 4）、`clear-01`（盲评 3），`show-01`（盲评 3、Fable 4）。案例库 `library/cases.json`（140 条）持续扩充。冷启动（新会话 sonnet 只拿一句委托）三次盲评都是 3，记录在 `evals/coldstart-*.md`；"随时让别的 agent 调用也能出优秀高级效果"尚未达成。
 
 ## 1. 目录
 
@@ -16,9 +16,10 @@
 | `templates/design.md` | 唯一产物模板，三节：氛围、每屏做法、执行规则 |
 | `library/cases.json`、`cases.md` | 组件创意案例库。`cases.md` 是索引 |
 | `library/` 其他 | `carriers.json` 9 种载体、`page-forms.json` 15 种页面形态、`expressions.json` 表现形式、`palettes.json` 配色类、`directions.json` 整页方向、`references.json`、`motions.json` |
+| `references/why-good.md` | 为什么好：高级感的可测部分（秩序感）、氛围感、组件四判据、16 槽好与平庸分界、动效令牌、示意图质感层、何时不要用 |
 | `references/restraint.md` | 收放原则：四条禁区、三句话原则、四种动效气质 |
 | `references/craft.md` | 工艺附录：起手复制、导出口、截图法、钩子（可选）、开源库 |
-| `references/anti-sameness.md` | 反同质化八条与反默认清单 X1 到 X17 |
+| `references/anti-sameness.md` | 反同质化八条与反默认清单 X1 到 X20 |
 | `references/carriers.md`、`asset-generation.md`、`blender-pipeline.md` | 载体细则、生成资产、Blender 管线 |
 | `examples/mechanisms/` | 21 个机制示例，单文件 HTML，每个带 `CARD.md` |
 | `examples/finished/` | 成品。实现起手从这里复制工艺层 |
@@ -26,7 +27,7 @@
 | `history/` | 使用史 `history.json`，运行时唯一会写进本目录的文件 |
 | `samples/design.md` | 填好的 design.md 样例（由 E2 发布页的氛围与每屏做法合成） |
 | `evals/` | 评测 E1 讲解页、E2 发布页、E3 小程序，冷启动记录，Fable 评审记录 |
-| `research/` | 调研底稿 R1 到 R5 |
+| `research/` | 调研底稿 R1 到 R5，以及 `inspiration-20261018/`（用户收集的设计资源研究：A 到 D 笔记、E 分析与整合方案） |
 | `PLAN.md` | 方案、完成定义、Fable 评审记录、重定向记录 |
 
 ## 2. 怎么用
