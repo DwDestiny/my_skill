@@ -9,8 +9,8 @@
 来自技术卡：T23（research/R4-visual-tech.md）。加载端沿用 T02（gltf-model-stage）。
 glb 来源：Blender 无头导出。命令：blender -b --python make-model.py（见本目录 make-model.py）。
   model.glb 约 40 KB，不压缩，不需要 DRACOLoader。preview.png 是同一脚本用 Cycles CPU 渲的预览。
-  本机 Blender 4.0.2 缺 numpy，官方 glTF 导出器会失败，脚本自动改用内置的标准库写入器。
-适合 / 不适合：适合一次性生成的程序化件（图层塔、环柱组合）。复杂有机形体、贴图烘焙不适合本机。
+  示例环境 Blender 4.0.2 缺 numpy，官方 glTF 导出器会失败，脚本自动改用内置的标准库写入器。
+适合 / 不适合：适合一次性生成的程序化件（图层塔、环柱组合）。复杂有机形体、贴图烘焙不适合示例环境。
 依赖与固定版本：three 0.186.0 与 addons/loaders/GLTFLoader.js，经 jsDelivr 加载（importmap）。
 运行要求：必须经 http 访问。file:// 下浏览器禁止 fetch .glb。例：python3 -m http.server 在本目录运行。
 Reduce Motion 退路：不自转，只渲染一帧。

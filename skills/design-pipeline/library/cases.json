@@ -1,9 +1,9 @@
 {
  "_meta": {
   "source": "component-patterns.json 29 张转换加本库已做出的机制示例、成品范例与评测页面做法",
-  "checked": "2026-10-18",
+  "checked": "2026-10-19",
   "note": "案例只写思路、结构与机制，不带皮肤。皮肤取 design.md 变量。how_checked 三值：亲核打开 / 本库已做出 / 二手摘要。 2026-10-17 探索 B 从 reactbits.dev 补 14 条薄槽案例，同源；同一页面选用时注意 X17。 2026-10-18 并入用户收集的设计资源（A 组件库站、B 整页氛围、C 提示词与 skill、D 3D）；二手摘要居多，待亲核条目见 verify_note。",
-  "case_count": 140,
+  "case_count": 148,
   "slots": [
    "cards",
    "cursor",
@@ -83,7 +83,7 @@
    "seen_at": [
     {
      "site": "本库 E2",
-     "url": "evals/E2/runs/20261016/04-页面/index.html 第 58 到 70 行",
+     "url": "archive:evals/E2/runs/20261016/04-页面/index.html 第 58 到 70 行",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -228,7 +228,7 @@
    "seen_at": [
     {
      "site": "本库 E2",
-     "url": "evals/E2/runs/20261016/04-页面/index.html 第 74 到 89 行",
+     "url": "archive:evals/E2/runs/20261016/04-页面/index.html 第 74 到 89 行",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -417,7 +417,7 @@
    "seen_at": [
     {
      "site": "本库 E2",
-     "url": "evals/E2/runs/20261016/04-页面/index.html 第 106 到 121 行",
+     "url": "archive:evals/E2/runs/20261016/04-页面/index.html 第 106 到 121 行",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -599,7 +599,8 @@
    "added": "2026-10-17",
    "used_in": [
     "clear-01"
-   ]
+   ],
+   "verify_note": "出处成品为待改案例，只学这一处机制，不学成品整体。"
   },
   {
    "id": "rows-02",
@@ -617,7 +618,7 @@
     },
     {
      "site": "本库 E2",
-     "url": "evals/E2/runs/20261016/04-页面/index.html 第 338 到 341 行",
+     "url": "archive:evals/E2/runs/20261016/04-页面/index.html 第 338 到 341 行",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -759,7 +760,7 @@
    "seen_at": [
     {
      "site": "本库 E2",
-     "url": "evals/E2/runs/20261016/04-页面/index.html 第 209 到 212 行",
+     "url": "archive:evals/E2/runs/20261016/04-页面/index.html 第 209 到 212 行",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -846,7 +847,8 @@
    "added": "2026-10-17",
    "used_in": [
     "clear-01"
-   ]
+   ],
+   "verify_note": "出处成品为待改案例，只学这一处机制，不学成品整体。"
   },
   {
    "id": "steps-03",
@@ -993,7 +995,8 @@
    "added": "2026-10-17",
    "used_in": [
     "clear-01"
-   ]
+   ],
+   "verify_note": "出处成品为待改案例，只学这一处机制，不学成品整体。"
   },
   {
    "id": "panel-02",
@@ -1020,8 +1023,9 @@
      "site": "Lucian UX/UI Prompt（元素 336，MIT）",
      "url": "https://lucianlabs.dev/uxui-prompt/#336",
      "year": 2026,
-     "verified": "2026-10-18",
-     "how_checked": "二手摘要"
+     "verified": false,
+     "how_checked": "二手摘要",
+     "verified_at": "2026-10-18"
     }
    ],
    "atmosphere_fit": [
@@ -1099,9 +1103,9 @@
   {
    "id": "panel-04",
    "slot": "panel",
-   "purpose": "让输入框的标签既占位又不丢失",
+   "purpose": "让输入框的标签既预留又不丢失",
    "name": "浮动标签输入",
-   "why": "标签在框内起占位作用，聚焦后上浮缩小，输入时仍能看到字段名",
+   "why": "标签在框内起预留作用，聚焦后上浮缩小，输入时仍能看到字段名",
    "seen_at": [
     {
      "site": "Mobbin 表单合集",
@@ -1133,7 +1137,7 @@
     "出错时错误信息放标签旁还是框下？"
    ],
    "reduce_motion": "直接定位，无上浮",
-   "risks": "可读性：占位与标签重复",
+   "risks": "可读性：预留与标签重复",
    "avoids": [
     "X8"
    ],
@@ -1191,7 +1195,8 @@
    "added": "2026-10-17",
    "used_in": [
     "clear-01"
-   ]
+   ],
+   "verify_note": "出处成品为待改案例，只学这一处机制，不学成品整体。"
   },
   {
    "id": "overlay-02",
@@ -1458,8 +1463,8 @@
    "why": "板片分层加相机推近，滚动距离即观察距离，读者通过靠近理解层叠关系",
    "seen_at": [
     {
-     "site": "本库机制示例 hero-05",
-     "url": "examples/mechanisms/hero-05/index.html",
+     "site": "本库机制示例 webgl-scene",
+     "url": "examples/mechanisms/webgl-scene/index.html",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -1485,7 +1490,7 @@
    ],
    "structure": null,
    "mechanism": "three 场景、鼠标视差、滚动推镜头",
-   "impl": "examples/mechanisms/hero-05",
+   "impl": "examples/mechanisms/webgl-scene",
    "tasteskill_id": null,
    "added": "2026-10-17",
    "used_in": []
@@ -1498,8 +1503,8 @@
    "why": "片元着色器噪声场由 CSS 变量取色，文字放在实色面板上，背景动效与阅读区分层",
    "seen_at": [
     {
-     "site": "本库机制示例 hero-06",
-     "url": "examples/mechanisms/hero-06/index.html",
+     "site": "本库机制示例 fluid-noise",
+     "url": "examples/mechanisms/fluid-noise/index.html",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -1526,7 +1531,7 @@
    ],
    "structure": null,
    "mechanism": "WebGL2 片元着色器 fbm 噪声，uniform 取 CSS 变量",
-   "impl": "examples/mechanisms/hero-06",
+   "impl": "examples/mechanisms/fluid-noise",
    "tasteskill_id": null,
    "added": "2026-10-17",
    "used_in": []
@@ -1539,8 +1544,8 @@
    "why": "SDF 光线步进在单个全屏着色器里生成体块，不需要模型文件，只在指针或滚动后短时运行",
    "seen_at": [
     {
-     "site": "本库机制示例 hero-07",
-     "url": "examples/mechanisms/hero-07/index.html",
+     "site": "本库机制示例 raymarch-backdrop",
+     "url": "examples/mechanisms/raymarch-backdrop/index.html",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -1565,7 +1570,7 @@
    ],
    "structure": null,
    "mechanism": "WebGL1 SDF 光线步进，640 乘 360 渲染",
-   "impl": "examples/mechanisms/hero-07",
+   "impl": "examples/mechanisms/raymarch-backdrop",
    "tasteskill_id": null,
    "added": "2026-10-17",
    "used_in": []
@@ -1578,8 +1583,8 @@
    "why": "双缓冲染料场按指针速度扩散，指针每次移动都得到视觉回应，文字放在实色面板上",
    "seen_at": [
     {
-     "site": "本库机制示例 transition-01",
-     "url": "examples/mechanisms/transition-01/index.html",
+     "site": "本库机制示例 fluid-ink-pointer",
+     "url": "examples/mechanisms/fluid-ink-pointer/index.html",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -1604,7 +1609,7 @@
    ],
    "structure": null,
    "mechanism": "WebGL2 染料双缓冲，curl noise，指针速度回溯采样",
-   "impl": "examples/mechanisms/transition-01",
+   "impl": "examples/mechanisms/fluid-ink-pointer",
    "tasteskill_id": null,
    "added": "2026-10-17",
    "used_in": []
@@ -1617,8 +1622,8 @@
    "why": "浏览器为同名元素生成转场，页面切换时读者看见同一个物件从一页到另一页",
    "seen_at": [
     {
-     "site": "本库机制示例 transition-02",
-     "url": "examples/mechanisms/transition-02/index.html",
+     "site": "本库机制示例 cross-doc-view-transition",
+     "url": "examples/mechanisms/cross-doc-view-transition/index.html",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -1644,7 +1649,7 @@
    ],
    "structure": null,
    "mechanism": "@view-transition navigation auto，view-transition-name",
-   "impl": "examples/mechanisms/transition-02",
+   "impl": "examples/mechanisms/cross-doc-view-transition",
    "tasteskill_id": null,
    "added": "2026-10-17",
    "used_in": []
@@ -1657,8 +1662,8 @@
    "why": "舞台固定、文字逐章滚过、进度变量驱动舞台，读者读到哪章舞台就到哪状态",
    "seen_at": [
     {
-     "site": "本库机制示例 page-01",
-     "url": "examples/mechanisms/page-01/index.html",
+     "site": "本库机制示例 scroll-story",
+     "url": "examples/mechanisms/scroll-story/index.html",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -1683,7 +1688,7 @@
    ],
    "structure": null,
    "mechanism": "GSAP ScrollTrigger pin 与 scrub，--p 变量",
-   "impl": "examples/mechanisms/page-01",
+   "impl": "examples/mechanisms/scroll-story",
    "tasteskill_id": null,
    "added": "2026-10-17",
    "used_in": []
@@ -1696,8 +1701,8 @@
    "why": "相机沿样条曲线穿过站点，滚动进度即路径位置，HTML 文字叠在站点上",
    "seen_at": [
     {
-     "site": "本库机制示例 page-02",
-     "url": "examples/mechanisms/page-02/index.html",
+     "site": "本库机制示例 scroll-camera-path",
+     "url": "examples/mechanisms/scroll-camera-path/index.html",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -1721,7 +1726,7 @@
    ],
    "structure": null,
    "mechanism": "three CatmullRomCurve3 相机路径，pin 3 屏",
-   "impl": "examples/mechanisms/page-02",
+   "impl": "examples/mechanisms/scroll-camera-path",
    "tasteskill_id": null,
    "added": "2026-10-17",
    "used_in": []
@@ -1734,8 +1739,8 @@
    "why": "canvas 按滚动进度画序列帧，读者控制播放速度，不被动看视频",
    "seen_at": [
     {
-     "site": "本库机制示例 page-03",
-     "url": "examples/mechanisms/page-03/index.html",
+     "site": "本库机制示例 image-sequence",
+     "url": "examples/mechanisms/image-sequence/index.html",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -1761,7 +1766,7 @@
    ],
    "structure": null,
    "mechanism": "canvas 序列帧，预加载，进度映射",
-   "impl": "examples/mechanisms/page-03",
+   "impl": "examples/mechanisms/image-sequence",
    "tasteskill_id": null,
    "added": "2026-10-17",
    "used_in": []
@@ -1774,8 +1779,8 @@
    "why": "CSS 动画绑定滚动或视口进度，动效跟随读者位置而非时钟",
    "seen_at": [
     {
-     "site": "本库机制示例 page-04",
-     "url": "examples/mechanisms/page-04/index.html",
+     "site": "本库机制示例 css-scroll-timeline",
+     "url": "examples/mechanisms/css-scroll-timeline/index.html",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -1801,7 +1806,7 @@
    ],
    "structure": null,
    "mechanism": "animation-timeline view() 与 scroll()，@supports",
-   "impl": "examples/mechanisms/page-04",
+   "impl": "examples/mechanisms/css-scroll-timeline",
    "tasteskill_id": null,
    "added": "2026-10-17",
    "used_in": []
@@ -1814,8 +1819,8 @@
    "why": "一屏 pin 住，滚动驱动旋转、分解、相机推进三段，文字按段切换，读者看着物件被拆开",
    "seen_at": [
     {
-     "site": "本库机制示例 page-05",
-     "url": "examples/mechanisms/page-05/index.html",
+     "site": "本库机制示例 pinned-3d-scrub",
+     "url": "examples/mechanisms/pinned-3d-scrub/index.html",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -1840,7 +1845,7 @@
    ],
    "structure": null,
    "mechanism": "ScrollTrigger pin 与 scrub，three，data-pin-screens",
-   "impl": "examples/mechanisms/page-05",
+   "impl": "examples/mechanisms/pinned-3d-scrub",
    "tasteskill_id": null,
    "added": "2026-10-17",
    "used_in": []
@@ -1854,7 +1859,7 @@
    "seen_at": [
     {
      "site": "本库 E2 页面规划",
-     "url": "evals/E2/runs/20261016/03-页面规划.md",
+     "url": "archive:evals/E2/runs/20261016/03-页面规划.md",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -1895,7 +1900,7 @@
    "seen_at": [
     {
      "site": "本库 E2 页面规划",
-     "url": "evals/E2/runs/20261016/03-页面规划.md",
+     "url": "archive:evals/E2/runs/20261016/03-页面规划.md",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -1936,7 +1941,7 @@
    "seen_at": [
     {
      "site": "本库 E2 方向单",
-     "url": "evals/E2/runs/20261016/02-方向单/direction.md",
+     "url": "archive:evals/E2/runs/20261016/02-方向单/direction.md",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -1977,7 +1982,7 @@
    "seen_at": [
     {
      "site": "本库 E2 页面规划",
-     "url": "evals/E2/runs/20261016/03-页面规划.md",
+     "url": "archive:evals/E2/runs/20261016/03-页面规划.md",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -2017,7 +2022,7 @@
    "seen_at": [
     {
      "site": "本库 E2 页面规划",
-     "url": "evals/E2/runs/20261016/03-页面规划.md",
+     "url": "archive:evals/E2/runs/20261016/03-页面规划.md",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -2058,7 +2063,7 @@
    "seen_at": [
     {
      "site": "本库冷启动页面规划",
-     "url": "evals/coldstart-full-20261017/run/03-页面规划.md",
+     "url": "archive:evals/coldstart-full-20261017/run/03-页面规划.md",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -2100,7 +2105,7 @@
    "seen_at": [
     {
      "site": "本库冷启动页面规划",
-     "url": "evals/coldstart-full-20261017/run/03-页面规划.md",
+     "url": "archive:evals/coldstart-full-20261017/run/03-页面规划.md",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -2142,7 +2147,7 @@
    "seen_at": [
     {
      "site": "本库 E1 方向单",
-     "url": "evals/E1/runs/20261016/02-方向单/direction.md",
+     "url": "archive:evals/E1/runs/20261016/02-方向单/direction.md",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -2335,7 +2340,8 @@
    "added": "2026-10-17",
    "used_in": [
     "clear-01"
-   ]
+   ],
+   "verify_note": "出处成品为待改案例，只学这一处机制，不学成品整体。"
   },
   {
    "id": "cards-04",
@@ -2377,7 +2383,8 @@
    "added": "2026-10-17",
    "used_in": [
     "clear-01"
-   ]
+   ],
+   "verify_note": "出处成品为待改案例，只学这一处机制，不学成品整体。"
   },
   {
    "id": "form-01",
@@ -2418,7 +2425,8 @@
    "added": "2026-10-17",
    "used_in": [
     "clear-01"
-   ]
+   ],
+   "verify_note": "出处成品为待改案例，只学这一处机制，不学成品整体。"
   },
   {
    "id": "cards-50",
@@ -2554,8 +2562,9 @@
      "site": "Lucian UX/UI Prompt（元素 223，MIT）",
      "url": "https://lucianlabs.dev/uxui-prompt/#223",
      "year": 2026,
-     "verified": "2026-10-18",
-     "how_checked": "二手摘要"
+     "verified": false,
+     "how_checked": "二手摘要",
+     "verified_at": "2026-10-18"
     }
    ],
    "atmosphere_fit": [
@@ -3350,8 +3359,9 @@
      "site": "Lucian UX/UI Prompt（元素 212，MIT）",
      "url": "https://lucianlabs.dev/uxui-prompt/#212",
      "year": 2026,
-     "verified": "2026-10-18",
-     "how_checked": "二手摘要"
+     "verified": false,
+     "how_checked": "二手摘要",
+     "verified_at": "2026-10-18"
     }
    ],
    "atmosphere_fit": [
@@ -3977,7 +3987,8 @@
    "added": "2026-10-17",
    "used_in": [
     "show-01"
-   ]
+   ],
+   "verify_note": "出处成品为待改案例，只学这一处机制，不学成品整体。"
   },
   {
    "id": "panel-06",
@@ -4020,7 +4031,8 @@
    "added": "2026-10-17",
    "used_in": [
     "show-01"
-   ]
+   ],
+   "verify_note": "出处成品为待改案例，只学这一处机制，不学成品整体。"
   },
   {
    "id": "rows-06",
@@ -4063,7 +4075,8 @@
    "added": "2026-10-17",
    "used_in": [
     "show-01"
-   ]
+   ],
+   "verify_note": "出处成品为待改案例，只学这一处机制，不学成品整体。"
   },
   {
    "id": "testimonial-01",
@@ -4108,7 +4121,8 @@
    "added": "2026-10-17",
    "used_in": [
     "show-01"
-   ]
+   ],
+   "verify_note": "出处成品为待改案例，只学这一处机制，不学成品整体。"
   },
   {
    "id": "page-10",
@@ -4153,7 +4167,8 @@
    "added": "2026-10-17",
    "used_in": [
     "show-01"
-   ]
+   ],
+   "verify_note": "出处成品为待改案例，只学这一处机制，不学成品整体。"
   },
   {
    "id": "panel-07",
@@ -4164,7 +4179,7 @@
    "seen_at": [
     {
      "site": "本库 冷启动 v2 胶片冲扫页",
-     "url": "evals/coldstart-v2-20261017/run/04-页面/index.html",
+     "url": "archive:evals/coldstart-v2-20261017/run/04-页面/index.html",
      "year": 2026,
      "verified": true,
      "how_checked": "本库已做出"
@@ -4718,8 +4733,9 @@
      "site": "Lucian UX/UI Prompt（元素 231，MIT）",
      "url": "https://lucianlabs.dev/uxui-prompt/#231",
      "year": 2026,
-     "verified": "2026-10-18",
-     "how_checked": "二手摘要"
+     "verified": false,
+     "how_checked": "二手摘要",
+     "verified_at": "2026-10-18"
     }
    ],
    "atmosphere_fit": [
@@ -4768,8 +4784,9 @@
      "site": "Lucian UX/UI Prompt（元素 219，MIT）",
      "url": "https://lucianlabs.dev/uxui-prompt/#219",
      "year": 2026,
-     "verified": "2026-10-18",
-     "how_checked": "二手摘要"
+     "verified": false,
+     "how_checked": "二手摘要",
+     "verified_at": "2026-10-18"
     }
    ],
    "atmosphere_fit": [
@@ -5490,8 +5507,9 @@
      "site": "Lucian UX/UI Prompt（元素 260，MIT）",
      "url": "https://lucianlabs.dev/uxui-prompt/#260",
      "year": 2026,
-     "verified": "2026-10-18",
-     "how_checked": "二手摘要"
+     "verified": false,
+     "how_checked": "二手摘要",
+     "verified_at": "2026-10-18"
     }
    ],
    "atmosphere_fit": [
@@ -5646,8 +5664,9 @@
      "site": "Lucian UX/UI Prompt（元素 276，MIT）",
      "url": "https://lucianlabs.dev/uxui-prompt/#276",
      "year": 2026,
-     "verified": "2026-10-18",
-     "how_checked": "二手摘要"
+     "verified": false,
+     "how_checked": "二手摘要",
+     "verified_at": "2026-10-18"
     }
    ],
    "atmosphere_fit": [
@@ -5684,8 +5703,9 @@
      "site": "Lucian UX/UI Prompt（元素 244，MIT）",
      "url": "https://lucianlabs.dev/uxui-prompt/#244",
      "year": 2026,
-     "verified": "2026-10-18",
-     "how_checked": "二手摘要"
+     "verified": false,
+     "how_checked": "二手摘要",
+     "verified_at": "2026-10-18"
     }
    ],
    "atmosphere_fit": [
@@ -5722,8 +5742,9 @@
      "site": "Lucian UX/UI Prompt（元素 274，MIT）",
      "url": "https://lucianlabs.dev/uxui-prompt/#274",
      "year": 2026,
-     "verified": "2026-10-18",
-     "how_checked": "二手摘要"
+     "verified": false,
+     "how_checked": "二手摘要",
+     "verified_at": "2026-10-18"
     }
    ],
    "atmosphere_fit": [
@@ -5759,8 +5780,9 @@
      "site": "Lucian UX/UI Prompt（元素 354，MIT）",
      "url": "https://lucianlabs.dev/uxui-prompt/#354",
      "year": 2026,
-     "verified": "2026-10-18",
-     "how_checked": "二手摘要"
+     "verified": false,
+     "how_checked": "二手摘要",
+     "verified_at": "2026-10-18"
     }
    ],
    "atmosphere_fit": [
@@ -5794,8 +5816,9 @@
      "site": "Lucian UX/UI Prompt（元素 214，MIT）",
      "url": "https://lucianlabs.dev/uxui-prompt/#214",
      "year": 2026,
-     "verified": "2026-10-18",
-     "how_checked": "二手摘要"
+     "verified": false,
+     "how_checked": "二手摘要",
+     "verified_at": "2026-10-18"
     }
    ],
    "atmosphere_fit": [
@@ -5830,8 +5853,9 @@
      "site": "Lucian UX/UI Prompt（元素 279，MIT）",
      "url": "https://lucianlabs.dev/uxui-prompt/#279",
      "year": 2026,
-     "verified": "2026-10-18",
-     "how_checked": "二手摘要"
+     "verified": false,
+     "how_checked": "二手摘要",
+     "verified_at": "2026-10-18"
     }
    ],
    "atmosphere_fit": [
@@ -5898,6 +5922,349 @@
    "added": "2026-10-18",
    "used_in": [],
    "verify_note": "待亲核：长按开始到字被吞的时长；松手后逐字重现的顺序；正文是否被压。"
+  },
+  {
+   "id": "nav-54",
+   "slot": "nav",
+   "purpose": "让读者一眼知道这是有章节的东西，并直接跳章",
+   "name": "书籍目录式导航",
+   "why": "触发：读者打开首页。变化：点线加罗马数字排出目录，读者把网站读成一本书。终态：进入子页时顶部再出现章号，世界延续到子页",
+   "seen_at": [
+    {
+     "site": "Lynn Fisher 个人站",
+     "url": "lynnandtonic.com",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开",
+     "verified_at": "2026-10-19"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页的目录物是什么（病历索引、工序卡、图谱）？",
+    "本页的章号用什么单位？"
+   ],
+   "reduce_motion": "无动效，目录静态显示",
+   "risks": "可读性：点线引导在窄屏会折行，章名过长时需截断。章号必须是真实序列，否则成为装饰编号（X10）",
+   "avoids": [],
+   "structure": "首页目录每行：章名、点线、章号。子页顶部带当前章号。章号单位由题材决定",
+   "mechanism": "首页目录清单用点线引导加章号，子页顶栏复用同一章号",
+   "added": "2026-10-19",
+   "used_in": [],
+   "depends_on": "无",
+   "verify_note": "采集 agent 打开并截图，动态行为未测。悬停未测。"
+  },
+  {
+   "id": "gallery-56",
+   "slot": "gallery",
+   "purpose": "让风格各异的作品并排时像一个系列",
+   "name": "灰阶统一，选中复色",
+   "why": "触发：读者选中一项作品。变化：全部缩略图已降为灰阶，色彩维度被拿走，选中项带回原色。终态：选中项成为全页唯一焦点",
+   "seen_at": [
+    {
+     "site": "Obys 工作室站",
+     "url": "obys.agency",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开",
+     "verified_at": "2026-10-19"
+    },
+    {
+     "site": "Lynn Fisher 个人站",
+     "url": "lynnandtonic.com",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开",
+     "verified_at": "2026-10-19"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "纸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页的作品色彩是卖点吗？是的话不要用。",
+    "本页的选中由什么触发（滚动位置、指针）？"
+   ],
+   "reduce_motion": "选中项直接换色，无过渡",
+   "risks": "内容：色彩是卖点的作品（插画、美妆）会被抹掉证据。不设为作品集默认。对比度：灰阶缩略图在深色底上需核对",
+   "avoids": [],
+   "structure": "未选中项灰阶，选中项恢复原色，其余框架元素保持中性色",
+   "mechanism": "缩略图统一灰阶滤镜，选中项移除滤镜",
+   "added": "2026-10-19",
+   "used_in": [],
+   "depends_on": "作品图（色彩不是卖点）",
+   "verify_note": "采集 agent 打开并截图，动态行为未测。Obys 的复色只部分可见（只带回少量原色），缩放未见。"
+  },
+  {
+   "id": "gallery-57",
+   "slot": "gallery",
+   "purpose": "用裁切制造好奇，让读者主动挑图",
+   "name": "窄切片加指针点亮",
+   "why": "触发：指针移到某一窄条上。变化：作品裁成同宽窄条并压暗，指针所在的一条变亮。终态：读者觉得主动权在自己手里",
+   "seen_at": [
+    {
+     "site": "Aristide Benoist 个人站",
+     "url": "aristidebenoist.com",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开",
+     "verified_at": "2026-10-19"
+    }
+   ],
+   "atmosphere_fit": [
+    "呼吸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web"
+   ],
+   "adapt": [
+    "本页的每个窄条旁至少要配什么文字，读者才知道它是什么？",
+    "本页的键盘与触屏用什么方式点亮？",
+    "本页的压暗后对比度是多少？"
+   ],
+   "reduce_motion": "点亮无渐变，直接切换亮度",
+   "risks": "无障碍：只靠悬停点亮，键盘与触屏用户看不到。可读性：压暗后对比度低，缺项目名时读者不知道每条是什么",
+   "avoids": [],
+   "structure": "全部窄条同宽、默认压暗。指针所在条恢复亮度，仍是灰阶",
+   "mechanism": "同宽竖条加亮度滤镜，指针所在条取消压暗",
+   "added": "2026-10-19",
+   "used_in": [],
+   "depends_on": "高质量作品图",
+   "verify_note": "采集 agent 打开并截图，动态行为未测。悬停只变亮、不复色。键盘未测。"
+  },
+  {
+   "id": "transition-53",
+   "slot": "transition",
+   "purpose": "让读者从一个项目进入下一个时，只收到一个信号",
+   "name": "一次切换，整页同步换色",
+   "why": "触发：读者滚动一次。变化：背景、标题、边条、进度点、缩略图描边同起同止换成新项目的颜色对。终态：每个项目像一个独立品牌",
+   "seen_at": [
+    {
+     "site": "Robin Noguier 个人站",
+     "url": "robin-noguier.com",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开",
+     "verified_at": "2026-10-19"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "沉浸"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页的项目各有自己的主色吗？",
+    "本页的项目没有主色时，用什么属性代替颜色来切换？"
+   ],
+   "reduce_motion": "各属性同刻直接切换，无过渡",
+   "risks": "可读性：互补色标题在某些色对上对比度不足，逐对核对。项目品牌混杂时整页失去统一",
+   "avoids": [
+    "X14"
+   ],
+   "structure": "每个项目一对主色，写成变量。切换时所有元素读同一组变量，同起同止",
+   "mechanism": "单一状态变量驱动多个元素的颜色变量，同一时长同一缓动",
+   "added": "2026-10-19",
+   "used_in": [],
+   "depends_on": "项目各有主色",
+   "verify_note": "采集 agent 打开并截图，动态行为未测。切换的动态过程未测。"
+  },
+  {
+   "id": "footer-53",
+   "slot": "footer",
+   "purpose": "让页面的最后一屏证明这是一个完整的世界",
+   "name": "页脚在世界里",
+   "why": "触发：读者滚到页底。变化：页脚用首屏同一来源的形式（同一材质、同一字体、一个巨型字标）。终态：读者在最容易被忽略的地方也看到用心，记忆点落在终点",
+   "seen_at": [
+    {
+     "site": "Darkroom 工作室站",
+     "url": "darkroom.engineering",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开",
+     "verified_at": "2026-10-19"
+    },
+    {
+     "site": "Pentagram 设计公司站",
+     "url": "pentagram.com",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开",
+     "verified_at": "2026-10-19"
+    },
+    {
+     "site": "Josh Comeau 个人站",
+     "url": "joshwcomeau.com",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开",
+     "verified_at": "2026-10-19"
+    }
+   ],
+   "atmosphere_fit": [
+    "沉浸",
+    "纸",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页的来源在页脚能落成什么（印章、版权页、收据底部）？",
+    "本页的页脚里能放的真实在场信号是什么？"
+   ],
+   "reduce_motion": "页脚静态显示，不播放材质动画",
+   "risks": "可读性：巨型字标压住法律与联系信息时，需另留清晰的链接区。在场信号过期反而伤害可信度",
+   "avoids": [],
+   "structure": "页脚含一个与来源同源的巨型字标或签名字，下方保留常规链接区",
+   "mechanism": "页脚复用首屏的字体、材质与色彩变量，加一处巨型字标",
+   "added": "2026-10-19",
+   "used_in": [],
+   "depends_on": "无",
+   "verify_note": "采集 agent 打开并截图，动态行为未测。静态即可判断。"
+  },
+  {
+   "id": "cards-56",
+   "slot": "cards",
+   "purpose": "不用图标和插画，也让 B 端特性卡显得可信",
+   "name": "FIG 编号线稿",
+   "why": "触发：读者看到特性卡。变化：每个特性配一个极淡的等轴测线稿，并编号 FIG 0.x。终态：读者读作技术手册，装饰退成线，文字仍是主角",
+   "seen_at": [
+    {
+     "site": "Linear 产品站",
+     "url": "linear.app",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开",
+     "verified_at": "2026-10-19"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "钢",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页的产品物件是什么（数据层、队列、文档栈）？",
+    "本页的编号体系用 FIG，还是本行业自己的图号？"
+   ],
+   "reduce_motion": "线稿静态显示，不播放线稿动效",
+   "risks": "内容：编号必须对应真实图序，否则成为装饰编号（X10）。对比度：线稿明度极接近底色，在低质量屏幕上可能看不见",
+   "avoids": [],
+   "structure": "每张卡一个线稿物件，线稿与面的明度都接近底色。编号写在图旁",
+   "mechanism": "SVG 线稿加极淡的面填充，图下方等宽小号写 FIG 编号",
+   "added": "2026-10-19",
+   "used_in": [],
+   "depends_on": "产品的可画物件",
+   "verify_note": "采集 agent 打开并截图，动态行为未测。线稿动效未测。线稿物体有深色面填充，只是明度接近底色。"
+  },
+  {
+   "id": "hero-60",
+   "slot": "hero",
+   "purpose": "让读者用一句话筛选作品，不用读菜单",
+   "name": "一句可选句式代替导航",
+   "why": "触发：读者改变句中一个下拉词。变化：首屏写成“我们为 Y 做 X”，X 与 Y 是两个下拉词，整屏作品随之替换。终态：读者用一句话选出自己要看的作品",
+   "seen_at": [
+    {
+     "site": "Pentagram 设计公司站",
+     "url": "pentagram.com",
+     "year": 2026,
+     "verified": false,
+     "how_checked": "二手摘要"
+    }
+   ],
+   "atmosphere_fit": [
+    "驱动",
+    "屏幕"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页的两个筛选维度是什么？",
+    "本页的每种组合都有内容吗？",
+    "本页的空组合显示什么？"
+   ],
+   "reduce_motion": "作品区直接替换，无过渡",
+   "risks": "内容：有空组合时读者看到空页。无障碍：下拉词需可聚焦、可键盘操作。作品少于 2 类时不适用",
+   "avoids": [
+    "X4"
+   ],
+   "structure": "一句话含两个下拉词，选择后作品区同步替换",
+   "mechanism": "首屏句中嵌入两个可选择控件，选择结果过滤下方作品列表",
+   "added": "2026-10-19",
+   "used_in": [],
+   "depends_on": "每种筛选组合都有内容",
+   "verify_note": "待亲核：观察卡记录了 Pentagram 首屏句式切换，调研者未看该图，切换行为未测。"
+  },
+  {
+   "id": "nav-55",
+   "slot": "nav",
+   "purpose": "让读者在横滚或系列浏览中知道总长与当前位置",
+   "name": "刻度尺位置指示",
+   "why": "触发：读者横向浏览或滚动。变化：一排细竖线代表全部条目，一个小方框随位置移动。终态：读者不读数字也知道还有多少",
+   "seen_at": [
+    {
+     "site": "Rauno 个人站",
+     "url": "rauno.me",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开",
+     "verified_at": "2026-10-19"
+    },
+    {
+     "site": "Aristide Benoist 个人站",
+     "url": "aristidebenoist.com",
+     "year": 2026,
+     "verified": true,
+     "how_checked": "亲核打开",
+     "verified_at": "2026-10-19"
+    }
+   ],
+   "atmosphere_fit": [
+    "静",
+    "屏幕",
+    "钢"
+   ],
+   "carriers": [
+    "desktop-web",
+    "mobile-web"
+   ],
+   "adapt": [
+    "本页的一格代表什么（一章、一个项目、一天）？",
+    "本页的竖屏时刻度放在哪里？"
+   ],
+   "reduce_motion": "小方框直接跳到新位置，无过渡",
+   "risks": "无障碍：刻度只用图形表达位置时，需另给文字或 aria 当前项。条目超过一屏宽的刻度时需分组",
+   "avoids": [],
+   "structure": "细竖线数量等于条目数，标记框落在当前条目的竖线上",
+   "mechanism": "一排等距细竖线加一个随滚动位置映射的标记框",
+   "added": "2026-10-19",
+   "used_in": [],
+   "depends_on": "无",
+   "verify_note": "采集 agent 打开并截图，动态行为未测。同步移动只在观察卡里描述。"
   }
  ]
 }

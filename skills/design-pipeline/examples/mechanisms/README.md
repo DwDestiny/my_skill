@@ -2,7 +2,7 @@
 
 机制示例只给技术，皮肤来自方向单。配色、字体、版式、文案都不可照抄。
 
-每个示例是一个单文件 HTML。文件头注释写明机制、适合与不适合、依赖版本、许可、Reduce Motion 退路、性能预算、不可照抄的部分和三步接入方法。
+每个示例是一个单文件 HTML。每个示例的说明在 `index.html` 头部注释，其中 9 个另带 `CARD.md`。文件头注释写明机制、适合与不适合、依赖版本、许可、Reduce Motion 退路、性能预算、不可照抄的部分和三步接入方法。
 
 ## 已交 21 个（P1 六个，第二轮六个，P2 九个）
 
@@ -17,7 +17,7 @@
 | `scroll-camera-path` | three.js 四个站点，相机沿 CatmullRomCurve3 随滚动穿行，HTML 叠层文字 | three 0.186.0（jsDelivr） | 6.0 KB | 不绑滚动，站点导航按钮切换 4 个静态视图 | 控制台 0 错误。起点、中段、页脚截图确认能滚到页脚。pin 滚动距离 3 屏 |
 | `css-scroll-timeline` | 零 JS，`animation-timeline: view()` 与 `scroll()` 做入场与进度条，`@supports` 包住 | 无 | 3.8 KB | `animation: none`，显示终态 | 控制台 0 错误。两种模式截图完整。不支持的浏览器路径未测 |
 | `fluid-ink-pointer` | WebGL2 染料双缓冲，curl noise 加指针速度回溯采样，文字在实色面板上 | 无 | 6.7 KB | 预置染料，推进 30 步后画一帧并停止 | 控制台 0 错误。指针拖出墨迹截图确认。简化版，无压力求解 |
-| `capability-tiering` | 探测 6 项信号，判 full / lite / static，写入 `window.__tier`，三档舞台 | 无 | 6.1 KB | 直接判 static | 控制台 0 错误。本机判 lite，`?tier=full` 截图确认。static 档与少透明分支未截图 |
+| `capability-tiering` | 探测 6 项信号，判 full / lite / static，写入 `window.__tier`，三档舞台 | 无 | 6.1 KB | 直接判 static | 控制台 0 错误。示例环境判 lite，`?tier=full` 截图确认。static 档与少透明分支未截图 |
 | `depth-parallax-image` | 程序生成彩色图与深度图，着色器按深度位移，指针加滚动驱动 | 无 | 6.0 KB | 位移置 0，渲染一帧 | 控制台 0 错误。两种模式截图完整。采样位移上限 3% |
 | `gltf-model-stage` | GLTFLoader 加载本地 model.glb，`make-model.mjs` 手写 glTF 二进制写入器生成 25 KB 环面 | three 0.186.0 与 GLTFLoader（jsDelivr） | 4.4 KB | 不自转，渲染一帧 | 控制台 0 错误。两种模式截图完整。需经 http 访问 |
 | `mesh-gradient` | WebGL 1 片元着色器融合 5 个来自 CSS 变量的控制色，慢速漂移，读回像素实测正文区对比度 | 无（原生 WebGL 1） | 6.3 KB | 渲染一帧静帧，不启动 rAF。无 WebGL 时用 CSS 多层 radial-gradient | 控制台 0 错误。1440 与 390 截图已看。实测对比度 11.5:1（浅色）。暗色模式未截图 |

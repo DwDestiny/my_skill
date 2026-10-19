@@ -48,7 +48,7 @@ bpy.ops.mesh.primitive_cylinder_add(radius=0.07, depth=TOP + 0.3, vertices=32,
 finish(bpy.context.active_object, "Core")
 
 # 4. 导出 glb。
-#    官方导出器 bpy.ops.export_scene.gltf 需要 numpy。本机的 Blender 用系统 Python，没有 numpy。
+#    官方导出器 bpy.ops.export_scene.gltf 需要 numpy。示例环境的 Blender 用系统 Python，没有 numpy。
 #    所以先试官方导出器，失败时用下面的纯标准库写入器（读取已应用修改器的网格）。
 #    Blender 的 Z 向上，glTF 的 Y 向上：(x, y, z) 转成 (x, z, -y)。
 def write_glb_fallback(path):
@@ -138,7 +138,7 @@ if RENDER:
     sc.render.engine = "CYCLES"
     sc.cycles.device = "CPU"
     sc.cycles.samples = 16
-    sc.cycles.use_denoising = False  # 本机 Blender 无 OpenImageDenoise
+    sc.cycles.use_denoising = False  # 示例环境 Blender 无 OpenImageDenoise
     sc.render.resolution_x, sc.render.resolution_y = 640, 400
     sc.render.filepath = PREVIEW
     bpy.ops.render.render(write_still=True)

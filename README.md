@@ -39,7 +39,7 @@
 | ui-visual-walkthrough | `skills/ui-visual-walkthrough/` | 已入库 | 对真实运行站点做无基线逐屏视觉走查：双视口截图 + DOM/CSS 探针实证（容器边界/hover 死区/字号分布/截断溢出），产出每条内嵌截图的分级 issue 台账 |
 | content-blueprint | `skills/content-blueprint/` | v0.1 · 配对使用 | 把资料和目标拆成讲解蓝图：受众、可测结果、内容取舍、形式选择、断言来源与可信度；产物交给 visual-motion-design（详见该目录 `README.md`） |
 | visual-motion-design | `skills/visual-motion-design/` | v0.1 · 配对使用 | 读蓝图设计并搭建 HTML 页面：令牌、图表与图示、动效引擎，用预算预设（clear / mixed / show）作起点、按氛围收放动效（详见该目录 `README.md`） |
-| design-pipeline | `skills/design-pipeline/` | v0.1 · 待用户决定入库 · 依赖 content-blueprint 与 visual-motion-design | 设计流水线入口：四个阶段（内容蓝图、视觉氛围、组件创意、design.md）把一句委托做成设计过的页面，含案例库、design.md 模板、参考与评测样例（详见该目录 `README.md`） |
+| design-pipeline | `skills/design-pipeline/` | v0.2 · 已入库 · 依赖 content-blueprint 与 visual-motion-design | 设计流水线入口：四个阶段（内容蓝图、视觉氛围、组件创意、design.md）把一句委托做成设计过的页面，含案例库（148 条）、品味方法论、design.md 模板、参考与成品样例（详见该目录 `README.md`） |
 
 ### 内容 + 视觉配对
 

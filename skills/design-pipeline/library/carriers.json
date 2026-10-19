@@ -14,7 +14,7 @@
       "name_zh": "微信小程序",
       "viewport": {"width_css_px": [375, 390], "height_css_px": 844, "note": "设计稿 375 固定布局，390 响应式。750rpx 等于页面宽。高度 844 为 [记]", "src": "S1,S3", "height_src": "unverified"},
       "safe_area": {"top": "胶囊占右上角，需避让", "bottom": null, "capsule_px": [87, 32], "note": "胶囊位置不可改，真机用 wx.getMenuButtonBoundingClientRect() 读取。87x32 为 [记]", "src": "S1", "capsule_src": "unverified"},
-      "nav_height": {"value": null, "note": "无固定值，用胶囊坐标计算。HTML 里按 44 px 顶栏占位", "src": "not_found", "placeholder_src": "unverified"},
+      "nav_height": {"value": null, "note": "无固定值，用胶囊坐标计算。HTML 里按 44 px 顶栏预留", "src": "not_found", "placeholder_src": "unverified"},
       "primary_nav": {"value": "Tab 栏 2 到 5 个，建议不超过 4 个，位置 bottom 或 top，top 时不显示图标，一页只放一个", "src": "S1,S3c"},
       "back": {"value": "二级页左上角返回", "src": "S1"},
       "type_scale": {"body": 17, "secondary": 15, "caption": 12, "title": 22, "also": [14], "unit": "pt", "src": "S1"},
@@ -29,7 +29,7 @@
       "flash_typical": "动效少，靠版式、插画、Lottie",
       "platform_discourages": ["整页阻塞加载", "顶栏用渐变、图片或视频", "错误提示用 Toast", "一页放多个 Tab 栏或多个加载动画"],
       "html_substitute": {
-        "shell": "390 宽，顶部 44 高导航条加右上胶囊占位 87x32 (87x32 为 [记])。按 390x844 视口直接出页面",
+        "shell": "390 宽，顶部 44 高导航条加右上胶囊预留 87x32 (87x32 为 [记])。按 390x844 视口直接出页面",
         "components": "WeUI (https://github.com/Tencent/weui)，绿色主色，顶栏纯色",
         "gesture": "手势用点击或按钮代替",
         "hover": ":active 代替",
@@ -62,7 +62,7 @@
       "platform_discourages": [],
       "html_substitute": {
         "shell": "同微信：390 宽，顶部 44 高导航条，按 390x844 视口出页面。待核",
-        "components": "antd-mini 外观 (https://ant-design-mini.antgroup.com)。不复用 WeUI 绿色，改用 Ant 蓝占位，页面标待核",
+        "components": "antd-mini 外观 (https://ant-design-mini.antgroup.com)。不复用 WeUI 绿色，改用 Ant 蓝预留，页面标待核",
         "gesture": "手势用点击或按钮代替",
         "hover": ":active 代替",
         "src": "S21"
@@ -177,9 +177,9 @@
         "src": "S20 弱"
       },
       "gear_defaults": {
-        "clear": "R1 未找到来源。按 Android 清晰档做法占位并标待核",
-        "mixed": "R1 未找到来源。按 Android 混合档做法占位并标待核",
-        "show": "R1 未找到来源。按 Android 展示档做法占位并标待核"
+        "clear": "R1 未找到来源。按 Android 清晰档做法预留并标待核",
+        "mixed": "R1 未找到来源。按 Android 混合档做法预留并标待核",
+        "show": "R1 未找到来源。按 Android 展示档做法预留并标待核"
       }
     },
     {
@@ -252,7 +252,7 @@
       "id": "macos",
       "name_zh": "macOS 原生 App",
       "viewport": {"width_css_px": 1200, "height_css_px": 760, "note": "窗口可任意缩放。1200x760 为窗口内容约值", "src": "unverified", "resizable_src": "S9"},
-      "safe_area": {"value": "无刘海约束，有菜单栏。HTML 里顶部画 24 px 菜单栏占位", "menubar_px": 24, "src": "S9", "menubar_src": "unverified"},
+      "safe_area": {"value": "无刘海约束，有菜单栏。HTML 里顶部画 24 px 菜单栏预留", "menubar_px": 24, "src": "S9", "menubar_src": "unverified"},
       "nav_height": {"value": 52, "unit": "px", "note": "工具栏区。标题栏、红绿灯固定高度 R1 未找到", "src": "unverified"},
       "primary_nav": {"value": "侧栏加菜单栏加工具栏。侧栏最多两级，可隐藏，宽 220-260 px。所有命令都要在菜单栏可达", "src": "S9,S10", "sidebar_width_src": "unverified"},
       "back": {"value": "无统一返回，用工具栏按钮", "src": "unverified"},
@@ -268,7 +268,7 @@
       "flash_typical": "玻璃侧栏、窗口材质",
       "platform_discourages": ["动效滥用", "在内容层用玻璃"],
       "html_substitute": {
-        "shell": "窗口内容区约 1200x760，顶部 24 高菜单栏占位，下接 52 高工具栏区。按该视口直接出页面",
+        "shell": "窗口内容区约 1200x760，顶部 24 高菜单栏预留，下接 52 高工具栏区。按该视口直接出页面",
         "components": "无成熟 macOS HTML 组件库，自写令牌。正文 13 px。侧栏 220-260 px 宽，半透明加 backdrop-filter",
         "gesture": "鼠标与键盘，必须有快捷键提示",
         "hover": "hover 态要做",

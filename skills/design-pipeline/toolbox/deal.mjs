@@ -24,7 +24,7 @@
 //   --add-history   id  write one manual record to history/history.json (no deal). Needs --project.
 //                   The record carries source:"manual". --carrier and --gear are optional.
 //
-// Rules (PLAN.md sections 6.2, 6.3)
+// Rules (from the archived PLAN.md sections 6.2 and 6.3, 作者的私有归档（不在本仓库）)
 //   1. Skip the direction ids used in the last 5 history entries. If the pool is too small, use the full pool.
 //   2. Weight = 1 / (1 + use_count). Outcome "差" for the same carrier and topic halves the weight.
 //   3. Any two dealt cards differ on at least 3 of 5 axes. If impossible, relax to 2, then 1, and print a note.
@@ -149,8 +149,19 @@ function loadCards() {
     .filter((c) => (seen.has(c.id) ? false : seen.add(c.id)));
 }
 
-function loadHist() {
-  try { return readJson(HIST); } catch { return { entries: [] }; }
+// 只有文件不存在才算空历史。损坏时：写路径停止（strict），读路径警告后按空历史发牌。
+function loadHist(strict = false) {
+  let raw;
+  try { raw = readFileSync(HIST, 'utf8'); } catch (e) {
+    if (e && e.code === 'ENOENT') return { entries: [] };
+    return histBad(strict);
+  }
+  try { return JSON.parse(raw); } catch { return histBad(strict); }
+}
+function histBad(strict) {
+  if (strict) { console.error(`错误：history.json 无法解析，已停止，原文件未改动：${HIST}`); process.exit(1); }
+  console.error(`警告：history.json 无法解析，本次按空历史发牌，原文件未改动：${HIST}`);
+  return { entries: [] };
 }
 
 // ---------- rng ----------
@@ -241,6 +252,7 @@ if (opt.slot) {
     if (c.structure) out(`结构起点：${c.structure}`);
     if (c.mechanism) out(`机制：${arr(c.mechanism).join(', ') || c.mechanism}`);
     out(`适合氛围：${arr(c.atmosphere_fit).join('、') || '未写'}（提示，不是过滤）`);
+    if (c.depends_on && c.depends_on !== "无") out(`依赖条件：${c.depends_on}`);
     arr(c.adapt).forEach((q, k) => out(`改写提问 ${k + 1}：${q}`));
     out(`Reduce Motion：${c.reduce_motion || '未写'}`);
     out(`避开：${arr(c.avoids).join(', ') || '无'}   实现：${c.impl || '无'}   tasteskill：${arr(c.tasteskill_id).join(', ') || '无'}`);
@@ -263,7 +275,7 @@ if (opt['set-components']) {
   if (!opt.project || opt.project === true) { console.error('错误：--set-components 需要 --project'); process.exit(1); }
   const comps = parseComponents(opt.components);
   if (!comps.length) { console.error('错误：--set-components 需要 --components slot:id,slot:id'); process.exit(1); }
-  const h = loadHist();
+  const h = loadHist(true);
   h.entries = h.entries || [];
   const idx = h.entries.map((e) => e.project).lastIndexOf(opt.project);
   if (idx < 0) { console.error(`错误：history 里没有项目 ${opt.project}。先在 S3 用 --commit 记录。`); process.exit(1); }
@@ -280,7 +292,7 @@ if (opt['add-history']) {
   if (!opt.project || opt.project === true) { console.error('错误：--add-history 需要 --project'); process.exit(1); }
   if (opt.gear && !GEARS.includes(opt.gear)) { console.error('错误：--gear 只能是 clear mixed show'); process.exit(1); }
   const sv = (k) => (opt[k] && opt[k] !== true ? opt[k] : null);
-  const h = loadHist();
+  const h = loadHist(true);
   const entry = {
     date: new Date().toISOString().slice(0, 10),
     project: opt.project,
@@ -309,7 +321,7 @@ if (opt.commit) {
   for (const k of ['project', 'carrier']) if (!opt[k] || opt[k] === true) { console.error(`错误：--commit 需要 --${k}`); process.exit(1); }
   if (opt.gear && !GEARS.includes(opt.gear)) { console.error('错误：--gear 只能是 clear mixed show'); process.exit(1); }
   if (opt.outcome && !['好', '一般', '差'].includes(opt.outcome)) { console.error('错误：--outcome 只能是 好 一般 差'); process.exit(1); }
-  const h = loadHist();
+  const h = loadHist(true);
   const entry = {
     date: new Date().toISOString().slice(0, 10),
     project: opt.project,

@@ -1,6 +1,6 @@
 # 载体对照表（9 载体）
 
-调研日期 2026-10-16。数据底稿：`research/R1-carriers.md`。机器可读档案：`library/carriers.json`。
+调研日期 2026-10-16。数据底稿：`research/R1-carriers.md`（已归档，不在本仓库）。机器可读档案：`library/carriers.json`。
 
 ## 读法
 
@@ -60,7 +60,7 @@
 
 ## 来源编号与 URL
 
-访问日期 2026-10-16。读取方式与要点见 `research/R1-carriers.md` 第 5 节。
+访问日期 2026-10-16。读取方式与要点见归档内 `research/R1-carriers.md` 第 5 节。
 
 | 编号 | URL |
 |---|---|

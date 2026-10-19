@@ -42,11 +42,15 @@ MANUAL = [
 ]
 
 
+MISSING = []
+
+
 def read(path):
     try:
         with open(path, encoding='utf-8', errors='replace') as f:
             return f.read()
     except OSError:
+        MISSING.append(path)
         return ''
 
 
@@ -211,6 +215,9 @@ def main():
     ap.add_argument('html', help='页面 index.html 路径')
     ap.add_argument('--compare', help='另一个页面（html 文件或目录），比同质化')
     a = ap.parse_args()
+    if not os.path.isfile(a.html):
+        print('错误：无法读取 %s' % a.html)
+        sys.exit(2)
     html, css, js = load_sources(a.html)
     css_nc = re.sub(r'/\*.*?\*/', '', css, flags=re.S)
     rows, cnt = [], {'FAIL': 0, 'WARN': 0, '人工': 0}
@@ -335,6 +342,10 @@ def main():
             cnt['FAIL'] += verdict == 'FAIL'
             print('| 平均命中率 | %s | %s（阈值 >60%% 为与上一项目同套） |' % (pct(avg), verdict))
 
+    if MISSING:
+        print('\n未覆盖项：下列本地外链读不到，其内容未检查：')
+        for m in MISSING:
+            print('- %s' % m)
     print('\nresult: %d FAIL, %d WARN, %d 人工' % (cnt['FAIL'], cnt['WARN'], cnt['人工']))
     sys.exit(1 if cnt['FAIL'] else 0)
 

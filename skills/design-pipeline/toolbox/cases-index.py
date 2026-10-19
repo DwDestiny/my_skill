@@ -10,24 +10,45 @@ REQ = ['id','slot','purpose','name','why','seen_at','atmosphere_fit','carriers',
 def load(p):
     with open(p, encoding='utf-8') as f: return json.load(f)
 
+HC = ('亲核打开','本库已做出','二手摘要')
+
+def check(cases):
+    """返回 (缺字段与非法项, 重复 id)。"""
+    bad = [(c.get('id'), k) for c in cases for k in REQ if k not in c or c[k] in ('', None)]
+    for c in cases:
+        for x in c.get('seen_at', []):
+            if x.get('how_checked') not in HC: bad.append((c.get('id'), 'how_checked:' + str(x.get('how_checked'))))
+        if 'verified' in c and not isinstance(c['verified'], bool): bad.append((c.get('id'), 'verified 须为布尔值'))
+    ids = [c.get('id') for c in cases]
+    return bad, sorted({i for i in ids if ids.count(i) > 1}, key=str)
+
 d = load(CASES)
 cases = d['cases']
 if '--merge' in sys.argv:
     other = load(os.path.join(ROOT, sys.argv[sys.argv.index('--merge') + 1]))
-    have = {c['id'] for c in cases}
-    added = [c for c in other['cases'] if c['id'] not in have]
-    cases.extend(added)
+    merged, have, skipped = list(cases), {c.get('id') for c in cases}, 0
+    n0 = len(cases)
+    for c in other['cases']:
+        if c.get('id') in have: skipped += 1; continue
+        have.add(c.get('id')); merged.append(c)
+    # 同批重复也算重复：按原始合并结果再校验一遍，重复入库前先拦下
+    batch_ids = [c.get('id') for c in other['cases']]
+    batch_dup = sorted({i for i in batch_ids if batch_ids.count(i) > 1}, key=str)
+    bad, dup = check(merged)
+    dup = sorted(set(dup) | set(batch_dup), key=str)
+    if bad or dup:
+        print(f'合并失败，未写任何文件。缺字段或非法项 {len(bad)}：{bad[:10]}，重复 id {dup}')
+        sys.exit(1)
+    d['cases'] = cases = merged
     d['_meta']['case_count'] = len(cases)
     d['_meta']['slots'] = sorted({c['slot'] for c in cases})
     d['_meta']['checked'] = datetime.date.today().isoformat()
-    with open(CASES, 'w', encoding='utf-8') as f: json.dump(d, f, ensure_ascii=False, indent=2); f.write('\n')
-    print(f'合并 {len(added)} 条，共 {len(cases)} 条')
+    tmp = CASES + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f: json.dump(d, f, ensure_ascii=False, indent=1); f.write('\n')
+    os.replace(tmp, CASES)
+    print(f'合并 {len(merged) - n0} 条，跳过已有 {skipped} 条，共 {len(merged)} 条')
 
-bad = [(c.get('id'), k) for c in cases for k in REQ if k not in c or c[k] in ('', None)]
-HC = ('亲核打开','本库已做出','二手摘要')
-bad += [(c.get('id'), 'how_checked:'+str(x.get('how_checked'))) for c in cases for x in c.get('seen_at', []) if x.get('how_checked') not in HC]
-ids = [c['id'] for c in cases]
-dup = sorted({i for i in ids if ids.count(i) > 1})
+bad, dup = check(cases)
 by = {}
 for c in cases: by.setdefault(c['slot'], []).append(c)
 hc = lambda c: '、'.join(sorted({s.get('how_checked', '二手摘要') for s in c['seen_at']}))
@@ -45,3 +66,4 @@ for s in sorted(by):
 with open(os.path.join(LIB, 'cases.md'), 'w', encoding='utf-8') as f: f.write('\n'.join(lines))
 print(f'cases.md 写好：{len(cases)} 条，{len(by)} 槽。缺字段 {len(bad)}，重复 id {dup}')
 if bad: print(bad[:10])
+sys.exit(1 if bad or dup else 0)

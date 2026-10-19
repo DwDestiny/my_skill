@@ -28,13 +28,13 @@ S3 写资产生成清单，S5 按清单生成。用户 2026-10-16 已授权直�
 5. 每张约 20 秒。先生成 1 张试风格，再批量。
 6. 生成后用 Read 工具逐张看图。检查乱字、logo、多余肢体、风格偏离。不合格重生成，最多 3 次，再用备选。
 7. 压缩。生成的 PNG 未压缩，每张约 3 MB。目标：hero 不超过 300 KB，章节图不超过 200 KB，平铺纹理缩到 512 像素且不超过 50 KB。做法：
-   1. 本机没有 Pillow 时，先建临时环境：`python3 -m venv <临时目录>/imgenv && <临时目录>/imgenv/bin/pip install -q pillow`。
+   1. 示例环境没有 Pillow 时，先建临时环境：`python3 -m venv <临时目录>/imgenv && <临时目录>/imgenv/bin/pip install -q pillow`。
    2. 照片类转 JPG：`Image.open(src).convert("RGB").save(dst, "JPEG", quality=82, optimize=True, progressive=True)`。需要透明底的图保留 PNG，用 `quantize(256)` 后保存。
    3. 平铺纹理先 `resize((512, 512), Image.LANCZOS)` 再保存。
    4. 删除原始 PNG。后续 `edit --ref` 用压缩后的文件作参考图。
 8. 合格后放到项目 `assets/generated/`，写 `ASSETS.md`，记录压缩前后体积。
 
-> **警告**：不把项目源码、用户隐私、客户名称、本机路径写进提示词。不打印、不记录、不提交密钥。
+> **警告**：不把项目源码、用户隐私、客户名称、示例环境路径写进提示词。不打印、不记录、不提交密钥。
 
 > **注意**：`HTTP 5xx` 或超时时，等几秒重试一次。仍失败就用备选，并报告原因。不换用别的站点或模型厂商。
 

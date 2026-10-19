@@ -1,6 +1,6 @@
 ---
 name: visual-motion-design
-description: 视觉与动效总 skill。负责 HTML 页面的整体视觉、设计系统、版式、图表与图示、3D 等轴测图、动效引擎与视觉炫技。按场合分配动效预算，而不是关掉动效；氛围决定收放，没有分级。触发词：设计页面、做一个 HTML、灵感库、组件参考、视觉、排版、配色、令牌、动效、入场动画、滚动效果、炫一点、要有冲击力、展示页、发布页、讲解页的视觉、图表怎么画、等轴测、3D 图、设计计划、线框、截图自检、视觉评审、页面看起来像模板、太 AI 味。串联 frontend-design、artifact-design、dataviz、artifact-diagramming、design-taste-frontend、diagram-design、anatomy，并吸收 juliobsz awwwards 与 open-claude-ui 的方法。不适用：决定页面说什么、章节怎么拆、哪些内容保留（那是 content-blueprint）；原生 macOS / iOS 应用界面；仪表盘与后台表单的交互设计；纯文字文档。
+description: design-pipeline 的子步骤，由 design-pipeline 阶段 2 到 4 调用，不要单独触发。视觉与动效：负责 HTML 页面的整体视觉、设计系统、版式、图表与图示、3D 等轴测图、动效引擎与视觉炫技。按场合分配动效预算，而不是关掉动效；氛围决定收放，没有分级。触发词：设计页面、做一个 HTML、灵感库、组件参考、视觉、排版、配色、令牌、动效、入场动画、滚动效果、炫一点、要有冲击力、展示页、发布页、讲解页的视觉、图表怎么画、等轴测、3D 图、设计计划、线框、截图自检、视觉评审、页面看起来像模板、太 AI 味。串联 frontend-design、artifact-design、dataviz、artifact-diagramming、design-taste-frontend、diagram-design、anatomy，并吸收 juliobsz awwwards 与 open-claude-ui 的方法。不适用：决定页面说什么、章节怎么拆、哪些内容保留（那是 content-blueprint）；原生 macOS / iOS 应用界面；仪表盘与后台表单的交互设计；纯文字文档。
 ---
 
 # 视觉与动效
@@ -12,7 +12,7 @@ description: 视觉与动效总 skill。负责 HTML 页面的整体视觉、设�
 ## 1. 触发后先做的三件事
 
 1. 读用户原话。把原话逐字抄进设计计划第 9 节。原话优先于本文件的任何规则。
-2. 读 `frontend-design` skill（路径：`~/.claude/plugins/cache/claude-plugins-official/frontend-design/*/skills/frontend-design/SKILL.md`，取最新目录）。发布为 Artifact 时再加载 `artifact-design`。
+2. 读 `frontend-design` skill。先探测当前宿主有没有它：用 Skill 工具加载，或在宿主的插件目录里找（Claude Code 的插件缓存 `~/.claude/plugins/cache/*/frontend-design/*/skills/frontend-design/SKILL.md` 是其中一处，取最新版本）。找不到就读 `design-pipeline/references/anti-sameness.md`，并在 design.md 写“未读 frontend-design”。发布为 Artifact 时再加载 `artifact-design`。
 3. 判断输入类型：
    - 有 `01-内容规划/blueprint.md`：按 `references/handoff.md` 第 2 节过门禁，然后开工。
    - 没有蓝图，且页面是讲解、学习、汇报、展示资料：先调用 `content-blueprint`，拿到蓝图再回来。
@@ -36,7 +36,7 @@ description: 视觉与动效总 skill。负责 HTML 页面的整体视觉、设�
 
 | 情况 | 读 | 做 |
 |---|---|---|
-| 由 `design-pipeline` 调用时 | `design-pipeline/references/sop.md` 第 2 节 | 按该节映射表找到当前 SOP 步骤对应的本 skill 步骤与蓝图字段 |
+| 由 `design-pipeline` 调用时 | `references/handoff.md` 第 0 节 | 按四阶段对照表找到当前阶段对应的本 skill 步骤与蓝图字段 |
 | 任何页面 | 本文件；`references/gears.md`；`references/design-plan-template.md`；`references/tokens-and-type.md` | 定氛围与预算、写设计计划 |
 | 要加动效 | `references/motion.md`（含"选引擎"一节）；`assets/engine/` | 按预算预设选引擎并接入 |
 | 蓝图有 `metric` / `chart` | Skill 工具加载 `dataviz` | 运行其校验器（本机） |
@@ -56,7 +56,7 @@ description: 视觉与动效总 skill。负责 HTML 页面的整体视觉、设�
 
 ## 4. 流程
 
-由 `design-pipeline` 调用时，按 `design-pipeline/references/sop.md` 第 2 节的映射表只做当前 SOP 步骤对应的部分。字段读法见 `references/handoff.md` 第 1 节。
+由 `design-pipeline` 调用时，按 `references/handoff.md` 第 0 节的四阶段对照表只做当前阶段对应的部分。字段读法见 `references/handoff.md` 第 1 节。
 
 ### 步骤 1：定氛围与预算
 
@@ -110,10 +110,12 @@ description: 视觉与动效总 skill。负责 HTML 页面的整体视觉、设�
 3. 写 ROUND 记录。修前三问题。至多 3 轮。
 4. 不为通过检查表删动效。过不了先改角色、位置、幅度；确需删除时写进报告。
 
-### 步骤 7：Fable 视觉评审
+### 步骤 7：视觉评审
 
-1. 用 `references/review.md` 第 5 节模板发起评审。模板里放用户原话（含风格和效果的话）、预算预设、设计计划第 2.1 节、截图目录、自评。要求 Fable 先回答"氛围是否成立，哪里太素"。
-2. 处理意见。Fable 与用户原话冲突时，按用户原话，并写明分歧。
+评审者首选第二个独立 agent（只看截图与检查表）。宿主有 Fable 且用户要求时才用 Fable。在设计计划或 design.md 记录实际评审者与未覆盖项。
+
+1. 用 `references/review.md` 第 5 节模板发起评审（模板对任何评审者通用）。模板里放用户原话（含风格和效果的话）、预算预设、设计计划第 2.1 节、截图目录、自评。要求评审者先回答"氛围是否成立，哪里太素"。
+2. 处理意见。评审意见与用户原话冲突时，按用户原话，并写明分歧。
 3. 预设 `show`建议再做一次盲评（第 6 节）。
 
 ### 步骤 8：报告与收尾

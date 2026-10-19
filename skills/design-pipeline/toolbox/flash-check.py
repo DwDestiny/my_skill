@@ -164,7 +164,10 @@ def main():
         rows.append((item, res, val, why))
 
     # 1 无限循环
-    inf_css = len(re.findall(r'\binfinite\b', css + html))
+    # css 已含内联 <style> 块，HTML 只补 style="..." 属性，避免同一段 CSS 数两次
+    attrs = '\n'.join(a or b for a, b in re.findall(r'\bstyle\s*=\s*"([^"]*)"|\bstyle\s*=\s*\'([^\']*)\'', html))
+    css_all = css + '\n' + attrs
+    inf_css = len(re.findall(r'\binfinite\b', css_all))
     inf_js = len(re.findall(r'\binfinite\b|repeat\s*:\s*-1', js))
     raf = len(re.findall(r'requestAnimationFrame', js))
     caf = len(re.findall(r'cancelAnimationFrame', js))
@@ -195,7 +198,7 @@ def main():
     row('pin 总屏高', res, '%.1f 屏（%s）%s' % (scr, src, '，估算' if est else ''), '上限 %g 屏。相机页按停靠与 pin 计' % PIN_MAX)
 
     # 3 Reduce Motion
-    rm_css = len(re.findall(r'prefers-reduced-motion', css + html))
+    rm_css = len(re.findall(r'prefers-reduced-motion', css_all))
     rm_js = len(re.findall(r'prefers-reduced-motion', js))
     row('Reduce Motion 退路', 'FAIL' if rm_css + rm_js == 0 else 'PASS', '分支共 %d（CSS %d，JS %d）' % (rm_css + rm_js, rm_css, rm_js),
         '0 处为过量。开启后截图是否完整须人工看 r-fold')
@@ -208,7 +211,7 @@ def main():
         '>1 处须确认不在同屏同时运行（软件渲染下 1 到 2 帧每秒）')
 
     # 5 backdrop-filter
-    bf = len(re.findall(r'backdrop-filter\s*:', css + html))
+    bf = len(re.findall(r'backdrop-filter\s*:', css_all))
     row('backdrop-filter 元素数', 'WARN' if bf > 3 else 'PASS', '%d 处' % bf, '>3 处在低端机上掉帧')
 
     for item, how in MANUAL:

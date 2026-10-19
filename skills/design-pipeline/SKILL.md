@@ -14,11 +14,11 @@ description: 设计流水线入口。四个阶段把一句委托做成设计过�
 | 阶段 | 回答的问题 | 产物 | 读 |
 |---|---|---|---|
 | 1 内容蓝图 | 给谁看、讲什么、分几章、哪些章是舞台 | `01-内容规划/blueprint.md`、design.md 第 0 节 | `stages/1-blueprint.md`，`content-blueprint` skill |
-| 2 视觉氛围 | 配色、边角、透明度、材质、光、空间、图像、动效气质、页面形态、签名时刻 | design.md 第 1 节 | `stages/2-atmosphere.md`，`references/restraint.md` |
-| 3 组件创意 | 每一屏用市面上最好的哪种表达，怎么改成本页的 | design.md 第 2 节 | `stages/3-components.md`，`library/cases.md` |
-| 4 design.md | 令牌、动效规则、载体数值、实现建议，让实现者不读别的文件也能做 | design.md 第 3 节 | `stages/4-design-md.md`，`references/craft.md` |
+| 2 视觉氛围 | 配色、边角、透明度、材质、光、空间、图像、动效气质、页面形态、签名时刻 | design.md 第 1 节 | `stages/2-atmosphere.md`，`references/taste-method.md`，`references/restraint.md` |
+| 3 组件创意 | 每一屏用市面上最好的哪种表达，怎么改成本页的 | design.md 第 2 节 | `stages/3-components.md`，`library/cases.md`，`references/technique-catalog.md` |
+| 4 design.md | 令牌、动效规则、载体数值、实现建议，入口文件加交付包，让空上下文的实现者不需追问就能做 | design.md 第 3 节 | `stages/4-design-md.md`，`references/craft.md` |
 
-实现按 design.md 做，用开源组件库或自研都可以。做完看真实截图，对照 design.md 第 3.5 节看图清单，请 Fable 做视觉评审。收口后补库。
+实现按 design.md 做，用开源组件库或自研都可以。做完看真实截图，对照 design.md 第 3.5 节看图清单，交给评审者（见第 3 节第 7 条）。收口后补库。
 
 已有蓝图的项目从阶段 2 开始。已有 design.md 第 1 节的从阶段 3 开始。
 
@@ -33,24 +33,24 @@ description: 设计流水线入口。四个阶段把一句委托做成设计过�
 | 签名时刻 | 全页唯一允许"响"的画面或交互 |
 | 案例 | `library/cases.json` 一条：某个组件为某个目的的最佳表达，写出处、为什么好、适合什么氛围、怎么改 |
 | 发牌 | `toolbox/deal.mjs` 按槽与目的发 3 条候选，选 1 条或库外自拟 |
-| design.md | 交给实现的唯一文件，三节：氛围、每屏做法、执行规则 |
+| design.md | 交给实现的入口文件，三节：氛围、每屏做法、执行规则。第 0 节“交付包清单”列出蓝图、证据索引、术语表、资产的路径 |
 
 ## 3. 最少约束
 
 1. 原话优先于一切规则。
 2. 点子先于库。发牌不翻库。使用史跨项目。每条选中案例写"本页怎么改"。
 3. 先选页面形态再排章节。
-4. 签名时刻全页 1 处。首屏 3 秒内可读。动效回答一个动作或一个状态变化。
+4. 签名时刻全页 1 处。首屏 3 秒内可读。动效回答一个动作或一个状态变化。舞台章占比、相邻屏版式、重复次数、填充率、空白高度是带适用条件的默认值，偏离时在 design.md 写理由（`references/restraint.md` 第 7 节）。
 5. 正文对比 ≥4.5:1。Reduce Motion 有退路。390 宽无横向溢出。
 6. design.md 第 2 节一屏一行，没有空行。
-7. 看真实截图对照看图清单。请 Fable 做视觉评审。
+7. 看真实截图对照看图清单。评审者首选第二个独立 agent 看截图，有 Fable 且用户要求时才用 Fable。design.md 记录实际评审者与未覆盖项。
 8. 炫技是默认。3D、GLSL 流体、滚动相机、WebGL、glTF 与 Blender 是常规选项，不因"风险"降级。收放看 `references/restraint.md`。
 
 ## 4. 路由表
 
 | 情况 | 读 |
 |---|---|
-| 任何阶段开始前 | `frontend-design` skill（`~/.claude/plugins/cache/claude-plugins-official/frontend-design/<最高版本>/skills/frontend-design/SKILL.md`） |
+| 任何阶段开始前 | `frontend-design` skill。先探测当前宿主有没有它：用 Skill 工具加载，或在宿主的插件目录找（Claude Code 的插件缓存 `~/.claude/plugins/cache/*/frontend-design/*/skills/frontend-design/SKILL.md` 是其中一处，取最新版本）。找不到就读 `references/anti-sameness.md`，并在 design.md 记“未读 frontend-design” |
 | 载体数值与平替 | `library/carriers.json`、`references/carriers.md`。壳尺寸 = 视口尺寸，不画设备外框 |
 | 页面形态与幕表 | `library/page-forms.json`，`toolbox/pick-form.mjs` |
 | 氛围选项 | `library/expressions.json` 表现形式、`library/palettes.json` 配色类、`library/directions.json` 整页案例 |
@@ -72,8 +72,8 @@ description: 设计流水线入口。四个阶段把一句委托做成设计过�
 1. 从任何网站取图或下载素材。
 2. 发布到公开画廊。发布 Artifact。
 
-其他红线：不自己另开对模型厂商的请求。不把项目源码、隐私、本机路径写进生图提示词。不复制 Anthropic / Claude 的品牌色、字体、logo。Defaults 反默认清单 X1 到 X20 见 `references/anti-sameness.md`。
+其他红线：不自己另开对模型厂商的请求。不把项目源码、隐私、示例环境路径写进生图提示词。不复制 Anthropic / Claude 的品牌色、字体、logo。Defaults 反默认清单 X1 到 X20 见 `references/anti-sameness.md`。
 
 ## 6. 补库与验证
 
-每个项目收口后补 1 到 2 条案例，规则见 `stages/3-components.md`。评测任务 `evals/E1` 讲解页、`E2` 发布页、`E3` 小程序，各有 `brief.md`。改过本 skill 后重跑一个，产物放 `evals/E<n>/runs/<日期>/`，看图清单与 Fable 评审记入 `05-评审/`。
+每个项目收口后补 1 到 2 条案例，规则见 `stages/3-components.md`。验证只用真实项目：做用户要的页面，拿用户反馈，每次只改一处。不再跑评测任务、盲评和多轮评审（2026-10-18 用户决定，旧评测记录在归档 作者的私有归档（不在本仓库））。
