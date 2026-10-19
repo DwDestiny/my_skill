@@ -223,9 +223,26 @@ def t_compare_import(P, tmp):
 def t_thin(P, tmp):
     r = run([sys.executable, '-I', os.path.join(P, 'toolbox', 'cases-index.py'), '--thin'], tmp)
     deal = run(['node', os.path.join(P, 'toolbox', 'deal.mjs'), '--slot', 'pricing', '--purpose', '展示价格'], tmp).stdout
-    hero = run(['node', os.path.join(P, 'toolbox', 'deal.mjs'), '--slot', 'hero', '--purpose', '首屏'], tmp).stdout
-    ok = r.returncode == 0 and 'pricing | 3 | 0 | 薄' in r.stdout and '库薄提示' in deal and '库薄提示' not in hero
-    return ok, '体检退出码 %d，pricing 判薄 %s，发牌提示 %s，hero 无提示 %s' % (r.returncode, 'pricing | 3 | 0 | 薄' in r.stdout, '库薄提示' in deal, '库薄提示' not in hero)
+    # hero 来源改成全二手、全亲核两份夹具，提示与否不取决于随机抽牌
+    lib = os.path.join(P, 'library', 'cases.json')
+    d = json.loads(rd(lib))
+    hero = {}
+    for how in ('二手摘要', '亲核打开'):
+        for c in d['cases']:
+            if c['slot'] == 'hero':
+                c['seen_at'] = [dict(x, how_checked=how) for x in c['seen_at']]
+        with open(lib, 'w', encoding='utf-8') as f:
+            json.dump(d, f, ensure_ascii=False)
+        hero[how] = run(['node', os.path.join(P, 'toolbox', 'deal.mjs'), '--slot', 'hero', '--purpose', '首屏'], tmp).stdout
+    # 删光 pricing 案例，槽配置仍在：体检要列出 0 条并判薄
+    d['cases'] = [c for c in d['cases'] if c['slot'] != 'pricing']
+    with open(lib, 'w', encoding='utf-8') as f:
+        json.dump(d, f, ensure_ascii=False)
+    empty = run([sys.executable, '-I', os.path.join(P, 'toolbox', 'cases-index.py'), '--thin'], tmp).stdout
+    checks = {'pricing 判薄': r.returncode == 0 and 'pricing | 3 | 0 | 薄' in r.stdout, 'pricing 发牌提示': '库薄提示' in deal,
+              'hero 全二手提示': '库薄提示' in hero['二手摘要'], 'hero 全亲核无提示': '库薄提示' not in hero['亲核打开'],
+              '零条槽判薄': 'pricing | 0 | 0 | 薄' in empty}
+    return all(checks.values()), '，'.join('%s %s' % kv for kv in checks.items())
 
 
 def main():
@@ -237,7 +254,7 @@ def main():
              ('--compare 沿用 root，读不全时不判 PASS', t_compare_root), ('cases-index 第二次替换失败时退回', t_cases_rollback),
              ('--compare 任一侧资源读不全都不判 PASS', t_compare_both_sides),
              ('@import 远程样式（外部与内联）不绕过完整性判断', t_compare_import),
-             ('库薄体检与发牌库薄提示', t_thin)]
+             ('库薄体检（含零条槽）与发牌库薄提示（确定性夹具）', t_thin)]
     fails = 0
     for name, fn in tests:
         with tempfile.TemporaryDirectory() as tmp:
