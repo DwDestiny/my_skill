@@ -135,10 +135,18 @@ def main():
             ab('eval', 'window.scrollTo(0,%d)' % y)
         ab('wait', str(wait))
         path = os.path.join(a.out, name + '.png')
-        if os.path.exists(path):
-            os.remove(path)  # 删旧图，失败的截图不会被旧文件冒充
-        ab('screenshot', path)
-        ok = OK[0] and os.path.isfile(path)
+        tmp = os.path.join(a.out, name + '.new.png')
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        ab('screenshot', tmp)  # 先拍到临时名，成功才替换，失败时保留上次的旧图
+        ok = OK[0] and os.path.isfile(tmp) and os.path.getsize(tmp) > 0
+        if ok:
+            os.replace(tmp, path)
+        else:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+            if os.path.isfile(path):
+                notes.append('%s.png 本次截图失败，目录里是上一次的旧图，不能当本次结果' % name)
         rows.append((name + '.png' if ok else name + '（失败）', '%dx%d' % vp, st, use))
 
     def paged(prefix, vp, media='light'):

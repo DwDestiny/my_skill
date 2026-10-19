@@ -1,15 +1,17 @@
-# 评审：截图自检、修正轮次、Fable 视觉评审
+# 评审：截图自检、修正轮次、视觉评审
 
 用户规则原文：
 
 > After you build: look at real screenshots. Do not judge a design from gate results. Check each screenshot against the checklist below. Fix every miss before you report.
 > Ask the Fable reviewer for a visual review. Give it the checklist and the screenshots.
 
+评审者：首选第二个独立 agent（只看截图与检查表）。宿主有 Fable 且用户要求时才用 Fable。在设计计划或 design.md 记录实际评审者与未覆盖项。上面的原文是 Fable 可用时的全局规则，本文件把它读作“交给评审者”。
+
 > **注意**：门禁通过不证明设计好。门禁抓回归，只有截图评审能抓坏版式。
 
 ## 0. 参考值检查（先于自检表）
 
-自检表和 Fable 评审问"有没有违规"。本节问"氛围是否成立，有没有做出该有的样子"。参考值是起点，不是品质分级，偏离时写理由。先过本节，再过自检表。顺序不能反。
+自检表和视觉评审问"有没有违规"。本节问"氛围是否成立，有没有做出该有的样子"。参考值是起点，不是品质分级，偏离时写理由。先过本节，再过自检表。顺序不能反。
 
 1. 运行 `python3 <skill>/assets/floor-check.py <index.html>`。它检查 F1、F2、F3、F5 的可机械判断部分。FAIL 项先看：修，或在设计计划写偏离理由。
 2. 对每张必拍截图，回答设计计划第 2.1 节的六项：过或不过，写截图编号。
@@ -94,7 +96,7 @@ ROUND n · 预算预设 <clear|mixed|show>
 
 修的顺序：点子 → 层级 → 构图 → 字 → 图 → 色 → 细节 → 动效。至多 3 轮。第 3 轮仍 <7.5 时如实报告。
 
-## 5. Fable 视觉评审请求模板
+## 5. 视觉评审请求模板（交给评审者）
 
 ```
 你是视觉评审。只看截图与检查表，不看代码。
@@ -127,7 +129,7 @@ ROUND n · 预算预设 <clear|mixed|show>
 
 1. 最终文件路径与提交。
 2. 预算预设与签名时刻。
-3. 检查结果：截图数、自检未过项与修复、ROUND 记录、Fable 意见与处置。
+3. 检查结果：截图数、自检未过项与修复、ROUND 记录、评审者意见与处置。
 4. 契约变更：退回 `content-blueprint` 的条目编号。
 5. 未验证项：没拍的截图、没跑的脚本、没在真机看的项。
 

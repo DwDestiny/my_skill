@@ -12,15 +12,59 @@ def load(p):
 
 HC = ('亲核打开','本库已做出','二手摘要')
 
+LISTS = ('atmosphere_fit','carriers','adapt','avoids','used_in')
+STRS = ('id','slot','purpose','name','why','added','reduce_motion','risks')
+
 def check(cases):
-    """返回 (缺字段与非法项, 重复 id)。"""
-    bad = [(c.get('id'), k) for c in cases for k in REQ if k not in c or c[k] in ('', None)]
+    """返回 (缺字段与非法项, 重复 id)。类型也校验：写索引要用，类型错会让渲染崩溃。"""
+    bad = []
     for c in cases:
-        for x in c.get('seen_at', []):
-            if x.get('how_checked') not in HC: bad.append((c.get('id'), 'how_checked:' + str(x.get('how_checked'))))
-        if 'verified' in c and not isinstance(c['verified'], bool): bad.append((c.get('id'), 'verified 须为布尔值'))
-    ids = [c.get('id') for c in cases]
+        if not isinstance(c, dict): bad.append((None, '条目须为对象')); continue
+        i = c.get('id')
+        for k in REQ:
+            if k not in c or c[k] in ('', None): bad.append((i, k))
+        for k in LISTS:
+            if k in c and not (isinstance(c[k], list) and all(isinstance(x, str) for x in c[k])): bad.append((i, k + ' 须为字符串列表'))
+        for k in STRS:
+            if k in c and not isinstance(c[k], str): bad.append((i, k + ' 须为字符串'))
+        sa = c.get('seen_at')
+        if sa is not None and not (isinstance(sa, list) and all(isinstance(x, dict) for x in sa)): bad.append((i, 'seen_at 须为对象列表')); continue
+        for x in sa or []:
+            if x.get('how_checked') not in HC: bad.append((i, 'how_checked:' + str(x.get('how_checked'))))
+            if 'verified' in x and not isinstance(x['verified'], bool): bad.append((i, 'seen_at.verified 须为布尔值，日期写在 verified_at'))
+        if 'verified' in c: bad.append((i, 'verified 写在 seen_at 每项里，不写在条目上'))
+    ids = [c.get('id') for c in cases if isinstance(c, dict)]
     return bad, sorted({i for i in ids if ids.count(i) > 1}, key=str)
+
+def render(cases):
+    """在内存里生成 cases.md 文本。非法数据先由 check 拦下，这里不再处理。"""
+    by = {}
+    for c in cases: by.setdefault(c['slot'], []).append(c)
+    hc = lambda c: '、'.join(sorted({s.get('how_checked', '二手摘要') for s in c['seen_at']}))
+    lines = ['# 案例索引', '', f'由 `toolbox/cases-index.py` 生成，不手改。共 {len(cases)} 条，{len(by)} 个槽。发牌：`node toolbox/deal.mjs --slot <槽> --purpose "<目的>" --carrier <id>`。字段与补库规则见 `stages/3-components.md` 第 6、7 节。', '']
+    lines.append('| 槽 | 条数 | 本库已做出 | 亲核打开 | 二手摘要 |'); lines.append('|---|---|---|---|---|')
+    for s in sorted(by):
+        cs = by[s]; cnt = lambda k: sum(1 for c in cs if any(x.get('how_checked') == k for x in c['seen_at']))
+        lines.append(f"| {s} | {len(cs)} | {cnt('本库已做出')} | {cnt('亲核打开')} | {cnt('二手摘要')} |")
+    lines.append('')
+    for s in sorted(by):
+        lines += [f'## {s}', '', '| id | 名字 | 目的 | 为什么好 | 适合氛围 | 载体 | 核验 | 用过 |', '|---|---|---|---|---|---|---|---|']
+        for c in sorted(by[s], key=lambda c: c['id']):
+            lines.append(f"| `{c['id']}` | {c['name']} | {c['purpose']} | {c['why']} | {'、'.join(c['atmosphere_fit'])} | {','.join(c['carriers'])} | {hc(c)} | {','.join(c['used_in']) or '—'} |")
+        lines.append('')
+    return '\n'.join(lines), len(by)
+
+def write_both(d, md):
+    """两份文件先写临时名，都成功后再替换，避免 cases.json 已改而 cases.md 没写。"""
+    t1, t2 = CASES + '.tmp', os.path.join(LIB, 'cases.md.tmp')
+    try:
+        with open(t1, 'w', encoding='utf-8') as f: json.dump(d, f, ensure_ascii=False, indent=1); f.write('\n')
+        with open(t2, 'w', encoding='utf-8') as f: f.write(md)
+    except Exception:
+        for t in (t1, t2):
+            if os.path.exists(t): os.remove(t)
+        raise
+    os.replace(t1, CASES); os.replace(t2, os.path.join(LIB, 'cases.md'))
 
 d = load(CASES)
 cases = d['cases']
@@ -43,27 +87,18 @@ if '--merge' in sys.argv:
     d['_meta']['case_count'] = len(cases)
     d['_meta']['slots'] = sorted({c['slot'] for c in cases})
     d['_meta']['checked'] = datetime.date.today().isoformat()
-    tmp = CASES + '.tmp'
-    with open(tmp, 'w', encoding='utf-8') as f: json.dump(d, f, ensure_ascii=False, indent=1); f.write('\n')
-    os.replace(tmp, CASES)
+    md, nslots = render(cases)
+    write_both(d, md)
     print(f'合并 {len(merged) - n0} 条，跳过已有 {skipped} 条，共 {len(merged)} 条')
+    print(f'cases.md 写好：{len(cases)} 条，{nslots} 槽。缺字段 0，重复 id []')
+    sys.exit(0)
 
 bad, dup = check(cases)
-by = {}
-for c in cases: by.setdefault(c['slot'], []).append(c)
-hc = lambda c: '、'.join(sorted({s.get('how_checked', '二手摘要') for s in c['seen_at']}))
-lines = ['# 案例索引', '', f'由 `toolbox/cases-index.py` 生成，不手改。共 {len(cases)} 条，{len(by)} 个槽。发牌：`node toolbox/deal.mjs --slot <槽> --purpose "<目的>" --carrier <id>`。字段与补库规则见 `stages/3-components.md` 第 6、7 节。', '']
-lines.append('| 槽 | 条数 | 本库已做出 | 亲核打开 | 二手摘要 |'); lines.append('|---|---|---|---|---|')
-for s in sorted(by):
-    cs = by[s]; cnt = lambda k: sum(1 for c in cs if any(x.get('how_checked') == k for x in c['seen_at']))
-    lines.append(f"| {s} | {len(cs)} | {cnt('本库已做出')} | {cnt('亲核打开')} | {cnt('二手摘要')} |")
-lines.append('')
-for s in sorted(by):
-    lines += [f'## {s}', '', '| id | 名字 | 目的 | 为什么好 | 适合氛围 | 载体 | 核验 | 用过 |', '|---|---|---|---|---|---|---|---|']
-    for c in sorted(by[s], key=lambda c: c['id']):
-        lines.append(f"| `{c['id']}` | {c['name']} | {c['purpose']} | {c['why']} | {'、'.join(c['atmosphere_fit'])} | {','.join(c['carriers'])} | {hc(c)} | {','.join(c['used_in']) or '—'} |")
-    lines.append('')
-with open(os.path.join(LIB, 'cases.md'), 'w', encoding='utf-8') as f: f.write('\n'.join(lines))
-print(f'cases.md 写好：{len(cases)} 条，{len(by)} 槽。缺字段 {len(bad)}，重复 id {dup}')
-if bad: print(bad[:10])
-sys.exit(1 if bad or dup else 0)
+if bad or dup:
+    print(f'未写 cases.md。缺字段或非法项 {len(bad)}：{bad[:10]}，重复 id {dup}')
+    sys.exit(1)
+md, nslots = render(cases)
+tmp = os.path.join(LIB, 'cases.md.tmp')
+with open(tmp, 'w', encoding='utf-8') as f: f.write(md)
+os.replace(tmp, os.path.join(LIB, 'cases.md'))
+print(f'cases.md 写好：{len(cases)} 条，{nslots} 槽。缺字段 0，重复 id []')
