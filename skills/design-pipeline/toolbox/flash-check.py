@@ -60,6 +60,7 @@ def load_sources(html_path, root=None):
     css += re.findall(r'<style[^>]*>(.*?)</style>', html, re.S | re.I)
     for body in re.findall(r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>', html, re.S | re.I):
         js.append(body)
+    inline_n = len(css)
 
     def local(ref, frm):
         if ref.startswith('data:'):
@@ -110,6 +111,11 @@ def load_sources(html_path, root=None):
         if re.search(r'rel=["\']?stylesheet', tag, re.I):
             m = re.search(r'href=["\']([^"\']+)', tag, re.I)
             q = local(m.group(1), base) if m else None
+            if q:
+                add_css(q)
+    for block in css[:inline_n]:  # 内联 <style> 里的 @import 也要跟随
+        for r in re.findall(r'@import\s+(?:url\()?["\']?([^"\')\s;]+)', block):
+            q = local(r, base)
             if q:
                 add_css(q)
     for tag in re.findall(r'<script\b[^>]*\bsrc=[^>]*>', html, re.I):

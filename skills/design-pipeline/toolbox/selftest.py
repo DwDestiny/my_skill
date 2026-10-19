@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""selftest.py 工具自测：历史 bug 的回归检查（12 项）。Python 3.12 标准库。
+"""selftest.py 工具自测：历史 bug 的回归检查（13 项）。Python 3.12 标准库。
 
 用途：把 design-pipeline 复制到临时目录，对 shots、defaults-check、cases-index、deal、flash-check 各跑一个坏输入。
 用法：python3 -I toolbox/selftest.py（需要 node）。每项输出 PASS 或 FAIL，任一失败退出码 1，不碰真实库与真实 history。
@@ -192,6 +192,34 @@ def t_compare_both_sides(P, tmp):
     return oka and okb, '主页面缺资源：%s，比较页远程样式表：%s' % ('不判 PASS' if oka else '仍判 PASS', '不判 PASS' if okb else '仍判 PASS')
 
 
+def t_compare_import(P, tmp):
+    d = os.path.join(tmp, 'site')
+    os.makedirs(d)
+    css = ':root{--a:#336699;--b:#cc5533}@keyframes k{}body{font-family:"Foo"}'
+    with open(os.path.join(d, 'style.css'), 'w', encoding='utf-8') as f:
+        f.write(css)
+    with open(os.path.join(d, 'imp.css'), 'w', encoding='utf-8') as f:
+        f.write('@import url("https://example.test/theme.css");' + css)
+    pages = {
+        'full': '<link rel="stylesheet" href="style.css">',
+        'ext': '<link rel="stylesheet" href="imp.css">',
+        'inline': '<style>@import url("https://example.test/theme.css");' + css + '</style>',
+        'other': '<style>:root{--a:#112233;--b:#aabbcc}@keyframes zz{}body{font-family:"Bar"}</style>',
+    }
+    for k, v in pages.items():
+        with open(os.path.join(d, k + '.html'), 'w', encoding='utf-8') as f:
+            f.write('<!doctype html>' + v + '<body>x</body>')
+    dc = os.path.join(P, 'toolbox', 'defaults-check.py')
+    verdict = lambda a, b: run([sys.executable, '-I', dc, os.path.join(d, a + '.html'), '--compare', os.path.join(d, b + '.html')], tmp).stdout.split('平均命中率')[-1].split('\n')[0]
+    bad = []
+    for a, b in (('ext', 'other'), ('other', 'ext'), ('inline', 'other'), ('other', 'inline')):
+        if '| PASS' in verdict(a, b) or '不完整' not in verdict(a, b):
+            bad.append('%s 对 %s' % (a, b))
+    ctrl_same = 'FAIL' in verdict('full', 'full')
+    ctrl_diff = '| PASS' in verdict('full', 'other')
+    return not bad and ctrl_same and ctrl_diff, '@import 漏检 %s，同页 FAIL %s，异页 PASS %s' % (bad or '无', ctrl_same, ctrl_diff)
+
+
 def main():
     tests = [('shots 失败截图不被旧 PNG 冒充', t_shots), ('defaults-check 读不到主 HTML', t_defaults),
              ('cases-index 同 id 缺字段不写库', t_cases), ('deal 损坏 history 不覆盖', t_deal),
@@ -199,7 +227,8 @@ def main():
              ('shots 失败时保留上次旧图', t_shots_keep), ('cases-index 类型错误不崩溃不写库', t_cases_types),
              ('根相对 CSS 缺失与外链列入未覆盖项', t_root_missing), ('根相对 CSS 存在时被读入', t_root_found),
              ('--compare 沿用 root，读不全时不判 PASS', t_compare_root), ('cases-index 第二次替换失败时退回', t_cases_rollback),
-             ('--compare 任一侧资源读不全都不判 PASS', t_compare_both_sides)]
+             ('--compare 任一侧资源读不全都不判 PASS', t_compare_both_sides),
+             ('@import 远程样式（外部与内联）不绕过完整性判断', t_compare_import)]
     fails = 0
     for name, fn in tests:
         with tempfile.TemporaryDirectory() as tmp:
