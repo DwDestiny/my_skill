@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""selftest.py 工具自测：历史 bug 的回归检查（13 项）。Python 3.12 标准库。
+"""selftest.py 工具自测：历史 bug 的回归检查（14 项）。Python 3.12 标准库。
 
 用途：把 design-pipeline 复制到临时目录，对 shots、defaults-check、cases-index、deal、flash-check 各跑一个坏输入。
 用法：python3 -I toolbox/selftest.py（需要 node）。每项输出 PASS 或 FAIL，任一失败退出码 1，不碰真实库与真实 history。
@@ -220,6 +220,14 @@ def t_compare_import(P, tmp):
     return not bad and ctrl_same and ctrl_diff, '@import 漏检 %s，同页 FAIL %s，异页 PASS %s' % (bad or '无', ctrl_same, ctrl_diff)
 
 
+def t_thin(P, tmp):
+    r = run([sys.executable, '-I', os.path.join(P, 'toolbox', 'cases-index.py'), '--thin'], tmp)
+    deal = run(['node', os.path.join(P, 'toolbox', 'deal.mjs'), '--slot', 'pricing', '--purpose', '展示价格'], tmp).stdout
+    hero = run(['node', os.path.join(P, 'toolbox', 'deal.mjs'), '--slot', 'hero', '--purpose', '首屏'], tmp).stdout
+    ok = r.returncode == 0 and 'pricing | 3 | 0 | 薄' in r.stdout and '库薄提示' in deal and '库薄提示' not in hero
+    return ok, '体检退出码 %d，pricing 判薄 %s，发牌提示 %s，hero 无提示 %s' % (r.returncode, 'pricing | 3 | 0 | 薄' in r.stdout, '库薄提示' in deal, '库薄提示' not in hero)
+
+
 def main():
     tests = [('shots 失败截图不被旧 PNG 冒充', t_shots), ('defaults-check 读不到主 HTML', t_defaults),
              ('cases-index 同 id 缺字段不写库', t_cases), ('deal 损坏 history 不覆盖', t_deal),
@@ -228,7 +236,8 @@ def main():
              ('根相对 CSS 缺失与外链列入未覆盖项', t_root_missing), ('根相对 CSS 存在时被读入', t_root_found),
              ('--compare 沿用 root，读不全时不判 PASS', t_compare_root), ('cases-index 第二次替换失败时退回', t_cases_rollback),
              ('--compare 任一侧资源读不全都不判 PASS', t_compare_both_sides),
-             ('@import 远程样式（外部与内联）不绕过完整性判断', t_compare_import)]
+             ('@import 远程样式（外部与内联）不绕过完整性判断', t_compare_import),
+             ('库薄体检与发牌库薄提示', t_thin)]
     fails = 0
     for name, fn in tests:
         with tempfile.TemporaryDirectory() as tmp:

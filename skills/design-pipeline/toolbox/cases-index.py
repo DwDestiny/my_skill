@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""生成 library/cases.md 索引。用法：python3 -I toolbox/cases-index.py [--merge library/cases-batch2.json]
+"""生成 library/cases.md 索引。用法：python3 -I toolbox/cases-index.py [--merge library/cases-batch2.json | --thin]
 --merge 先把另一份 {"cases":[...]} 合并进 cases.json（按 id 去重，后来者不覆盖），再写索引。"""
 import json, sys, os, datetime
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -83,6 +83,22 @@ def write_both(d, md):
 
 d = load(CASES)
 cases = d['cases']
+if '--thin' in sys.argv:
+    # 库薄体检：条数少于 THIN_N，或可信条数（亲核打开、本库已做出至少一条来源）少于 THIN_TRUST。起点值，不是通过线
+    THIN_N, THIN_TRUST = 6, 3
+    by = {}
+    for c in cases: by.setdefault(c.get('slot'), []).append(c)
+    ok = lambda c: any(x.get('how_checked') in ('亲核打开', '本库已做出') for x in c.get('seen_at', []))
+    print(f'库薄体检（条数 <{THIN_N} 或 可信条数 <{THIN_TRUST} 判薄；可信 = 亲核打开或本库已做出）')
+    print('| 槽 | 条数 | 可信 | 判定 |'); print('|---|---|---|---|')
+    thin = []
+    for s in sorted(by, key=str):
+        n, t = len(by[s]), sum(1 for c in by[s] if ok(c))
+        flag = n < THIN_N or t < THIN_TRUST
+        if flag: thin.append(s)
+        print(f'| {s} | {n} | {t} | {"薄，建议补调研" if flag else "够"} |')
+    print(f'薄槽 {len(thin)} 个：{"、".join(map(str, thin)) or "无"}。补调研步骤见 stages/3-components.md 第 5.5 节。')
+    sys.exit(0)
 if '--merge' in sys.argv:
     other = load(os.path.join(ROOT, sys.argv[sys.argv.index('--merge') + 1]))
     merged, have, skipped = list(cases), {c.get('id') for c in cases}, 0

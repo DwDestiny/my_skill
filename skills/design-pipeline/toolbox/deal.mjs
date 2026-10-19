@@ -236,7 +236,7 @@ if (opt.slot) {
   const useCount = (id) => hist.filter((e) => arr(e.components).some((x) => x.id === id)).length;
   out(`发案例：slot=${slot} carrier=${carrier || '任意'} purpose=${purpose || '-'} seed=${startSeed}`);
   out(`该槽共 ${inSlot.length} 条，载体筛后 ${byCarrier.length} 条${toks.length ? (narrowed ? `，目的命中 ${pool.length} 条` : '，目的命中不足 3 条，全池发') : ''}。`);
-  if (!pool.length) { out('没有可用案例。去掉 --carrier，或写"库外自拟"，收口后补库。'); process.exit(0); }
+  if (!pool.length) { out('没有可用案例。去掉 --carrier，或写"库外自拟"，收口后补库。'); out('库薄提示：该槽无可发案例，先做补调研（stages/3-components.md 第 5.5 节）。'); process.exit(0); }
   let dealPool = pool.filter((c) => !recent.has(c.id));
   if (recent.size && dealPool.length) out(`已排除最近 5 条使用史里同槽用过的案例：${[...recent].join(', ')}`);
   if (!dealPool.length) { dealPool = pool; out('最近 5 条已用尽可用池，回到全池。'); }
@@ -244,6 +244,9 @@ if (opt.slot) {
   let left = dealPool.slice();
   while (dealt.length < N && left.length) { const p = pickWeighted(left, (c) => 1 / (1 + useCount(c.id))); dealt.push(p); left = left.filter((c) => c.id !== p.id); }
   if (dealt.length < N) out(`说明：只发出 ${dealt.length} 条（可用池不足 ${N} 条，全给）。`);
+  // 库薄提示：命中池少于 3 条，或发出的卡里没有一条亲核打开或本库已做出
+  const trusted = (c) => arr(c.seen_at).some((r) => r.how_checked === '亲核打开' || r.how_checked === '本库已做出');
+  if (pool.length < N || !dealt.some(trusted)) out(`库薄提示：${pool.length < N ? `命中池只有 ${pool.length} 条` : '发出的卡全是二手摘要'}。先做补调研（stages/3-components.md 第 5.5 节），再决定选卡或库外自拟。`);
   out();
   dealt.forEach((c, i) => {
     out(`=== 案例 ${String.fromCharCode(65 + i)}：${c.name}（${c.id}）  载体 ${(arr(c.carriers).length ? arr(c.carriers) : arr(c.medium)).join(',')}`);
