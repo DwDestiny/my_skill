@@ -64,14 +64,18 @@ def load_sources(html_path, root=None):
     html = read(html_path)
     css = re.findall(r'<style[^>]*>(.*?)</style>', html, re.S | re.I)
     js = [b for b in re.findall(r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>', html, re.S | re.I)]
+    inline_css = list(css)
     seen = set()
 
-    def local(ref, frm):
+    def local(ref, frm, is_css=False):
         if ref.startswith('data:'):
             return None
         if re.match(r'^(https?:)?//', ref):
             if ref not in REMOTE:
                 REMOTE.append(ref)
+            # 样式表来源统一在这里登记（link、外部 CSS 的 @import、内联 style 的 @import 三条路径共用）
+            if is_css and not re.search(r'fonts\.(googleapis|gstatic)\.com', ref) and ref not in REMOTE_CSS:
+                REMOTE_CSS.append(ref)
             return None
         r = ref.split('?')[0].split('#')[0]
         # 以 / 开头的引用相对站点根（--root，默认为 HTML 所在目录），不是文件系统根
@@ -88,7 +92,7 @@ def load_sources(html_path, root=None):
         t = read(p)
         css.append(t)
         for r in re.findall(r'@import\s+(?:url\()?["\']?([^"\')\s;]+)', t):
-            q = local(r, os.path.dirname(p))
+            q = local(r, os.path.dirname(p), True)
             if q:
                 add_css(q)
 
@@ -112,9 +116,12 @@ def load_sources(html_path, root=None):
     for tag in re.findall(r'<link\b[^>]*>', html, re.I):
         if re.search(r'rel=["\']?stylesheet', tag, re.I):
             m = re.search(r'href=["\']([^"\']+)', tag, re.I)
-            q = local(m.group(1), base) if m else None
-            if m and re.match(r'^(https?:)?//', m.group(1)) and not re.search(r'fonts\.(googleapis|gstatic)\.com', m.group(1)) and m.group(1) not in REMOTE_CSS:
-                REMOTE_CSS.append(m.group(1))
+            q = local(m.group(1), base, True) if m else None
+            if q:
+                add_css(q)
+    for block in inline_css:  # 内联 <style> 里的 @import 也要跟随
+        for r in re.findall(r'@import\s+(?:url\()?["\']?([^"\')\s;]+)', block):
+            q = local(r, base, True)
             if q:
                 add_css(q)
     for tag in re.findall(r'<script\b[^>]*\bsrc=[^>]*>', html, re.I):
