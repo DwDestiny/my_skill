@@ -86,7 +86,8 @@ cases = d['cases']
 if '--thin' in sys.argv:
     # 库薄体检：条数少于 THIN_N，或可信条数（亲核打开、本库已做出至少一条来源）少于 THIN_TRUST。起点值，不是通过线
     THIN_N, THIN_TRUST = 6, 3
-    by = {}
+    # 先按合法槽建空表，零条案例的槽也要列出并判薄
+    by = {s: [] for s in d.get('_meta', {}).get('slots', [])}
     for c in cases: by.setdefault(c.get('slot'), []).append(c)
     ok = lambda c: any(x.get('how_checked') in ('亲核打开', '本库已做出') for x in c.get('seen_at', []))
     print(f'库薄体检（条数 <{THIN_N} 或 可信条数 <{THIN_TRUST} 判薄；可信 = 亲核打开或本库已做出）')
