@@ -24,7 +24,6 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
 - 流水线分四个阶段，每个阶段留下一份文件。 [C001] 事实 · 高
 - 案例库有 148 条，机制示例有 21 个。 [C002] [C003] 事实 · 高
 - 防模板靠 8 条机制，不靠检查脚本。 [C004] 事实 · 高
-- 检查点个数与浮夸度维度数，当前插件内无原文。 [C011] 缺口
 
 ## 产品层（样例，未经客户确认）
 
@@ -46,10 +45,10 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
 |---|---|---|---|---|---|---|---|---|
 | s0 首屏 | J1 | 刚打开 | 说出"需求进、页面出" | 看到机器 | s0-1 s0-2 | 3D 舞台 | 主角 | 内部编号 |
 | s1 成品 | J1 | 想看产出 | 看到成品截图 | 看成品 | s1-1 s1-2 s1-3 | 舞台加读数 | 主角 | 生成图冒充截图 |
-| s2 八步 | J2 | 想知道怎么做 | 说出每站留下什么 | 沿机身看站 | s2-1 s2-2 s2-3 | pin 加 scrub | 主角 | 步骤编号占视觉中心 |
+| s2 八步 | J2 | 想知道怎么做 | 说出每个阶段留下什么 | 沿机身看四个阶段 | s2-1 s2-2 | pin 加 scrub | 主角 | 步骤编号占视觉中心 |
 | s3 点头 | J2 | 想知道何时确认 | 知道委托人要点头 | 读确认规则 | s3-1 s3-2 | 阅读 | 配角 | 无 |
 | s4 防模板 | J3 | 担心像模板 | 说出 8 条机制 | 看发牌 | s4-1 s4-2 s4-3 | 舞台加列表 | 主角 | 无 |
-| s5 边界 | J3 | 想知道不做什么 | 说出 4 条禁区 | 读边界 | s5-1 s5-2 s5-3 | 阅读 | 配角 | 无 |
+| s5 边界 | J3 | 想知道不做什么 | 说出 4 条禁区 | 读边界 | s5-1 | 阅读 | 配角 | 无 |
 | s6 缺口 | J3 | 想知道没验证什么 | 看到未测项 | 读缺口 | s6-1 | 阅读 | 配角 | 无 |
 
 ## 章节
@@ -137,7 +136,7 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
     kind: mechanism
     size: 800×120
 
-### s2 · 四个阶段，每一站留下一个文件
+### s2 · 四个阶段，每个阶段留下一个文件
 - id: s2
 - outcome_ids: [O2]
 - pattern: 顺序展开
@@ -146,36 +145,34 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
 - new_terms: [站, 层]
 - blocks:
   - block: s2-1
-    shape: 站点说明
-    form: text
-    title: 每一站留下什么
+    shape: 阶段产物表
+    form: table
+    title: 每个阶段留下什么
     claims: [C001]
-    budget: 90 字
-    mobile: 竖排 8 行
-    twin: A04
+    budget: 4 行 × 2 列
+    items:
+      - 列：阶段 | 产物
+      - 1 内容蓝图 | `01-内容规划/blueprint.md`，并在 `design.md` 第 0 节登记路径
+      - 2 视觉氛围 | `design.md` 第 1 节
+      - 3 组件创意 | `design.md` 第 2 节
+      - 4 design.md | `design.md` 第 3 节
+    mobile: 竖排 4 行
+    twin: 无
   - block: s2-2
-    shape: 站点小图
+    shape: 八工位机身示意
     form: text
-    title: 站点小图
+    title: 八工位静帧
     claims: [C007]
     budget: 30 字
     mobile: 静图
     twin: A04
-  - block: s2-3
-    shape: 折叠条
-    form: table
-    title: 检查点清单
-    claims: [C011]
-    budget: 7 行 × 2 列
-    mobile: 折叠
-    twin: 无
-- fold: [s2-3]
+- fold: []
 - screens: 3
 - checkpoint: 读完这节你能说出每个阶段的产物。
 - stage: yes
 - image_needs:
   - id: A04
-    purpose: 站点小图，每站一张
+    purpose: 八工位静帧，只作机身示意，工位上只写站名 S0 到 S6、S3.5，不写产出说明
     subject: 八个工位的静帧
     kind: mechanism
     size: 8 张各 320×200
@@ -238,7 +235,7 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
     claims: [C004, C014]
     budget: 8 句各 ≤40 字
     items:
-      - M1 点子先于库：发牌前先写点子，换行业后点子不成立则重做。
+      - M1 点子先于库：发牌前先写点子。把题材换成另一行业，点子应当不成立；仍成立则重做。
       - M2 发牌不检索：一次发 3 张候选，从中选 1 张。
       - M3 使用史跨项目：发牌前写出最近 5 次用了什么，撞车则重新发牌。
       - M4 禁用清单每项目重写：每项目写 5 条，有使用史时至少 2 条引用上一项目。
@@ -253,7 +250,30 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
     form: table
     title: 21 个机制示例
     claims: [C002, C003, C009]
-    budget: 21 行 × 2 列
+    budget: 21 行 × 3 列
+    items:
+      - 列：目录名 | 路径 | 一句话
+      - blender-headless-glb | `examples/mechanisms/blender-headless-glb` | `blender -b --python make-model.py` 在 Blender 里程序化建模（6 块倒角薄板螺旋叠放加中柱，Principled BSDF），导出 `model.glb` 49 KB，three.js GLTFLoader 加载。管线见 `references/blender-pipeline.md`
+      - capability-tiering | `examples/mechanisms/capability-tiering` | 探测 6 项信号，判 full / lite / static，写入 `window.__tier`，三档舞台
+      - cross-doc-view-transition | `examples/mechanisms/cross-doc-view-transition` | 两个文档都写 `@view-transition { navigation: auto }`，共享元素同名 `view-transition-name`，转场由浏览器完成
+      - css-scroll-timeline | `examples/mechanisms/css-scroll-timeline` | 零 JS，`animation-timeline: view()` 与 `scroll()` 做入场与进度条，`@supports` 包住
+      - depth-parallax-image | `examples/mechanisms/depth-parallax-image` | 程序生成彩色图与深度图，着色器按深度位移，指针加滚动驱动
+      - fluid-ink-pointer | `examples/mechanisms/fluid-ink-pointer` | WebGL2 染料双缓冲，curl noise 加指针速度回溯采样，文字在实色面板上
+      - fluid-noise | `examples/mechanisms/fluid-noise` | 全屏片元着色器 fbm 噪声，三个 CSS 变量传入 uniform
+      - glass | `examples/mechanisms/glass` | backdrop-filter 玻璃浮层，只用于浮层
+      - gltf-model-stage | `examples/mechanisms/gltf-model-stage` | GLTFLoader 加载本地 model.glb，`make-model.mjs` 手写 glTF 二进制写入器生成 25 KB 环面
+      - grain | `examples/mechanisms/grain` | SVG feTurbulence 静态颗粒，可选 steps() 动态颗粒，页内算正文对比度
+      - image-sequence | `examples/mechanisms/image-sequence` | canvas 按滚动进度绘 24 帧程序化序列，预加载、进度映射、低端机降帧
+      - instanced-field | `examples/mechanisms/instanced-field` | InstancedMesh 画 3000 根柱，高度按噪声场变化，鼠标移波心，滚动推相位，按需渲染
+      - lenis-webgl-sync | `examples/mechanisms/lenis-webgl-sync` | Lenis 平滑滚动，gsap.ticker 单循环同时驱动 ScrollTrigger.update 与 three 着色器 uniform，静止时不渲染
+      - mesh-gradient | `examples/mechanisms/mesh-gradient` | WebGL 1 片元着色器融合 5 个来自 CSS 变量的控制色，慢速漂移，读回像素实测正文区对比度
+      - pinned-3d-scrub | `examples/mechanisms/pinned-3d-scrub` | ScrollTrigger pin 一屏并 scrub，驱动 8 方块旋转、分解、相机推进三段，文字叠层按段切换。舞台 `data-pin-screens="2"`
+      - raymarch-backdrop | `examples/mechanisms/raymarch-backdrop` | 全屏片元着色器 SDF 光线步进（球体与盒体平滑并集），只作 `show` 档背景，文字在实色面板上
+      - scroll-camera-path | `examples/mechanisms/scroll-camera-path` | three.js 四个站点，相机沿 CatmullRomCurve3 随滚动穿行，HTML 叠层文字
+      - scroll-story | `examples/mechanisms/scroll-story` | GSAP ScrollTrigger 固定舞台，三章，SVG 状态切换，`--p` 由 scrub 驱动
+      - splittext-kinetic | `examples/mechanisms/splittext-kinetic` | SplitText 按字入场（位移加旋转）加 SVG textPath 的 startOffset 随滚动 scrub
+      - variable-font-axis | `examples/mechanisms/variable-font-axis` | 原生 `font-variation-settings`，滚动进度驱动 wght、slnt、CASL，rAF 合并写入
+      - webgl-scene | `examples/mechanisms/webgl-scene` | three.js 程序化分层板片与节点连线，鼠标视差，滚动推镜头
     mobile: 折叠
     twin: 无
 - fold: [s4-3]
@@ -272,7 +292,7 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
 - outcome_ids: [O3]
 - pattern: 边界清单
 - intro: 流水线明确不做四类事。
-- claims: [C005, C011, C015]
+- claims: [C005, C015]
 - new_terms: [禁区]
 - blocks:
   - block: s5-1
@@ -288,15 +308,7 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
       - 禁 4 出现在阅读区：阅读区只允许反馈与状态动效。
     mobile: 静图
     twin: A07
-  - block: s5-2
-    shape: 折叠条
-    form: table
-    title: 浮夸度维度
-    claims: [C011]
-    budget: 9 行 × 2 列
-    mobile: 折叠
-    twin: 无
-- fold: [s5-2]
+- fold: []
 - screens: 2
 - checkpoint: 读完这节你能说出四条禁区。
 - stage: no
@@ -325,7 +337,7 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
     twin: 无
     items:
       - 列：项目 | 状态 | 一句说明 | 来源文件
-      - 检查点个数与浮夸度维度数 | 缺口 | 插件内无原文 | 见 C011
+      - 检查点与浮夸度维度的清单 | 缺口 | 插件内无原文，本页不展示 | 见 C011
       - 委托人点头两次 | 缺口 | 插件内无原文 | 见 C012
       - 八站与四阶段的对应 | 缺口 | 插件内无对应表 | 见 C013
       - 四项底线 | 缺口 | 原样例有此说法，restraint.md 只有四条禁区，已删 | `references/restraint.md` 第 2 节
@@ -339,13 +351,14 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
 ## 信息缺口
 - id: gaps
 - claims: [C011, C012, C013]
-- C011、C012：当前插件内无原文，来自历史页面。
+- C011：检查点与浮夸度维度的清单在插件内无原文，本页不展示。
+- C012：当前插件内无原文，来自历史页面。
 - C013：`SKILL.md` 与 `README.md` 没有八站到四阶段的对应表。
 - 四项底线：插件内无原文，蓝图与 design.md 已删。
 
 ## 信息架构
 - 导航：顶栏 7 个章名锚点，显示当前位置
-- 折叠清单：s2-3、s4-3、s5-2
+- 折叠清单：s4-3
 - 附录：证据索引、术语表
 - 可信度图例位置：顶部摘要之后
 - 速读通道检查：s0 的 s0-1 单独读即可知道页面用途
@@ -379,7 +392,7 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
 | C008 | Fable 评审 S3.5 第 1 轮 3 分，第 2 轮 4 分 | `examples/finished/show-01/README.md` 表中"Fable"行 | 中 |
 | C009 | 禁用清单每项目写 5 条 | `references/anti-sameness.md` 第 1 节 M4 | 高 |
 | C010 | 发牌一次 3 张，选 1 张 | `references/anti-sameness.md` 第 1 节 M2 | 高 |
-| C011 | 检查点 7 个，浮夸度 9 个维度 | 当前插件内无原文，来自历史页面 | 未验证 |
+| C011 | 检查点 7 个，浮夸度 9 个维度 | 当前插件内无原文，来自历史页面 | 未采用 |
 | C012 | 委托人点头两次，确认后文件不可改 | 当前插件内无原文，来自历史页面 | 未验证 |
 | C013 | 历史页面按 S0 到 S6 八站运行，插件内无八站到四阶段的对应表 | `examples/finished/show-01/README.md` 来源行 | 中 |
 | C014 | 8 条机制 M1 到 M8 的名称与作用 | `references/anti-sameness.md` 第 1 节表 | 高 |

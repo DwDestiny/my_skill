@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""selftest.py 工具自测：历史 bug 的回归检查（11 项）。Python 3.12 标准库。
+"""selftest.py 工具自测：历史 bug 的回归检查（12 项）。Python 3.12 标准库。
 
 用途：把 design-pipeline 复制到临时目录，对 shots、defaults-check、cases-index、deal、flash-check 各跑一个坏输入。
 用法：python3 -I toolbox/selftest.py（需要 node）。每项输出 PASS 或 FAIL，任一失败退出码 1，不碰真实库与真实 history。
@@ -173,13 +173,33 @@ def t_cases_rollback(P, tmp):
     return r.returncode == 1 and rd(cj) == before and not left and '失败' in r.stdout, '退出码 %d，cases.json %s，残留临时文件 %d 个' % (r.returncode, '已退回' if rd(cj) == before else '停在新内容', len(left))
 
 
+def t_compare_both_sides(P, tmp):
+    d = os.path.join(tmp, 'site')
+    os.makedirs(d)
+    full = os.path.join(d, 'full.html')
+    miss = os.path.join(d, 'miss.html')
+    rem = os.path.join(d, 'remote.html')
+    with open(os.path.join(d, 'style.css'), 'w', encoding='utf-8') as f:
+        f.write(':root{--a:#336699;--b:#cc5533}@keyframes k{}body{font-family:"Foo"}')
+    for path, link in ((full, '/style.css'), (miss, '/missing.css'), (rem, 'https://cdn.example.com/theme.css')):
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write('<!doctype html><link rel="stylesheet" href="%s"><body>x</body>' % link)
+    dc = os.path.join(P, 'toolbox', 'defaults-check.py')
+    a = run([sys.executable, '-I', dc, miss, '--root', d, '--compare', full], tmp).stdout
+    b = run([sys.executable, '-I', dc, full, '--root', d, '--compare', rem], tmp).stdout
+    oka = '| PASS' not in a.split('平均命中率')[-1].split('\n')[0] and '不完整' in a
+    okb = '| PASS' not in b.split('平均命中率')[-1].split('\n')[0] and '不完整' in b
+    return oka and okb, '主页面缺资源：%s，比较页远程样式表：%s' % ('不判 PASS' if oka else '仍判 PASS', '不判 PASS' if okb else '仍判 PASS')
+
+
 def main():
     tests = [('shots 失败截图不被旧 PNG 冒充', t_shots), ('defaults-check 读不到主 HTML', t_defaults),
              ('cases-index 同 id 缺字段不写库', t_cases), ('deal 损坏 history 不覆盖', t_deal),
              ('flash-check 内联循环不重复计数', t_flash),
              ('shots 失败时保留上次旧图', t_shots_keep), ('cases-index 类型错误不崩溃不写库', t_cases_types),
              ('根相对 CSS 缺失与外链列入未覆盖项', t_root_missing), ('根相对 CSS 存在时被读入', t_root_found),
-             ('--compare 沿用 root，读不全时不判 PASS', t_compare_root), ('cases-index 第二次替换失败时退回', t_cases_rollback)]
+             ('--compare 沿用 root，读不全时不判 PASS', t_compare_root), ('cases-index 第二次替换失败时退回', t_cases_rollback),
+             ('--compare 任一侧资源读不全都不判 PASS', t_compare_both_sides)]
     fails = 0
     for name, fn in tests:
         with tempfile.TemporaryDirectory() as tmp:
