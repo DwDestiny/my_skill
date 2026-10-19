@@ -5,7 +5,7 @@
 | 编号 | 用在 | 种类 | 生成方式 | 文件 |
 |---|---|---|---|---|
 | A01 | s0 首屏 | mechanism | three.js 程序化几何，`buildMachine` 工厂产出叠片机 | 无 |
-| A02 | s1 成品 | data | 自有页面截图，运行页面后用浏览器截取，不得生成冒充 | 无（实现时截取） |
+| A02 | s1 成品 | data | 自有页面截图，用 `toolbox/shots.py` 截取，不得生成冒充。5 张：show-01 d-fold（1440 浅色首屏）、show-01 m-fold（390 首屏）、mixed-01 d-fold、mixed-01 m-fold、clear-01 m-fold。范例在 `examples/finished/` | 无（实现时截取） |
 | A03 | s1 读数 | mechanism | HTML 与 SVG 自绘刻度尺 | 无 |
 | A04 | s2 八步 | mechanism | three.js 程序化几何，`?export` 参数导出站点小图 | 无（导出时生成 `assets/*.jpg`） |
 | A05 | s3 点头 | mechanism | three.js 程序化几何，S3 近景静帧 | 无 |

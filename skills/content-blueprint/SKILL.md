@@ -11,7 +11,7 @@ description: design-pipeline 的子步骤，由 design-pipeline 阶段 1 调用�
 
 1. 读用户原话。逐字抄进 `audience-outcomes.md` 第 0 节。
 2. 收集输入：资料路径、目标、受众线索、交付形态（本地 HTML / Artifact / 其他）、用户对风格的话（只记录，不决定）。
-3. 建目录：项目里有 `01-内容规划/` 就用它；没有则在页面目录旁建 `content-plan/`。复制 `assets/templates/` 的五个模板进去。
+3. 建目录：项目里有 `01-内容规划/` 就用它；没有则在页面目录旁建 `content-plan/`。复制 `assets/templates/` 的模板进去。单页且章数 ≤8 时，证据索引和术语表可写进 `blueprint.md` 的附录，不复制这两个独立模板。
 
 ## 2. 术语表
 
@@ -192,7 +192,7 @@ A 可能退回七种问题：`over_budget`、`wont_fit`、`form_mismatch`、`mis
 
 样例任务 B1：用 `01-业务调研/工程设计院AI讲解页-20261015/00-资料/` 的两份资料，目标"让一位非行业业务人员在 2 小时内读懂行业、已有成果、关键概念"。
 
-1. 产出目录有五个文件，`audience-outcomes.md` 第 0 节含用户原话逐字。
+1. 产出目录有 `audience-outcomes.md` 与 `blueprint.md`；证据索引与术语表是独立文件，或是蓝图附录（以交付包清单为准）。`audience-outcomes.md` 第 0 节含用户原话逐字。
 2. `audience-outcomes.md` 有 ≥5 条已知、≥5 条不知、≥4 条结果，每条结果有自测题与可测动词。
 3. 证据索引（`evidence-index.md` 或蓝图附录）每行字段齐全；随机抽 5 条，回到资料核对原话与来源一致。
 4. `blueprint.md` front matter 字段齐全；每章 `claims` 的 ID 都在证据索引里；每章 `form` 与 `budget` 有值；每章 `screens` 为 1 到 3。

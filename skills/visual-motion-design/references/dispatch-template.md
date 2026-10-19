@@ -4,32 +4,32 @@
 
 > Put the skill file path and the user's quoted words in every dispatch prompt for a design or UI work package. Tell the agent to read both before it writes code.
 
-把下面的模板填完整后再派发。模型与 effort 按用户的角色表选（设计与视觉打磨给 opus，实现给 sonnet，机械检查给 haiku）。
+把下面的模板填完整后再派发。模型与 effort 按宿主能力和用户规则选：设计与视觉打磨给可用的最强模型，实现给中档模型，机械检查给最便宜的模型。不固定某一家的模型名。
 
 ```
 # 任务：<页面名> · <工作包名>
 
 ## 先读（写代码前全部读完）
-1. 视觉与动效 skill：<仓库根>/.claude/skills/visual-motion-design/SKILL.md
-   以及 references/gears.md、design-plan-template.md、review.md
-2. 设计基础 skill：`frontend-design`（先探测宿主有没有它，Claude Code 插件缓存是其中一处。找不到就读 design-pipeline/references/anti-sameness.md，并记“未读 frontend-design”）
-3. 需要时：artifact-design（发布 Artifact）、dataviz（图表）、artifact-diagramming（内联 SVG）、diagram-design、anatomy
-4. 内容蓝图：<01-内容规划/blueprint.md 路径>，证据索引：<evidence-index.md 路径，或 blueprint.md#附录-证据索引>，术语表：<glossary.md 路径，或 blueprint.md#附录-术语表>
-5. 设计计划：<02-设计/design-plan.md 路径>（已批准，照做；要改先写 handoff-log）
+1. 设计入口：<design.md 路径>。先读第 0 节“交付包清单”，再读清单列出的每个文件（蓝图、证据索引、术语表、资产清单等，路径以清单为准）。这是本次设计决定的唯一入口
+2. 视觉与动效 skill：<visual-motion-design 的实际路径，用宿主探测到的 Skill 目录>/SKILL.md
+   以及 references/gears.md、review.md
+3. 设计基础 skill：`frontend-design`（先探测宿主有没有它，Claude Code 插件缓存是其中一处。找不到就读 design-pipeline/references/anti-sameness.md，并记“未读 frontend-design”）
+4. 需要时：artifact-design（发布 Artifact）、dataviz（图表）、artifact-diagramming（内联 SVG）、diagram-design、anatomy
+5. 内容蓝图、证据索引、术语表：路径以 design.md 第 0 节为准（独立文件，或 `blueprint.md#附录-证据索引`、`blueprint.md#附录-术语表`）
+6. 设计计划：只有 design.md 清单列出 `02-设计/design-plan.md` 时才读（已批准，照做；要改先写 handoff-log）。清单没有它就不读、不索要
 
 ## 用户原话（逐字，不得改写）
 > <原话 1>
 > <原话 2>
 
 ## 预算预设
-<clear|mixed|show>。预设是起点，氛围决定收放，不是品质分级。预算（上限）见 gears.md 第 2 节。参考值（F1 到 F6）见 gears.md 第 2.1 节，设计计划第 2.1 节有这个页面的验收项。底线见 gears.md 第 4 节。用户的风格词是对效果的要求，不是成本上限。不要为通过检查表或省成本删参考项和动效；过不了先改角色、位置、幅度。
+<clear|mixed|show>。预设是起点，氛围决定收放，不是品质分级。预算（上限）见 gears.md 第 2 节。参考值（F1 到 F6）见 gears.md 第 2.1 节，这个页面的验收项写在 design.md（有设计计划时见其第 2.1 节）。底线见 gears.md 第 4 节。用户的风格词是对效果的要求，不是成本上限。不要为通过检查表或省成本删参考项和动效；过不了先改角色、位置、幅度。
 
 ## 文件所有权
 | 文件 | 所有者 |
 |---|---|
 | 03-页面/index.html | 本代理 |
-| 02-设计/design-plan.md | 只读 |
-| 01-内容规划/* | 只读；问题写进 01-内容规划/handoff-log.md |
+| design.md 与其第 0 节清单列出的文件（含设计计划，若有） | 只读；问题写进 01-内容规划/handoff-log.md |
 
 ## 工作目录与分支
 <绝对路径>，分支 <名>。只在此目录工作。小步提交。

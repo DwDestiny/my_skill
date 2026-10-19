@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""selftest.py 工具自测：历史 bug 的回归检查（9 项）。Python 3.12 标准库。
+"""selftest.py 工具自测：历史 bug 的回归检查（11 项）。Python 3.12 标准库。
 
 用途：把 design-pipeline 复制到临时目录，对 shots、defaults-check、cases-index、deal、flash-check 各跑一个坏输入。
 用法：python3 -I toolbox/selftest.py（需要 node）。每项输出 PASS 或 FAIL，任一失败退出码 1，不碰真实库与真实 history。
@@ -142,12 +142,44 @@ def t_root_found(P, tmp):
     return local_ok, line[:80]
 
 
+def t_compare_root(P, tmp):
+    d = os.path.join(tmp, 'site')
+    os.makedirs(os.path.join(d, 'a'))
+    with open(os.path.join(d, 'a', 'index.html'), 'w', encoding='utf-8') as f:
+        f.write('<!doctype html><link rel="stylesheet" href="/style.css"><body>x</body>')
+    with open(os.path.join(d, 'style.css'), 'w', encoding='utf-8') as f:
+        f.write(':root{--a:#336699;--b:#cc5533}@keyframes k{}body{font-family:"Foo"}')
+    h, dc = os.path.join(d, 'a', 'index.html'), os.path.join(P, 'toolbox', 'defaults-check.py')
+    ok1 = run([sys.executable, '-I', dc, h, '--root', d, '--compare', h], tmp).stdout
+    ok2 = run([sys.executable, '-I', dc, h, '--compare', h], tmp).stdout
+    a = '| 平均命中率 | 0% | PASS' not in ok1 and '读不到' not in ok1.split('同质化比较')[-1]
+    b = '不完整' in ok2 and '| 平均命中率 | 0% | PASS' not in ok2
+    return a and b, '带 --root 时比较页读到 CSS：%s，不带时标不完整：%s' % (a, b)
+
+
+def t_cases_rollback(P, tmp):
+    L = os.path.join(P, 'library')
+    cj = os.path.join(L, 'cases.json')
+    with open(cj, encoding='utf-8') as f:
+        c = dict(json.load(f)['cases'][0])
+    c['id'] = 'new-rollback-x'
+    with open(os.path.join(L, 'batch.json'), 'w', encoding='utf-8') as f:
+        json.dump({'cases': [c]}, f, ensure_ascii=False)
+    before = rd(cj)
+    os.remove(os.path.join(L, 'cases.md'))
+    os.mkdir(os.path.join(L, 'cases.md'))  # 让第二次替换失败
+    r = run([sys.executable, '-I', os.path.join(P, 'toolbox', 'cases-index.py'), '--merge', 'library/batch.json'], tmp)
+    left = [n for n in os.listdir(L) if n.endswith('.tmp')]
+    return r.returncode == 1 and rd(cj) == before and not left and '失败' in r.stdout, '退出码 %d，cases.json %s，残留临时文件 %d 个' % (r.returncode, '已退回' if rd(cj) == before else '停在新内容', len(left))
+
+
 def main():
     tests = [('shots 失败截图不被旧 PNG 冒充', t_shots), ('defaults-check 读不到主 HTML', t_defaults),
              ('cases-index 同 id 缺字段不写库', t_cases), ('deal 损坏 history 不覆盖', t_deal),
              ('flash-check 内联循环不重复计数', t_flash),
              ('shots 失败时保留上次旧图', t_shots_keep), ('cases-index 类型错误不崩溃不写库', t_cases_types),
-             ('根相对 CSS 缺失与外链列入未覆盖项', t_root_missing), ('根相对 CSS 存在时被读入', t_root_found)]
+             ('根相对 CSS 缺失与外链列入未覆盖项', t_root_missing), ('根相对 CSS 存在时被读入', t_root_found),
+             ('--compare 沿用 root，读不全时不判 PASS', t_compare_root), ('cases-index 第二次替换失败时退回', t_cases_rollback)]
     fails = 0
     for name, fn in tests:
         with tempfile.TemporaryDirectory() as tmp:

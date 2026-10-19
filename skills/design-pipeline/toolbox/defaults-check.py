@@ -21,7 +21,7 @@
   - X14 数 @keyframes 名与 JS 入场位移种类，不看实际视觉。
   - 引擎自带关键帧（如 `engine.css`）也会计入。判定时人工扣除。
 
-用法：python3 -I defaults-check.py index.html [--root 站点根目录] [--compare 另一页或目录]
+用法：python3 -I defaults-check.py index.html [--root 站点根目录] [--compare 另一页或目录 [--compare-root 比较页站点根]]
 """
 import argparse
 import colorsys
@@ -228,6 +228,7 @@ def main():
     ap = argparse.ArgumentParser(description='默认值检查（X1 到 X16 的 grep 类各项）。读 HTML 与其本地 CSS、JS，输出 Markdown 表。有 FAIL 退出码为 1。')
     ap.add_argument('html', help='页面 index.html 路径')
     ap.add_argument('--root', help='站点根目录。页面里以 / 开头的引用按此解析，默认为 HTML 所在目录')
+    ap.add_argument('--compare-root', help='比较页面的站点根目录。默认沿用 --root，没有 --root 时为比较页面所在目录')
     ap.add_argument('--compare', help='另一个页面（html 文件或目录），比同质化')
     a = ap.parse_args()
     if not os.path.isfile(a.html):
@@ -339,7 +340,12 @@ def main():
             print('\n--compare 找不到页面：%s' % a.compare)
             cnt['FAIL'] += 1
         else:
-            h2, c2, _ = load_sources(p)
+            saved = (MISSING[:], UNRESOLVED[:])
+            del MISSING[:], UNRESOLVED[:]
+            h2, c2, _ = load_sources(p, a.compare_root or a.root)
+            incomplete = bool(MISSING or UNRESOLVED)  # 比较页自己有没读到的资源
+            MISSING[:] = saved[0] + [m for m in MISSING if m not in saved[0]]
+            UNRESOLVED[:] = saved[1] + [m for m in UNRESOLVED if m not in saved[1]]
             c2 = re.sub(r'/\*.*?\*/', '', c2, flags=re.S)
             dims = [
                 ('色相直方图（:root 令牌）', hist_sim(hue_hist(css_nc), hue_hist(c2)), '%s 对 %s' % (hue_hist(css_nc), hue_hist(c2))),
@@ -354,8 +360,11 @@ def main():
             for d in dims:
                 print('| %s | %s | %s |' % (d[0], pct(d[1]), str(d[2]).replace('|', '\\|')))
             verdict = 'FAIL' if avg > 0.6 else 'PASS'
+            if incomplete and verdict == 'PASS':
+                verdict = '不完整'  # 比较页的资源没读全，低相似度可能是漏读造成的，不下 PASS 结论
+                cnt['WARN'] += 1
             cnt['FAIL'] += verdict == 'FAIL'
-            print('| 平均命中率 | %s | %s（阈值 >60%% 为与上一项目同套） |' % (pct(avg), verdict))
+            print('| 平均命中率 | %s | %s（阈值 >60%% 为与上一项目同套%s） |' % (pct(avg), verdict, '。比较页有资源读不到，见未覆盖项，结论不可靠' if incomplete else ''))
 
     if MISSING or UNRESOLVED or REMOTE:
         print('\n未覆盖项：下列引用的内容没有被检查。令牌或动效若在这些文件里，上面的 PASS 不代表通过：')
