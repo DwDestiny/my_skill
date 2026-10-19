@@ -6,7 +6,8 @@ A FAIL means the page is below the reference value of its budget preset (a prese
 
 Page conventions the check reads:
   - chapter sections carry data-chapter and data-layout="<family>"
-  - the first-screen visual subject carries data-hero-visual and contains svg / img / canvas / picture
+  - the first-screen visual subject carries data-hero-visual and contains svg / img / canvas / picture,
+    or is built with CSS 3D (transform-style: preserve-3d in the page CSS)
   - credibility chips use class "tag"
   - motion hooks: data-reveal, data-counter (engine attributes)
 
@@ -40,6 +41,7 @@ class P(HTMLParser):
         self._stack = []             # open chapter idx stack by tag depth
         self.cur = None
         self.hero_visual = False
+        self.hero_marked = False
         self._hero_depth = 0
         self.depth = 0
         self.attr_counts = {'data-reveal': 0, 'data-counter': 0}
@@ -68,6 +70,7 @@ class P(HTMLParser):
             self.cur['cell_tags' if self.in_cell else 'tags'] += 1
         if 'data-hero-visual' in a:
             self._hero_depth = self.depth
+            self.hero_marked = True
         if self._hero_depth and tag in ('svg', 'img', 'canvas', 'picture'):
             self.hero_visual = True
 
@@ -173,8 +176,10 @@ def main():
         notes.append('F1 ok: ' + ', '.join('%s x%d' % kv for kv in strong.items()))
 
     # F2 hero visual
-    if not p.hero_visual:
-        fails.append('F2 no [data-hero-visual] element with svg/img/canvas/picture on the first screen')
+    if not p.hero_visual and p.hero_marked and 'preserve-3d' in css:
+        notes.append('F2 ok: hero visual is CSS 3D')
+    elif not p.hero_visual:
+        fails.append('F2 no [data-hero-visual] element with svg/img/canvas/picture (or CSS 3D) on the first screen')
     else:
         notes.append('F2 ok: hero visual present')
 

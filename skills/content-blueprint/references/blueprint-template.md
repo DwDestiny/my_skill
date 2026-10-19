@@ -19,7 +19,7 @@ audience:
 reader_mode: 读                # 读 | 读看 | 看（提示读者主要怎么用这页，不是分级）
 style_quotes:                   # 用户关于风格的原话，逐字；没有则留空数组
   - "<原话>"
-outcomes: [O1, O2, O3]
+outcomes: [O1, O2, O3, E1]     # E 为体验结果，原话有体验词时必有
 sources_file: evidence-index.md   # 文件名，或附录锚点如 blueprint.md#附录-证据索引（单页且章数 ≤8）
 glossary_file: glossary.md   # 文件名，或附录锚点如 blueprint.md#附录-术语表
 credibility_legend: "高=官方原文；中=媒体转述；低=厂商自述；未验证=未读到原文"
@@ -74,6 +74,13 @@ notes: <与用户原话冲突的处理、口径差异等>
     shape: 单个判断
     form: text
     claims: [C005]
+  - block: s1-3                 # 演示块示例：资料缺具体对象时用，可选
+    shape: 顺序
+    form: timeline
+    demo: yes                   # 页面就近标"演示示例"；内容不进证据索引的事实
+    title: <一个具体过程的一句结论>
+    claims: []
+    budget: steps=5
 - fold: [C006, C007]            # 放进折叠的断言
 - screens: 2                    # 预计屏数，1 到 3
 - checkpoint: 读完这节你能说出 2025 年设计收入与变化方向

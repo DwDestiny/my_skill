@@ -25,7 +25,7 @@ description: design-pipeline 的子步骤，由 design-pipeline 阶段 2 到 4 �
 | 预算预设 | 动效预算的起点：`clear` 清晰讲解、`mixed` 混合、`show` 展示冲击。预设是起点，氛围决定收放，不是品质分级 |
 | 阅读区 | 正文、表格、来源、术语、折叠内容、图注、目录 |
 | 舞台区 | hero、章节开场、签名时刻、页脚收尾、独立的图或 3D 场景 |
-| 签名时刻 | 页面里唯一允许"响"的动效或构图 |
+| 签名时刻 | 页面里最响的一处动效或构图。只限高潮，其他章仍要有本页的材质与构图 |
 | 动效动词 | 全页动效共用的一个比喻（"像纸落定"） |
 | 驱动模块 | 一个变量驱动全部承载概念的视觉 |
 | 角色表 | 设计计划里登记每个炫技元素职责的表 |
@@ -92,7 +92,7 @@ description: design-pipeline 的子步骤，由 design-pipeline 阶段 2 到 4 �
 
 ### 步骤 5：门禁（本机，离线）
 
-0. `python3 assets/floor-check.py <index.html>` 无 FAIL。
+0. `python3 assets/floor-check.py <index.html>`：FAIL 逐项处理，修或写不适用原因（例：首屏是 CSS3D，章节不用 data-layout）。它量标记与引用次数，不量画面，不为清零加标记或动效。
 1. HTML 可解析；外链只允许固定版本的 CDN 脚本和 Google Fonts（grep `http`，逐条核对版本号）。
 2. `lang="zh-CN"`；一个 `h1`；每个 `img` 有 `alt`；每个 `svg` 有 `role="img"` 与 `aria-label`。
 3. 对比度：正文 4.5:1，大字 3:1，浅色与深色各算。
