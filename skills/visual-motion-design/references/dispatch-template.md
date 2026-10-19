@@ -10,9 +10,9 @@
 # 任务：<页面名> · <工作包名>
 
 ## 先读（写代码前全部读完）
-1. 视觉与动效 skill：<skill-root>/visual-motion-design/SKILL.md
+1. 视觉与动效 skill：<仓库根>/.claude/skills/visual-motion-design/SKILL.md
    以及 references/gears.md、design-plan-template.md、review.md
-2. 设计基础 skill：~/.claude/plugins/cache/claude-plugins-official/frontend-design/*/skills/frontend-design/SKILL.md（取最新目录）
+2. 设计基础 skill：`frontend-design`（先探测宿主有没有它，Claude Code 插件缓存是其中一处。找不到就读 design-pipeline/references/anti-sameness.md，并记“未读 frontend-design”）
 3. 需要时：artifact-design（发布 Artifact）、dataviz（图表）、artifact-diagramming（内联 SVG）、diagram-design、anatomy
 4. 内容蓝图：<01-内容规划/blueprint.md 路径>，证据索引：<evidence-index.md 路径>，术语表：<glossary.md 路径>
 5. 设计计划：<02-设计/design-plan.md 路径>（已批准，照做；要改先写 handoff-log）

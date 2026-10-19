@@ -33,10 +33,12 @@ import time
 MAX_PAGES = 12
 AB = shutil.which('agent-browser') or os.path.expanduser('~/.local/bin/agent-browser')
 LOG = []
+OK = [False]  # 最近一次 ab() 是否成功（返回码 0）
 
 
 def ab(*args, timeout=90):
     """运行 agent-browser，返回标准输出文本。失败返回空串并记录。"""
+    OK[0] = False
     try:
         r = subprocess.run([AB, *args], capture_output=True, text=True, timeout=timeout)
     except (OSError, subprocess.TimeoutExpired) as e:
@@ -46,6 +48,7 @@ def ab(*args, timeout=90):
         msg = (r.stderr or r.stdout).strip()
         LOG.append('命令失败 %s: %s%s' % (' '.join(args)[:60], msg[:120], '（超时）' if 'timed out' in msg else ''))
         return ''
+    OK[0] = True
     return r.stdout
 
 
@@ -132,8 +135,10 @@ def main():
             ab('eval', 'window.scrollTo(0,%d)' % y)
         ab('wait', str(wait))
         path = os.path.join(a.out, name + '.png')
+        if os.path.exists(path):
+            os.remove(path)  # 删旧图，失败的截图不会被旧文件冒充
         ab('screenshot', path)
-        ok = os.path.isfile(path)
+        ok = OK[0] and os.path.isfile(path)
         rows.append((name + '.png' if ok else name + '（失败）', '%dx%d' % vp, st, use))
 
     def paged(prefix, vp, media='light'):
