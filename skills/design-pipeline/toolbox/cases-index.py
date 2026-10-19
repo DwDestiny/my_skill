@@ -64,7 +64,22 @@ def write_both(d, md):
         for t in (t1, t2):
             if os.path.exists(t): os.remove(t)
         raise
-    os.replace(t1, CASES); os.replace(t2, os.path.join(LIB, 'cases.md'))
+    MD = os.path.join(LIB, 'cases.md')
+    old_json = open(CASES, 'rb').read()
+    os.replace(t1, CASES)
+    try:
+        os.replace(t2, MD)
+    except Exception as e:
+        # 第二次替换失败：把 cases.json 退回旧内容，保持两份一致。退回也失败就明说，不报成功
+        try:
+            with open(t1, 'wb') as f: f.write(old_json)
+            os.replace(t1, CASES)
+            msg = 'cases.json 已退回旧内容，两份文件仍一致。'
+        except Exception as e2:
+            msg = f'退回失败（{e2!r}）。cases.json 已是新内容，cases.md 是旧的：修好权限后运行 python3 -I toolbox/cases-index.py 重建 cases.md。'
+        if os.path.exists(t2): os.remove(t2)
+        print(f'写 cases.md 失败（{e!r}）。{msg}')
+        sys.exit(1)
 
 d = load(CASES)
 cases = d['cases']

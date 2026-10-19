@@ -82,7 +82,12 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
 - screens: 1
 - checkpoint: 读完这节你能说出页面的用途。
 - stage: yes
-- image_needs: [A01]
+- image_needs:
+  - id: A01
+    purpose: 首屏主视觉，让读者看到需求进、页面出
+    subject: 八层叠片落下的叠片机
+    kind: mechanism
+    size: 全宽 16:9
 
 ### s1 · 上一个成品长这样
 - id: s1
@@ -102,7 +107,7 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
     twin: 无
   - block: s1-2
     shape: 成品截图展开
-    form: image
+    form: text
     title: 5 张成品截图
     claims: [C006]
     budget: 60 字
@@ -120,14 +125,24 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
 - screens: 2
 - checkpoint: 读完这节你能说出成品的评价结论。
 - stage: yes
-- image_needs: [A02, A03]
+- image_needs:
+  - id: A02
+    purpose: 给出 5 个真实成品画面作证据
+    subject: 5 张首屏截图：show-01 的 d-fold 与 m-fold，mixed-01 的 d-fold 与 m-fold，clear-01 的 m-fold（浅色，首屏）
+    kind: data
+    size: 1440×900 与 390×844
+  - id: A03
+    purpose: 评审读数的刻度尺
+    subject: 评审 3 分到 4 分
+    kind: mechanism
+    size: 800×120
 
 ### s2 · 四个阶段，每一站留下一个文件
 - id: s2
 - outcome_ids: [O2]
 - pattern: 顺序展开
-- intro: 每个阶段交出一份文件，交给下一阶段。
-- claims: [C001, C007]
+- intro: 每个阶段交出一份文件，交给下一阶段。本页按四阶段讲流水线；叠片机的八个工位沿用评测页的历史划分（S0 到 S6 加 S3.5），与四阶段不一一对应，页面不展示这个对应。
+- claims: [C001, C007, C013]
 - new_terms: [站, 层]
 - blocks:
   - block: s2-1
@@ -140,7 +155,7 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
     twin: A04
   - block: s2-2
     shape: 站点小图
-    form: image
+    form: text
     title: 站点小图
     claims: [C007]
     budget: 30 字
@@ -151,14 +166,19 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
     form: table
     title: 检查点清单
     claims: [C011]
-    budget: 折叠
+    budget: 7 行 × 2 列
     mobile: 折叠
     twin: 无
 - fold: [s2-3]
 - screens: 3
 - checkpoint: 读完这节你能说出每个阶段的产物。
 - stage: yes
-- image_needs: [A04]
+- image_needs:
+  - id: A04
+    purpose: 站点小图，每站一张
+    subject: 八个工位的静帧
+    kind: mechanism
+    size: 8 张各 320×200
 
 ### s3 · 委托人点头，文件才锁定
 - id: s3
@@ -178,7 +198,7 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
     twin: 无
   - block: s3-2
     shape: 控制台近景
-    form: image
+    form: text
     title: 夹具合上
     claims: [C012]
     budget: 30 字
@@ -188,14 +208,19 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
 - screens: 1
 - checkpoint: 读完这节你能说出何时点头。
 - stage: no
-- image_needs: [A05]
+- image_needs:
+  - id: A05
+    purpose: 夹具合上的近景
+    subject: S3 工位的夹具
+    kind: mechanism
+    size: 16:9
 
 ### s4 · 每次开工都重新发牌，用过的不再发
 - id: s4
 - outcome_ids: [O3]
 - pattern: 机制加证据
 - intro: 防模板靠 8 条机制。
-- claims: [C002, C003, C004, C009, C010]
+- claims: [C002, C003, C004, C009, C010, C014]
 - new_terms: [发牌, 使用史]
 - blocks:
   - block: s4-1
@@ -210,8 +235,17 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
     shape: 机制列表
     form: text
     title: 8 条机制
-    claims: [C004]
+    claims: [C004, C014]
     budget: 8 句各 ≤40 字
+    items:
+      - M1 点子先于库：发牌前先写点子，换行业后点子不成立则重做。
+      - M2 发牌不检索：一次发 3 张候选，从中选 1 张。
+      - M3 使用史跨项目：发牌前写出最近 5 次用了什么，撞车则重新发牌。
+      - M4 禁用清单每项目重写：每项目写 5 条，有使用史时至少 2 条引用上一项目。
+      - M5 库里存决定不存形容词：每个决定写选项名、数值或色值、参照。
+      - M6 默认值检查：按清单逐项查，命中 2 项回阶段 2 重做。
+      - M7 可区分性盲评（建议）：与上一项目并排，另一会话说出 3 处不同。
+      - M8 机制示例不带皮肤：接入后页面色值与字体全部来自方向单变量。
     mobile: 同桌面
     twin: 无
   - block: s4-3
@@ -219,29 +253,39 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
     form: table
     title: 21 个机制示例
     claims: [C002, C003, C009]
-    budget: 折叠
+    budget: 21 行 × 2 列
     mobile: 折叠
     twin: 无
 - fold: [s4-3]
 - screens: 2
 - checkpoint: 读完这节你能说出防模板的做法。
 - stage: yes
-- image_needs: [A06]
+- image_needs:
+  - id: A06
+    purpose: 发牌口吐出 3 张方向卡
+    subject: 发牌口与方向卡
+    kind: mechanism
+    size: 16:9
 
-### s5 · 四条禁区与四项底线
+### s5 · 四条禁区
 - id: s5
 - outcome_ids: [O3]
 - pattern: 边界清单
 - intro: 流水线明确不做四类事。
-- claims: [C005, C011]
+- claims: [C005, C011, C015]
 - new_terms: [禁区]
 - blocks:
   - block: s5-1
     shape: 护栏图
-    form: image
-    title: 四块禁区
-    claims: [C005]
-    budget: 120 字
+    form: text
+    title: 四条禁区
+    claims: [C015]
+    budget: 4 句各 ≤40 字
+    items:
+      - 禁 1 没有概念承载：手法不能用一句话说出它表达主题的哪一点。
+      - 禁 2 挡住阅读：动效层、3D、视频与正文重叠，或正文对比低于 4.5:1。
+      - 禁 3 同一手法重复超过默认次数：同一表现形式 id 出现 3 次以上。
+      - 禁 4 出现在阅读区：阅读区只允许反馈与状态动效。
     mobile: 静图
     twin: A07
   - block: s5-2
@@ -249,28 +293,55 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
     form: table
     title: 浮夸度维度
     claims: [C011]
-    budget: 折叠
+    budget: 9 行 × 2 列
     mobile: 折叠
     twin: 无
-  - block: s5-3
-    shape: 底线列表
-    form: text
-    title: 四项底线
-    claims: [C005]
-    budget: 140 字
-    mobile: 同桌面
-    twin: A07
 - fold: [s5-2]
 - screens: 2
 - checkpoint: 读完这节你能说出四条禁区。
 - stage: no
-- image_needs: [A07]
+- image_needs:
+  - id: A07
+    purpose: 护栏翻开露出禁区
+    subject: 4 块护栏与禁区标签
+    kind: mechanism
+    size: 1200×400
+
+### s6 · 没验证的部分
+- id: s6
+- outcome_ids: [O3]
+- pattern: 状态清单
+- intro: 本页有 5 项没有验证或没有原文。
+- claims: [C011, C012, C013]
+- new_terms: []
+- blocks:
+  - block: s6-1
+    shape: 铭牌
+    form: table
+    title: 五项未验证内容
+    claims: [C011, C012, C013]
+    budget: 5 行 × 4 列
+    mobile: 竖排
+    twin: 无
+    items:
+      - 列：项目 | 状态 | 一句说明 | 来源文件
+      - 检查点个数与浮夸度维度数 | 缺口 | 插件内无原文 | 见 C011
+      - 委托人点头两次 | 缺口 | 插件内无原文 | 见 C012
+      - 八站与四阶段的对应 | 缺口 | 插件内无对应表 | 见 C013
+      - 四项底线 | 缺口 | 原样例有此说法，restraint.md 只有四条禁区，已删 | `references/restraint.md` 第 2 节
+      - 实现后的页面 | 未测 | 样例只到 design.md，未做截图与盲评 | 无
+- fold: []
+- screens: 1
+- checkpoint: 读完这节你能说出哪些内容没有验证。
+- stage: no
+- image_needs: []
 
 ## 信息缺口
 - id: gaps
-- claims: [C011, C012]
-- s6-1: 铭牌 5 行。已测、未测、缺口三种状态，每行含项目、状态、一句说明、来源文件。
-- 章 s6 · 没验证的部分：block s6-1，stage: no，screens: 1。
+- claims: [C011, C012, C013]
+- C011、C012：当前插件内无原文，来自历史页面。
+- C013：`SKILL.md` 与 `README.md` 没有八站到四阶段的对应表。
+- 四项底线：插件内无原文，蓝图与 design.md 已删。
 
 ## 信息架构
 - 导航：顶栏 7 个章名锚点，显示当前位置
@@ -310,6 +381,9 @@ notes: 样例。7 章，舞台章 4（s0 s1 s2 s4），占 4/7，高于默认 1/
 | C010 | 发牌一次 3 张，选 1 张 | `references/anti-sameness.md` 第 1 节 M2 | 高 |
 | C011 | 检查点 7 个，浮夸度 9 个维度 | 当前插件内无原文，来自历史页面 | 未验证 |
 | C012 | 委托人点头两次，确认后文件不可改 | 当前插件内无原文，来自历史页面 | 未验证 |
+| C013 | 历史页面按 S0 到 S6 八站运行，插件内无八站到四阶段的对应表 | `examples/finished/show-01/README.md` 来源行 | 中 |
+| C014 | 8 条机制 M1 到 M8 的名称与作用 | `references/anti-sameness.md` 第 1 节表 | 高 |
+| C015 | 4 条禁区的名称与判定 | `references/restraint.md` 第 2 节 | 高 |
 
 ## 附录 术语表
 | 首选词 | 定义 | 不用的词 |
