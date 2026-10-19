@@ -37,17 +37,24 @@ MANUAL = [
 ]
 
 
+MISSING = []
+UNRESOLVED = []  # 本地引用但文件不存在（含站点根相对路径）
+REMOTE = []  # http(s) 外链，脚本不下载，内容未检查
+
+
 def read(path):
     try:
         with open(path, encoding='utf-8', errors='replace') as f:
             return f.read()
     except OSError:
+        MISSING.append(path)
         return ''
 
 
-def load_sources(html_path):
+def load_sources(html_path, root=None):
     """返回 (html, css, js)。css 与 js 含内联与本地外链（递归 import/@import）。"""
     base = os.path.dirname(os.path.abspath(html_path))
+    site_root = os.path.abspath(root) if root else base
     html = read(html_path)
     css, js, seen = [], [], set()
     css += re.findall(r'<style[^>]*>(.*?)</style>', html, re.S | re.I)
@@ -55,10 +62,21 @@ def load_sources(html_path):
         js.append(body)
 
     def local(ref, frm):
-        if re.match(r'^(https?:)?//|^data:', ref):
+        if ref.startswith('data:'):
             return None
-        p = os.path.normpath(os.path.join(frm, ref.split('?')[0].split('#')[0]))
-        return p if os.path.isfile(p) and p not in seen else None
+        if re.match(r'^(https?:)?//', ref):
+            if ref not in REMOTE:
+                REMOTE.append(ref)
+            return None
+        r = ref.split('?')[0].split('#')[0]
+        # 以 / 开头的引用相对站点根（--root，默认为 HTML 所在目录），不是文件系统根
+        p = os.path.normpath(os.path.join(site_root, r.lstrip('/')) if r.startswith('/') else os.path.join(frm, r))
+        if not os.path.isfile(p):
+            note = '%s（引用自 %s）' % (ref, os.path.basename(html_path) if frm == base else os.path.relpath(frm, base))
+            if note not in UNRESOLVED:
+                UNRESOLVED.append(note)
+            return None
+        return p if p not in seen else None
 
     def add_css(p):
         seen.add(p)
@@ -151,9 +169,10 @@ def main():
     ap = argparse.ArgumentParser(description='浮夸度静态检查。读 HTML 与其本地 CSS、JS，输出 Markdown 表。有 FAIL 退出码为 1。')
     ap.add_argument('html', help='页面 index.html 路径')
     ap.add_argument('--gear', default='mixed', choices=list(LOOP_MAX), help='档位：clear、mixed、show。默认 mixed')
+    ap.add_argument('--root', help='站点根目录。页面里以 / 开头的引用按此解析，默认为 HTML 所在目录')
     ap.add_argument('--shots', help='截图目录（shots.py 的输出）。有 Pillow 时做 d-fold 与 r-fold 差分')
     a = ap.parse_args()
-    html, css, js = load_sources(a.html)
+    html, css, js = load_sources(a.html, a.root)
     rows, fails, warns, manual = [], 0, 0, 0
 
     def row(item, res, val, why):
@@ -226,6 +245,13 @@ def main():
     print('|---|---|---|---|')
     for r in rows:
         print('| %s |' % ' | '.join(esc(x) for x in r))
+    if MISSING or UNRESOLVED or REMOTE:
+        print('\n未覆盖项：下列引用的内容没有被检查。动效若在这些文件里，上面的 PASS 不代表通过：')
+        for m in MISSING + UNRESOLVED:
+            print('- 本地读不到：%s' % m)
+        for m in REMOTE:
+            print('- 外部链接未检查：%s' % m)
+        warns += len(MISSING) + len(UNRESOLVED)
     print('\nresult: %d FAIL, %d WARN, %d 人工' % (fails, warns, manual))
     sys.exit(1 if fails else 0)
 

@@ -21,7 +21,7 @@
   - X14 数 @keyframes 名与 JS 入场位移种类，不看实际视觉。
   - 引擎自带关键帧（如 `engine.css`）也会计入。判定时人工扣除。
 
-用法：python3 -I defaults-check.py index.html [--compare 另一页或目录]
+用法：python3 -I defaults-check.py index.html [--root 站点根目录] [--compare 另一页或目录]
 """
 import argparse
 import colorsys
@@ -43,6 +43,8 @@ MANUAL = [
 
 
 MISSING = []
+UNRESOLVED = []  # 本地引用但文件不存在（含站点根相对路径）
+REMOTE = []  # http(s) 外链，脚本不下载，内容未检查
 
 
 def read(path):
@@ -54,19 +56,31 @@ def read(path):
         return ''
 
 
-def load_sources(html_path):
+def load_sources(html_path, root=None):
     """返回 (html, css, js)，含本地外链与递归 import。"""
     base = os.path.dirname(os.path.abspath(html_path))
+    site_root = os.path.abspath(root) if root else base
     html = read(html_path)
     css = re.findall(r'<style[^>]*>(.*?)</style>', html, re.S | re.I)
     js = [b for b in re.findall(r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>', html, re.S | re.I)]
     seen = set()
 
     def local(ref, frm):
-        if re.match(r'^(https?:)?//|^data:', ref):
+        if ref.startswith('data:'):
             return None
-        p = os.path.normpath(os.path.join(frm, ref.split('?')[0].split('#')[0]))
-        return p if os.path.isfile(p) and p not in seen else None
+        if re.match(r'^(https?:)?//', ref):
+            if ref not in REMOTE:
+                REMOTE.append(ref)
+            return None
+        r = ref.split('?')[0].split('#')[0]
+        # 以 / 开头的引用相对站点根（--root，默认为 HTML 所在目录），不是文件系统根
+        p = os.path.normpath(os.path.join(site_root, r.lstrip('/')) if r.startswith('/') else os.path.join(frm, r))
+        if not os.path.isfile(p):
+            note = '%s（引用自 %s）' % (ref, os.path.basename(html_path) if frm == base else os.path.relpath(frm, base))
+            if note not in UNRESOLVED:
+                UNRESOLVED.append(note)
+            return None
+        return p if p not in seen else None
 
     def add_css(p):
         seen.add(p)
@@ -213,12 +227,13 @@ def pct(x):
 def main():
     ap = argparse.ArgumentParser(description='默认值检查（X1 到 X16 的 grep 类各项）。读 HTML 与其本地 CSS、JS，输出 Markdown 表。有 FAIL 退出码为 1。')
     ap.add_argument('html', help='页面 index.html 路径')
+    ap.add_argument('--root', help='站点根目录。页面里以 / 开头的引用按此解析，默认为 HTML 所在目录')
     ap.add_argument('--compare', help='另一个页面（html 文件或目录），比同质化')
     a = ap.parse_args()
     if not os.path.isfile(a.html):
         print('错误：无法读取 %s' % a.html)
         sys.exit(2)
-    html, css, js = load_sources(a.html)
+    html, css, js = load_sources(a.html, a.root)
     css_nc = re.sub(r'/\*.*?\*/', '', css, flags=re.S)
     rows, cnt = [], {'FAIL': 0, 'WARN': 0, '人工': 0}
 
@@ -342,10 +357,13 @@ def main():
             cnt['FAIL'] += verdict == 'FAIL'
             print('| 平均命中率 | %s | %s（阈值 >60%% 为与上一项目同套） |' % (pct(avg), verdict))
 
-    if MISSING:
-        print('\n未覆盖项：下列本地外链读不到，其内容未检查：')
-        for m in MISSING:
-            print('- %s' % m)
+    if MISSING or UNRESOLVED or REMOTE:
+        print('\n未覆盖项：下列引用的内容没有被检查。令牌或动效若在这些文件里，上面的 PASS 不代表通过：')
+        for m in MISSING + UNRESOLVED:
+            print('- 本地读不到：%s' % m)
+        for m in REMOTE:
+            print('- 外部链接未检查：%s' % m)
+        cnt['WARN'] += len(MISSING) + len(UNRESOLVED)
     print('\nresult: %d FAIL, %d WARN, %d 人工' % (cnt['FAIL'], cnt['WARN'], cnt['人工']))
     sys.exit(1 if cnt['FAIL'] else 0)
 

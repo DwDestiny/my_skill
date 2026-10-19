@@ -20,8 +20,8 @@ reader_mode: 读                # 读 | 读看 | 看（提示读者主要怎么�
 style_quotes:                   # 用户关于风格的原话，逐字；没有则留空数组
   - "<原话>"
 outcomes: [O1, O2, O3]
-sources_file: evidence-index.md
-glossary_file: glossary.md
+sources_file: evidence-index.md   # 文件名，或附录锚点如 blueprint.md#附录-证据索引（单页且章数 ≤8）
+glossary_file: glossary.md   # 文件名，或附录锚点如 blueprint.md#附录-术语表
 credibility_legend: "高=官方原文；中=媒体转述；低=厂商自述；未验证=未读到原文"
 notes: <与用户原话冲突的处理、口径差异等>
 ---
@@ -129,7 +129,7 @@ notes: <与用户原话冲突的处理、口径差异等>
 
 1. 值只能是 `yes` 或 `no`。
 2. 判定：本章有过程、状态变化或空间关系时为 `yes`。纯概念、纯列表为 `no`。
-3. 舞台章 ≥ 总章数的 1/4（向上取整）。不足时 B 在步骤 10 报 `stage_short`。
+3. 默认舞台章不少于总章数的 1/4（向上取整）。不足时 B 在步骤 10 报 `stage_short` 提示项（不是失败项）。偏离时在 `notes` 写理由，并说明属于哪类不适用页面。
 4. `yes` 只是候选。A 决定哪些章真正成为舞台区。
 
 `image_needs`（每章必填，可为空列表）：
@@ -146,7 +146,7 @@ notes: <与用户原话冲突的处理、口径差异等>
 ## 2. A 开工的门禁（B 自检同一清单）
 
 1. front matter 字段齐全。
-2. 每章 `claims` 的每个 ID 在 `evidence-index.md` 里存在。
+2. 每章 `claims` 的每个 ID 在证据索引里存在（独立文件或蓝图附录）。
 3. 每个 block 的 `form` 是允许值之一。
 4. 每个非 `text` 的 block 有 `budget` 数值。
 5. 每章 `screens` 为 1 到 3。

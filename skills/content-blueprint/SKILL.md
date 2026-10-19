@@ -19,7 +19,7 @@ description: design-pipeline 的子步骤，由 design-pipeline 阶段 1 调用�
 |---|---|
 | 结果 | "读完后，读者能 X"的可检验陈述，编号 O1… |
 | 断言 | 页面上的一条事实、判断或缺口，编号 C001… |
-| 证据索引 | 全部断言的登记表 `evidence-index.md` |
+| 证据索引 | 全部断言的登记表。独立文件 `evidence-index.md`，或 `blueprint.md` 附录（单页且章数 ≤8） |
 | 三态标记 | 事实 / 判断 / 缺口 |
 | 可信度 | 高 / 中 / 低 / 未验证 |
 | 信息形状 | 内容的结构类型（单值、多对象多属性、顺序、流向、占比、空间） |
@@ -32,8 +32,8 @@ description: design-pipeline 的子步骤，由 design-pipeline 阶段 1 调用�
 | 步骤 | 文件 | 关键内容 | 模板 |
 |---|---|---|---|
 | 1 到 2 | `audience-outcomes.md` | 用户原话；典型读者；已知 5 条、不知 5 条；使用方式；错误代价；语言；结果 O1…（动词可测、自测题、优先级） | `assets/templates/audience-outcomes.md` |
-| 3 | `evidence-index.md` | 断言 ID、原话、类型、来源、定位、日期、可信度、范围、反面证据 | `assets/templates/evidence-index.md` |
-| 4 | `glossary.md` | 首选词、禁用同义词、一句话定义、类比、例子、边界、前置概念、首次出现章节 | `assets/templates/glossary.md` |
+| 3 | `evidence-index.md`（单页且章数 ≤8 时可写在 `blueprint.md` 附录） | 断言 ID、原话、类型、来源、定位、日期、可信度、范围、反面证据 | `assets/templates/evidence-index.md` |
+| 4 | `glossary.md`（同上，可写在 `blueprint.md` 附录） | 首选词、禁用同义词、一句话定义、类比、例子、边界、前置概念、首次出现章节 | `assets/templates/glossary.md` |
 | 5 到 9 | `blueprint.md` | front matter + 逐章块 + 删除清单 + 信息架构 | `assets/templates/blueprint.md` |
 | 0.5、7、9 | `blueprint.md` 增补 | 产品层（根本目标、工作故事、职责卡）放在顶部摘要之后、第一章之前。每章 `stage` 与 `image_needs` | 同上，字段定义见 `references/blueprint-template.md` 第 1.1 节 |
 | 10 | `handoff-log.md` | 与 A 的往来记录 | `assets/templates/handoff-log.md` |
@@ -123,7 +123,7 @@ description: design-pipeline 的子步骤，由 design-pipeline 阶段 1 调用�
 2. 每张图写一句结论标题，并写预算数值（节点数、行列数、序列数）。
 3. 预算超过 `form-selection.md` 第 3 节的上限时，拆成总览加细节，或改用表格。
 4. 等轴测 3D 只在"空间或机构本身是要讲的内容"时选。
-5. 每章标 `stage: yes|no`。有过程、状态变化或空间关系的章为 `yes`。舞台章 ≥ 总章数的 1/4。
+5. 每章标 `stage: yes|no`。有过程、状态变化或空间关系的章为 `yes`。默认舞台章不少于总章数的 1/4（向上取整）。偏离时在 `notes` 写理由，并说明属于哪类不适用页面（操作型原型、成功/确认状态、需要重复结构做比较的页、短内容阅读页）。
 6. 每章写 `image_needs`：只写需求（`purpose`、`subject`、`kind`、`size`），不写做法、风格与提示词。不需要图像时写 `[]`。字段见 `references/blueprint-template.md` 第 1.1 节。
 
 ### 步骤 8：信息架构
@@ -153,7 +153,7 @@ description: design-pipeline 的子步骤，由 design-pipeline 阶段 1 调用�
 7. 标题 ≤25 字；描述句 ≤50 字；一段 ≤6 句。
 8. 有条件时请一位非行业读者读摘要与第一章，圈出看不懂的词，回改术语表。
 9. 有"产品层"节：工作故事 3 到 7 条，每页或每章有职责卡，职责卡九列全非空。
-10. 每章有 `stage` 与 `image_needs`。舞台章 < 总章数的 1/4 时，报 `stage_short`：补舞台章或在 `notes` 写理由。
+10. 每章有 `stage` 与 `image_needs`。舞台章少于总章数的 1/4 时，报 `stage_short` 提示项（不是失败项）：补舞台章，或在 `notes` 写偏离理由。
 11. 每条工作故事 J 至少有一章承担。每张职责卡的 J 至少挂一个 O。
 12. 视觉重量为"主角"当且仅当该章 `stage: yes`。有冲突时改其中一处。
 
@@ -194,7 +194,7 @@ A 可能退回七种问题：`over_budget`、`wont_fit`、`form_mismatch`、`mis
 
 1. 产出目录有五个文件，`audience-outcomes.md` 第 0 节含用户原话逐字。
 2. `audience-outcomes.md` 有 ≥5 条已知、≥5 条不知、≥4 条结果，每条结果有自测题与可测动词。
-3. `evidence-index.md` 每行字段齐全；随机抽 5 条，回到资料核对原话与来源一致。
+3. 证据索引（`evidence-index.md` 或蓝图附录）每行字段齐全；随机抽 5 条，回到资料核对原话与来源一致。
 4. `blueprint.md` front matter 字段齐全；每章 `claims` 的 ID 都在证据索引里；每章 `form` 与 `budget` 有值；每章 `screens` 为 1 到 3。
 5. 章节到结果对照表无空行。
 6. `grep -E "建议你问|可以说|话术|切入点|打动" 01-内容规划/*.md` 无命中。

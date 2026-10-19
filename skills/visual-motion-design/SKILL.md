@@ -47,7 +47,7 @@ description: design-pipeline 的子步骤，由 design-pipeline 阶段 2 到 4 �
 | 找某类组件的更多做法（导航、页脚、区块、便当格、微交互） | `references/inspiration-library.md` | 写设计计划后再查，写吸收记录；取图先问用户 |
 | 发布为 Artifact | `references/artifact-contract.md`；Skill 工具加载 `artifact-design` | 按平台契约改骨架 |
 | 派发给子代理 | `references/dispatch-template.md` | 填模板 |
-| 评审 | `references/review.md`（先做第 0 节参考值检查） | 截图、ROUND、Fable |
+| 评审 | `references/review.md`（先做第 0 节参考值检查） | 截图、ROUND、评审者（首选第二个独立 agent，有 Fable 且用户要求时才用 Fable） |
 | 找参照、做参考值验收 | `references/inspiration-library.md`、`references/gears.md` 第 2.1 节 | 设计计划第 2.1、2.2 节 |
 | 交付前 | `references/lessons.md` | 对照已知偏差 |
 | 本项目 | `references/project-overlay.md` | 项目边界 |
