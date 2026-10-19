@@ -45,6 +45,7 @@ MANUAL = [
 MISSING = []
 UNRESOLVED = []  # 本地引用但文件不存在（含站点根相对路径）
 REMOTE = []  # http(s) 外链，脚本不下载，内容未检查
+REMOTE_CSS = []  # 其中的远程样式表（Google Fonts 除外）：令牌可能在里面，影响比较结论
 
 
 def read(path):
@@ -112,6 +113,8 @@ def load_sources(html_path, root=None):
         if re.search(r'rel=["\']?stylesheet', tag, re.I):
             m = re.search(r'href=["\']([^"\']+)', tag, re.I)
             q = local(m.group(1), base) if m else None
+            if m and re.match(r'^(https?:)?//', m.group(1)) and not re.search(r'fonts\.(googleapis|gstatic)\.com', m.group(1)) and m.group(1) not in REMOTE_CSS:
+                REMOTE_CSS.append(m.group(1))
             if q:
                 add_css(q)
     for tag in re.findall(r'<script\b[^>]*\bsrc=[^>]*>', html, re.I):
@@ -235,6 +238,7 @@ def main():
         print('错误：无法读取 %s' % a.html)
         sys.exit(2)
     html, css, js = load_sources(a.html, a.root)
+    main_incomplete = bool(MISSING or UNRESOLVED or REMOTE_CSS)  # 主页面有没读到的样式资源
     css_nc = re.sub(r'/\*.*?\*/', '', css, flags=re.S)
     rows, cnt = [], {'FAIL': 0, 'WARN': 0, '人工': 0}
 
@@ -340,12 +344,14 @@ def main():
             print('\n--compare 找不到页面：%s' % a.compare)
             cnt['FAIL'] += 1
         else:
-            saved = (MISSING[:], UNRESOLVED[:])
-            del MISSING[:], UNRESOLVED[:]
+            saved = (MISSING[:], UNRESOLVED[:], REMOTE_CSS[:])
+            del MISSING[:], UNRESOLVED[:], REMOTE_CSS[:]
             h2, c2, _ = load_sources(p, a.compare_root or a.root)
-            incomplete = bool(MISSING or UNRESOLVED)  # 比较页自己有没读到的资源
+            cmp_incomplete = bool(MISSING or UNRESOLVED or REMOTE_CSS)  # 比较页有没读到的样式资源
             MISSING[:] = saved[0] + [m for m in MISSING if m not in saved[0]]
             UNRESOLVED[:] = saved[1] + [m for m in UNRESOLVED if m not in saved[1]]
+            REMOTE_CSS[:] = saved[2] + [m for m in REMOTE_CSS if m not in saved[2]]
+            incomplete = main_incomplete or cmp_incomplete
             c2 = re.sub(r'/\*.*?\*/', '', c2, flags=re.S)
             dims = [
                 ('色相直方图（:root 令牌）', hist_sim(hue_hist(css_nc), hue_hist(c2)), '%s 对 %s' % (hue_hist(css_nc), hue_hist(c2))),
@@ -364,7 +370,7 @@ def main():
                 verdict = '不完整'  # 比较页的资源没读全，低相似度可能是漏读造成的，不下 PASS 结论
                 cnt['WARN'] += 1
             cnt['FAIL'] += verdict == 'FAIL'
-            print('| 平均命中率 | %s | %s（阈值 >60%% 为与上一项目同套%s） |' % (pct(avg), verdict, '。比较页有资源读不到，见未覆盖项，结论不可靠' if incomplete else ''))
+            print('| 平均命中率 | %s | %s（阈值 >60%% 为与上一项目同套%s） |' % (pct(avg), verdict, '。两侧页面有样式资源没读到（本地缺失或远程样式表），见未覆盖项，结论不可靠' if incomplete else ''))
 
     if MISSING or UNRESOLVED or REMOTE:
         print('\n未覆盖项：下列引用的内容没有被检查。令牌或动效若在这些文件里，上面的 PASS 不代表通过：')
