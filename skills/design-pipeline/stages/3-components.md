@@ -87,6 +87,17 @@ node toolbox/deal.mjs --set-components --project <项目名> --components <槽:i
 
 另有 X17：同一页面 3 条以上案例来自同一参照站点，即撞车。换案例。X1 到 X20 全文见 `references/anti-sameness.md`。案例里的数值是起点。它与载体最小字号或 `references/restraint.md` 的限制冲突时，以后者为准，并在"本页怎么改"写压到的值。
 
+## 5.5 补调研（库薄时）
+
+触发：`deal.mjs` 输出"库薄提示"，或执行者看完 3 张卡认为都不优雅。体检全库：`python3 -I toolbox/cases-index.py --thin`。
+
+1. 只补当前这个槽。限时 20 分钟。
+2. 找 3 到 5 个参照站。来源：作品集站、获奖站、`references/taste-method.md` 与 `references/technique-catalog.md` 里点名的手法。
+3. 用 `agent-browser` 亲核打开，看触发、变化、终态。只记录看到的行为（红线见第 6 节警告）。
+4. 写 2 到 3 条候选，字段见第 7 节。`how_checked` 写亲核打开。
+5. 候选直接进 `design.md` 第 2 节"案例"列，标"调研补入"。项目收口时按第 6 节入库。
+6. 调研结果只当候选，不当通过线。调研到的都是好站，没有平庸对照，不能证明"这样做一定优雅"。
+
 ## 6. 补库规则
 
 案例库要不断扩充。每个项目收口后补库。
