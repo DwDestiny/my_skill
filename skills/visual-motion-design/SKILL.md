@@ -105,7 +105,7 @@ description: design-pipeline 的子步骤，由 design-pipeline 阶段 2 到 4 �
 
 ### 步骤 6：截图自检
 
-1. 按 `references/review.md` 第 1 节拍全套截图，放 `05-评审/shots/<日期>/`。
+1. 按 `references/review.md` 第 1 节拍全套截图，放 `05-评审/shots/<日期>/`。看法用 `../design-pipeline/references/critique-method.md`：眯眼看主次、和锚点并排、放大看细节、走一遍状态、找最平的一屏，写最差三处。
 2. 先做第 0 节参考值检查（含 `assets/floor-check.py`），再过第 2 节自检表的每一项。
 3. 写 ROUND 记录。修前三问题。至多 3 轮。
 4. 不为通过检查表删动效。过不了先改角色、位置、幅度；确需删除时写进报告。

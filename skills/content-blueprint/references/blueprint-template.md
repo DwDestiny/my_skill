@@ -19,7 +19,7 @@ audience:
 reader_mode: 读                # 读 | 读看 | 看（提示读者主要怎么用这页，不是分级）
 style_quotes:                   # 用户关于风格的原话，逐字；没有则留空数组
   - "<原话>"
-outcomes: [O1, O2, O3, E1]     # E 为体验结果，原话有体验词时必有
+outcomes: [O1, O2, O3, E1]     # E 为体验目标，原话有体验词时必有
 sources_file: evidence-index.md   # 文件名，或附录锚点如 blueprint.md#附录-证据索引（单页且章数 ≤8）
 glossary_file: glossary.md   # 文件名，或附录锚点如 blueprint.md#附录-术语表
 credibility_legend: "高=官方原文；中=媒体转述；低=厂商自述；未验证=未读到原文"

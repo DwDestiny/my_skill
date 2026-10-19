@@ -2,7 +2,7 @@
 
 > 何时读：阶段 2 的氛围已写进 `design.md` 第 1 节之后。
 > 读完做什么：为每一屏选一条最好的组件表达，写进 `design.md` 第 2 节。
-> 选案例前读 `references/why-good.md` 第 4、5 节。想看有哪些手法可选，查 `references/technique-catalog.md`（手法目录与技术栈地图）。
+> 选案例前读 `references/why-good.md` 第 4、5 节。页面有卡片、列表、表单、弹窗时，读 `references/product-ui.md`：卡片先定回答什么问题再分主次，控件只有一层底色。想看有哪些手法可选，查 `references/technique-catalog.md`（手法目录与技术栈地图）。
 > 产物：`design.md` 第 2 节"每屏做法"。
 > 来自：旧 `references/component-patterns.md`、`prompts/S4-page-plan.md`、`references/page-plan.md`。
 

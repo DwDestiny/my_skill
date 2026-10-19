@@ -1,24 +1,31 @@
 ---
 name: design-pipeline
-description: 设计流水线入口。四个阶段把一句委托做成设计过的页面：内容蓝图、视觉氛围、组件创意、design.md。核心是创意与案例库，不是代码门禁。触发词：设计页面、做一个 HTML、小程序原型、App 原型、发布页、讲解页、高级效果、炫一点、视觉氛围、配色风格、组件创意、3D、流体、视频背景、像模板、太 AI 味。不适用：原生 macOS / iOS / Android 代码、仪表盘与后台表单、纯文字文档、写沟通话术。
+description: 设计流水线入口。新页面走四个阶段：内容蓝图、视觉氛围、组件创意、design.md；已有产品按一页设计源统一改版走改版路线。核心是方法与案例库，不是代码门禁。触发词：设计页面、做一个 HTML、小程序原型、App 原型、发布页、讲解页、高级效果、炫一点、视觉氛围、配色风格、组件创意、3D、流体、视频背景、像模板、太 AI 味、按首页风格统一、全站视觉升级、页面改版、卡片太丑、信息没主次。不适用：原生 macOS / iOS / Android 代码、仪表盘与后台表单、纯文字文档、写沟通话术。
 ---
 
 # 设计流水线
 
-本文件是入口，只做三件事：读原话、定阶段、路由。每个阶段一个文件在 `stages/`，案例在 `library/cases.json`，唯一产物模板是 `templates/design.md`。
+本文件是入口，只做三件事：读原话、定路线和阶段、路由。每个阶段一个文件在 `stages/`，案例在 `library/cases.json`，唯一产物模板是 `templates/design.md`。
 
 > **注意**：用户原话优先于本文件和所有引用文件的任何规则。原话与规则冲突时，按原话做，在 design.md 第 0 节写明分歧。
 
-## 1. 四个阶段
+## 1. 两条路线
+
+| 路线 | 什么时候 | 读 |
+|---|---|---|
+| 新页面 | 从一句委托做一个新页面，方向要自己找 | 下面四个阶段 |
+| 改版 | 已有产品要按一页确认过的设计统一，功能不变 | `stages/redesign.md` |
+
+## 1.1 四个阶段
 
 | 阶段 | 回答的问题 | 产物 | 读 |
 |---|---|---|---|
 | 1 内容蓝图 | 给谁看、讲什么、分几章、哪些章是舞台 | `01-内容规划/blueprint.md`、design.md 第 0 节 | `stages/1-blueprint.md`，`content-blueprint` skill |
-| 2 视觉氛围 | 配色、边角、透明度、材质、光、空间、图像、动效气质、页面形态、签名时刻 | design.md 第 1 节 | `stages/2-atmosphere.md`，`references/taste-method.md`，`references/restraint.md` |
+| 2 视觉氛围 | 身份、2 到 3 个方向与选择、配色、边角、透明度、材质、光、空间、图像、动效气质、页面形态、签名时刻 | design.md 第 1 节 | `stages/2-atmosphere.md`，`references/direction-and-appeal.md`，`references/taste-method.md`，`references/restraint.md` |
 | 3 组件创意 | 每一屏用市面上最好的哪种表达，怎么改成本页的 | design.md 第 2 节 | `stages/3-components.md`，`library/cases.md`，`references/technique-catalog.md` |
 | 4 design.md | 令牌、动效规则、载体数值、实现建议，入口文件加交付包，让空上下文的实现者不需追问就能做 | design.md 第 3 节 | `stages/4-design-md.md`，`references/craft.md` |
 
-实现按 design.md 做，用开源组件库或自研都可以。做完看真实截图，对照 design.md 第 3.5 节看图清单，交给评审者（见第 3 节第 7 条）。收口后补库。
+实现按 design.md 做，用开源组件库或自研都可以。做完按 `references/critique-method.md` 看真实截图，先改最差的三处，再交给评审者（见第 3 节第 7 条）。收口后补库。
 
 已有蓝图的项目从阶段 2 开始。已有 design.md 第 1 节的从阶段 3 开始。
 
@@ -61,6 +68,9 @@ description: 设计流水线入口。四个阶段把一句委托做成设计过�
 | 起手复制与工艺 | `examples/finished/<id>/`（先读 README"不可照抄的部分"），`references/craft.md` |
 | 营销页、发布页，或用户说"像模板""AI 味" | `design-taste-frontend` 的 `references/tells.md`、`critique.md` |
 | 生成图像、纹理、插画 | `image-gen` skill，`references/asset-generation.md` |
+| logo、头像、图标、数据卡要不要配图 | `references/asset-generation.md` 第 7 节 |
+| 卡片层级、表面与底色、焦点与状态、对齐、页头、弹窗、版面重排 | `references/product-ui.md` |
+| 看截图、找最该改的地方 | `references/critique-method.md` |
 | 图表、等轴测图 | `dataviz` skill，`anatomy` skill |
 | 可选工具 | `toolbox/`：截图清单、默认值检查、收放检查、使用史 |
 
