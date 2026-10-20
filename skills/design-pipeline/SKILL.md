@@ -21,7 +21,7 @@ description: 设计流水线入口。新页面走四个阶段：内容蓝图、�
 | 阶段 | 回答的问题 | 产物 | 读 |
 |---|---|---|---|
 | 1 内容蓝图 | 给谁看、讲什么、分几章、哪些章是舞台 | `01-内容规划/blueprint.md`、design.md 第 0 节 | `stages/1-blueprint.md`，`content-blueprint` skill |
-| 2 视觉氛围 | 身份、2 到 3 个方向与选择、配色、边角、透明度、材质、光、空间、图像、动效气质、页面形态、签名时刻 | design.md 第 1 节 | `stages/2-atmosphere.md`，`references/direction-and-appeal.md`，`references/taste-method.md`，`references/restraint.md` |
+| 2 视觉氛围 | 身份、带问题看参照、2 到 3 个方向与选择（颜色与中文字形一起比）、配色、边角、透明度、材质、光、空间、图像、动效气质、页面形态、签名时刻 | design.md 第 1 节 | `stages/2-atmosphere.md`，`references/direction-and-appeal.md`，`references/taste-method.md`，`references/restraint.md` |
 | 3 组件创意 | 每一屏用市面上最好的哪种表达，怎么改成本页的 | design.md 第 2 节 | `stages/3-components.md`，`library/cases.md`，`references/technique-catalog.md` |
 | 4 design.md | 令牌、动效规则、载体数值、实现建议，入口文件加交付包，让空上下文的实现者不需追问就能做 | design.md 第 3 节 | `stages/4-design-md.md`，`references/craft.md` |
 
