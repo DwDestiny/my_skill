@@ -11,7 +11,7 @@ audience:
   device: [desktop, mobile]
 reader_mode: 读                # 读 | 读看 | 看（读者主要怎么用这页的提示，不是分级）
 style_quotes: []
-outcomes: [O1, O2, O3]
+outcomes: [O1, O2, O3]         # 原话有体验词时加 E1（体验目标）
 sources_file: evidence-index.md   # 文件名，或附录锚点如 blueprint.md#附录-证据索引（单页且章数 ≤8）
 glossary_file: glossary.md   # 文件名，或附录锚点如 blueprint.md#附录-术语表
 credibility_legend: "高=官方原文；中=媒体转述；低=厂商自述；未验证=未读到原文"
@@ -64,6 +64,7 @@ notes:
     budget: 
     mobile: 
     twin: 
+    # demo: yes                 # 演示块才写：页面就近标"演示示例"，内容不进证据索引的事实
 - fold: []
 - screens: 1
 - checkpoint: 读完这节你能…

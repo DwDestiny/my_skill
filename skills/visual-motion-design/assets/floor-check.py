@@ -9,13 +9,18 @@ Page conventions the check reads:
   - the first-screen visual subject carries data-hero-visual and contains svg / img / canvas / picture,
     or is built with CSS 3D (transform-style: preserve-3d in the page CSS)
   - credibility chips use class "tag"
-  - motion hooks: data-reveal, data-counter (engine attributes)
+  - motion hooks: data-reveal, data-counter (engine attributes). F6 wants data-reveal on mixed/show (WARN when
+    missing: entrances may be built without the engine hook). data-counter only applies when the page has a
+    number to count; gears.md F6 also accepts a figure state change. Do not add fake counters or hidden hooks.
 
 Usage: python3 floor-check.py index.html [--gear clear|mixed|show] [--carrier <id>]
 --carrier reads design-pipeline/library/carriers.json (min_font, min_hit, viewport) and adds C1-C3
 advisory checks: smallest declared font-size, smallest declared control height, viewport meta.
 It does not change F1-F6. When carriers.json is missing it prints one line and runs as --gear only.
-Local <link rel=stylesheet> files are read together with inline <style> (the tokens live there).
+Local <link rel=stylesheet> files and local @import (in <style> and in CSS files, followed recursively,
+cycles read once) are read together with inline <style> (the tokens live there). Remote, root-relative and
+missing sources are listed in a WARN: the CSS read is incomplete and F1 may be wrong.
+F1 counts var() references of a chromatic token. It is a heuristic, not the share of the screen in that colour.
 Exit code 1 when any FAIL.
 """
 import argparse
@@ -103,15 +108,40 @@ def hex_to_hls(h):
     return hh, ll, ss
 
 
-def linked_css(html, base):
-    out = []
+IMPORT_RE = re.compile(r'@import\s+(?:url\(\s*)?["\']?([^"\')\s;]+)', re.I)
+
+
+def read_css(href, base, seen, out, gaps):
+    """Read one local CSS file and its @import chain. gaps collects sources that could not be read."""
+    href = href.split('?')[0].split('#')[0]
+    if re.match(r'^(https?:)?//', href):
+        gaps.append('remote, not read: ' + href)
+        return
+    if href.startswith('/'):
+        gaps.append('root-relative, not resolved: ' + href)
+        return
+    fp = os.path.normpath(os.path.join(base, href))
+    if fp in seen:
+        return
+    seen.add(fp)
+    if not os.path.isfile(fp):
+        gaps.append('missing: ' + href)
+        return
+    text = open(fp, encoding='utf-8', errors='replace').read()
+    out.append(text)
+    for imp in IMPORT_RE.findall(re.sub(r'/\*.*?\*/', '', text, flags=re.S)):
+        read_css(imp, os.path.dirname(fp), seen, out, gaps)
+
+
+def linked_css(html, base, inline_css=''):
+    out, gaps, seen = [], [], set()
     for tag in re.findall(r'<link\b[^>]*>', html, re.I):
         m = re.search(r'href=["\']([^"\']+)', tag, re.I)
-        if m and re.search(r'rel=["\']?stylesheet', tag, re.I) and not re.match(r'^(https?:)?//', m.group(1)):
-            fp = os.path.normpath(os.path.join(base, m.group(1).split('?')[0]))
-            if os.path.isfile(fp):
-                out.append(open(fp, encoding='utf-8', errors='replace').read())
-    return '\n'.join(out)
+        if m and re.search(r'rel=["\']?stylesheet', tag, re.I):
+            read_css(m.group(1), base, seen, out, gaps)
+    for imp in IMPORT_RE.findall(re.sub(r'/\*.*?\*/', '', inline_css, flags=re.S)):
+        read_css(imp, base, seen, out, gaps)
+    return '\n'.join(out), gaps
 
 
 def carrier_checks(args, html, css, fails, warns, notes):
@@ -157,10 +187,12 @@ def main():
     src = open(args.html, encoding='utf-8').read()
     p = P()
     p.feed(src)
-    ext_css = linked_css(src, os.path.dirname(os.path.abspath(args.html)))
+    ext_css, gaps = linked_css(src, os.path.dirname(os.path.abspath(args.html)), '\n'.join(p.styles))
     css = '\n'.join(p.styles) + '\n' + ext_css
     fam_min, chips_max, need_reveal = FLOOR[args.gear]
     fails, warns, notes = [], [], []
+    if gaps:
+        warns.append('CSS sources incomplete, F1 may be wrong: %s' % '; '.join(gaps[:8]))
 
     # F1 structure colour: a chromatic token used often
     tokens = {}
@@ -171,7 +203,7 @@ def main():
     used = {n: len(re.findall(r'var\(%s\)' % re.escape(n), src + ext_css)) for n in tokens}
     strong = {n: c for n, c in used.items() if c >= 12}
     if not strong:
-        fails.append('F1 no chromatic token is used 12 times or more. chromatic tokens: %s' % (used or 'none'))
+        fails.append('F1 no chromatic token is used 12 times or more%s. chromatic tokens: %s' % (' (CSS read incomplete, see WARN)' if gaps else '', used or 'none'))
     else:
         notes.append('F1 ok: ' + ', '.join('%s x%d' % kv for kv in strong.items()))
 
@@ -211,10 +243,11 @@ def main():
     # F4 / F6 (advisory)
     if p.pattern_count and not strong:
         warns.append('F4 charts use hatch patterns and the page has no chromatic ramp')
-    if need_reveal and (p.attr_counts['data-reveal'] == 0 or p.attr_counts['data-counter'] == 0):
-        fails.append('F6 preset %s expects data-reveal and data-counter hooks (found %s)' % (args.gear, p.attr_counts))
-    else:
-        notes.append('F6 hooks: %s' % p.attr_counts)
+    if need_reveal and p.attr_counts['data-reveal'] == 0:
+        warns.append('F6 preset %s expects entrances; no data-reveal found. If entrances are built another way, write in design.md which element carries F6' % args.gear)
+    notes.append('F6 hooks: %s' % p.attr_counts)
+    if need_reveal and p.attr_counts['data-counter'] == 0:
+        notes.append('F6 no data-counter: fine when the page has no number to count (a figure state change also meets F6). Do not add a fake counter')
 
     if args.carrier:
         carrier_checks(args, src, css, fails, warns, notes)

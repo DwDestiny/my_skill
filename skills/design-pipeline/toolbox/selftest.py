@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""selftest.py 工具自测：历史 bug 的回归检查（14 项）。Python 3.12 标准库。
+"""selftest.py 工具自测：历史 bug 的回归检查（16 项）。Python 3.12 标准库。
 
-用途：把 design-pipeline 复制到临时目录，对 shots、defaults-check、cases-index、deal、flash-check 各跑一个坏输入。
+用途：把 design-pipeline 复制到临时目录，对 shots、defaults-check、cases-index、deal、flash-check 各跑一个坏输入；floor-check（visual-motion-design）只读夹具，在临时目录跑。
 用法：python3 -I toolbox/selftest.py（需要 node）。每项输出 PASS 或 FAIL，任一失败退出码 1，不碰真实库与真实 history。
 """
 import json
@@ -245,6 +245,45 @@ def t_thin(P, tmp):
     return all(checks.values()), '，'.join('%s %s' % kv for kv in checks.items())
 
 
+FLOOR = os.path.join(os.path.dirname(SRC), 'visual-motion-design', 'assets', 'floor-check.py')
+
+
+def floor(tmp, html, files, gear='show'):
+    for name, text in files.items():
+        fp = os.path.join(tmp, name)
+        os.makedirs(os.path.dirname(fp), exist_ok=True)
+        with open(fp, 'w', encoding='utf-8') as f:
+            f.write(text)
+    with open(os.path.join(tmp, 'index.html'), 'w', encoding='utf-8') as f:
+        f.write(html)
+    return run([sys.executable, '-I', FLOOR, os.path.join(tmp, 'index.html'), '--gear', gear], tmp, timeout=20)
+
+
+def t_floor_import(P, tmp):
+    # 令牌在两级 @import 里；含循环、缺失、远程与根相对来源
+    uses = ''.join('<p style="color:var(--brand)">x</p>' for _ in range(12))
+    html = '<link rel="stylesheet" href="page.css"><style>@import "inline.css";</style>' + uses
+    files = {'page.css': '@import url("css/probe-v2.css");\n', 'css/probe-v2.css': '@import "probe.css";\n@import "../page.css";\n',
+             'css/probe.css': '@import "nope.css";\n@import url(https://cdn.example/x.css);\n@import "/root.css";\n:root{--brand:#ba1353}\n',
+             'inline.css': ':root{--ink2:#1a1a1a}'}
+    out = floor(tmp, html, files).stdout
+    checks = {'F1 读到多级 import 令牌': 'F1 ok: --brand x12' in out, '缺失列出': 'missing: nope.css' in out,
+              '远程列出': 'remote, not read: https://cdn.example/x.css' in out, '根相对列出': 'root-relative, not resolved: /root.css' in out,
+              '循环不重复不挂起': out.count('result:') == 1}
+    return all(checks.values()), '，'.join('%s %s' % kv for kv in checks.items())
+
+
+def t_floor_f6(P, tmp):
+    # 没有数字可计的展示页不因缺 data-counter 判 FAIL；缺 data-reveal 给 WARN 不给 FAIL
+    no_counter = floor(tmp, '<div data-reveal>a</div>', {}).stdout
+    no_reveal = floor(tmp, '<div>a</div>', {}).stdout
+    both = floor(tmp, '<div data-reveal>a</div><span data-counter>3</span>', {}).stdout
+    checks = {'无计数不 FAIL': 'FAIL  F6' not in no_counter and 'fake counter' in no_counter,
+              '无入场 WARN': 'WARN  F6' in no_reveal and 'FAIL  F6' not in no_reveal,
+              '齐全无 F6 提示': 'F6' in both and 'WARN  F6' not in both and 'fake counter' not in both}
+    return all(checks.values()), '，'.join('%s %s' % kv for kv in checks.items())
+
+
 def main():
     tests = [('shots 失败截图不被旧 PNG 冒充', t_shots), ('defaults-check 读不到主 HTML', t_defaults),
              ('cases-index 同 id 缺字段不写库', t_cases), ('deal 损坏 history 不覆盖', t_deal),
@@ -254,7 +293,9 @@ def main():
              ('--compare 沿用 root，读不全时不判 PASS', t_compare_root), ('cases-index 第二次替换失败时退回', t_cases_rollback),
              ('--compare 任一侧资源读不全都不判 PASS', t_compare_both_sides),
              ('@import 远程样式（外部与内联）不绕过完整性判断', t_compare_import),
-             ('库薄体检（含零条槽）与发牌库薄提示（确定性夹具）', t_thin)]
+             ('库薄体检（含零条槽）与发牌库薄提示（确定性夹具）', t_thin),
+             ('floor-check 递归读本地 @import，列出读不到的来源', t_floor_import),
+             ('floor-check F6 不要求虚构计数器', t_floor_f6)]
     fails = 0
     for name, fn in tests:
         with tempfile.TemporaryDirectory() as tmp:
