@@ -38,6 +38,9 @@ FLOOR = {  # budget preset (--gear value) -> reference values (layout families, 
 }
 
 
+VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'}
+
+
 class P(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
@@ -78,6 +81,13 @@ class P(HTMLParser):
             self.hero_marked = True
         if self._hero_depth and tag in ('svg', 'img', 'canvas', 'picture'):
             self.hero_visual = True
+        if tag in VOID:              # void tags never get an end tag; close them now so depth stays true
+            self.handle_endtag(tag)
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        if tag not in VOID:
+            self.handle_endtag(tag)
 
     def handle_endtag(self, tag):
         if tag == 'style':
@@ -108,7 +118,11 @@ def hex_to_hls(h):
     return hh, ll, ss
 
 
-IMPORT_RE = re.compile(r'@import\s+(?:url\(\s*)?["\']?([^"\')\s;]+)', re.I)
+IMPORT_RE = re.compile(r'@import\s+(?:url\(\s*)?(?:"([^"]+)"|\'([^\']+)\'|([^"\')\s;]+))', re.I)
+
+
+def css_imports(text):
+    return [''.join(m) for m in IMPORT_RE.findall(re.sub(r'/\*.*?\*/', '', text, flags=re.S))]
 
 
 def read_css(href, base, seen, out, gaps):
@@ -129,7 +143,7 @@ def read_css(href, base, seen, out, gaps):
         return
     text = open(fp, encoding='utf-8', errors='replace').read()
     out.append(text)
-    for imp in IMPORT_RE.findall(re.sub(r'/\*.*?\*/', '', text, flags=re.S)):
+    for imp in css_imports(text):
         read_css(imp, os.path.dirname(fp), seen, out, gaps)
 
 
@@ -139,7 +153,7 @@ def linked_css(html, base, inline_css=''):
         m = re.search(r'href=["\']([^"\']+)', tag, re.I)
         if m and re.search(r'rel=["\']?stylesheet', tag, re.I):
             read_css(m.group(1), base, seen, out, gaps)
-    for imp in IMPORT_RE.findall(re.sub(r'/\*.*?\*/', '', inline_css, flags=re.S)):
+    for imp in css_imports(inline_css):
         read_css(imp, base, seen, out, gaps)
     return '\n'.join(out), gaps
 

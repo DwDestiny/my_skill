@@ -96,7 +96,7 @@ description: design-pipeline 的子步骤，由 design-pipeline 阶段 2 到 4 �
 1. HTML 可解析；外链只允许固定版本的 CDN 脚本和 Google Fonts（grep `http`，逐条核对版本号）。
 2. `lang="zh-CN"`；一个 `h1`；每个 `img` 有 `alt`；每个 `svg` 有 `role="img"` 与 `aria-label`。
 3. 对比度：正文 4.5:1，大字 3:1，浅色与深色各算。
-4. 同屏字号 ≤4；中文 ≥12px；强调色 <5%。
+4. 同屏字号 ≤4；中文 ≥12px；交互强调色 <5%（氛围色场不受此限）。
 5. 有图表时跑 `dataviz` 校验器，浅深两次。
 6. 有 diagram-design 图时跑 `self_check.py --offline`。
 7. 可用 `design-taste-frontend/scripts/lint.mjs` 扫源码；其 FAIL 项里"功能性表格线、真实 `<ol>` 编号、来源编号"可豁免，豁免写理由。
