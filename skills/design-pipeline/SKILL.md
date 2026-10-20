@@ -21,11 +21,11 @@ description: 设计流水线入口。新页面走四个阶段：内容蓝图、�
 | 阶段 | 回答的问题 | 产物 | 读 |
 |---|---|---|---|
 | 1 内容蓝图 | 给谁看、讲什么、分几章、哪些章是舞台 | `01-内容规划/blueprint.md`、design.md 第 0 节 | `stages/1-blueprint.md`，`content-blueprint` skill |
-| 2 视觉氛围 | 身份、题材研究与同页型标杆、带问题看参照、2 到 3 个方向与选择（颜色与中文字形一起比）、世界观与氛围三层（光、色场、环境）、配色、边角、透明度、材质、光、空间、图像、动效气质、页面形态、签名时刻 | design.md 第 1 节 | `stages/2-atmosphere.md`，`references/direction-and-appeal.md`，`references/atmosphere-and-impact.md`，`references/taste-method.md`，`references/restraint.md` |
+| 2 视觉氛围 | 身份、题材研究与同页型标杆、带问题看参照、2 到 3 个方向的生图方向板、和获奖锚点盲比、方向循环（颜色与中文字形一起比）、世界观与氛围三层（光、色场、环境）、配色、边角、透明度、材质、光、空间、图像、动效气质、页面形态、签名时刻 | design.md 第 1 节 | `stages/2-atmosphere.md`，`references/judging.md`，`references/iteration-loop.md`，`references/direction-and-appeal.md`，`references/atmosphere-and-impact.md`，`references/taste-method.md`，`references/restraint.md` |
 | 3 组件创意 | 每一屏用市面上最好的哪种表达，怎么改成本页的 | design.md 第 2 节 | `stages/3-components.md`，`library/cases.md`，`references/technique-catalog.md` |
 | 4 design.md | 令牌、动效规则、载体数值、实现建议，入口文件加交付包，让空上下文的实现者不需追问就能做 | design.md 第 3 节 | `stages/4-design-md.md`，`references/craft.md` |
 
-实现按 design.md 做，用开源组件库或自研都可以。做完按 `references/critique-method.md` 看真实截图，先改最差的三处，再交给评审者（见第 3 节第 7 条）。收口后补库。
+实现按 design.md 做，用开源组件库或自研都可以。做完按 `references/critique-method.md` 看真实截图，再进整页循环：独立评审和获奖锚点、和冠军盲比，每轮只改最差的一处，按跳出条件停（`references/iteration-loop.md`）。好坏的尺子是获奖级作品（`references/judging.md`、`library/anchors.json`），不是规则清单。收口后补库。
 
 已有蓝图的项目从阶段 2 开始。已有 design.md 第 1 节的从阶段 3 开始。
 
@@ -61,6 +61,8 @@ description: 设计流水线入口。新页面走四个阶段：内容蓝图、�
 | 任何阶段开始前 | `frontend-design` skill。先探测当前宿主有没有它：用 Skill 工具加载，或在宿主的插件目录找（Claude Code 的插件缓存 `~/.claude/plugins/cache/*/frontend-design/*/skills/frontend-design/SKILL.md` 是其中一处，取最新版本）。找不到就读 `references/anti-sameness.md`，并在 design.md 记“未读 frontend-design” |
 | 载体数值与平替 | `library/carriers.json`、`references/carriers.md`。壳尺寸 = 视口尺寸，不画设备外框 |
 | 页面形态与幕表 | `library/page-forms.json`，`toolbox/pick-form.mjs` |
+| 判断好坏、打分、和获奖作品比、深化还是换方向 | `references/judging.md`、`library/anchors.json` |
+| 迭代几轮、什么时候停、越改越差 | `references/iteration-loop.md` |
 | 氛围、冲击力、"炫酷"、配色太灰太平 | `references/atmosphere-and-impact.md` |
 | 同页型标杆 | `library/references.json` 按 `page_type` 筛 |
 | 氛围选项 | `library/expressions.json` 表现形式、`library/palettes.json` 配色类、`library/directions.json` 整页案例 |
