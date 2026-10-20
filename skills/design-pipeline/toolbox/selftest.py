@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""selftest.py 工具自测：历史 bug 的回归检查（16 项）。Python 3.12 标准库。
+"""selftest.py 工具自测：历史 bug 的回归检查（18 项）。Python 3.12 标准库。
 
 用途：把 design-pipeline 复制到临时目录，对 shots、defaults-check、cases-index、deal、flash-check 各跑一个坏输入；floor-check（visual-motion-design）只读夹具，在临时目录跑。
 用法：python3 -I toolbox/selftest.py（需要 node）。每项输出 PASS 或 FAIL，任一失败退出码 1，不碰真实库与真实 history。
@@ -284,6 +284,26 @@ def t_floor_f6(P, tmp):
     return all(checks.values()), '，'.join('%s %s' % kv for kv in checks.items())
 
 
+def t_floor_void(P, tmp):
+    # 主视觉标记里只有空元素（br）、图在标记外时 F2 不能误判通过；标记直接放在 img 上算通过
+    leak = floor(tmp, '<div data-hero-visual><br>标题</div><img src="a.png">', {}).stdout
+    on_img = floor(tmp, '<img data-hero-visual src="a.png"><p>x</p>', {}).stdout
+    nested = floor(tmp, '<div data-hero-visual><img src="a.png"><canvas></canvas></div>', {}).stdout
+    checks = {'空元素不泄漏深度': 'FAIL  F2' in leak, '标记在 img 上': 'F2 ok' in on_img, '标记内有图': 'F2 ok' in nested}
+    return all(checks.values()), '，'.join('%s %s' % kv for kv in checks.items())
+
+
+def t_floor_quoted_import(P, tmp):
+    # 带空格的引号路径不被截断（双引号、单引号、url() 三种写法）
+    uses = ''.join('<p style="color:var(--brand)">x</p>' for _ in range(12))
+    html = '<style>@import "brand colors.css";</style>' + uses
+    files = {'brand colors.css': "@import 'more tokens.css';\n", 'more tokens.css': '@import url("last one.css");\n',
+             'last one.css': ':root{--brand:#ba1353}'}
+    out = floor(tmp, html, files).stdout
+    checks = {'F1 读到令牌': 'F1 ok: --brand x12' in out, '无缺失误报': 'missing:' not in out}
+    return all(checks.values()), '，'.join('%s %s' % kv for kv in checks.items())
+
+
 def main():
     tests = [('shots 失败截图不被旧 PNG 冒充', t_shots), ('defaults-check 读不到主 HTML', t_defaults),
              ('cases-index 同 id 缺字段不写库', t_cases), ('deal 损坏 history 不覆盖', t_deal),
@@ -295,7 +315,9 @@ def main():
              ('@import 远程样式（外部与内联）不绕过完整性判断', t_compare_import),
              ('库薄体检（含零条槽）与发牌库薄提示（确定性夹具）', t_thin),
              ('floor-check 递归读本地 @import，列出读不到的来源', t_floor_import),
-             ('floor-check F6 不要求虚构计数器', t_floor_f6)]
+             ('floor-check F6 不要求虚构计数器', t_floor_f6),
+             ('floor-check 空元素不让 F2 误判通过', t_floor_void),
+             ('floor-check 带空格的引号 @import 不被截断', t_floor_quoted_import)]
     fails = 0
     for name, fn in tests:
         with tempfile.TemporaryDirectory() as tmp:

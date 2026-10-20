@@ -1,7 +1,7 @@
 {
  "_meta": {
   "source": "research/R2-expression.md 各卡与第 6 节",
-  "note": "verified=false 表示二手或未读到一手页面。只存网址与要点，不存站点内容。"
+  "note": "verified=false 表示二手或未读到一手页面。只存网址与要点，不存站点内容。page_type 是页型（team / careers / studio-home 等），找同页型标杆时按它筛；旧条目未标注 page_type 的，按 what 判断。first_screen、middle、why 记从首屏翻到页尾看到的东西和它为什么成立。year 未核实时等于查看年份。"
  },
  "references": [
   {
@@ -489,6 +489,81 @@
    "what": "Design 40、Usability 30、Creativity 20、Content 10",
    "verified": true,
    "checked_at": "2026-10-16"
+  },
+  {
+   "id": "ref-38",
+   "name": "Palantir Careers",
+   "url": "https://www.palantir.com/careers/",
+   "year": 2026,
+   "source": "亲核",
+   "page_type": "careers",
+   "forms": [],
+   "what": "身份靠真实现场和岗位分工成立：读者看到的是这些人在哪里、对谁工作",
+   "first_screen": "满屏巨字 \"NEED THE WORLD…\" 压在影像上，第一句就是使命，不是公司介绍",
+   "middle": "写明三种岗位 Echos、Deltas、Devs 有意重叠；Echo 的职责写着对齐从 CIO 到护士的相关方；放造船厂与医院的现场影片",
+   "why": "身份靠真实现场和岗位分工成立：读者看到的是这些人在哪里、对谁工作。做 FDE 类团队页的题材研究可从这里取公开事实",
+   "verified": true,
+   "checked_at": "2026-10-20"
+  },
+  {
+   "id": "ref-39",
+   "name": "basement.studio People",
+   "url": "https://basement.studio/people",
+   "year": 2026,
+   "source": "亲核",
+   "page_type": "team",
+   "forms": [],
+   "what": "冲击力来自黑场、大字和真人，不来自 3D",
+   "first_screen": "整页黑场，大号紧排的 \"The Crew 38\"，下面一张黑白的团队工作现场照",
+   "middle": "全部成员统一黑白布光的肖像网格；左侧 A–Z 名册写名字与角色；颜色只有一点橙色（HUMAN/MACHINE 切换）",
+   "why": "冲击力来自黑场、大字和真人，不来自 3D。统一的影像处理让几十个人像变成一个整体",
+   "verified": true,
+   "checked_at": "2026-10-20"
+  },
+  {
+   "id": "ref-40",
+   "name": "Linear Careers",
+   "url": "https://linear.app/careers",
+   "year": 2026,
+   "source": "亲核",
+   "page_type": "careers",
+   "forms": [],
+   "what": "原则写成编号短句，像团队自己的话；中段靠文字的声音和节奏延续首屏，不靠装饰",
+   "first_screen": "深色底，一句 \"Help us craft high-quality tools\"，接一段团队视频",
+   "middle": "编号的工作原则（01. Ship early …）；岗位清单朴素排列",
+   "why": "原则写成编号短句，像团队自己的话；中段靠文字的声音和节奏延续首屏，不靠装饰",
+   "verified": true,
+   "checked_at": "2026-10-20"
+  },
+  {
+   "id": "ref-41",
+   "name": "Teenage Engineering 首页",
+   "url": "https://teenage.engineering/",
+   "year": 2026,
+   "source": "亲核",
+   "page_type": "studio-home",
+   "forms": [],
+   "what": "一张照片交代整个世界：地方、光、材质都在一张图里，字压在影像的暗部",
+   "first_screen": "满屏黑白城市实拍，白色霓虹字压在砖墙上",
+   "middle": "未看到页尾，只记首屏",
+   "why": "一张照片交代整个世界：地方、光、材质都在一张图里，字压在影像的暗部",
+   "verified": true,
+   "checked_at": "2026-10-20"
+  },
+  {
+   "id": "ref-42",
+   "name": "Pentagram About",
+   "url": "https://www.pentagram.com/about",
+   "year": 2026,
+   "source": "亲核",
+   "page_type": "team",
+   "forms": [],
+   "what": "统一的影像处理加网格秩序，让一页人像成为一个整体；名字加城市就交代了团队的分布",
+   "first_screen": "合伙人肖像统一黑白，排成整齐网格，每张配名字与城市",
+   "middle": "未看到页尾，只记肖像网格",
+   "why": "统一的影像处理加网格秩序，让一页人像成为一个整体；名字加城市就交代了团队的分布",
+   "verified": true,
+   "checked_at": "2026-10-20"
   }
  ]
 }
