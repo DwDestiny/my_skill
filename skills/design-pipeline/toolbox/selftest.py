@@ -336,8 +336,18 @@ def t_floor_quoted_import(P, tmp):
     return all(checks.values()), '，'.join('%s %s' % kv for kv in checks.items())
 
 
+def t_motion(P, tmp):
+    # 不开浏览器：缺参数要报错退出，未知锚点要报错退出，--help 要能打印用法。
+    r1 = run([sys.executable, '-I', 'toolbox/record-motion.py', '--out', tmp], P)
+    r2 = run([sys.executable, '-I', 'toolbox/record-motion.py', '--anchor', 'no-such-anchor', '--out', tmp], P)
+    r3 = run([sys.executable, '-I', 'toolbox/record-motion.py', '--help'], P)
+    ok = r1.returncode != 0 and r2.returncode != 0 and ('不在' in (r2.stdout + r2.stderr)) and r3.returncode == 0 and '--anchor' in r3.stdout
+    return ok, '缺参数退出 %s，未知锚点退出 %s，帮助 %s' % (r1.returncode != 0, r2.returncode != 0, r3.returncode == 0)
+
+
 def main():
-    tests = [('shots 失败截图不被旧 PNG 冒充', t_shots), ('defaults-check 读不到主 HTML', t_defaults),
+    tests = [('record-motion 缺参数与未知锚点报错，不开浏览器', t_motion),
+             ('shots 失败截图不被旧 PNG 冒充', t_shots), ('defaults-check 读不到主 HTML', t_defaults),
              ('cases-index 同 id 缺字段不写库', t_cases), ('deal 损坏 history 不覆盖', t_deal),
              ('flash-check 内联循环不重复计数', t_flash), ('deal --record 写入主题，坏主题不写', t_record),
              ('lib.mjs 简表、单条、过滤与未知库', t_lib),

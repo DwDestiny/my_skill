@@ -77,7 +77,7 @@
 
 原因：不打分时，模型会落到最顺手的一种。团队页第六次（Grok 实测，2026-10-21）三个方向板全是生成照片，成品是"满屏照片加压字"，氛围到了 4 档，但交互只剩滚动，用户担心"每次做网站都搞这种放个图片背景的设计方式"。满屏摄影只是目录里的一种主题。
 
-0. 先读 `library/case-map.md`：用题材自己的世界（地方、光、谁在干什么）找簇，簇里挑 2 到 3 条案例，按它的第 2 节写换题四行，过第 3 节不雷同三问。主题库是手法库，在簇定了之后才查。
+0. 先读 `library/case-map.md`：用题材自己的世界（地方、光、谁在干什么）找簇，簇里挑 2 到 3 条案例，每条先 `toolbox/record-motion.py` 录动和跟手，按它的第 2 节写换题六行，过第 3 节不雷同三问。主题库是手法库，在簇定了之后才查。
 1. 运行 `node toolbox/lib.mjs themes`，简表给每个主题的 `one_liner`、`feasibility_here`、`content_signals`。入围的 5 到 6 个再 `lib.mjs themes <id>` 看 `not_fit`、`cases`、`signature_interaction`、`mediocre_version`。
 2. 每个主题按 5 项各打 1 到 5 分，写一句依据：
 
