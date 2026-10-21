@@ -1,0 +1,1762 @@
+{
+ "_meta": {
+  "what": "整体设计与交互主题目录。主题 = 一个页面整体靠什么吸引人、读者怎么和它互动。它高于页面形态（page-forms.json，章节怎么排）和技术卡（expressions.json，单项技术）。",
+  "use": "阶段 2 第 2.1.3 节：拿到蓝图后给每个主题打分，选前 3 个不同主题各做一张方向板。",
+  "date": "2026-10-21",
+  "source": "4 个调研代理读 Awwwards 作品页核对奖项；T01 到 T20 为 researched，T21 到 T25 由调研中发现的缺口补入，为 draft，案例较少。",
+  "caveat": "why_good 大多来自 Awwwards 作品页的文字、标签和配色，调研时没有看到画面（写了“未看到画面”）。打分时估“第一眼潜力”，先打开 1 到 2 个案例或它的 Awwwards 作品页看图（一次一个浏览器会话）。verified=false 的案例奖项或网址未逐一核对。",
+  "fields": {
+   "id": "T01 起",
+   "content_signals": "蓝图里出现这些信号时适合",
+   "not_fit": "不适合的内容",
+   "feasibility_here": "本机（2 核、无 GPU、无视频生成、有 gpt-image 与 Blender Cycles 小预览）能否做",
+   "mediocre_version": "这个主题的平庸版本",
+   "expressions": "对应 expressions.json 的技术卡 id",
+   "cases": "获奖案例；anchor_id 指向 anchors.json"
+  },
+  "to_extend": "新主题或新案例按同一字段追加。案例要亲自读到奖项页，写 verified。"
+ },
+ "themes": [
+  {
+   "id": "T01",
+   "name_zh": "电影感视频世界",
+   "name_en": "Cinematic video world",
+   "one_liner": "用真实拍摄或剪辑过的影像撑满屏幕，让读者像进入一部片子，靠画面质感与节奏停住。",
+   "first_screen": "全屏视频或影像做底，少量大标题和一个入口压在画面上；开场常有视频式的进入动画，随后滚动切换章节影像。",
+   "signature_interaction": "读者滚动或点击推进，视频随滚动缩放、转场或切镜头；菜单和章节以影像过渡衔接。",
+   "content_signals": [
+    "有真实现场、空间、产品使用的视频素材",
+    "品牌想卖氛围与体验而非参数",
+    "叙事有时间顺序，可分镜头讲",
+    "受众是高客单价或高端体验场景"
+   ],
+   "not_fit": [
+    "信息密度高、需要对比查表的内容",
+    "没有成片素材且无法拍摄",
+    "读者在弱网或低端手机上为主"
+   ],
+   "needs": "成片视频素材（压缩多码率）、海报帧兜底、字幕/文字层；可加 GSAP 滚动控制与 three.js 少量 3D。",
+   "feasibility_here": "中：本机无视频生成，无法产出新视频；可用客户提供素材、Blender 渲染短片或 gpt-image 静帧做 image-sequence/Ken Burns 替代，ffmpeg 压缩可行。",
+   "mediocre_version": "首屏循环一段素材库风景视频，叠一句口号和按钮，往下就是普通卡片列表，影像与内容无关。",
+   "expressions": [
+    "video-bg",
+    "scroll-story",
+    "pin-scrub",
+    "image-sequence",
+    "postfx-bloom-dof",
+    "grain",
+    "capability-tiering"
+   ],
+   "cases": [
+    {
+     "name": "Belgrade Arbor",
+     "url": "https://belgradearbor.rs/en",
+     "award": "Awwwards SOTD 2026-10-17 + Developer Award",
+     "award_source": "https://www.awwwards.com/sites/belgrade-arbor",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "Awwwards 描述为融合电影叙事、动效与 3D 的建筑体验；标签含 Video，元素列表有视频开场动画和商业/零售/住宅页的视频内容，配色为奶油色与深橄榄绿。未看到实际画面。",
+     "transferable": "把住宅项目拆成视频分区页，用视频开场建立氛围，再接 3D 区块。"
+    },
+    {
+     "name": "Floema",
+     "url": "https://www.floema.com/en",
+     "award": "Awwwards SOTD 2026-05-13 + Developer Award",
+     "award_source": "https://www.awwwards.com/sites/floema",
+     "verified": true,
+     "anchor_id": "floema",
+     "why_good": "元素列表含滚动驱动的视频缩放、首页与关于页的视频头图；标签含 Photographic、3D。配色为黄绿与炭黑。未看到实际画面。",
+     "transferable": "视频头图加滚动缩放，把实拍素材变成进入页面的动作。"
+    },
+    {
+     "name": "Santioni Spirits",
+     "url": "https://santionispirits.com/",
+     "award": "Awwwards SOTD 2026-10-05",
+     "award_source": "https://www.awwwards.com/sites/santioni-spirits",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "元素列表有开场视频、鼠标驱动的倒酒互动、手部动画、故事转场和漩涡动画；描述为漫画风的品牌世界之旅，配色深酒红与红。未看到实际画面。",
+     "transferable": "开场视频与可操作的品牌动作（倒酒）结合，视频不只是背景。"
+    },
+    {
+     "name": "Cartier — Le Chœur des Pierres",
+     "url": "https://www.cartier.com/en-fr/lechoeurdespierres",
+     "award": "Awwwards SOTD 2026-10-20 + Developer Award",
+     "award_source": "https://www.awwwards.com/sites/cartier-le-choeur-des-pierres",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "描述为高级珠宝的沉浸之旅，宝石揭示设计灵感、工艺与水粉画稿；元素有水粉揭示效果和滚动动画内容页，配色黑白。未看到实际画面。",
+     "transferable": "奢侈品用影像与水粉画稿揭示的节奏讲工艺，而非堆产品图。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T02",
+   "name_zh": "摄影现场",
+   "name_en": "Photographic presence",
+   "one_liner": "让摄影作品或人像本身占满屏幕，页面其余部分退后，靠画面内容和翻看的动作让人停住。",
+   "first_screen": "大幅摄影作品铺满视口，只有极简的标题与导航；常见网格/列表两种视图切换。",
+   "signature_interaction": "读者翻页、切换列表与网格、点开大图；转场用翻页卷曲或遮罩过渡，画面始终是主角。",
+   "content_signals": [
+    "有成套高质量摄影或人像素材",
+    "内容是展览、档案、人物、场地",
+    "图片本身就是论据",
+    "读者需要逐张浏览"
+   ],
+   "not_fit": [
+    "没有自有高质量照片，只能用图库",
+    "需要大量文字论证或数据",
+    "图片很多但质量参差"
+   ],
+   "needs": "成套高分辨率摄影、版权与肖像授权、图片懒加载与响应式裁切；可选 WebGL 转场。",
+   "feasibility_here": "中：照片需客户提供；无照片时可用 gpt-image 生成摄影风格图，但真实性与肖像授权要说明。网格/翻页转场纯 CSS/WebGL 可做。",
+   "mediocre_version": "图库照片做成等大方块网格，hover 放大，没有节奏、没有主次，换任何内容都成立。",
+   "expressions": [
+    "parallax-25d",
+    "depth-parallax-image",
+    "view-transitions",
+    "cross-doc-view-transition",
+    "grain",
+    "editorial-type"
+   ],
+   "cases": [
+    {
+     "name": "Hearst Exhibit 2026",
+     "url": "https://www.hollywoodexhibit2026.com",
+     "award": "Awwwards SOTD 2026-08-02 + Developer Award",
+     "award_source": "https://www.awwwards.com/sites/hearst-exhibit-2026",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "ELLE 与 Esquire 的好莱坞摄影展；标签含 Photography、Gallery、Scrolling，特色元素是翻页卷曲的 WebGL 转场和列表/网格视图，配色深灰与浅灰。未看到实际画面。",
+     "transferable": "用翻页卷曲转场加列表/网格切换，让浏览摄影像翻画册。"
+    },
+    {
+     "name": "21 Hrs On The Moon",
+     "url": "https://www.21hrs.space/",
+     "award": "Awwwards SOTD 2026-07-10",
+     "award_source": "https://www.awwwards.com/sites/21-hrs-on-the-moon",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "纪念登月的 21 小时；元素有可交互月面地图、音频片段、全景图库和照片库，配色近黑与暖白。未看到实际画面。",
+     "transferable": "把档案照片、全景和音频放进一张可探索的地图，而不是线性相册。"
+    },
+    {
+     "name": "sakazuki",
+     "url": "https://sakazuki.io/",
+     "award": "Awwwards SOTD 2026-06-14",
+     "award_source": "https://www.awwwards.com/sites/sakazuki",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "日本清酒会员站；标签含 Photographic、Graphic design，配色深红与米色，元素有团队、页脚、福利、理念等视频段。未看到实际画面。",
+     "transferable": "摄影与平面色块混用，用深红底色统一实拍素材。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T03",
+   "name_zh": "3D 物件舞台",
+   "name_en": "3D object stage",
+   "one_liner": "一个主物件居中，随滚动或鼠标旋转、拆解、变形，靠物件本身的质感和被操控的感觉让人停住。",
+   "first_screen": "深色或纯色舞台上一个渲染精细的主物，标题压在旁边或后面；物件有轻微的待机动作。",
+   "signature_interaction": "读者滚动或移动鼠标，物件旋转、翻转、切换形态；章节切换时物件换姿态或 3D 到 2D 再回 3D。",
+   "content_signals": [
+    "有一个明确的实物产品或象征物",
+    "产品有可讲的细节、部件或材质",
+    "品牌想让人觉得做工讲究",
+    "单页或短页，主线单一"
+   ],
+   "not_fit": [
+    "产品多，没有一个代表物",
+    "内容以数据和文字论证为主",
+    "目标设备性能弱"
+   ],
+   "needs": "glTF 模型（Blender 建模/导出）、PBR 材质与环境光、three.js；备用静帧序列。",
+   "feasibility_here": "中：Blender 4.0 可建模并导出 glTF，Cycles 只能出小预览；three.js 实时渲染本机可做。复杂材质用烘焙贴图，低端设备降级为静帧序列。",
+   "mediocre_version": "白底上放一个现成模型自转，旁边几行参数和一个购买按钮，滚动时模型无变化。",
+   "expressions": [
+    "gltf-model-stage",
+    "pinned-3d-scrub",
+    "webgl-scene",
+    "blender-headless-glb",
+    "image-sequence",
+    "capability-tiering"
+   ],
+   "cases": [
+    {
+     "name": "Oryzo AI",
+     "url": "https://oryzo.ai/",
+     "award": "Awwwards SOTD 2026-04-13 + Developer Award",
+     "award_source": "https://www.awwwards.com/sites/oryzo-ai",
+     "verified": true,
+     "anchor_id": "oryzo-ai",
+     "why_good": "描述为把一块软木杯垫做成沉浸式电影化产品故事；元素有 3D→2D→3D 转场、页脚粒子互动和开场互动，配色近黑与橙。未看到实际画面。",
+     "transferable": "用普通小物件做主角，靠转场和细节让它值得被讲。"
+    },
+    {
+     "name": "Opal Tadpole",
+     "url": "https://www.opalcamera.com/opal-tadpole",
+     "award": "Awwwards SOTD 2024-01-11",
+     "award_source": "https://www.awwwards.com/sites/opal-tadpole",
+     "verified": true,
+     "anchor_id": "opal-tadpole",
+     "why_good": "世界最小网络摄像头的单页站；标签含 3D、Photographic、Single page，元素有“手翻转”首图互动，配色亮黄与白。未看到实际画面。",
+     "transferable": "首屏用一个动作（翻转）直接演示产品尺寸与手感。"
+    },
+    {
+     "name": "Lando Norris",
+     "url": "https://landonorris.com/",
+     "award": "Awwwards SOTD 2025-11-17",
+     "award_source": "https://www.awwwards.com/sites/lando-norris",
+     "verified": true,
+     "anchor_id": "lando-norris",
+     "why_good": "F1 车手官网；站点首屏文字有“Load Norris”按钮和竖屏提示，缩略图是赛车与荧光绿头盔，配色荧光绿与近黑；标签含 3D、WebGL。未看到 3D 运行画面。",
+     "transferable": "品牌色高对比加可操控 3D 角色，把人变成可玩的物件。"
+    },
+    {
+     "name": "Superlist",
+     "url": "https://superlist.craftedbygc.com/",
+     "award": "Awwwards SOTD 2021-04-19 + Developer Award",
+     "award_source": "https://www.awwwards.com/sites/superlist",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "Unseen Studio 制作的产品预发布站；标签含 3D、Three.js，配色黑、红、白。Unseen 项目页称用定制 3D 图形表现核心概念并与滚动位置绑定。未看到实际画面。",
+     "transferable": "用定制 3D 图形做概念隐喻，并绑定滚动位置。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T04",
+   "name_zh": "3D 沉浸场景与相机穿行",
+   "name_en": "Immersive 3D scene and camera journey",
+   "one_liner": "页面本身就是一个可以走进去的三维空间，靠相机穿行、探索和空间感让人停住。",
+   "first_screen": "全屏三维场景，一个角色或视角站在场景里，界面只有极简的导航和提示文字。",
+   "signature_interaction": "读者用滚动、键盘或鼠标驱动相机穿过场景；到达节点后出现内容，或直接操作角色走动。",
+   "content_signals": [
+    "内容有空间属性（地图、建筑、世界观）",
+    "品牌想展示技术实力",
+    "叙事可拆成路径上的几个站点",
+    "受众愿意花几分钟探索"
+   ],
+   "not_fit": [
+    "读者要快速拿到信息",
+    "内容无空间结构",
+    "需要在手机弱网上稳定打开"
+   ],
+   "needs": "完整 3D 场景与资源预算、相机路径设计、加载进度、性能分级；通常需要开发团队数周。",
+   "feasibility_here": "低到中：2 核无 GPU，完整场景难以实时验证。可做低面数风格化场景（three.js）+ 预渲染静帧序列，相机路径做成滚动驱动，必须有降级版。",
+   "mediocre_version": "一个低质量天空盒加漂浮几何体，相机随滚动平移，内容仍是普通文字块。",
+   "expressions": [
+    "webgl-scene",
+    "scroll-camera-path",
+    "pinned-3d-scrub",
+    "instanced-field",
+    "postfx-bloom-dof",
+    "lenis-webgl-sync",
+    "capability-tiering"
+   ],
+   "cases": [
+    {
+     "name": "Messenger (Abeto)",
+     "url": "https://messenger.abeto.co/",
+     "award": "Awwwards SOTD 2025-11-10 + Developer Award",
+     "award_source": "https://www.awwwards.com/sites/messenger",
+     "verified": true,
+     "anchor_id": "messenger",
+     "why_good": "标语是“这是颗小行星，但总得有人送货”；标签含 3D、WebGL、Three.js、WebSockets，元素有角色导航、NPC 与角色配置，配色青绿与灰绿。未看到实际画面。",
+     "transferable": "把站点做成可走动的小世界，多人在线增加存在感。"
+    },
+    {
+     "name": "Bruno Simon portfolio",
+     "url": "https://bruno-simon.com/",
+     "award": "Awwwards SOTD 2019-11-11 + Developer Award",
+     "award_source": "https://www.awwwards.com/sites/brunos-portfolio",
+     "verified": true,
+     "anchor_id": "brunos-portfolio",
+     "why_good": "个人作品集；元素是“3D 游戏式项目导航”与“3D 游戏社交链接”，标签含 Three.js、Gestures / Interaction，配色珊瑚橙与暖黄。未看到实际画面。",
+     "transferable": "作品集导航本身做成可驾驶的玩法，需转化为内容站时保留一条非 3D 路径。"
+    },
+    {
+     "name": "Igloo Inc",
+     "url": "https://www.igloo.inc/",
+     "award": "Awwwards SOTD 2024-07-23 + Developer Award",
+     "award_source": "https://www.awwwards.com/sites/igloo-inc",
+     "verified": true,
+     "anchor_id": "igloo-inc",
+     "why_good": "Pudgy Penguins 母公司站；标签含 3D、Infinite Scroll、Transitions，动效得分 9.6，配色灰蓝与深石板。未看到实际画面。",
+     "transferable": "用无限滚动把一个冷色世界串起来，动效比文字更重。"
+    },
+    {
+     "name": "EDOLUS",
+     "url": "https://edolus.com/",
+     "award": "Awwwards SOTD 2026-10-04 + Developer Award",
+     "award_source": "https://www.awwwards.com/sites/edolus",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "描述为通往 AI 基础设施的电影化 WebGL 旅程，用实时 3D 与动态声音设计；六个区块如 AI Data Center、Planetary Network、Orbital Intelligence，多数为鼠标互动，纯黑配色。未看到实际画面。",
+     "transferable": "每个概念一间“房”，鼠标驱动，配声音。"
+    },
+    {
+     "name": "Orano",
+     "url": "https://orano.immersive-g.com/",
+     "award": "Awwwards SOTD 2018-11-26 + Developer Award",
+     "award_source": "https://www.awwwards.com/sites/orano",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "Immersive Garden 为 Orano 做的核能介入介绍；标签含 3D、Three.js、Storytelling、Unusual Navigation，元素有键盘导航与彩色网格转场图像。未看到实际画面。URL 为推测，未核对。",
+     "transferable": "企业严肃内容用 3D 空间叙事，键盘也能导航。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T05",
+   "name_zh": "流体、粒子与生成艺术",
+   "name_en": "Fluid, particles and generative art",
+   "one_liner": "用实时模拟的流体、粒子、噪声场当主视觉，画面永远在变，读者的光标或滚动会扰动它。",
+   "first_screen": "深色画布上有会流动的光、粒子或墨迹，标题叠在上面；鼠标一动画面随之涌动。",
+   "signature_interaction": "读者移动光标或拖拽，流体/粒子被推开或聚拢；滚动时形态变化，转场用粒子溶解。",
+   "content_signals": [
+    "内容抽象，没有可拍的实物",
+    "品牌调性偏科技、艺术、前沿",
+    "需要一个有生命感的背景和强氛围",
+    "能接受氛围优先于信息"
+   ],
+   "not_fit": [
+    "需要精确说明产品的场景",
+    "读者设备性能弱",
+    "无障碍与减少动效要求高的内容"
+   ],
+   "needs": "着色器（GLSL/WebGPU）、GPGPU 粒子或流体模拟、调色板、性能分级、Reduce Motion 静帧。",
+   "feasibility_here": "中：纯 GLSL 噪声与简化流体本机可写，截图可验；大规模 GPGPU 粒子无 GPU 难实测，需降低粒子数并给出静帧兜底。",
+   "mediocre_version": "网上通用的紫蓝渐变粒子背景，与内容无关，鼠标拖尾做一点涟漪，压住文字影响阅读。",
+   "expressions": [
+    "fluid-noise",
+    "fluid-ink-pointer",
+    "gpgpu-curl-particles",
+    "mesh-gradient",
+    "raymarch-backdrop",
+    "webgpu-tsl-material",
+    "postfx-bloom-dof",
+    "instanced-field"
+   ],
+   "cases": [
+    {
+     "name": "Dracarys",
+     "url": "https://www.awwwards.com/sites/dracarys",
+     "award": "Awwwards SOTD 2024-07-30 + Developer Award",
+     "award_source": "https://www.awwwards.com/sites/dracarys",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "Awwwards 描述为 WebGL 与 Three.js 实验，涵盖 GPGPU 模拟、粒子、后期、水、冰、火焰、霜与闪电；元素有慢动作拖拽、开场、静置状态，配色青色与深海军蓝。未看到实际画面。作品页 URL 即站点入口以外的页面，站点本身 URL 未核。",
+     "transferable": "给每种效果配一个可拖拽的状态，静置状态也要好看。"
+    },
+    {
+     "name": "Active Theory v6",
+     "url": "http://activetheory.net",
+     "award": "Awwwards SOTD 2024-02-06 + Developer Award",
+     "award_source": "https://www.awwwards.com/sites/active-theory-v6",
+     "verified": true,
+     "anchor_id": "active-theory-v6",
+     "why_good": "工作室官网第六版，新增渲染技术、AI 聊天与多人；元素有首页导航与鼠标交互的粒子效果，动效得分 9.6。未看到实际画面。",
+     "transferable": "把粒子做成鼠标交互的首页导航。"
+    },
+    {
+     "name": "Lusion v3",
+     "url": "https://lusion.co/",
+     "award": "Awwwards SOTD 2023-10-02 + Developer Award",
+     "award_source": "https://www.awwwards.com/sites/lusion-v3",
+     "verified": true,
+     "anchor_id": "lusion-v3",
+     "why_good": "工作室作品集第三版；标签含 3D、Clean、Animation，元素有反应式光标互动和滚动动画，配色蓝与近白，动效得分 10.0。未看到实际画面。",
+     "transferable": "干净底色上用反应式光标与 3D 做精致互动，而非暗色炫技。"
+    },
+    {
+     "name": "Santioni Spirits",
+     "url": "https://santionispirits.com/",
+     "award": "Awwwards SOTD 2026-10-05",
+     "award_source": "https://www.awwwards.com/sites/santioni-spirits",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "元素有鼠标驱动的倒酒互动和漩涡动画，WebGL 标签；漫画风品牌世界，配色深酒红与红。未看到实际画面。",
+     "transferable": "把流体做成与产品行为（倒酒）对应的互动，而非通用背景。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T06",
+   "name_zh": "大字动态排版",
+   "name_en": "Kinetic big typography",
+   "one_liner": "字本身就是画面主角：超大字号、字形变形与滚动驱动的文字动画让人停住。",
+   "first_screen": "满屏巨大的单词或标题占据首屏，字与背景只有一两种强对比色；文字随鼠标或滚动伸缩、位移、拆字入场，几乎没有配图。",
+   "signature_interaction": "读者滚动或移动鼠标，大字逐字拆分、缩放、变形或相互遮挡，页面靠文字节奏推进。",
+   "content_signals": [
+    "品牌名或一句主张本身有力量",
+    "内容以文字、字体、观点为主而非实物图",
+    "有字体、版式或设计教育类资产",
+    "素材少但想要强记忆点"
+   ],
+   "not_fit": [
+    "需要展示大量产品实物或细节参数",
+    "正文长、要求连续阅读的资料型页面",
+    "读者以低端设备或弱网为主且无降级方案"
+   ],
+   "needs": "1 至 2 款有性格的字体（含可变字体更佳）、GSAP/SplitText 或 CSS 动画、少量主色；无需视频与 3D 素材。",
+   "feasibility_here": "高：纯 CSS/JS 与字体即可，不依赖 GPU；复杂着色器文字（WebGL 扭曲）可用 CSS 变形与可变字体轴替代。",
+   "mediocre_version": "把标题放大再加一个淡入上移，所有章节都是同一个入场动画，字大但没有节奏变化，也没有字形层面的设计。",
+   "expressions": [
+    "kinetic-type",
+    "splittext-kinetic",
+    "variable-font-axis",
+    "editorial-type",
+    "typographic-object-stage"
+   ],
+   "cases": [
+    {
+     "name": "Mat Voyce",
+     "url": "https://matvoyce.tv/",
+     "award": "Awwwards SOTD 2025-01-30（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/mat-voyce",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "字体设计师兼动画师的作品集，页面只用青蓝 #00D3FF 与黄绿 #DFFF6B 两色。奖项页列出的亮点是 Work、About、以视频呈现的大菜单、Media 页与页脚，标签含 Animation、Typography、Microinteractions。具体首屏画面未直接看到，上述内容来自奖项页的描述与标签。",
+     "transferable": "两色加字形动画做整站语言，菜单与页脚也当作动态字的展示场。"
+    },
+    {
+     "name": "Pangram Pangram Foundry",
+     "url": "https://pangrampangram.com/",
+     "award": "Awwwards SOTD 2021-11-11（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/pangram-pangram-foundry",
+     "verified": true,
+     "anchor_id": "pangram-pangram-foundry",
+     "why_good": "字体厂牌站，配色只有黑、灰、白三色，把字样与字符特征做成主视觉；奖项页提到动画下拉菜单与字体特征展示，用 Locomotive Scroll 做滚动。字就是商品，所以版面不需要其他图。",
+     "transferable": "卖什么就让什么当主角：用黑白灰底色衬出字形细节，并把菜单也做成动效。"
+    },
+    {
+     "name": "FORMAT (Obys × DES)",
+     "url": "https://format.obys.agency/",
+     "award": "Awwwards SOTD 2026-10-19（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/format",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "Obys 与 DES 的特别项目，主题是「格式」如何改变设计；纯黑白两色，标签含 Typography、Transitions、Matter.js（物理引擎），亮点是加载与转场。画面细节未看到，推断为用形状、比例的变化演示排版。",
+     "transferable": "用黑白两色加物理或转场动效，把「形状与比例」这类抽象概念讲成可玩的排版。"
+    },
+    {
+     "name": "Don't Board Me",
+     "url": "https://dontboardme.com/",
+     "award": "Awwwards SOTD 2024-03-11（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/dont-board-me",
+     "verified": true,
+     "anchor_id": "dont-board-me",
+     "why_good": "宠物寄养服务站，只用鲜红 #E33529 与浅蓝 #AFD8FB 两色，文案带狗语气（如 404 页「poooooooo」、「Our Services, Woof」）。奖项页亮点含滚动的 How it Works、404、价格页。图形与大字承担主视觉，具体字号与版面未直接看到。",
+     "transferable": "用两个高饱和色加玩笑式文案，让普通服务页有性格。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T07",
+   "name_zh": "编辑杂志版式",
+   "name_en": "Editorial magazine layout",
+   "one_liner": "像印刷杂志一样靠版心、衬线字、图文网格与栏线建立阅读秩序和格调。",
+   "first_screen": "米白或深灰底，大标题与细小的刊头信息并置，图片按杂志网格错落排布，留白与分栏明显。",
+   "signature_interaction": "读者像翻页一样滚动，图文随栏位平移、对齐；图集可在列表与网格之间切换，细节处有轻微的悬停与转场。",
+   "content_signals": [
+    "有成篇的文章、访谈、报告或展览内容",
+    "有高质量摄影或档案图",
+    "品牌调性偏文化、奢侈、研究",
+    "需要长文可读且有格调"
+   ],
+   "not_fit": [
+    "以实时数据或工具操作为主的产品页",
+    "只有一两句口号的极简内容",
+    "没有可用的好图或好字，版式撑不起来"
+   ],
+   "needs": "成套摄影或档案图、衬线或有个性的无衬线字体、完整的文章与说明文字、栅格系统；可选 CMS。",
+   "feasibility_here": "高：HTML/CSS 栅格加图片即可；图片可用 gpt-image 生成或使用授权素材，WebGL 翻页效果可降级为 CSS 转场。",
+   "mediocre_version": "三栏卡片加大图，字体用系统默认，没有刊头、栏线、图注，看起来像博客模板而不是杂志。",
+   "expressions": [
+    "editorial-type",
+    "balanced-text-property-gradient",
+    "parallax-25d",
+    "view-transitions",
+    "scroll-story"
+   ],
+   "cases": [
+    {
+     "name": "Sculpting Harmony (Getty / Gehry)",
+     "url": "https://gehry.getty.edu/",
+     "award": "Awwwards SOTD 2023-11-17（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/sculpting-harmony",
+     "verified": true,
+     "anchor_id": "sculpting-harmony",
+     "why_good": "关于迪士尼音乐厅建筑设计的数字展览，含对盖里的新访谈与 3D 媒体，两色 #FEA341 与 #16A147。奖项页亮点列出 Index、Editorial、Story、Main Scroll，标签有 Typography 与 Big Background Images。具体版面未直接看到。",
+     "transferable": "用 Index、Editorial、Story 三类固定版式把展览内容分层，读者知道自己在哪一层。"
+    },
+    {
+     "name": "Aupale Vodka",
+     "url": "https://www.aupalevodka.com/en/",
+     "award": "Awwwards SOTD 2026-03-17（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/aupale-vodka",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "加拿大北部山谷主题的伏特加品牌，浅灰绿 #C4CFC6 与近白 #EFF0EF 两色。奖项页亮点单列了 Editorial layout、产品列表、微文案、标题与背景视频。静而克制，靠版面留白显出品质，具体画面未看到。",
+     "transferable": "用接近白的浅色加背景视频，版面靠留白与小字文案传递品牌的安静感。"
+    },
+    {
+     "name": "Books of Design",
+     "url": "https://booksofdesign.designstripe.com/artists/alphonse-mucha",
+     "award": "Awwwards SOTD 2023-05-14（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/books-of-design",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "向设计师致敬的单页站，黑 #171717 与白 #FFFFFF 两色，讲设计史上各位艺术家与流派。奖项页亮点有 Design composition、Quote、Editorial layout、Featured gallery，标签是 Magazine/Newspaper/Blog、Gallery。接近书籍目录式的黑白图文。",
+     "transferable": "黑白底加引文与精选图集，用内容分类驱动版式，而不是靠特效。"
+    },
+    {
+     "name": "Hearst Exhibit 2026 (ELLE x Esquire)",
+     "url": "https://www.hollywoodexhibit2026.com",
+     "award": "Awwwards SOTD 2026-08-02（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/hearst-exhibit-2026",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "ELLE 与 Esquire 联合摄影展，纪念好莱坞经典摄影，深灰 #252525 与浅灰 #E3E3E3 两色。奖项页亮点是「纸张卷曲」WebGL 转场与列表/网格切换的图集，兼具杂志感与互动。",
+     "transferable": "把摄影集做成可在列表与网格间切换的图集，并用一个纸张物理转场强化「翻刊」的质感。"
+    },
+    {
+     "name": "AI in Design Report 2026",
+     "url": "https://stateofaidesign.com/",
+     "award": "Awwwards SOTD 2026-08-26（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/ai-in-design-report-2026",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "把调研报告做成编辑式数字体验，数据、分析和动效共用一种视觉语言。奖项页亮点有章节标题动画、Editorial Chart（带视频）、案例菜单和页脚悬停。用 Framer 做，说明门槛不高。",
+     "transferable": "报告类内容用章节标题动画加统一的编辑式图表，不必上 WebGL 也能有杂志感。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T08",
+   "name_zh": "滚动叙事（pin/scrub 讲故事）",
+   "name_en": "Scroll-driven storytelling (pin/scrub)",
+   "one_liner": "滚动就是时间轴：画面被钉住，读者的滚动量驱动镜头、物体与文字按章节推进。",
+   "first_screen": "全屏的第一幕，一句引导文案与滚动提示；开始滚动后主体物或场景被固定，文字与图层逐幕替换。",
+   "signature_interaction": "读者往下滚，固定的舞台随进度缩放、转场或换幕；停止滚动画面就停住，可回放。",
+   "content_signals": [
+    "内容有明确的先后顺序或因果链",
+    "有一个主体物或一个主场景可以反复变化",
+    "需要把复杂机制讲清楚",
+    "有 5 到 12 个可成幕的章节"
+   ],
+   "not_fit": [
+    "读者想快速查信息或比价的页面",
+    "章节之间没有顺序关系",
+    "内容很短，一屏就能讲完"
+   ],
+   "needs": "分幕脚本、每幕一个主画面（图、视频帧序列或 3D）、GSAP ScrollTrigger 或 CSS scroll-timeline、移动端降级方案。",
+   "feasibility_here": "中到高：2D 的 pin/scrub 与图片序列可做；3D 镜头穿行需 three.js，用小模型、少后期并截图自检，重场景改为预渲染图片序列。",
+   "mediocre_version": "每屏一个淡入的区块，滚动只是触发入场动画，没有钉住与进度控制，也看不出前后关联。",
+   "expressions": [
+    "scroll-story",
+    "pin-scrub",
+    "css-scroll-timeline",
+    "image-sequence",
+    "scroll-camera-path",
+    "pinned-3d-scrub"
+   ],
+   "cases": [
+    {
+     "name": "Lando Norris",
+     "url": "https://landonorris.com/",
+     "award": "Awwwards SOTD 2025-11-17（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/lando-norris",
+     "verified": true,
+     "anchor_id": "lando-norris",
+     "why_good": "F1 车手个人平台，亮黄 #D2FF00 与近黑 #111112 两色，标签含 3D、WebGL、Gestures/Interaction。奖项页显示 SOTD 2025-11-17，Creativity 8.71。具体滚动画面未看到。",
+     "transferable": "用两色高对比加 3D 场景，让个人品牌的滚动体验贴近他的速度感。"
+    },
+    {
+     "name": "Persepolis Reimagined (Getty)",
+     "url": "http://www.getty.edu/persepolis",
+     "award": "Awwwards SOTD 2022-06-01（Dev Award，Animations 9.6）",
+     "award_source": "https://www.awwwards.com/sites/persepolis-reimagined",
+     "verified": true,
+     "anchor_id": "persepolis-reimagined",
+     "why_good": "古波斯城 Persepolis 的虚拟复原，标签含 Scrolling、360、Storytelling、3D、WebGL。奖项页亮点是沉浸式 WebGL 菜单与「Persepolis 虚拟重建」导航，用滚动带读者进入遗址。动画分 9.6，在同类里很高。",
+     "transferable": "把导航本身做成场景穿行，读者在空间里移动而不是翻页。"
+    },
+    {
+     "name": "Opal Tadpole",
+     "url": "https://www.opalcamera.com/opal-tadpole",
+     "award": "Awwwards SOTD 2024-01-11（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/opal-tadpole",
+     "verified": true,
+     "anchor_id": "opal-tadpole",
+     "why_good": "迷你网络摄像头的单页发布站，黄 #FFDB01 与白两色。奖项页亮点为「The hand flip」首图、「Explain it like I'm a 5 yo」讲解、「Show don't tell」数据与「Smooth Criminal」产品展示，标签含 3D、Photographic、Microinteractions。",
+     "transferable": "产品发布页用一个主物体贯穿全页，先演示再解释，数据也用画面讲。"
+    },
+    {
+     "name": "Floema",
+     "url": "https://www.floema.com/en",
+     "award": "Awwwards SOTD 2026-05-13（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/floema",
+     "verified": true,
+     "anchor_id": "floema",
+     "why_good": "可持续城市家具与标识品牌，黄绿 #E9E778 与近黑 #241F21 两色。奖项页亮点有「滚动视频缩放」、可持续材料 3D 与可持续滚动交互、产品页。以滚动让照片/视频放大推进，再接 3D 材料示范。",
+     "transferable": "用滚动放大视频作为章节转场，再切到 3D 材料细节，让品牌主张有实物证据。"
+    },
+    {
+     "name": "KPR (New Eden)",
+     "url": "https://kprverse.com/",
+     "award": "Awwwards SOTD 2022-12-26（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/kpr",
+     "verified": true,
+     "anchor_id": "kpr",
+     "why_good": "Resn 做的虚构世界 New Eden，单色紫 #6D64A3。标签含 Scrolling、Illustration、Storytelling；奖项页亮点有 About 视频、Click and Hold 与滚动效果、加载动画。用插画世界加滚动推进两个阵营的故事，具体画面未看到。",
+     "transferable": "虚构世界观用单一主色加插画，滚动推进剧情，并把「按住」做成额外的互动。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T09",
+   "name_zh": "横向轨道与画廊",
+   "name_en": "Horizontal tracks and galleries",
+   "one_liner": "把页面轴线转成横向，像胶片或展墙一样向右拖动或滚动浏览一组并列内容。",
+   "first_screen": "全屏的横向轨道，一排大图或项目卡部分露出到屏幕右侧，提示还有更多；顶部或底部有小号索引与进度。",
+   "signature_interaction": "读者纵向滚动或拖动，内容沿水平方向匀速平移，无限循环或带视差；点击某项进入全屏详情。",
+   "content_signals": [
+    "有一批同类并列内容（作品、款式、时间线节点）",
+    "图片质量高，适合大幅展示",
+    "内容之间是并列关系而非因果",
+    "想要展览或胶片的节奏"
+   ],
+   "not_fit": [
+    "有严格先后因果的长篇叙述",
+    "需要对比表格或密集文字",
+    "移动端为主且无法做好触摸滑动"
+   ],
+   "needs": "整齐的同尺寸素材（图、视频缩略）、GSAP 或 Lenis 做横向滚动、索引与详情页、触摸与键盘降级。",
+   "feasibility_here": "高：横向滚动与无限轨道是纯前端；素材用 gpt-image 生成或实拍，WebGL 版时间线可降级为 CSS transform。",
+   "mediocre_version": "一个默认横向滑动条加圆点分页，卡片大小相同、没有索引、没有节奏变化，看起来像电商轮播。",
+   "expressions": [
+    "scroll-story",
+    "pin-scrub",
+    "parallax-25d",
+    "css-scroll-timeline",
+    "image-sequence"
+   ],
+   "cases": [
+    {
+     "name": "Capitolium",
+     "url": "https://www.collabcapitolium.fr",
+     "award": "Awwwards SOTD 2026-05-18（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/capitolium",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "图卢兹足球俱乐部与图卢兹体育会联名球衣的发布站，奶油色 #F0E3CF 与炭灰 #58595B 两色。标签含 Horizontal Layout、Fullscreen、Big Background Images、Photographic；亮点含全屏内容与随滚动展开的导航。",
+     "transferable": "联名发布用整屏摄影加横向展开，导航随滚动出现，保持画面干净。"
+    },
+    {
+     "name": "RISK",
+     "url": "https://www.risk.film",
+     "award": "Awwwards SOTD 2026-07-15（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/risk",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "后期制作工作室的站，黑 #000000 与米色 #e4d5be 两色。标签含 Horizontal Layout、Infinite Scroll、Transitions、WebGL；亮点有首屏 Slider、作品列表与加载动画。具体画面未直接看到。",
+     "transferable": "影视类作品用黑底米色，加无限横向滑块展示作品，适合胶片感。"
+    },
+    {
+     "name": "MERSI",
+     "url": "https://www.mersi-architecture.com",
+     "award": "Awwwards SOTD 2026-04-10（Dev Award，Portfolio Honors 2026-03）",
+     "award_source": "https://www.awwwards.com/sites/mersi",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "巴黎多学科建筑事务所，浅米 #EDE7DE 与近黑 #1A1A1A 两色。亮点是首页无限滑块、项目与流程版式、新闻与联系页。建筑项目横向铺开，像图纸或展墙。",
+     "transferable": "建筑或设计工作室可用首页无限滑块做作品墙，其他页保持克制的统一版式。"
+    },
+    {
+     "name": "OceanX 2025",
+     "url": "https://2025.oceanx.org/",
+     "award": "Awwwards SOTD 2026-02-23",
+     "award_source": "https://www.awwwards.com/sites/oceanx-2025",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "Unseen Studio 为 OceanX 做的 2025 年沉浸式滚动时间线，标签含 Horizontal Layout、Scrolling、3D、WebGL、Three.js、Blender；亮点是 WebGL 时间线与开场转场。年度回顾用横向时间线串起任务。",
+     "transferable": "年度回顾或里程碑内容可用横向时间线加 3D 场景，把「时间」变成可走的路。"
+    },
+    {
+     "name": "Working Stiff Films",
+     "url": "https://stiff.madebybuzzworthy.com/",
+     "award": "Awwwards SOTD 2025-10-15（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/working-stiff-films",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "巴尔的摩制作公司，深蓝灰 #282D35 与米色 #F0ECD9 两色。标签含 Horizontal Layout、Typography、Illustration；亮点有视频滚动、团队网格、流程网格与首页滚动。影片公司用横向版面串联视频和团队。",
+     "transferable": "视频类公司用横向滚动配合视频，把团队与流程做成同一套网格。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T10",
+   "name_zh": "悬停揭示与光标互动",
+   "name_en": "Hover reveals and cursor play",
+   "one_liner": "鼠标就是画笔：悬停、拖拽、按住、光标跟随等微交互不断给出回应与惊喜。",
+   "first_screen": "较干净的列表或网格，光标处有自定义光标或悬停缩略图；移到某项时图片、字形或着色器随鼠标出现或变形。",
+   "signature_interaction": "读者移动、悬停、按住或拖动光标，画面实时响应，揭示隐藏的图片、文字或下一个状态。",
+   "content_signals": [
+    "有一批可预览的作品或条目",
+    "有想在不跳页时展示的第二层信息",
+    "读者主要用桌面与鼠标",
+    "想让读者主动探索而不是被动读"
+   ],
+   "not_fit": [
+    "读者主要用手机，没有悬停",
+    "关键信息只在悬停中出现，无键盘与触摸替代",
+    "严肃、合规或无障碍要求高的内容"
+   ],
+   "needs": "每条目的预览图或第二层内容、光标跟随脚本、可选 WebGL 着色器、触摸与键盘的等价交互。",
+   "feasibility_here": "高：CSS 与 JS 悬停、自定义光标可直接做；WebGL 着色器图像变形可用 three.js 小场景，截图自检，触摸端降级为点击。",
+   "mediocre_version": "只给按钮加个放大和变色，或加一个无关联的圆形光标跟随，悬停没有揭示任何新信息。",
+   "expressions": [
+    "cursor-magnetic",
+    "fluid-ink-pointer",
+    "chromatic-glitch",
+    "depth-parallax-image",
+    "capability-tiering"
+   ],
+   "cases": [
+    {
+     "name": "Maria Vasilyeva Portfolio",
+     "url": "https://www.mariavasilyeva.com/",
+     "award": "Awwwards SOTD 2026-10-09（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/maria-vasilyeva-portfolio",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "受音乐与声音启发的设计师作品集，深色 #131313 与近白 #F9F9F9 两色。奖项页列了三条 Hover Effect 鼠标交互、项目页互动、笔记互动与批注，标签含 Typography、WebGL。具体画面未直接看到。",
+     "transferable": "作品集把悬停做成多种而非一种，每个入口给读者不同的回应。"
+    },
+    {
+     "name": "Why Zero",
+     "url": "https://why.zero.university/",
+     "award": "Awwwards SOTD 2026-09-07；SOTM 2026-09（来自标签列表页）",
+     "award_source": "https://www.awwwards.com/sites/why-zero",
+     "verified": true,
+     "anchor_id": "why-zero",
+     "why_good": "Zero University 的沉浸式讲解站，绿 #01C654 与白两色，标签含 Gestures/Interaction、3D、Three.js。奖项页亮点有「Page Unlock」与「Hold to proceed」两种鼠标互动、着色器交互、带游戏控制的地图。按住才能继续，把读者的动作当作叙事的一部分。",
+     "transferable": "用「按住继续」做章节门槛，让读者的动作成为叙事的一部分。"
+    },
+    {
+     "name": "Cartier - Le Chœur des Pierres",
+     "url": "https://www.cartier.com/en-fr/lechoeurdespierres",
+     "award": "Awwwards SOTD 2026-10-20（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/cartier-le-choeur-des-pierres",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "卡地亚高级珠宝的沉浸式页面，讲每件作品的灵感、工艺与水粉原稿，黑白两色，由 makemepulse 制作。亮点有内容页滚动动画、主导航，以及「Gouaché reveal」（水粉揭示）。读者通过交互揭开原稿。",
+     "transferable": "高端内容用「揭示」互动展示工艺原稿，读者每次操作都得到新信息。"
+    },
+    {
+     "name": "Lidar Drone Scanning (Riotters)",
+     "url": "https://drone.riotters.com/",
+     "award": "Awwwards SOTD 2026-10-06（Dev Award）",
+     "award_source": "https://www.awwwards.com/sites/lidar-drone-scanning",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "Riotters 的 R&D 实验，把无人机激光雷达扫描变成浏览器里实时渲染的 3D 点云，浅蓝灰 #dfe5e8 与深石板 #28363e 两色。标签含 Gestures/Interaction、Three.js；亮点有地形扫描与内容切换器。",
+     "transferable": "技术实验用实时点云给读者可动手的体验，光标一动数据就响应。"
+    },
+    {
+     "name": "The Tuscan Journey Begins (Weekend Max Mara)",
+     "url": "https://weekend-mm-2026-pasticcino-bag-master.monogrid.io/en/",
+     "award": "Awwwards SOTD 2026-09-13",
+     "award_source": "https://www.awwwards.com/sites/the-tuscan-journey-begins",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "MONOGRID 为 Weekend Max Mara 做的托斯卡纳之旅互动页，单一橄榄绿 #465016，标签含 Illustration、Sound-Audio、Gestures/Interaction、WebGL。亮点是 3 项互动、3 项动画与鼠标交互，具体画面未看到。",
+     "transferable": "时尚品牌用插画加声音与手势，让读者的每次操作像在旅途中前进。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T11",
+   "name_zh": "交互玩具与游戏化",
+   "name_en": "Interactive toy and gamification",
+   "one_liner": "把页面做成可以玩的东西：读者操作、画面立刻回应，玩的过程就是浏览的过程。",
+   "first_screen": "首屏是一个可操作的场景或玩具，例如能开动的小车、可点的角色、可拖动的控件，而不是一张静态大图。标题与导航常被做成场景里的物件。",
+   "signature_interaction": "读者用键盘、鼠标或手势直接操控物体或角色，画面有物理或即时反馈；作品、链接等内容藏在被触碰的物件里。",
+   "content_signals": [
+    "品牌或个人想强调好玩、有性格",
+    "内容可拆成一件件可触碰的小物件",
+    "目标读者愿意花几分钟探索",
+    "有可以转成关卡、地图或小工具的信息"
+   ],
+   "not_fit": [
+    "读者要在 30 秒内查到价格、联系方式等明确信息",
+    "严肃、合规或医疗类内容",
+    "弱设备和无障碍要求高的场景"
+   ],
+   "needs": "场景与角色设计、物理或状态逻辑（three.js、PixiJS 或 Canvas）、音效、移动端降级方案。",
+   "feasibility_here": "中：无 GPU 但 three.js 低模场景和 2D Canvas 小游戏可做；全 3D 物理与高精度模型成本高，替代做法是 2D 或等轴测小场景加可点热点。",
+   "mediocre_version": "在普通页面角落加一个能点的彩蛋或小游戏弹窗，与主体内容无关，玩完回到原来的模板页。",
+   "expressions": [
+    "webgl-scene",
+    "gltf-model-stage",
+    "cursor-magnetic",
+    "lottie-rive",
+    "view-transitions",
+    "capability-tiering"
+   ],
+   "cases": [
+    {
+     "name": "Bruno Simon Portfolio",
+     "url": "https://bruno-simon.com/",
+     "award": "Awwwards Site of the Day 2019-11-11",
+     "award_source": "https://www.awwwards.com/sites/bruno-simon-portfolio",
+     "verified": true,
+     "anchor_id": "brunos-portfolio",
+     "why_good": "Awwwards 页面把它的亮点写成游戏式 3D 项目导航和游戏式社交链接：读者开一辆小车在 3D 场景里找作品。导航本身就是玩具，标签含 Games & Entertainment、Three.js。",
+     "transferable": "把导航与作品入口做成场景里的可操控物件，而不是菜单。"
+    },
+    {
+     "name": "Messenger (Abeto)",
+     "url": "https://messenger.abeto.co/",
+     "award": "Awwwards Site of the Day 2025-11-10",
+     "award_source": "https://www.awwwards.com/sites/messenger",
+     "verified": true,
+     "anchor_id": "messenger",
+     "why_good": "标语是 \"It's a small planet, but someone's gotta make the deliveries.\"，页面亮点为角色导航、NPC 和角色配置，用 3D 小星球和可配置角色把浏览变成送货游戏；双色 #81BFBC / #C9D5C3 的柔和配色。",
+     "transferable": "用一个有叙事的小世界加角色配置，让读者先投入再看内容。"
+    },
+    {
+     "name": "basement chronicles",
+     "url": "https://chronicles.basement.studio/",
+     "award": "Awwwards Site of the Day 2023-11-08",
+     "award_source": "https://www.awwwards.com/sites/basement-chronicles",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "页面描述为 \"A pixelated throwback to classic point-and-click game on your browser.\"，整站是橙黑像素风点击冒险，亮点是游戏场景与转场效果。读者通过点击场景推进内容。",
+     "transferable": "把团队介绍或品牌故事写成点击冒险的几个场景。"
+    },
+    {
+     "name": "Dropbox Brand",
+     "url": "https://brand.dropbox.com/",
+     "award": "Awwwards Site of the Day 2025-02-12",
+     "award_source": "https://www.awwwards.com/sites/dropbox-brand",
+     "verified": true,
+     "anchor_id": "dropbox-brand",
+     "why_good": "页面亮点列表里有字体控件、动效缓动演示、图标老虎机、色彩系统展示和字体光标，读者拖动与点击这些控件来理解品牌规范。蓝 #0061FE 配近黑底。",
+     "transferable": "把规范说明做成可拨动的小控件，让读者自己试出参数的效果。"
+    },
+    {
+     "name": "Overworld Audio",
+     "url": "https://www.overworldaudio.com/",
+     "award": "Awwwards Site of the Day 2026-10-15",
+     "award_source": "https://www.awwwards.com/sites/overworld-audio",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "Awwwards 页面称它是 \"an explorable map of their work\"，3D 地图作为作品入口，深蓝 #13151f 与浅灰 #e9ecee 双色。其余视觉细节页面未写，未看到画面。",
+     "transferable": "用可探索的地图承载一组并列作品，位置关系本身就是信息架构。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T12",
+   "name_zh": "插画与动画角色世界",
+   "name_en": "Illustrated and animated character world",
+   "one_liner": "靠一套原创插画和有性格的角色讲话，品牌被记住的是角色与世界观，而不是产品图。",
+   "first_screen": "首屏是满幅的手绘或矢量插画场景，角色在其中做出小动作，文案很少，用画面直接带出基调与色板。",
+   "signature_interaction": "读者滚动、点击或移动鼠标时，角色与场景以视差、分镜或物理方式回应；章节像漫画的分格一样推进。",
+   "content_signals": [
+    "有可复用的原创插画或角色",
+    "品牌想显得亲切、有故事、有童趣",
+    "内容适合分章或分镜讲述",
+    "目标读者是大众、儿童或年轻人"
+   ],
+   "not_fit": [
+    "拿不出统一的插画风格与足够多的画面",
+    "要展示大量精确技术参数",
+    "追求冷峻、高端克制的调性"
+   ],
+   "needs": "插画师或生图、分层 SVG 或 PNG 素材、Lottie、Rive 或 GSAP 动画，必要时加 WebGL 或 PixiJS。",
+   "feasibility_here": "中：有 gpt-image 可出风格一致的插画与角色图，用分层图加 GSAP 视差即可；复杂骨骼动画与物理需人工绑定，替代做法是静帧加视差与少量循环动画。",
+   "mediocre_version": "套用通用扁平插画库的配图，角色没有名字和性格，只在入场时淡入。",
+   "expressions": [
+    "lottie-rive",
+    "parallax-25d",
+    "svg-scene-stage",
+    "paper-object-stage",
+    "scroll-story",
+    "image-sequence"
+   ],
+   "cases": [
+    {
+     "name": "Ponpon Mania",
+     "url": "https://ponpon-mania.com/",
+     "award": "Awwwards Site of the Day 2025-10-22",
+     "award_source": "https://www.awwwards.com/sites/ponpon-mania",
+     "verified": true,
+     "anchor_id": "ponpon-mania",
+     "why_good": "作品描述为 \"an interactive comic, following a megalomaniac sheep who wants to make the world dance\"，粉紫 #F894C0 / #7E7EFF 配色；亮点包括分格镜头运动、章节内鼠标互动和物理效果，插画与创意编程融合。",
+     "transferable": "用一个有人设的主角带着读者逐格推进，镜头移动代替翻页。"
+    },
+    {
+     "name": "Max Mara - Jacket Circle",
+     "url": "https://thejacketcirclegame.maxmara.com/",
+     "award": "Awwwards Site of the Day 2026-04-16",
+     "award_source": "https://www.awwwards.com/sites/max-mara-jacket-circle",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "描述为 \"A series of imaginary words through which women shape their everyday wardrobe\"，粉 #E59291 与金 #E7D497 双色，标签含插画、3D、微交互与大背景图，用 PixiJS 做出轻盈的游戏式画面。",
+     "transferable": "奢侈品牌也可以用轻盈的插画世界取代模特大片，把产品融进游戏式场景。"
+    },
+    {
+     "name": "Ruinart - Digital Fresco",
+     "url": "https://digitalfresco.ruinart.com/",
+     "award": "Awwwards Site of the Day 2026-04-21",
+     "award_source": "https://www.awwwards.com/sites/ruinart-digital-fresco",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "把品牌的经典壁画数字化，米白 #F8F3EE 配灰绿 #585852 的画卷质感；读者可在线上了解品牌传承，也可在现场用 AR 扫描。页面亮点含转场动画与 WebAR 自动识别。",
+     "transferable": "把一幅画当作入口，让读者在画里逐个区域放大并读到品牌故事。"
+    },
+    {
+     "name": "Messenger (Abeto)",
+     "url": "https://messenger.abeto.co/",
+     "award": "Awwwards Site of the Day 2025-11-10",
+     "award_source": "https://www.awwwards.com/sites/messenger",
+     "verified": true,
+     "anchor_id": "messenger",
+     "why_good": "标签含 Art & Illustration 与 Storytelling，页面亮点有角色导航、NPC 和角色配置；柔和的青绿色调把小星球和送货员做成一个完整的角色世界。",
+     "transferable": "给角色可配置的外观和 NPC，让读者对世界产生归属感。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T13",
+   "name_zh": "数据即视觉",
+   "name_en": "Data as visual",
+   "one_liner": "把真实数据直接画成页面的主视觉，读者看到的是数据本身长出来的形状。",
+   "first_screen": "首屏是由数据生成的图形、点云、地图或实时数字，标题很短，大数字或动态图形占据视线中心。",
+   "signature_interaction": "读者滚动或悬停时，图形按数据重排、计数或展开；有的页面实时更新，读者看到数字在走。",
+   "content_signals": [
+    "有可信的真实数据、报告或实时数字",
+    "核心论点可以用规模、趋势或对比一眼说清",
+    "内容来源需要公开、可核查",
+    "研究、公益、媒体或科技类叙事"
+   ],
+   "not_fit": [
+    "没有可靠数据，只靠形容词",
+    "数据很少或数字之间差别不大",
+    "读者要查精确数值表格而非看感觉"
+   ],
+   "needs": "干净的数据源、图表或粒子渲染（D3、Canvas、three.js）、数据口径说明与来源标注。",
+   "feasibility_here": "高：2D 图表与数字动画用 SVG、Canvas 即可；点云与大规模粒子在无 GPU 机器上降采样，替代做法是预渲染序列帧。",
+   "mediocre_version": "套用默认柱状图与饼图，数字静止，配一段泛泛的趋势文字，没有来源标注。",
+   "expressions": [
+    "generative-data",
+    "instanced-field",
+    "gpgpu-curl-particles",
+    "scroll-story",
+    "pin-scrub",
+    "editorial-type"
+   ],
+   "cases": [
+    {
+     "name": "The Other Side of Truth",
+     "url": "https://theothersideoftruth.com/",
+     "award": "Awwwards Site of the Day 2022-06-02",
+     "award_source": "https://www.awwwards.com/sites/the-other-side-of-truth",
+     "verified": true,
+     "anchor_id": "the-other-side-of-truth",
+     "why_good": "Awwwards 页面写明信息是 \"Ukraine is our home, we will defend it to the end\"，标签含 WebGL、PixiJS、Social responsibility，蓝 #2779a7 配黄 #ECD06F；锚点库记录它用实时数字与小字导航撑起版面。",
+     "transferable": "把实时增长的数字放在首屏，让时间本身成为视觉。"
+    },
+    {
+     "name": "Ai in Design Report 2026",
+     "url": "https://stateofaidesign.com/",
+     "award": "Awwwards Site of the Day 2026-08-26",
+     "award_source": "https://www.awwwards.com/sites/ai-in-design-report-2026",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "页面把调研报告做成编辑式数字体验，Awwwards 说明数据、分析与动效是同一套视觉语言；亮点包括章节页眉动画和编辑式图表。具体画面页面未写，未看到画面。",
+     "transferable": "报告类内容把每章的核心图表做成会动的编辑式图表。"
+    },
+    {
+     "name": "Lidar Drone Scanning (Riotters)",
+     "url": "https://drone.riotters.com/",
+     "award": "Awwwards Site of the Day 2026-10-06",
+     "award_source": "https://www.awwwards.com/sites/lidar-drone-scanning",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "页面是把无人机激光雷达扫描数据实时渲染成浏览器里的 3D 点云，用地形扫描和内容切换器展示；标签含 WebGL、Three.js、手势交互。点云本身就是主视觉。",
+     "transferable": "让原始数据（点云、扫描）直接成为画面，并给读者可切换的视角。"
+    },
+    {
+     "name": "EternaCloud",
+     "url": "https://www.eternacloud.com/",
+     "award": "Awwwards Honorable Mention 2025-08-19",
+     "award_source": "https://www.awwwards.com/sites/eternacloud",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "标签含 Data Visualization 与 Illustration，亮点有滚动驱动的线条动画、数据处理的动画插画和数据可视化块；深紫 #240B6C 与亮蓝 #1B4DFE 配色，是数据中心业务的图形化表达。",
+     "transferable": "用一条随滚动延伸的线把抽象流程串成数据流。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T14",
+   "name_zh": "产品界面演示",
+   "name_en": "Product UI showcase",
+   "one_liner": "让真实或仿真的产品界面当主角，读者在页面里直接看到并试到产品怎么用。",
+   "first_screen": "首屏是一个大尺寸的产品界面（窗口、手机或仪表盘），周围留白很多，界面内的数据与动作在循环播放。",
+   "signature_interaction": "读者滚动时界面逐段展开、切换状态，或在界面里点击、拖动；桌面窗口可变形成手机界面。",
+   "content_signals": [
+    "产品是软件、App 或 AI 工具，界面本身有说服力",
+    "能提供高质量截图或可跑的演示数据",
+    "需要快速让读者理解产品怎么用",
+    "面向开发者、团队或付费用户"
+   ],
+   "not_fit": [
+    "界面不成熟或截图很难看",
+    "产品是实物或服务，没有可展示的屏幕",
+    "界面里有读者不应看到的敏感数据"
+   ],
+   "needs": "高保真产品界面（Figma 或真实截图）、可复现的演示数据、HTML/CSS 重绘或录屏、状态切换逻辑。",
+   "feasibility_here": "高：用 HTML/CSS 重绘界面加 GSAP 或滚动时间线即可，无需 GPU；3D 界面倾斜与全局光效可用 CSS transform 代替。",
+   "mediocre_version": "一张居中的浏览器截图加渐变背景，下方三列图标特性，界面不动。",
+   "expressions": [
+    "bento",
+    "scroll-story",
+    "pin-scrub",
+    "css-scroll-timeline",
+    "glass",
+    "lottie-rive"
+   ],
+   "cases": [
+    {
+     "name": "Jeton",
+     "url": "https://jeton.com/",
+     "award": "Awwwards Site of the Day 2025-01-27",
+     "award_source": "https://www.awwwards.com/sites/jeton",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "支付 App 的站点，开头文案是 \"One wallet for all needs\"，单色 #F73B20 大面积铺满；Awwwards 亮点是首页滚动与桌面到手机的形态变换，即界面随滚动变形。",
+     "transferable": "让界面随滚动在桌面窗口与手机之间变形，一屏讲清多端。"
+    },
+    {
+     "name": "Cerebrium",
+     "url": "https://cerebrium.ai/",
+     "award": "Awwwards Site of the Day 2026-09-10",
+     "award_source": "https://www.awwwards.com/sites/cerebrium",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "面向实时 AI 的无服务器基础设施，标签含 App Style 与 UI design，亮点有透明定价计算器、Lottie 功能动画和 WebGL 地球，深蓝 #172B76 配品红 #902177。产品能力以可操作控件呈现。",
+     "transferable": "把定价或配置做成可拖动的计算器，用来证明透明。"
+    },
+    {
+     "name": "Heron AI",
+     "url": "https://heronaiapp.com/",
+     "award": "Awwwards Site of the Day 2026-10-12",
+     "award_source": "https://www.awwwards.com/sites/heron-ai",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "产品是在设计工具里工作的 AI 代理，会监测、提示并在批准后修改；亮点有首屏交互和叙事段落，Webflow 加 GSAP 与 Canvas 实现。具体画面页面未写，未看到画面。",
+     "transferable": "用带批准环节的小流程演示代替功能清单。"
+    },
+    {
+     "name": "Terminal Industries",
+     "url": "https://terminal-industries.com/",
+     "award": "Awwwards Site of the Day 2025-09-03",
+     "award_source": "https://www.awwwards.com/sites/terminal-industries",
+     "verified": true,
+     "anchor_id": "terminal-industries",
+     "why_good": "描述为 \"Turning shipping yards as the most efficient engine of the supply chain\"，标签含 Storytelling 与 Interaction Design；锚点库记为技术质感与信息密度。画面本轮未看到。",
+     "transferable": "用具体业务场景的数据面板代替抽象的技术口号。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T15",
+   "name_zh": "等轴测与机制图解",
+   "name_en": "Isometric and mechanism illustration",
+   "one_liner": "用等轴测或分解图把看不见的系统画成有零件、有层次的实物，让读者看懂它是怎么运转的。",
+   "first_screen": "首屏是一个等轴测的城市、房间或设备，颜色克制、零件精细，旁边有少量标注文字。",
+   "signature_interaction": "读者悬停或点击某个零件，它高亮并弹出说明；滚动时视角或层次逐步展开，像拆解模型。",
+   "content_signals": [
+    "内容是系统、流程、基础设施或多层架构",
+    "需要解释它怎么运转",
+    "有清晰的零件、层、角色可以对应",
+    "B 端或教育类读者要的是理解而非氛围"
+   ],
+   "not_fit": [
+    "内容没有结构，只有情绪或品牌感",
+    "读者要真实照片或真实人物作证明",
+    "零件过多且不稳定，每月都要重画"
+   ],
+   "needs": "统一的等轴测网格与四色明暗规则、SVG 或预渲染序列帧、零件命名与标注文案。",
+   "feasibility_here": "高：SVG 等轴测与 anatomy skill 可直接做，Blender 可预渲染序列帧；复杂 3D 光影可用静帧加少量动画代替。",
+   "mediocre_version": "套用素材库的等轴测配图，零件含义与页面内容无关，不能交互。",
+   "expressions": [
+    "isometric",
+    "svg-scene-stage",
+    "image-sequence",
+    "scroll-story",
+    "lottie-rive",
+    "blender-headless-glb"
+   ],
+   "cases": [
+    {
+     "name": "RTE - Le voyage électrique",
+     "url": "https://voyage-electrique.rte-france.com",
+     "award": "Awwwards Site of the Day 2018-07-05",
+     "award_source": "https://www.awwwards.com/sites/rte-le-voyage-electrique",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "为 RTE 2017 年报告做的等轴测 3D 世界，带动画 3D 地图展示项目与挑战，亮点是拖动地图导航和地图菜单；彩色粉蓝配色，大背景图。",
+     "transferable": "把报告中的项目放进一张可拖动的等轴测地图，用位置对应章节。"
+    },
+    {
+     "name": "Your Plan, Your Planet",
+     "url": "https://yourplanyourplanet.sustainability.google/",
+     "award": "Awwwards Site of the Day 2018-10-01",
+     "award_source": "https://www.awwwards.com/sites/your-plan-your-planet",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "页面描述是用等轴测插画延伸 Material Design 的可持续生活规划工具；亮点是大圆悬停效果与可持续测验，彩色干净的画面。",
+     "transferable": "等轴测插画配悬停与小测验，让抽象议题变成可选择的物件。"
+    },
+    {
+     "name": "WTF is Data Science?",
+     "url": "https://www.thinkful.com/blog/what-is-data-science/",
+     "award": "Awwwards Site of the Day 2018-07-04",
+     "award_source": "https://www.awwwards.com/sites/wtf-is-data-science",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "单页动画编辑式体验，Awwwards 相关元素里有等轴测机器学习动画和平面 3D 网格环境，标签含 Art & Illustration 与 Storytelling；用等轴测画面解释机器学习概念。",
+     "transferable": "用同一套等轴测网格给多个抽象概念各画一个小场景。"
+    },
+    {
+     "name": "EternaCloud",
+     "url": "https://www.eternacloud.com/",
+     "award": "Awwwards Honorable Mention 2025-08-19",
+     "award_source": "https://www.awwwards.com/sites/eternacloud",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "Awwwards 亮点里有 Isometric 元素，标签为等轴测插画、霓虹光、数据中心、深色主题与渐变；深紫蓝底上画出数据中心的等轴测结构。",
+     "transferable": "深色底加霓虹描边的等轴测，让基础设施看起来像精密实物。"
+    },
+    {
+     "name": "Sazabi",
+     "url": "https://sazabi.com",
+     "award": "Awwwards Honorable Mention 2026-05-01",
+     "award_source": "https://www.awwwards.com/sites/sazabi",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "AI 可观测性工具站，亮点包括等轴测城市动画（序列帧实现）、图表动画与 404 页面；近黑 #0D1110 配红 #FF0027。其余画面页面未写，未看到画面。",
+     "transferable": "用一座等轴测城市比喻系统，序列帧实现，对性能友好。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T16",
+   "name_zh": "极简留白与瑞士网格",
+   "name_en": "Minimal whitespace and Swiss grid",
+   "one_liner": "靠克制：大面积留白、严格网格、一两种颜色和精准的字体层级，让内容本身成为画面。",
+   "first_screen": "黑白或双色底，少量大字标题加一条细导航，其余是留白；信息按列对齐，图片少而大。点击或悬停才出现次级内容。",
+   "signature_interaction": "读者几乎不被打扰：悬停时文字扰动或光标替换，手风琴或叠层滑块展开档案，页面切换用淡入与位移。",
+   "content_signals": [
+    "文字与结构本身有分量（作品清单、条目、档案）",
+    "品牌气质偏专业、严谨、可信",
+    "素材少，没有可用的大片摄影或视频",
+    "需要快速扫读、查找"
+   ],
+   "not_fit": [
+    "靠情绪与现场感打动人的内容（需要影像）",
+    "要立刻吸引眼球的发布页",
+    "几乎没有可放的文字或结构"
+   ],
+   "needs": "一套好字体（可变字体最佳）、清晰的信息层级、少量高质量图；无需视频或 3D。",
+   "feasibility_here": "高：纯 HTML/CSS 加少量 GSAP 即可，无需 GPU。关键是字体与间距的判断，可用截图自检。",
+   "mediocre_version": "只是把页面做空：大片留白里放一段普通标题，没有网格逻辑，层级不分，看起来像未完成的模板。",
+   "expressions": [
+    "editorial-type",
+    "variable-font-axis",
+    "balanced-text-property-gradient",
+    "cross-doc-view-transition",
+    "cursor-magnetic"
+   ],
+   "cases": [
+    {
+     "name": "Signal-A Studio",
+     "url": "https://signal-a.studio",
+     "award": "Awwwards SOTD 2026-10-18（总分 7.22，开发奖 7.31）",
+     "award_source": "https://www.awwwards.com/sites/signal-a-studio",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "Awwwards 页面列出纯黑白双色，标签为 Clean、Minimal、Typography。页面突出四个互动件：案例区的光标替换、档案叠层滑块、极简网格手风琴、案例悬停文字扰动。未看到画面，以上来自奖项页描述。",
+     "transferable": "用单色加一个光标与文字扰动的悬停细节，让极简页不显空。"
+    },
+    {
+     "name": "twks",
+     "url": "https://twks.ch/en",
+     "award": "Awwwards SOTD 2026-10-07（总分 7.35）",
+     "award_source": "https://www.awwwards.com/sites/twks-1",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "日内瓦独立创意机构，黑白双色，标签 Typography、Gallery、Microinteractions。页面描述未给出版式细节，未看到画面。",
+     "transferable": "机构站可以只靠黑白、字体和图集做出辨识度，把力气放在微交互。"
+    },
+    {
+     "name": "Martin Laxenaire 21 Portfolio",
+     "url": "https://www.martin-laxenaire.fr/",
+     "award": "Awwwards SOTD 2021-04-23（总分 7.57，开发奖 7.39）",
+     "award_source": "https://www.awwwards.com/sites/martin-laxenaire-21-portfolio",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "法国前端开发者个人站，标签 Clean、Typography、Transitions、WebGL，奖项页突出作品集版式与自定义 404 页。未看到画面。",
+     "transferable": "极简版式里用一两处 WebGL 过渡作点睛，其余保持干净。"
+    },
+    {
+     "name": "OFFFForum",
+     "url": "https://www.offforum.com/",
+     "award": "Awwwards SOTD 2026-10-16（总分 7.33，开发奖 7.2）",
+     "award_source": "https://www.awwwards.com/sites/offfforum",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "为期一周的设计与数字文化节活动站，黑白双色，标签 Clean、Gallery、Animation。奖项页无版式描述，未看到画面。",
+     "transferable": "活动类站点可用黑白加图集撑起文化气质，不必堆装饰。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T17",
+   "name_zh": "粗野主义与实验反设计",
+   "name_en": "Brutalism and experimental anti-design",
+   "one_liner": "故意打破精致规则：生硬的边框、系统字体、错位叠压、刺眼配色，用不加修饰换取记忆点和态度。",
+   "first_screen": "大号黑体或等宽字顶满屏，厚边框和硬色块互相叠压，导航像普通超链接。画面看起来像没有设计过，但每处错位都是故意的。",
+   "signature_interaction": "悬停时整块变色或抖动，光标、跑马灯、弹出小游戏代替规整动画；点击反馈直接而夸张。",
+   "content_signals": [
+    "品牌想显得独立、反主流、有态度",
+    "受众是设计师、艺术、音乐或亚文化圈",
+    "内容本身粗粝或有批判性",
+    "需要让人一眼记住"
+   ],
+   "not_fit": [
+    "医疗、金融、政务等需要稳重可信的内容",
+    "受众是第一次接触、需要引导的普通用户",
+    "无障碍与阅读效率是首要目标"
+   ],
+   "needs": "强烈的品牌态度、大胆字体与配色选择；不需要复杂素材，但需要克制地选择哪里破坏规则。",
+   "feasibility_here": "高：HTML/CSS 即可，无需 GPU。风险在于乱而不准，需用截图检查层级与可读性。",
+   "mediocre_version": "把默认样式原样暴露、随意堆色，没有明确的态度，看起来只是做坏了。",
+   "expressions": [
+    "brutalism",
+    "kinetic-type",
+    "chromatic-glitch",
+    "cursor-magnetic",
+    "typographic-object-stage"
+   ],
+   "cases": [
+    {
+     "name": "FORMAT (Obys x DES)",
+     "url": "https://format.obys.agency/",
+     "award": "Awwwards SOTD 2026-10-19（总分 7.59）",
+     "award_source": "https://www.awwwards.com/sites/format",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "Obys 与 DES 合作的特别项目，把形状、比例、边界当作设计工具来讲。黑白双色，标签 Experimental、Typography、Matter.js。未看到画面。",
+     "transferable": "用物理引擎或形状变换让版式本身成为互动对象。"
+    },
+    {
+     "name": "More Smart Series",
+     "url": "http://seedsandsupply.com/mss/",
+     "award": "Awwwards SOTD 2017-05-26（总分 7.29）",
+     "award_source": "https://www.awwwards.com/sites/more-smart-series",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "补剂品牌站，黑白双色，奖项页突出文字构成的产品页与视频背景的悬停画廊，Awwwards 将其归入 Brutalism 合集。未看到画面。年代较早。",
+     "transferable": "用纯文字排版搭商品页，悬停时再亮出影像。"
+    },
+    {
+     "name": "Roze Bunker",
+     "url": "https://rozebunker.nl",
+     "award": "Awwwards Honorable Mention 2020-01-09",
+     "award_source": "https://www.awwwards.com/sites/roze-bunker",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "荷兰环保糖浆品牌，黑白加黄色，标签 Colorful、Infinite Scroll、Photography。奖项页称品牌与网站要匹配其乐观与热情。未看到画面。",
+     "transferable": "食品品牌可用粗黑线与高饱和色块做出直白的乐观感。"
+    },
+    {
+     "name": "WORK BY 10011",
+     "url": "http://www.10011mag.co",
+     "award": "Awwwards Honorable Mention 2021-07-20",
+     "award_source": "https://www.awwwards.com/sites/work-by-10011",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "纽约创意与技术工作室，黑白，标签 Minimal、Typography、Gestures/Interaction，Awwwards 归入 Brutalism 合集。未看到画面。",
+     "transferable": "黑白排版加手势互动，足以撑起粗粝感。"
+    },
+    {
+     "name": "Brutalism (Story of Brutalism)",
+     "url": "https://storyofbrutalism.com/",
+     "award": "Awwwards Honorable Mention 2024-01-15",
+     "award_source": "https://www.awwwards.com/sites/brutalism",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "讲建筑粗野主义历史的互动长文，黑加红 #EB504E，标签 Parallax、Storytelling。注意它讲的是建筑运动，不是网页粗野风。未看到画面。",
+     "transferable": "用建筑摄影的材质感与红黑两色移植粗野气质。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T18",
+   "name_zh": "拼贴、手作与实物材质",
+   "name_en": "Collage, handmade and physical materials",
+   "one_liner": "靠剪贴、纸张、织物、手绘与实物质感，让屏幕上的东西像摸得到。",
+   "first_screen": "米色或纸色底，图片像被剪下来、错位叠放，带边缘、阴影或布料质感；文字像贴纸或手写标签。",
+   "signature_interaction": "读者拖动、翻开、揭幕：布片可拖、窗帘式揭开视频格、悬停时物件浮起或转开。",
+   "content_signals": [
+    "品牌是手工、工艺、艺术、时尚或食品",
+    "有实物拍摄、手绘或可扫描的材质素材",
+    "想显得有人味、不工业",
+    "故事靠收藏、旅行、记忆类内容"
+   ],
+   "not_fit": [
+    "强调精密、速度、数据的科技与金融内容",
+    "没有任何实物素材又无法生成",
+    "页面需要大量表格或后台操作"
+   ],
+   "needs": "实物或手绘素材（可扫描、拍摄或用 gpt-image 生成后抠图）、纸张与布料纹理；少量拖拽交互。",
+   "feasibility_here": "中：HTML/CSS、SVG 加 GSAP 可行；素材可用 gpt-image 生成纹理与剪贴元素，Blender Cycles 可渲纸面。真实手作质感需要素材质量，有风险。",
+   "mediocre_version": "给普通卡片套一层纸纹滤镜或图钉图标，素材仍是统一的网格，没有真正的剪贴逻辑。",
+   "expressions": [
+    "paper-object-stage",
+    "svg-scene-stage",
+    "parallax-25d",
+    "grain",
+    "depth-parallax-image"
+   ],
+   "cases": [
+    {
+     "name": "Collage (hand crafted objects)",
+     "url": "https://collagecrafting.com/en",
+     "award": "Awwwards SOTD 2019-09-02（总分 7.59，开发奖 7.05）",
+     "award_source": "https://www.awwwards.com/sites/collage-hand-crafted-objects",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "手工物件与配饰品牌的电商站，奖项页突出悬停式商品画廊菜单和滚动导航，标签 Clean、Minimal、Parallax。未看到画面。",
+     "transferable": "把商品画廊做成悬停菜单，实物图本身承担视觉。"
+    },
+    {
+     "name": "Collage",
+     "url": "https://collagecrafting.com",
+     "award": "Awwwards SOTD 2017-07-18（总分 7.53，开发奖 7.47）",
+     "award_source": "https://www.awwwards.com/sites/collage",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "当代设计与手作线上精品店，Locomotive 制作，标签 Big Background Images、WebGL、PixiJS；奖项页写明品牌试验不同材料、形状、纹理和颜色。未看到画面。年代较早。",
+     "transferable": "用大图加 WebGL 过渡展示材料试验。"
+    },
+    {
+     "name": "Traveler's Collage",
+     "url": "https://travelers-collage.netlify.app/",
+     "award": "Awwwards Honorable Mention 2023-06-30",
+     "award_source": "https://www.awwwards.com/sites/travelers-collage",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "Mari Hosho 做的数字手工拼贴，收录 13 年、120 个城市、30 个国家的旅行收藏，浅灰白底，横向菜单与视频预览。未看到完整画面。",
+     "transferable": "个人收藏类内容用拼贴加地点章节，天然适合横向浏览。"
+    },
+    {
+     "name": "Aralesk — Collages & Motion",
+     "url": "https://www.aralesk.es",
+     "award": "Awwwards Honorable Mention 2026-08-17",
+     "award_source": "https://www.awwwards.com/sites/aralesk-collages-motion",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "拼贴、动画、时装跨界作品集，深棕与奶油两色。奖项页列出幕帘式揭开视频格、水下滚动场景、可拖拽的布片。口号是视觉艺术不安分。未看到画面。",
+     "transferable": "把拖拽布片、揭幕动作当作手作感的互动语言。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T19",
+   "name_zh": "复古界面与怀旧系统",
+   "name_en": "Retro interfaces and nostalgic systems",
+   "one_liner": "把网页做成旧操作系统、终端、像素游戏，用怀旧的界面隐喻让人想点一点。",
+   "first_screen": "一个桌面：图标、可拖动窗口、任务栏，或 CRT 终端与像素头像。配色往往是淡蓝、黄黑或红白，字体是像素或等宽。",
+   "signature_interaction": "读者像用电脑一样双击图标、拖窗口、开关程序；作品和案例装在窗口里，有音效和像素动画。",
+   "content_signals": [
+    "受众熟悉旧系统或游戏文化",
+    "内容天然是多个并列项目（作品、案例、工具）",
+    "想显得有趣、有玩心",
+    "个人或小团队品牌，不需要庄重感"
+   ],
+   "not_fit": [
+    "面向老年人或第一次使用者的正式服务",
+    "内容是一条长叙事，窗口会打断阅读",
+    "需要高度可信的金融医疗内容"
+   ],
+   "needs": "窗口管理逻辑、像素或复古字体、图标与音效；不需要视频或 3D。",
+   "feasibility_here": "高：HTML/CSS、JS 即可，拖拽窗口属常规前端；像素图标可用 gpt-image 生成后整理。需注意移动端窗口退化。",
+   "mediocre_version": "只套一个 Windows 95 边框的模板，内容仍是普通网页，窗口不能拖动，也没有自己的故事。",
+   "expressions": [
+    "brutalism",
+    "chromatic-glitch",
+    "grain",
+    "lottie-rive"
+   ],
+   "cases": [
+    {
+     "name": "Neutomni",
+     "url": "https://neutomni.com/",
+     "award": "Awwwards SOTD 2026-10-13（总分 7.38，开发奖 7.12）",
+     "award_source": "https://www.awwwards.com/sites/neutomni",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "奖项页描述为大胆的编辑式作品集，把醒目排版与好玩的复古 UI 结合；红 #CF1830 加白双色，标签 Retro、Scrolling、Storytelling。未看到画面。",
+     "transferable": "复古 UI 只作点缀，主体仍用大字排版，避免整站变玩具。"
+    },
+    {
+     "name": "22.09.2000 - HE WAS BORN",
+     "url": "https://www.hardikbhansali.com/",
+     "award": "Awwwards SOTD 2025-07-23（总分 7.24）",
+     "award_source": "https://www.awwwards.com/sites/22-09-2000-he-was-born",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "设计师 Hardik Bhansali 的个人站，黑加黄 #FFEA63，标签 Retro、3D、Gestures / Interaction；奖项页提到音乐区块和手势追踪互动。未看到画面。",
+     "transferable": "用手势或摄像头输入把怀旧界面做成体验，而非只是皮肤。"
+    },
+    {
+     "name": "Parinaz's Desktop Portfolio",
+     "url": "http://www.parinazkassemi.com",
+     "award": "Awwwards Honorable Mention 2026-07-19",
+     "award_source": "https://www.awwwards.com/sites/parinazs-desktop-portfolio",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "产品设计师用桌面操作系统隐喻呈现产品设计、系统思维与 AI 案例；淡蓝配色 #D7EAFF 与 #80A9E1，有森林动态壁纸和可交互的底部栏。",
+     "transferable": "把案例研究装进桌面窗口，用壁纸和底栏定下气质。"
+    },
+    {
+     "name": "EddyOS — Eddy Naboulet",
+     "url": "https://eddy-naboulet.dev/",
+     "award": "Awwwards Nominee 2026-10-05（未获日奖）",
+     "award_source": "https://www.awwwards.com/sites/eddyos-eddy-naboulet",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "作品集做成复古操作系统，奖项页描述有 CRT 风格显示、像素动画头像、可交互窗口和有趣的音效；Three.js 加 Astro。仅提名，不作获奖证据。",
+     "transferable": "CRT 屏幕加像素头像可让复古感更立体。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T20",
+   "name_zh": "色块与平面图形系统",
+   "name_en": "Color blocks and flat graphic systems",
+   "one_liner": "用大面积纯色、几何形状与一套图形语言，把品牌做成海报，靠色彩和形状而不是照片记忆。",
+   "first_screen": "满屏高饱和纯色或双色块，几何图形或平面插画占据画面，大字标题与图形咬合；整体像一张印刷海报。",
+   "signature_interaction": "滚动时色块整体切换或翻页，图形随指针或滚动变形，卡片像贴纸一样弹出。",
+   "content_signals": [
+    "品牌有一套自己的图形语言或吉祥物",
+    "没有高质量摄影，但有明确色彩身份",
+    "目标人群年轻、活泼",
+    "多个并列板块可用不同色块区分"
+   ],
+   "not_fit": [
+    "需要真实人物与现场感的内容",
+    "需要冷静严肃气质的金融法务内容",
+    "图片本身就是信息（产品照、病例图）"
+   ],
+   "needs": "品牌色板、几何图形或平面插画（SVG 可由代码生成）；无需视频或 3D。",
+   "feasibility_here": "高：SVG、CSS 与 GSAP 即可，色板与图形可用 gpt-image 出方向再手工 SVG 化。关键是色彩克制与节奏。",
+   "mediocre_version": "把渐变卡片换成纯色卡片，配色随意，图形是素材库里的通用图标，没有自己的形状语言。",
+   "expressions": [
+    "svg-scene-stage",
+    "mesh-gradient",
+    "kinetic-type",
+    "lottie-rive",
+    "bento"
+   ],
+   "cases": [
+    {
+     "name": "Dropbox Brand",
+     "url": "https://brand.dropbox.com/",
+     "award": "Awwwards SOTD 2025-02-12（总分 7.67，开发奖 7.8）",
+     "award_source": "https://www.awwwards.com/sites/dropbox-brand",
+     "verified": true,
+     "anchor_id": "dropbox-brand",
+     "why_good": "交互式品牌站，邀请人探索 Dropbox 品牌世界；蓝 #0061FE 与近黑 #1A1918，标签 Colorful、Storytelling、Microinteractions。未看到画面。",
+     "transferable": "用一个主色加近黑建立品牌图形语言，再靠微交互展开。"
+    },
+    {
+     "name": "Pohoda by Outloud",
+     "url": "https://work.outloud.co/pohoda",
+     "award": "Awwwards SOTD 2024-08-10（总分 7.22，开发奖 7.54）",
+     "award_source": "https://www.awwwards.com/sites/pohoda-by-outloud",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "Pohoda 音乐节手机 App 的交互案例页，奶油 #F1E6D8 加浅紫 #BB99FF，标签 App Style、Microinteractions。未看到画面。",
+     "transferable": "案例页用两色底加 App 样式的微交互，节庆感来自配色。"
+    },
+    {
+     "name": "Caffè Design",
+     "url": "https://www.caffe.design/",
+     "award": "Awwwards SOTD 2025-06-18（总分 7.57，开发奖 7.39）",
+     "award_source": "https://www.awwwards.com/sites/caffe-design",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "dverso 工作室做的 3D 互动站，柔粉 #FFB3D4 加蓝紫 #3F18FF，标签 Colorful、Graphic design、Infinite Scroll；可在共享白板上实时共同涂画。未看到画面。",
+     "transferable": "两个强对比色定调，再加多人白板之类的小玩具。"
+    },
+    {
+     "name": "Gucci Off The Grid",
+     "url": "https://offthegrid.gucci.com/",
+     "award": "Awwwards SOTD 2020-10-04（总分 7.38，开发奖 7.28）",
+     "award_source": "https://www.awwwards.com/sites/gucci-off-the-grid",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "Gucci 首个完全可持续系列的宣传站，Adoratorio Studio 制作；青 #49c5b6、珊瑚 #DF6C4F、黄 #ECD06F，访客回答问题搭建城市树屋，标签 Colorful、Graphic Design、Fullscreen。未看到画面。年代较早。",
+     "transferable": "用三个平面色加问答式建造，把品牌插画变成可参与的玩法。"
+    },
+    {
+     "name": "Huy Phan Vol.2",
+     "url": "https://huyml.co/",
+     "award": "Awwwards SOTD 2026-10-14（总分 7.67，开发奖 7.37）",
+     "award_source": "https://www.awwwards.com/sites/huy-phan-vol-2",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "越南胡志明市独立设计师与艺术总监的作品集，红 #FF4949 配近黑 #181818，标签 Illustration、Typography、Three.js。未看到画面。",
+     "transferable": "红黑两色加插画与大字，是个人品牌图形化的最小配方。"
+    }
+   ],
+   "status": "researched"
+  },
+  {
+   "id": "T21",
+   "name_zh": "声音与节奏驱动",
+   "name_en": "Sound and rhythm",
+   "one_liner": "声音、节奏或音乐是主线，版式与动效跟着节拍走，读者的动作发出声音。",
+   "first_screen": "首屏多是一个等待点击开启声音的入口，进入后字与图形随节拍跳动。",
+   "signature_interaction": "读者点击或悬停发出声音，画面随声音的强弱变化。",
+   "content_signals": [
+    "题材本身和声音有关：音乐、电台、播客、声学、乐器",
+    "内容有明确节奏或周期"
+   ],
+   "not_fit": [
+    "必须静音阅读的场合",
+    "信息密集的讲解页"
+   ],
+   "needs": "音频素材（自录或授权）、Web Audio API",
+   "feasibility_here": "中：Web Audio 与 Canvas 本机可写；无法在截图里验证声音，需要人耳听。",
+   "mediocre_version": "只放一个自动播放的背景音乐按钮，画面和声音无关。",
+   "expressions": [
+    "kinetic-type",
+    "cursor-magnetic",
+    "generative-data"
+   ],
+   "cases": [
+    {
+     "name": "Maria Vasilyeva Portfolio",
+     "url": "https://www.mariavasilyeva.com/",
+     "award": "Awwwards SOTD 2026-10-09",
+     "award_source": "https://www.awwwards.com/sites/",
+     "verified": false,
+     "anchor_id": null,
+     "why_good": "未看到画面。调研代理读到的描述是受音乐与声音启发的互动设计师作品集。",
+     "transferable": "让声音成为交互的反馈，而不是背景装饰。"
+    }
+   ],
+   "status": "draft"
+  },
+  {
+   "id": "T22",
+   "name_zh": "可探索地图与档案",
+   "name_en": "Explorable map and archive",
+   "one_liner": "整站是一张可拖动、可漫游的地图或档案馆，章节是地图上的地点，位置关系就是信息架构。",
+   "first_screen": "首屏是一张大地图或空间俯视图，上面散布可点的地点标记。",
+   "signature_interaction": "读者拖动地图、点地点，打开照片、全景、音频或章节。",
+   "content_signals": [
+    "内容天然有地点：现场、站点、城市、项目分布",
+    "条目多、彼此平级，适合让读者自己逛"
+   ],
+   "not_fit": [
+    "有严格先后顺序的讲解",
+    "条目少于 5 个"
+   ],
+   "needs": "地图或空间底图（SVG、生成图或 3D），地点数据",
+   "feasibility_here": "高：SVG 或 Canvas 地图本机可做；3D 地形需降级。",
+   "mediocre_version": "一张静态地图加几个图钉，点开是普通弹窗。",
+   "expressions": [
+    "svg-scene-stage",
+    "isometric",
+    "parallax-25d",
+    "view-transitions"
+   ],
+   "cases": [
+    {
+     "name": "21 Hrs On The Moon",
+     "url": "https://www.21hrs.space/",
+     "award": "Awwwards SOTD 2026-07-10",
+     "award_source": "https://www.awwwards.com/sites/",
+     "verified": false,
+     "anchor_id": null,
+     "why_good": "未看到画面。奖项页元素含互动月面地图、全景图库、音频。",
+     "transferable": "把章节放进一张可以逛的地图里。"
+    },
+    {
+     "name": "Overworld Audio",
+     "url": "https://www.awwwards.com/sites/",
+     "award": "Awwwards SOTD 2026-10-15",
+     "award_source": "https://www.awwwards.com/sites/",
+     "verified": false,
+     "anchor_id": null,
+     "why_good": "未看到画面。奖项页称其为作品的可探索地图。",
+     "transferable": "作品集做成一张地图。"
+    }
+   ],
+   "status": "draft"
+  },
+  {
+   "id": "T23",
+   "name_zh": "互动漫画与分格叙事",
+   "name_en": "Interactive comic panels",
+   "one_liner": "页面是一本可翻的漫画，镜头在分格之间移动，章节选择推进剧情。",
+   "first_screen": "首屏是漫画封面或第一格，画面有角色和对白框。",
+   "signature_interaction": "读者滚动或点击，镜头从一格推到下一格，对白逐句出现。",
+   "content_signals": [
+    "内容是一个有角色、有起伏的故事",
+    "受众偏年轻或大众"
+   ],
+   "not_fit": [
+    "严肃的数据报告",
+    "没有故事线的产品清单"
+   ],
+   "needs": "风格一致的分格插画（gpt-image 可出），对白文字",
+   "feasibility_here": "中：分格插画可生成，风格一致需要多轮；镜头移动用 CSS 或 GSAP。",
+   "mediocre_version": "把插画按顺序竖着排，滚动只是往下翻。",
+   "expressions": [
+    "scroll-story",
+    "pin-scrub",
+    "parallax-25d",
+    "lottie-rive"
+   ],
+   "cases": [
+    {
+     "name": "Ponpon Mania",
+     "url": "https://ponpon-mania.com/",
+     "award": "Awwwards SOTM 列表 / SOTD 2025-10-22",
+     "award_source": "https://www.awwwards.com/sites/",
+     "verified": true,
+     "anchor_id": "ponpon-mania",
+     "why_good": "一页互动漫画封面：拱门形天空开口、粉色云和气球；亮点含分格镜头移动与章节选择。",
+     "transferable": "让镜头在分格之间移动，而不是让页面往下滚。"
+    }
+   ],
+   "status": "draft"
+  },
+  {
+   "id": "T24",
+   "name_zh": "扫描数据与点云",
+   "name_en": "Scan data and point clouds",
+   "one_liner": "用真实扫描数据（点云、地形、传感器读数）做可交互的 3D 场景，内容就是数据本身。",
+   "first_screen": "首屏是一片由点组成的地形或建筑，点在缓慢漂移或被扫描线扫过。",
+   "signature_interaction": "读者拖动视角或滚动，点云从散开到聚合成物体。",
+   "content_signals": [
+    "有真实扫描、测绘、传感器数据",
+    "要证明研发或工程能力"
+   ],
+   "not_fit": [
+    "没有任何真实数据",
+    "需要讲清人和故事的页面"
+   ],
+   "needs": "点云或网格数据（可用 Blender 由模型采样生成）、three.js Points",
+   "feasibility_here": "低到中：点数要压到几万以内；无 GPU 只能小规模预览。",
+   "mediocre_version": "一团随机粒子，和真实数据无关。",
+   "expressions": [
+    "instanced-field",
+    "gpgpu-curl-particles",
+    "webgl-scene",
+    "scroll-camera-path"
+   ],
+   "cases": [
+    {
+     "name": "Lidar Drone Scanning (Riotters)",
+     "url": "https://drone.riotters.com/",
+     "award": "Awwwards SOTD 2026-10-06",
+     "award_source": "https://www.awwwards.com/sites/",
+     "verified": false,
+     "anchor_id": null,
+     "why_good": "未看到画面。奖项页描述为无人机激光雷达扫描数据做成的交互 3D 体验。",
+     "transferable": "让真实数据本身成为主画面。"
+    }
+   ],
+   "status": "draft"
+  },
+  {
+   "id": "T25",
+   "name_zh": "身体与多人输入",
+   "name_en": "Body and multiplayer input",
+   "one_liner": "读者用手势、摄像头或和其他读者一起操作页面，别人的动作实时可见。",
+   "first_screen": "首屏邀请读者举手、开摄像头，或显示其他在线读者的光标。",
+   "signature_interaction": "读者挥手或移动，画面跟着身体变化；多人时互相看到对方的操作。",
+   "content_signals": [
+    "活动、展览、发布会现场",
+    "希望读者参与、留下痕迹"
+   ],
+   "not_fit": [
+    "安静阅读的页面",
+    "涉及隐私或需要登录的场合"
+   ],
+   "needs": "摄像头手势识别（MediaPipe 等）或实时同步服务",
+   "feasibility_here": "低：Artifact 和多数托管环境拒绝摄像头；实时多人需要服务端。",
+   "mediocre_version": "加一个\"开启摄像头\"按钮，开启后只有一个镜像画面。",
+   "expressions": [
+    "cursor-magnetic",
+    "generative-data"
+   ],
+   "cases": [
+    {
+     "name": "22.09.2000 - HE WAS BORN",
+     "url": "https://www.awwwards.com/sites/",
+     "award": "Awwwards SOTD 2025-07-23",
+     "award_source": "https://www.awwwards.com/sites/",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "未看到画面。奖项页标签 Gestures / Interaction，含手势追踪互动。",
+     "transferable": "让身体动作成为输入。"
+    },
+    {
+     "name": "Caffè Design",
+     "url": "https://www.awwwards.com/sites/",
+     "award": "Awwwards SOTD 2025-06-18",
+     "award_source": "https://www.awwwards.com/sites/",
+     "verified": true,
+     "anchor_id": null,
+     "why_good": "未看到画面。奖项页描述含多人共享白板。",
+     "transferable": "让读者看到彼此的操作。"
+    }
+   ],
+   "status": "draft"
+  }
+ ]
+}
