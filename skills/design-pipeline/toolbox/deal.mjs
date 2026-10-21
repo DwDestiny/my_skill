@@ -79,14 +79,14 @@ const CARRIER_IDS = Object.keys(CARRIER_MEDIUM);
 const normCarrier = (c) => (c ? (CARRIER_MEDIUM[c] ? c : MEDIUM_TO_ID[c] || null) : null);
 
 // ---------- 帮助 ----------
-const KNOWN = ['carrier', 'gear', 'mode', 'topic', 'audience', 'options', 'seed', 'seed-history', 'commit', 'add-history', 'project', 'palette', 'form', 'outcome', 'note', 'list', 'help', 'slot', 'components', 'set-components', 'purpose'];
+const KNOWN = ['carrier', 'gear', 'mode', 'topic', 'audience', 'options', 'seed', 'seed-history', 'commit', 'add-history', 'project', 'palette', 'form', 'outcome', 'note', 'list', 'help', 'slot', 'components', 'set-components', 'purpose', 'theme'];
 const SLOTS = ['nav', 'hero', 'cards', 'rows', 'steps', 'panel', 'overlay', 'footer'];
 const unknown = argv.filter((a) => a.startsWith('--') && !KNOWN.includes(a.slice(2)));
 if (opt.help || argv.length === 0 || unknown.length) {
   if (unknown.length) out(`未知参数：${unknown.join(' ')}`);
   out(`用法
   node toolbox/deal.mjs --carrier <id> --topic <主题> --audience <受众> [--mode persuade|operate|read|experience] [--options 3] [--seed 7]
-  node toolbox/deal.mjs --commit <方向id> --project <名> --carrier <id> [--gear 旧字段可省] [--topic t] [--palette id] [--form id,id] [--outcome 好|一般|差] [--note 文字]
+  node toolbox/deal.mjs --commit <方向id> --project <名> --carrier <id> [--gear 旧字段可省] [--topic t] [--palette id] [--form id,id] [--theme T03] [--outcome 好|一般|差] [--note 文字]
   node toolbox/deal.mjs --add-history <方向id> --project <名> [--carrier c --gear g --topic t --note 文字]
   node toolbox/deal.mjs --slot <槽> --purpose "<目的>" --carrier <id> [--options 3] [--seed 7]   阶段 3 发案例，槽见 library/cases.json
   --commit 与 --add-history 可加 --components slot:id,slot:id 记组件手法卡
@@ -303,6 +303,7 @@ if (opt['add-history']) {
     gear: sv('gear'),
     topic: sv('topic'),
     direction: id,
+    theme: sv('theme'),
     palette: sv('palette'),
     form: arr(cards.find((c) => c.id === id).form),
     outcome: sv('outcome'),
@@ -332,6 +333,7 @@ if (opt.commit) {
     gear: opt.gear && opt.gear !== true ? opt.gear : null,
     topic: opt.topic && opt.topic !== true ? opt.topic : null,
     direction: id,
+    theme: opt.theme && opt.theme !== true ? String(opt.theme) : null,
     palette: opt.palette && opt.palette !== true ? opt.palette : null,
     form: opt.form && opt.form !== true ? String(opt.form).split(',') : arr(cards.find((c) => c.id === id).form),
     outcome: opt.outcome || null,

@@ -15,7 +15,7 @@
 | `stages/4-design-md.md` | 阶段 4：design.md 第 3 节执行规则、自查、实现与看图 |
 | `templates/design.md` | 唯一产物模板，三节：氛围、每屏做法、执行规则 |
 | `library/cases.json`、`cases.md` | 组件创意案例库。`cases.md` 是索引 |
-| `library/` 其他 | `carriers.json` 9 种载体、`page-forms.json` 15 种页面形态、`expressions.json` 表现形式、`palettes.json` 配色类、`directions.json` 整页方向、`references.json`、`motions.json` |
+| `library/` 其他 | `themes.json` 25 个整体主题与获奖案例、`carriers.json` 9 种载体、`page-forms.json` 15 种页面形态、`expressions.json` 表现形式、`palettes.json` 配色类、`directions.json` 整页方向、`references.json`、`motions.json` |
 | `references/taste-method.md` | 品味方法：好、氛围感、高级感、优雅、品味的定义，8 条通用做法，氛围 8 层，遮名检查。来源是 2026-10-19 的作品集调研，数值与原则都是起始值 |
 | `references/technique-catalog.md` | 手法目录 50 条与技术栈地图，带证据等级。3D 展厅类无样本，不涉及 |
 | `references/why-good.md` | 为什么好：高级感的可测部分（秩序感）、氛围感、组件四判据、16 槽好与平庸分界、动效令牌、示意图质感层、何时不要用 |
