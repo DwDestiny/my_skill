@@ -1,6 +1,6 @@
 ---
 name: visual-motion-design
-description: design-pipeline 的子步骤，由 design-pipeline 阶段 2 到 4 调用，不要单独触发。视觉与动效：负责 HTML 页面的整体视觉、设计系统、版式、图表与图示、3D 等轴测图、动效引擎与视觉炫技。按场合分配动效预算，而不是关掉动效；氛围决定收放，没有分级。触发词：设计页面、做一个 HTML、灵感库、组件参考、视觉、排版、配色、令牌、动效、入场动画、滚动效果、炫一点、要有冲击力、展示页、发布页、讲解页的视觉、图表怎么画、等轴测、3D 图、设计计划、线框、截图自检、视觉评审、页面看起来像模板、太 AI 味。串联 frontend-design、artifact-design、dataviz、artifact-diagramming、design-taste-frontend、diagram-design、anatomy，并吸收 juliobsz awwwards 与 open-claude-ui 的方法。不适用：决定页面说什么、章节怎么拆、哪些内容保留（那是 content-blueprint）；原生 macOS / iOS 应用界面；仪表盘与后台表单的交互设计；纯文字文档。
+description: design-pipeline 的附属资产库：motion-engine.js 动效引擎、base-tokens.css 与字体栈、floor-check.py 参考值检查、交接字段。只在 design-pipeline 的 craft.md 或阶段 4 指向时按需取用，不要单独触发，不按本文件的流程另起设计。不适用：原生 macOS / iOS / Android 应用界面；仪表盘与后台表单的交互设计；纯文字文档。
 ---
 
 # 视觉与动效

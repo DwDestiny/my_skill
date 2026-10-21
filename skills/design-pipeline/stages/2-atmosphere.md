@@ -1,24 +1,37 @@
 # 阶段 2 视觉氛围
 
-本阶段决定这页的整体风格：点子、页面形态、材质、光、空间、配色、边角、透明度、动效气质和签名时刻。产物是 `design.md` 第 1 节"氛围"（模板 `templates/design.md`）。来自：旧 `references/art-direction.md`、`prompts/S3-direction.md`、`prompts/S3.5-first-screen.md`。
+本阶段决定这页的整体风格：点子、页面形态、材质、光、空间、配色、边角、透明度、动效气质和签名时刻。产物是 `design.md` 第 1 节"氛围"（模板 `templates/design.md`）。
 
 用户原话（2026-10-17）："整体风格，包括但不限于配色、边角、透明度等等这些，其实这个环节定的是视觉氛围"。
 
-## 1. 输入
+## 1. 输入与读法
+
+开始前只读这四样：
 
 | 输入 | 从哪里取 |
 |---|---|
 | 委托 | `design.md` 第 0 节：原话逐字、第一眼要觉得什么、载体、点名手法 |
 | 蓝图 | `01-内容规划/blueprint.md`：章数、舞台章、受众、`image_needs` |
-| 使用史 | `history/history.json` 最近 5 条 |
-| 品味方法 | `references/taste-method.md`：开头读一次（定义、8 条做法、氛围 8 层、优雅与遮名检查） |
-| 方向与吸引力 | `references/direction-and-appeal.md`：怎么分清身份与例子、题材研究与参照、发散 2 到 3 个方向、吸引力的 6 个来源、怎么选 |
-| 主题目录 | `library/themes.json`：整体设计与交互主题（视频、摄影、3D、流体、大字、滚动叙事、交互玩具等），每个主题有适合的内容信号、本机可做程度和获奖案例。2.1.3 用它打分 |
-| 好坏标准与锚点 | `references/judging.md`、`library/anchors.json`：获奖级锚点、五个维度与档位、盲比、深化还是换方向 |
-| 迭代与停止 | `references/iteration-loop.md`：冠军与挑战者、每轮步骤、跳出条件 |
-| 氛围与冲击力 | `references/atmosphere-and-impact.md`：世界观、色场与光、环境与材质、"炫酷"的 6 种做法、盖住主物看 |
-| 为什么好 | `references/why-good.md` 第 2、3、7 节 |
-| 设计原则 | `frontend-design` skill。探测方法见 `SKILL.md` 路由表第一行。读它的"Ground your designs""Design principles""Process"三段。找不到时写"未读 frontend-design" |
+| 使用史 | `history/history.json` 最近 5 条（主题、形态、组件） |
+| 设计原则 | `frontend-design` skill 的"Ground your designs""Design principles""Process"三段。阶段 1 读过就不重读；找不到时写"未读 frontend-design"（探测方法见 `SKILL.md` 第 4 节第一行） |
+
+做到某一步再读那一节，不提前整读：
+
+| 做到 | 读 |
+|---|---|
+| 2.1 身份句 | `references/direction-and-appeal.md` 第 1 节 |
+| 2.1.1 到 2.1.2 研究与参照 | `references/direction-and-appeal.md` 第 2.1 节 |
+| 2.1.3 主题打分 | `node toolbox/lib.mjs themes`（简表 12 KB）；入围的主题再 `lib.mjs themes <id>` |
+| 2.2 点子与方向 | `references/direction-and-appeal.md` 第 2.2、3 节；`references/taste-method.md` 第 3 节（8 条做法，用来检查点子） |
+| 2.2.1 方向板、盲评、方向循环 | `references/judging.md` 第 2 到 5 节；`references/iteration-loop.md` 第 3、4.1 节；锚点 `node toolbox/lib.mjs anchors --where page_type=<页型>` |
+| 2.4 页面形态 | `node toolbox/pick-form.mjs` 或 `lib.mjs forms` |
+| 2.5 表现形式 | `node toolbox/lib.mjs expressions --where layer=<层>` |
+| 2.6 表面决定 | `references/atmosphere-and-impact.md` 第 1 到 4 节；`references/taste-method.md` 第 4 节（氛围 8 层）；配色 `lib.mjs palettes`；动效气质 `references/restraint.md` 第 3 节 |
+| 2.9 参照登记 | `node toolbox/lib.mjs references` |
+| 2.10 反同质化 | `references/anti-sameness.md` 第 1 节 |
+| 示意图、质感层拿不准时 | `references/why-good.md` 第 3、7 节 |
+
+库文件（`themes.json` 93 KB、`anchors.json` 66 KB、`expressions.json` 66 KB、`page-forms.json` 47 KB）不整读。原因：一次整读把上下文填满，后面的判断变差。
 
 原话优先于本文件的一切做法。原话点名的手法必须出现在决定里。做不到时写理由。
 
@@ -28,7 +41,7 @@
 
 先写一句身份："这是 ___ 的页面，读者看完应该记住 ___ 的什么性格。"页面里的演示任务、客户场景、设备是例子，单独写一行，不当题材盘点。原因：拿例子当题材，整页会变成例子那个行业的说明页（`references/direction-and-appeal.md` 第 1 节）。
 
-写完 2.1 到 2.3 之前，不打开 `library/`，不运行发牌。原因：先看库，氛围就来自库的统计平均。这一条只管库。外部参照和真实素材要在写方向之前看（2.1.1、2.1.2），原因是第一联想不经研究就写成方向，后面每一步都会给它补理由。
+点子先于库：2.1 的盘点和 2.1.1 的研究写完之前，不发组件牌、不翻案例库（`cases.json`、`expressions.json`）。原因：先看库，氛围就来自库的统计平均。主题目录、同页型标杆和获奖锚点是研究材料，不是库，从 2.1.1 起按步查。外部参照和真实素材要在写方向之前看（2.1.1、2.1.2），原因是第一联想不经研究就写成方向，后面每一步都会给它补理由。
 
 列 8 到 12 件只属于这个身份的东西，每件一行具体名词。按下面 8 类提问，每类至少答 1 件。
 
@@ -64,7 +77,7 @@
 
 原因：不打分时，模型会落到最顺手的一种。团队页第六次（Grok 实测，2026-10-21）三个方向板全是生成照片，成品是"满屏照片加压字"，氛围到了 4 档，但交互只剩滚动，用户担心"每次做网站都搞这种放个图片背景的设计方式"。满屏摄影只是目录里的一种主题。
 
-1. 读 `themes.json` 每个主题的 `one_liner`、`content_signals`、`not_fit`、`feasibility_here`。
+1. 运行 `node toolbox/lib.mjs themes`，简表给每个主题的 `one_liner`、`feasibility_here`、`content_signals`。入围的 5 到 6 个再 `lib.mjs themes <id>` 看 `not_fit`、`cases`、`signature_interaction`、`mediocre_version`。
 2. 每个主题按 5 项各打 1 到 5 分，写一句依据：
 
 | 项 | 问什么 | 依据从哪里来 |
@@ -85,7 +98,7 @@
 
 2.1.3 选出的 3 个主题各写一个方向：每个方向一句点子、一句世界观（"这页像 ___"），并在光、颜色归谁、文字的声音、图像语法、构图 5 根轴上各写一个值。至少两根轴（光、颜色归谁、图像语法里）不同才算不同方向，并且至少一个方向的图像语法和第一联想完全不同（例：第一联想是抽象 3D 物件，另一个方向就做真人与现场纪实，或高密度的日志与名册）。同一个造型换颜色、换字体是变体，不算新方向；同一个故事换容器也不算。做法与例子见 `references/direction-and-appeal.md` 第 2 节。原因：第一个联想最常见，只写一个点子时，后面每一步都会给它补理由。
 
-每句点子都要具体到这个身份：把身份换成一个相邻的身份（同行的普通公司），这句话应不成立。
+每句点子都要具体到这个身份：把身份换成一个相邻的身份（同行的普通公司），这句话应不成立。这是对点子的要求。到了成品层，身份是深化项，不是淘汰理由（`references/judging.md` 第 5 节）：盲评时第一眼成立但身份弱，就在同一个世界里加身份元素，不换方向。
 
 | 成立 | 不成立 |
 |---|---|
@@ -99,14 +112,14 @@
 先用生图做方向板，再写代码。原因：生图几十秒一张，画面上限比手写 HTML 小样高得多，能在写代码之前看到这个方向的光、色场和主物到底成不成立。r5 全程最好的一版（首批 A），恰好是一张生成的现场图撑起来的。
 
 1. **每个方向生成 1 张首屏方向板**（`image-gen` skill 或宿主的生图工具，1536x1024）。需要看中段时再加 1 张。方向板画的是这个主题的首屏，不只是一张氛围图：3D 主题画渲染出的物件和舞台，大字主题画字本身占满屏的版式，交互玩具画读者正在动手的那一刻，视频主题画视频里最有力的一帧并写一句它怎么动。提示词写：
-   - 主题名、世界观一句、光、色场、主物、构图；
+   - 主题名、世界观一句、光、色场、主物、构图。主物和环境用 2.1 盘点出的具体名词（器物、地点、材料）至少 2 个，不用抽象的行业词。原因：名词越具体，画面越不漂移；抽象词会被画成字面意思或相邻行业的现场；
    - 签名交互一句（`themes.json` 的 `signature_interaction`）：读者做什么，画面怎么变；
    - 标题放在哪个区域、大约多大（"large headline area on the left third"）；
-   - 借哪个高分锚点的做法，用文字描述做法，不写站名，不让模型复制别人的画面（锚点见 `library/anchors.json` 的 `transferable`）；
+   - 借哪个高分锚点的做法，用文字描述做法，不写站名，不让模型复制别人的画面（`node toolbox/lib.mjs anchors <id>` 的 `transferable`）；
    - 结尾写 "award-winning website hero, real browser screenshot, 16:10"。
    中文标题可以让模型试着画，但不依赖它画对。方向板看的是氛围和构图，不是界面规格。
-2. **盲评选出第一个冠军**：按 `references/judging.md` 第 3、4 节，先现场看 2 到 3 个高分锚点，再让独立评审把方向板和锚点并排比较。回答四个问题：第一眼停在哪里；和锚点差几档、差在哪个维度；遮住说明，画面自己讲了什么；盖住主物还剩什么世界。
-3. **进入方向循环**（`references/iteration-loop.md` 第 4.1 节）：每一轮按 `judging.md` 第 5 节决定深化还是换方向，生成挑战者，盲比冠军。最多 3 轮。
+2. **盲评选出第一个冠军**：按 `references/judging.md` 第 3、4 节，先现场看 2 到 3 个高分锚点（同一任务只开一次，截图留临时目录，后面每轮复用），再让独立评审把方向板和锚点并排比较。回答四个问题：第一眼停在哪里；和锚点差几档、差在哪个维度；遮住说明，画面自己讲了什么；盖住主物还剩什么世界。
+3. **进入方向循环**（`references/iteration-loop.md` 第 4.1 节）：每一轮按 `judging.md` 第 5 节决定深化还是换方向，生成挑战者，盲比冠军。最多 3 轮。要问用户而用户不在线时，写 `process/ASK.md` 并停在当前冠军（`iteration-loop.md` 第 3 节）。
 4. **拆成可实现的三层**，写进 `design.md` 第 1.1 节"方向板"行：
    - 图像层：按主题写清主画面怎么做出来。3D 主题用 three.js 或 Blender，大字主题用网页字体和 CSS，流体用着色器，数据主题用 `dataviz`。生成图是图像层的一种来源：摄影、插画类主题可以用同一提示词生成**无文字版本**作资产；其他主题只把方向板当画面目标，不把它铺成背景；
    - 界面层：标题、导航、按钮、正文，用 HTML 重建；
@@ -127,19 +140,17 @@
 
 先选形态，再排章节。纯瀑布流不可选：章节等宽堆叠、每章"标题加文字加图"、滚动只做位移。用户原话（2026-10-16）："我现在非常讨厌平庸的纯瀑布流的形式"。
 
-1. 运行 `node toolbox/pick-form.mjs --task <explainer|launch|prototype|datastory> --chapters <n> --reading <skim|sequential> --carrier <id>`，或读 `library/page-forms.json`（字段 `one_liner unit advance nav fit carriers acts_template vs_pure_waterfall reduce_motion`）。
+1. 运行 `node toolbox/pick-form.mjs --task <explainer|launch|prototype|datastory> --chapters <n> --reading <skim|sequential> --carrier <id>`，或 `node toolbox/lib.mjs forms` 看简表、`lib.mjs forms <id>` 看一种（字段 `one_liner unit advance nav fit carriers acts_template vs_pure_waterfall reduce_motion`）。
 2. 选 1 种形态，写一句它表达点子的哪一点。
 3. 写幕表：幕号、对应章、相机或舞台状态、视觉主体、停留方式（滚动经过、pin、点击、拖拽）。蓝图每个舞台章对应一幕。
 4. 写 390 宽下的形态变化与目录方式。章数超过 8 时，目录不用整行换行的锚点列表。
 5. 写 Reduce Motion 与无 JS 退路。退路保留章节分区与导航，不退回纯瀑布流。
 
-### 2.5 方向卡与表现形式
+### 2.5 表现形式与使用史
 
-1. 读使用史最近 5 条。运行 `node toolbox/deal.mjs --carrier <carriers.json 的 id> --topic <题材词> --audience <受众词>`，发 3 张方向卡（整页案例）。
-2. 方向已在 2.2.1 选定。方向卡用来借做法（版式、节奏、组件组合），不替换选定的方向。按点子和情绪词选 1 张，写它借给选定方向什么。不翻库挑卡。3 张都不贴题时重发，最多 2 次。仍不贴题时库外自拟，写清与 3 张各差在哪。
-3. 用户已指定方向时跳过发牌，写"跳过：用户指定"。
-4. 按幕表每幕选表现形式，取自 `library/expressions.json`（字段 `layer expresses fits avoid cost reduced_motion libs example`）。默认一页 1 个 `stage`、1 到 2 个 `material`、1 个 `type`、1 到 2 个 `interaction`。偏离时在 `design.md` 写理由。适用：展示型。不适用：操作型原型、成功/确认状态、需要重复结构做比较的页、短内容阅读页。`example` 指向 `examples/mechanisms/<id>/`。
-5. 定稿后运行 `node toolbox/deal.mjs --commit <id> --project <名> --carrier <id> --theme <2.1.3 选中的主题 id>`，写入使用史。
+1. 按幕表每幕选表现形式：`node toolbox/lib.mjs expressions --where layer=<stage|material|type|interaction>` 看简表，候选再 `lib.mjs expressions <id>` 看全文（字段 `layer expresses fits avoid cost reduced_motion libs example`）。默认一页 1 个 `stage`、1 到 2 个 `material`、1 个 `type`、1 到 2 个 `interaction`。偏离时在 `design.md` 写理由。适用：展示型。不适用：操作型原型、成功/确认状态、需要重复结构做比较的页、短内容阅读页。`example` 指向 `examples/mechanisms/<id>/`。
+2. 定稿后运行 `node toolbox/deal.mjs --record --project <名> --carrier <id> --theme <2.1.3 选中的主题 id> --form <形态 id> [--palette <id>]`，写入使用史。下一个项目的 2.1.3 新鲜度和 2.8 禁用清单读它。
+3. 整页方向卡（`library/directions.json`）不再发：方向由 2.1.3 主题打分和 2.2.1 方向板决定（2026-10-21）。用户已指定方向时，2.1.3 与 2.2.1 写"跳过：用户指定"，仍做 2.3 以后各步。
 
 炫技是默认。3D 场景、GLSL 流体、滚动驱动相机、WebGL、glTF 模型与 Blender 建模是常规选项，不是高风险选项。用户原话："3D流体、滚动视察、webgl建模、blender建模都不成问题"。放在哪里、放多大，看 `references/restraint.md`。
 
@@ -188,16 +199,7 @@
 
 拿走：写出整体拿走的 1 个维度（例：衬线、圆角、装饰线、动效）和它的接手者（哪个元素承担这个维度的表达）。拿走只作用于框架层，不拿走签名时刻与舞台，也不拿走氛围（光、色场、环境）。原因：整体少一个维度，剩下的才显出来；氛围被拿走，剩下的只有文档。
 
-动效气质选 1 种。气质是氛围决定，也是案例 `atmosphere_fit` 的提示值。气质不过滤发牌。
-
-| 气质 | 什么在动 | 何时动 | 占屏 |
-|---|---|---|---|
-| 静 | 只有反馈动效（悬停、按下、焦点、展开） | 用户动作后，≤200 ms | 元素自身 |
-| 呼吸 | 静 加 1 处环境动效（液面、颗粒、光斑） | 持续，周期 ≥4 s，不随滚动变 | ≤10% 视口 |
-| 驱动 | 滚动或指针驱动的舞台（相机、进度、揭示），入场每章 1 种 | 随滚动或指针 | 舞台 ≤60% 视口，阅读区不动 |
-| 沉浸 | 全视口舞台，滚动驱动相机或场景状态，允许 pin 段 | 随滚动 | 全视口，签名时刻在此 |
-
-四种都有 Reduce Motion 退路，退路等于静。
+动效气质选 1 种：静、呼吸、驱动、沉浸。定义（什么在动、何时动、占屏多少）和浮夸判定表见 `references/restraint.md` 第 3、4 节。气质是氛围决定，也是案例 `atmosphere_fit` 的提示值，不过滤发牌。四种都有 Reduce Motion 退路，退路等于静。
 
 ### 2.7 签名时刻
 
@@ -222,11 +224,11 @@
 
 ### 2.9 参照
 
-这里登记 2.1.1 和 2.1.2 看过的参照（包括同页型标杆）。一般写 3 到 5 个真实站点；以用户给的素材为主时，站点可以少于 3 个，写明原因。每个写：站点、年份、学它的什么（写做法，不写形容词）。年份没核实时写查看日期并注明。候选可从 `library/references.json` 取。只存网址，不下载图，不截别人的站入库。参照要亲核：用 `agent-browser` 亲自打开看过才算。打开参照网站已授权（`SKILL.md` 第 5 节，用户 2026-10-17 批准），不必再问，也不要因为它是外部站点就写"待亲核"。打不开的（人机验证、登录墙、超时）写"待亲核"并写原因。
+这里登记 2.1.1 和 2.1.2 看过的参照（包括同页型标杆）。一般写 3 到 5 个真实站点；以用户给的素材为主时，站点可以少于 3 个，写明原因。每个写：站点、年份、学它的什么（写做法，不写形容词）。年份没核实时写查看日期并注明。候选用 `node toolbox/lib.mjs references` 看（字段 `forms` 是页型）。只存网址，不下载图，不截别人的站入库。参照要亲核：用 `agent-browser` 亲自打开看过才算。打开参照网站已授权（`SKILL.md` 第 5 节，用户 2026-10-17 批准），不必再问，也不要因为它是外部站点就写"待亲核"。打不开的（人机验证、登录墙、超时）写"待亲核"并写原因。
 
 ### 2.10 反同质化记录
 
-在 `design.md` 第 1.5 节写三行：M1 点子先于库（2.1 到 2.3 写在发牌前的证据）、M2 发牌不翻库（发到的 3 张 id 与所选）、M3 使用史（最近 5 次用了什么，本页避开了什么）。机制全文见 `references/anti-sameness.md`。
+在 `design.md` 第 1.5 节写两行：M1 点子先于库（2.1 到 2.3 写在查案例库之前的证据）、M3 使用史（最近 5 次用了什么主题与形态，本页避开了什么）。M2 发牌不翻库由阶段 3 的组件发牌填。机制全文见 `references/anti-sameness.md`。
 
 ## 3. 先做首屏与最安静的一章
 

@@ -1,10 +1,12 @@
 # 载体对照表（9 载体）
 
+> 何时读：阶段 1 定载体时读"读法"与对应载体的"HTML 平替"；阶段 4 抄载体数值时。
+
 调研日期 2026-10-16。数据底稿：`research/R1-carriers.md`（已归档，不在本仓库）。机器可读档案：`library/carriers.json`。
 
 ## 读法
 
-1. 步骤 S1 先读 `library/carriers.json` 中对应载体的对象。再读本文件的"HTML 平替"一节。
+1. 阶段 1 定载体时，`node toolbox/lib.mjs carriers <id>` 取对应载体的对象。再读本文件的"HTML 平替"一节。
 2. 值带 `src`。`unverified` 是记忆值，`inferred` 是推断值，`not_found` 是空缺。三者落地前必须核对，不要当事实用。
 3. 没有设备外框。原型按载体视口直接出页面，视口之外不画任何图形。
 

@@ -5,14 +5,15 @@
 // Usage
 //   node toolbox/pick-form.mjs --task explainer|launch|prototype|datastory --chapters <n>
 //        --reading skim|sequential --carrier desktop_web|mobile_web|miniprogram（也接受 carriers.json 的 9 个 id）
-//        --gear clear|mixed|show [--options 3]
+//        [--options 3]
 //
 // Method
 //   1. Start with all forms in library/page-forms.json.
 //   2. Run the rules in order. A rule either excludes forms, boosts forms (+1), or penalises forms (-2).
 //   3. Base score = fit for the task (high 3, mid 2, low 1). Sort by score, then by id.
 //   4. Forms with status "not-recommended" join the pool only if no other candidate remains.
-//   5. Rule 4 (show): at least one pick from P02, P15, P01. Rule 10: at least one pick that is not P13.
+//   5. Rule 10: at least one pick that is not P13.
+//      Rules 3 and 4 no longer exist (removed with the old budget presets). Other rule numbers are unchanged.
 // The script does not tune rules to match the quick-reference table in R5 section 3.3.
 
 import { readFileSync } from 'node:fs';
@@ -45,15 +46,14 @@ const TASKS = ['explainer', 'launch', 'prototype', 'datastory'];
 const TASK_ZH = { explainer: '讲解页', launch: '发布页', prototype: '产品原型', datastory: '数据叙事' };
 const READINGS = ['skim', 'sequential'];
 const CARRIERS = ['desktop_web', 'mobile_web', 'miniprogram'];
-const GEARS = ['clear', 'mixed', 'show'];
 const FIT = { high: 3, mid: 2, low: 1 };
 const FIT_ZH = { high: '高', mid: '中', low: '低' };
 
-const HELP_FLAGS = ['task', 'chapters', 'reading', 'carrier', 'gear', 'options', 'help'];
+const HELP_FLAGS = ['task', 'chapters', 'reading', 'carrier', 'options', 'help'];
 const badFlags = argv.filter((a) => a.startsWith('--') && !HELP_FLAGS.includes(a.slice(2)));
 if (opt.help || argv.length === 0 || badFlags.length) {
   if (badFlags.length) console.log(`未知参数: ${badFlags.join(' ')}`);
-  console.log(`用法: node toolbox/pick-form.mjs --task ${TASKS.join('|')} --chapters <n> --reading ${READINGS.join('|')} --carrier <id> --gear ${GEARS.join('|')} [--options 3]
+  console.log(`用法: node toolbox/pick-form.mjs --task ${TASKS.join('|')} --chapters <n> --reading ${READINGS.join('|')} --carrier <id> [--options 3]
 --carrier 合法值: ${CARRIERS.join(' ')}
   也接受 carriers.json 的 9 个 id: ${Object.keys(CARRIER_ALIAS).join(' ')}
 本命令只打印用法，不选形态。`);
@@ -63,14 +63,13 @@ if (opt.help || argv.length === 0 || badFlags.length) {
 function usage(msg) {
   if (msg) console.error('错误: ' + msg);
   console.error('用法: node toolbox/pick-form.mjs --task explainer|launch|prototype|datastory --chapters <n> ' +
-    '--reading skim|sequential --carrier desktop_web|mobile_web|miniprogram [--gear clear|mixed|show] [--options 3]');
+    '--reading skim|sequential --carrier desktop_web|mobile_web|miniprogram [--options 3]');
   process.exit(2);
 }
 const oneOf = (name, list) => (list.includes(opt[name]) ? opt[name] : usage(`--${name} 取值必须是 ${list.join('|')}`));
 const task = oneOf('task', TASKS);
 const reading = oneOf('reading', READINGS);
 const carrier = oneOf('carrier', CARRIERS);
-const gear = opt.gear ? oneOf('gear', GEARS) : null; // 可选的预算预设。不给时不按它筛
 const chapters = Number(opt.chapters);
 if (!Number.isInteger(chapters) || chapters < 1) usage('--chapters 必须是正整数');
 const want = Math.min(3, Math.max(1, Number(opt.options ?? 3) || 3));
@@ -106,14 +105,6 @@ if (carrier === 'miniprogram') {
   notes.push('规则 2: P04 在小程序只能用 scroll-view 横向，不用 pin。');
   boost(['P12', 'P03', 'P05'], 2, '小程序优先 P12、P03、P05');
 }
-// Rule 3
-if (gear === 'clear') exclude(['P02', 'P15'], 3, 'clear 排除 P02、P15');
-// Gear floor (library field min_gear). Not a numbered rule: P02 and P15 need show.
-for (const { f } of state.values()) {
-  if (gear && f.min_gear && GEARS.indexOf(gear) < GEARS.indexOf(f.min_gear)) exclude([f.id], gear === 'clear' && ['P02', 'P15'].includes(f.id) ? 3 : '档位下限', `最低档 ${f.min_gear}，当前档 ${gear}`);
-}
-// Rule 4
-if (gear === 'show') boost(['P02', 'P15', 'P01'], 4, '预算预设 show 时候选含 P02、P15、P01');
 // Rule 5
 if (reading === 'skim') {
   exclude(['P05', 'P04'], 5, '快速跳读排除 P05、P04 作主形态');
@@ -147,14 +138,6 @@ if (pool.length === 0) {
 const picks = pool.slice(0, want);
 const rest = pool.slice(want);
 
-if (gear === 'show' && !picks.some((s) => ['P02', 'P15', 'P01'].includes(s.f.id))) {
-  const cand = rest.find((s) => ['P02', 'P15', 'P01'].includes(s.f.id));
-  if (cand && picks.length) {
-    notes.push(`规则 4: 用 ${cand.f.id} 替换 ${picks[picks.length - 1].f.id}，保证含 P02、P15、P01 之一。`);
-    rest.splice(rest.indexOf(cand), 1, picks.pop());
-    picks.push(cand);
-  }
-}
 if (picks.length > 0 && picks.every((s) => s.f.id === 'P13')) {
   const cand = rest.find((s) => s.f.id !== 'P13');
   if (cand) {
@@ -179,13 +162,13 @@ const whyLine = (s) => {
   return parts.join('。') + '。';
 };
 
-out(`输入: task=${task}(${TASK_ZH[task]}) chapters=${chapters} reading=${reading} carrier=${carrier} gear=${gear} options=${want}`);
+out(`输入: task=${task}(${TASK_ZH[task]}) chapters=${chapters} reading=${reading} carrier=${carrier} options=${want}`);
 out(`推荐 ${picks.length} 种形态:`);
 picks.forEach((s, i) => {
   const f = s.f;
-  const mark = f.status === 'not-recommended' ? ' [不推荐]' : f.status === 'p1-show' ? ' [预设 show]' : '';
+  const mark = f.status === 'not-recommended' ? ' [不推荐]': '';
   out(`${i + 1}. ${f.id} ${f.name_zh}${mark}: ${f.one_liner}`);
-  out(`   min_gear=${f.min_gear} 数量范围=${rangeText(f)} 分数=${s.score}`);
+  out(`   数量范围=${rangeText(f)} 分数=${s.score}`);
   out(`   为什么是它: ${whyLine(s)}`);
 });
 if (rest.length) out(`备选(未入选): ${rest.slice(0, 3).map((s) => `${s.f.id}(${s.score})`).join(' ')}`);

@@ -5,91 +5,91 @@ description: 设计流水线入口。新页面走四个阶段：内容蓝图、�
 
 # 设计流水线
 
-本文件是入口，只做三件事：读原话、定路线和阶段、路由。每个阶段一个文件在 `stages/`，案例在 `library/cases.json`，唯一产物模板是 `templates/design.md`。
+本文件只做三件事：读原话、定路线和阶段、告诉你下一步读哪一个文件。一个阶段只读它自己的阶段文件，阶段文件再告诉你做到哪一步读哪一节。库不整读，用 `toolbox/lib.mjs` 查。
 
 > **注意**：用户原话优先于本文件和所有引用文件的任何规则。原话与规则冲突时，按原话做，在 design.md 第 0 节写明分歧。
 
-## 1. 两条路线
+## 1. 路线与阶段
 
 | 路线 | 什么时候 | 读 |
 |---|---|---|
-| 新页面 | 从一句委托做一个新页面，方向要自己找 | 下面四个阶段 |
+| 新页面 | 从一句委托做一个新页面，方向要自己找 | 下表四个阶段，按序 |
 | 改版 | 已有产品要按一页确认过的设计统一，功能不变 | `stages/redesign.md` |
 
-## 1.1 四个阶段
-
-| 阶段 | 回答的问题 | 产物 | 读 |
+| 阶段 | 回答的问题 | 产物 | 只读这一个文件 |
 |---|---|---|---|
-| 1 内容蓝图 | 给谁看、讲什么、分几章、哪些章是舞台 | `01-内容规划/blueprint.md`、design.md 第 0 节 | `stages/1-blueprint.md`，`content-blueprint` skill |
-| 2 视觉氛围 | 身份、题材研究与同页型标杆、带问题看参照、主题打分选 3 个不同主题、各做一张生图方向板、和获奖锚点盲比、方向循环（颜色与中文字形一起比）、世界观与氛围三层（光、色场、环境）、配色、边角、透明度、材质、光、空间、图像、动效气质、页面形态、签名时刻 | design.md 第 1 节 | `stages/2-atmosphere.md`，`references/judging.md`，`references/iteration-loop.md`，`references/direction-and-appeal.md`，`references/atmosphere-and-impact.md`，`references/taste-method.md`，`references/restraint.md` |
-| 3 组件创意 | 每一屏用市面上最好的哪种表达，怎么改成本页的 | design.md 第 2 节 | `stages/3-components.md`，`library/cases.md`，`references/technique-catalog.md` |
-| 4 design.md | 令牌、动效规则、载体数值、实现建议，入口文件加交付包，让空上下文的实现者不需追问就能做 | design.md 第 3 节 | `stages/4-design-md.md`，`references/craft.md` |
+| 1 内容蓝图 | 给谁看、讲什么、分几章、哪些章是舞台 | `01-内容规划/blueprint.md`、design.md 第 0 节 | `stages/1-blueprint.md` |
+| 2 视觉氛围 | 身份、主题打分、方向板与获奖锚点盲比、配色、材质、动效气质、页面形态、签名时刻 | design.md 第 1 节 | `stages/2-atmosphere.md` |
+| 3 组件创意 | 每一屏用市面上最好的哪种表达，怎么改成本页的 | design.md 第 2 节 | `stages/3-components.md` |
+| 4 design.md 与实现 | 令牌、动效规则、载体数值、实现建议；实现后看图与整页循环 | design.md 第 3 节、页面 | `stages/4-design-md.md` |
 
-实现按 design.md 做，用开源组件库或自研都可以。做完按 `references/critique-method.md` 看真实截图，再进整页循环：独立评审和获奖锚点、和冠军盲比，每轮只改最差的一处，按跳出条件停（`references/iteration-loop.md`）。好坏的尺子是获奖级作品（`references/judging.md`、`library/anchors.json`），不是规则清单。收口后补库。
+已有蓝图的项目从阶段 2 开始。已有 design.md 第 1 节的从阶段 3 开始。唯一产物模板：`templates/design.md`。
 
-已有蓝图的项目从阶段 2 开始。已有 design.md 第 1 节的从阶段 3 开始。
+## 2. 读法
 
-## 2. 术语表
+1. 一个阶段只打开它的阶段文件。阶段文件写"做到某步读某节"时再读那一节，不提前整读参考文件。
+2. 库（`library/*.json`，最大 95 KB）不整读。`node toolbox/lib.mjs` 列库；`lib.mjs <库>` 看简表（每条一行）；`lib.mjs <库> <id>` 看一条全文；`--where k=v` 过滤。
+3. 同一个任务里，每个获奖锚点只现场打开一次，截图留在项目临时目录复用（`references/judging.md` 第 3 节）。
+4. 无人值守时，要问用户的事写进 `process/ASK.md` 然后停，不替用户选（`references/iteration-loop.md` 第 3 节）。
+
+## 3. 贯穿四条
+
+1. 原话优先于一切规则。原话点名的手法必须出现在决定里，做不到时写理由。
+2. 炫技是默认。3D、GLSL 流体、滚动相机、WebGL、glTF 与 Blender 是常规选项，不因"风险"降级。放在哪里、放多大看 `references/restraint.md`。
+3. 好坏由并排看图决定。尺子是获奖级作品（`references/judging.md`），不是规则清单。技术检查只说明能用。
+4. 签名时刻全页 1 处。首屏 3 秒内可读。正文对比 ≥4.5:1，Reduce Motion 有退路，390 宽无横向溢出。其余数值是带适用条件的默认值，偏离时在 design.md 写理由（`references/restraint.md` 第 7 节）。
+
+## 4. 按需读
+
+做到那一步再读，不预读。
+
+| 情况 | 读 |
+|---|---|
+| 设计原则（阶段 1 或 2 开始前读一次） | `frontend-design` skill：用 Skill 工具加载，或找宿主插件目录（Claude Code 是 `~/.claude/plugins/cache/*/frontend-design/*/skills/frontend-design/SKILL.md`，取最新版）。找不到就读 `references/anti-sameness.md`，并在 design.md 记"未读 frontend-design" |
+| 载体数值与平替 | `node toolbox/lib.mjs carriers <id>`，`references/carriers.md`。壳尺寸 = 视口尺寸，不画设备外框 |
+| 整体主题（视频、摄影、3D、流体、大字、交互玩具等）、主题打分 | `node toolbox/lib.mjs themes`，`stages/2-atmosphere.md` 2.1.3 |
+| 分清身份与例子、题材研究、发散方向 | `references/direction-and-appeal.md` |
+| 判断好坏、和获奖作品比、深化还是换方向 | `references/judging.md`，`node toolbox/lib.mjs anchors --where page_type=<页型>` |
+| 迭代几轮、什么时候停、越改越差 | `references/iteration-loop.md` |
+| 氛围、冲击力、"炫酷"、配色太灰太平 | `references/atmosphere-and-impact.md` |
+| 品味、高级感、优雅、遮名检查 | `references/taste-method.md`（按节读，文件头写了哪步读哪节） |
+| 收放、动效气质、浮夸判定 | `references/restraint.md` |
+| 页面形态与幕表 | `node toolbox/pick-form.mjs`，`node toolbox/lib.mjs forms` |
+| 表现形式、配色类、同页型标杆 | `node toolbox/lib.mjs expressions`、`lib.mjs palettes`、`lib.mjs references` |
+| 组件案例 | `node toolbox/deal.mjs --slot <槽> --purpose "<目的>" --carrier <id>` |
+| 组件好坏判据、16 槽分界、动效令牌、示意图质感 | `references/why-good.md` |
+| 手法目录与技术栈 | `references/technique-catalog.md` |
+| 避免同质化、反默认清单 X1 到 X20 | `references/anti-sameness.md` |
+| 3D、WebGPU、流体、滚动相机、glTF 与 Blender | `examples/mechanisms/<id>/`，`references/blender-pipeline.md` |
+| 起手复制、工艺、截图与检查脚本 | `examples/finished/mixed-01/`（先读 README"不可照抄的部分"），`references/craft.md` |
+| 营销页、发布页，或用户说"像模板""AI 味" | `design-taste-frontend` 的 `references/tells.md`、`critique.md` |
+| 生成图像、纹理、插画；logo、头像、图标要不要配图 | `image-gen` skill，`references/asset-generation.md` |
+| 卡片层级、表面与底色、焦点与状态、页头、弹窗 | `references/product-ui.md` |
+| 看截图、找最该改的地方 | `references/critique-method.md` |
+| 图表、等轴测图 | `dataviz` skill，`anatomy` skill |
+
+## 5. 术语
 
 | 术语 | 含义 |
 |---|---|
 | 氛围 | 阶段 2 的全部表面决定。氛围决定收放，没有分级 |
-| 动效气质 | 静、呼吸、驱动、沉浸四种，用"什么在动、何时动、占屏多少"定义，见 `references/restraint.md` |
-| 页面形态 | 章节在空间里怎样排、读者怎样推进。先选形态，再排章节 |
-| 纯瀑布流 | 章节纵向等宽堆叠、滚动只做位移、无舞台无空间结构。不做 |
-| 签名时刻 | 全页最响的一处画面或交互。只限高潮，不是说其他章要安静平淡 |
-| 案例 | `library/cases.json` 一条：某个组件为某个目的的最佳表达，写出处、为什么好、适合什么氛围、怎么改 |
-| 发牌 | `toolbox/deal.mjs` 按槽与目的发 3 条候选，选 1 条或库外自拟 |
-| 补调研 | 发牌输出"库薄提示"时，按 `stages/3-components.md` 第 5.5 节做。体检：`python3 -I toolbox/cases-index.py --thin` |
-| design.md | 交给实现的入口文件，三节：氛围、每屏做法、执行规则。第 0 节“交付包清单”列出蓝图、证据索引、术语表、资产的路径 |
+| 动效气质 | 静、呼吸、驱动、沉浸四种，用"什么在动、何时动、占屏多少"定义（`references/restraint.md` 第 3 节） |
+| 页面形态 | 章节在空间里怎样排、读者怎样推进。先选形态，再排章节。纯瀑布流（章节等宽堆叠、滚动只做位移）不做 |
+| 签名时刻 | 全页最响的一处画面或交互。只限高潮，其他章不必安静 |
+| 案例与发牌 | `library/cases.json` 一条是某个组件为某个目的的最佳表达；`deal.mjs` 按槽与目的发 3 条，选 1 条或库外自拟 |
+| design.md | 交给实现的入口文件，三节：氛围、每屏做法、执行规则。第 0 节"交付包清单"列出蓝图、证据索引、术语表、资产的路径 |
 
-## 3. 最少约束
+## 6. 权限与红线
 
-1. 原话优先于一切规则。
-2. 点子先于库。发牌不翻库。使用史跨项目。每条选中案例写"本页怎么改"。
-3. 先选页面形态再排章节。
-4. 签名时刻全页 1 处。首屏 3 秒内可读。动效回答一个动作或一个状态变化。舞台章占比、相邻屏版式、重复次数、填充率、空白高度是带适用条件的默认值，偏离时在 design.md 写理由（`references/restraint.md` 第 7 节）。
-5. 正文对比 ≥4.5:1。Reduce Motion 有退路。390 宽无横向溢出。
-6. design.md 第 2 节一屏一行，没有空行。
-7. 看真实截图对照看图清单。评审者首选第二个独立 agent 看截图，有 Fable 且用户要求时才用 Fable。design.md 记录实际评审者与未覆盖项。
-8. 炫技是默认。3D、GLSL 流体、滚动相机、WebGL、glTF 与 Blender 是常规选项，不因"风险"降级。收放看 `references/restraint.md`。
-
-## 4. 路由表
-
-| 情况 | 读 |
-|---|---|
-| 任何阶段开始前 | `frontend-design` skill。先探测当前宿主有没有它：用 Skill 工具加载，或在宿主的插件目录找（Claude Code 的插件缓存 `~/.claude/plugins/cache/*/frontend-design/*/skills/frontend-design/SKILL.md` 是其中一处，取最新版本）。找不到就读 `references/anti-sameness.md`，并在 design.md 记“未读 frontend-design” |
-| 载体数值与平替 | `library/carriers.json`、`references/carriers.md`。壳尺寸 = 视口尺寸，不画设备外框 |
-| 选整体主题（视频、摄影、3D、流体、大字、交互玩具等）、主题打分 | `library/themes.json`，`stages/2-atmosphere.md` 2.1.3 |
-| 页面形态与幕表 | `library/page-forms.json`，`toolbox/pick-form.mjs` |
-| 判断好坏、打分、和获奖作品比、深化还是换方向 | `references/judging.md`、`library/anchors.json` |
-| 迭代几轮、什么时候停、越改越差 | `references/iteration-loop.md` |
-| 氛围、冲击力、"炫酷"、配色太灰太平 | `references/atmosphere-and-impact.md` |
-| 同页型标杆 | `library/references.json` 按 `page_type` 筛 |
-| 氛围选项 | `library/expressions.json` 表现形式、`library/palettes.json` 配色类、`library/directions.json` 整页案例 |
-| 组件案例 | `library/cases.md` 索引，`toolbox/deal.mjs --slot <槽> --purpose "<目的>" --carrier <id>` |
-| 避免同质化 | `references/anti-sameness.md` |
-| 3D、WebGPU、流体、滚动相机、glTF 与 Blender | `examples/mechanisms/<id>/`，`references/blender-pipeline.md` |
-| 起手复制与工艺 | `examples/finished/<id>/`（先读 README"不可照抄的部分"），`references/craft.md` |
-| 营销页、发布页，或用户说"像模板""AI 味" | `design-taste-frontend` 的 `references/tells.md`、`critique.md` |
-| 生成图像、纹理、插画 | `image-gen` skill，`references/asset-generation.md` |
-| logo、头像、图标、数据卡要不要配图 | `references/asset-generation.md` 第 7 节 |
-| 卡片层级、表面与底色、焦点与状态、对齐、页头、弹窗、版面重排 | `references/product-ui.md` |
-| 看截图、找最该改的地方 | `references/critique-method.md` |
-| 图表、等轴测图 | `dataviz` skill，`anatomy` skill |
-| 可选工具 | `toolbox/`：截图清单、默认值检查、收放检查、使用史 |
-
-## 5. 权限与红线
-
-已授权，不必逐次问：用 `image-gen` 生成设计资产（每个资产写进 `ASSETS.md`）。固定版本的 CDN 脚本与 Google Fonts。用 `agent-browser` 打开参照网站看行为（用户 2026-10-17 批准），只记录看到的行为，不截图存档、不下载素材、不存代码。
+已授权，不必逐次问：用 `image-gen` 生成设计资产（每个资产写进 `ASSETS.md`）。固定版本的 CDN 脚本与 Google Fonts。用 `agent-browser` 打开参照网站看行为（用户 2026-10-17 批准），只记录看到的行为，不下载素材、不存代码；锚点截图只留在项目临时目录，不入库。
 
 > **警告**：下列动作先停下来问用户。原因：它们把内容交给第三方，或让别人看到。
 
-1. 从任何网站取图或下载素材。
+1. 从任何网站取图或下载素材入库。
 2. 发布到公开画廊。发布 Artifact。
 
-其他红线：不自己另开对模型厂商的请求。不把项目源码、隐私、示例环境路径写进生图提示词。不复制 Anthropic / Claude 的品牌色、字体、logo。Defaults 反默认清单 X1 到 X20 见 `references/anti-sameness.md`。
+其他红线：不自己另开对模型厂商的请求。不把项目源码、隐私、示例环境路径写进生图提示词。不复制 Anthropic / Claude 的品牌色、字体、logo。
 
-## 6. 补库与验证
+## 7. 补库与验证
 
-每个项目收口后补 1 到 2 条案例，规则见 `stages/3-components.md`。验证只用真实项目：做用户要的页面，拿用户反馈，每次只改一处。不再跑评测任务、盲评和多轮评审（2026-10-18 用户决定，旧评测记录在归档 作者的私有归档（不在本仓库））。
+每个项目收口后补 1 到 2 条案例（`stages/3-components.md` 第 6 节），并用 `deal.mjs --record` 写使用史。验证只用真实项目：做用户要的页面，拿用户反馈，每次只改一处（2026-10-18 用户决定）。

@@ -70,7 +70,6 @@
         "手机上低于 20 fps",
         "3D 物件和业务无关"
       ],
-      "gear_min": "show",
       "mechanism": "examples/mechanisms/webgl-scene/index.html",
       "example": "examples/mechanisms/webgl-scene/",
       "example_kind": "同名示例"
@@ -140,7 +139,6 @@
         "流体颜色和品牌色无关",
         "低端机帧率不足"
       ],
-      "gear_min": "show",
       "mechanism": "examples/mechanisms/fluid-noise/index.html",
       "example": "examples/mechanisms/fluid-noise/",
       "example_kind": "同名示例"
@@ -198,7 +196,6 @@
         "视频内容和页面任务无关",
         "多段视频同屏"
       ],
-      "gear_min": "mixed",
       "mechanism": null,
       "example": "examples/mechanisms/image-sequence/",
       "example_kind": "近似示例，机制不同，只借接入骨架"
@@ -251,7 +248,6 @@
         "故障效果覆盖超过 30% 屏面",
         "每次滚动都触发"
       ],
-      "gear_min": "show",
       "mechanism": null,
       "example": "examples/mechanisms/fluid-noise/",
       "example_kind": "近似示例，机制不同，只借接入骨架"
@@ -300,7 +296,6 @@
         "叠层压住点击",
         "与题材无关地全站加"
       ],
-      "gear_min": "mixed",
       "mechanism": "examples/mechanisms/grain/index.html",
       "example": "examples/mechanisms/grain/",
       "example_kind": "同名示例"
@@ -342,7 +337,6 @@
         "多层玻璃嵌套",
         "每个卡片都是玻璃"
       ],
-      "gear_min": "mixed",
       "mechanism": "examples/mechanisms/glass/index.html",
       "example": "examples/mechanisms/glass/",
       "example_kind": "同名示例"
@@ -417,7 +411,6 @@
         "滚动条被隐藏",
         "每个元素都有入场"
       ],
-      "gear_min": "clear",
       "mechanism": "examples/mechanisms/scroll-story/index.html",
       "example": "examples/mechanisms/scroll-story/",
       "example_kind": "同名示例"
@@ -485,7 +478,6 @@
         "pin 内无进度提示",
         "到不了页脚"
       ],
-      "gear_min": "mixed",
       "mechanism": null,
       "example": "examples/mechanisms/pinned-3d-scrub/",
       "example_kind": "近似示例，机制不同，只借接入骨架"
@@ -525,7 +517,6 @@
         "共享元素飞错位置",
         "转场期间输入被阻塞"
       ],
-      "gear_min": "clear",
       "mechanism": null,
       "example": "examples/mechanisms/cross-doc-view-transition/",
       "example_kind": "近似示例，机制不同，只借接入骨架"
@@ -593,7 +584,6 @@
         "字体动画盖过信息",
         "多种字体动画同屏"
       ],
-      "gear_min": "mixed",
       "mechanism": null,
       "example": "examples/mechanisms/splittext-kinetic/",
       "example_kind": "近似示例，机制不同，只借接入骨架"
@@ -648,7 +638,6 @@
         "字号缩到手机上溢出",
         "大字与图片抢焦点"
       ],
-      "gear_min": "clear",
       "mechanism": null,
       "example": null,
       "example_kind": "无示例，按 research/R4-visual-tech.md 技术卡自写"
@@ -689,7 +678,6 @@
         "格子大小全相同",
         "每格塞图标"
       ],
-      "gear_min": "clear",
       "mechanism": null,
       "example": null,
       "example_kind": "无示例，按 research/R4-visual-tech.md 技术卡自写"
@@ -745,7 +733,6 @@
         "为乱而乱，错位到看不清",
         "全页原色高饱和刺眼"
       ],
-      "gear_min": "clear",
       "mechanism": null,
       "example": null,
       "example_kind": "无示例，按 research/R4-visual-tech.md 技术卡自写"
@@ -793,7 +780,6 @@
         "每张图都有独立动画",
         "风格在页内不统一"
       ],
-      "gear_min": "clear",
       "mechanism": null,
       "example": "examples/mechanisms/webgl-scene/",
       "example_kind": "近似示例，机制不同，只借接入骨架"
@@ -848,7 +834,6 @@
         "3D 柱状图",
         "所有数字都在跳动"
       ],
-      "gear_min": "clear",
       "mechanism": null,
       "example": "examples/mechanisms/instanced-field/",
       "example_kind": "近似示例，机制不同，只借接入骨架"
@@ -916,7 +901,6 @@
         "每个元素都磁吸",
         "所有可点区域光标样式各不同"
       ],
-      "gear_min": "show",
       "mechanism": null,
       "example": null,
       "example_kind": "无示例，按 research/R4-visual-tech.md 技术卡自写"
@@ -977,7 +961,6 @@
         "动画文件超过 500 KB",
         "动画与页面状态无关"
       ],
-      "gear_min": "mixed",
       "mechanism": null,
       "example": null,
       "example_kind": "无示例，按 research/R4-visual-tech.md 技术卡自写"
@@ -1024,7 +1007,6 @@
         "随便放一个旋转的玻璃体当装饰",
         "首屏等 viewer 超过 3 秒"
       ],
-      "gear_min": "show",
       "mechanism": null,
       "example": null,
       "example_kind": "无示例，按 research/R4-visual-tech.md 技术卡自写"
@@ -1085,7 +1067,6 @@
         "帧间闪烁",
         "滚动一点就跳很多帧"
       ],
-      "gear_min": "show",
       "mechanism": "examples/mechanisms/image-sequence/index.html",
       "example": "examples/mechanisms/image-sequence/",
       "example_kind": "同名示例"
@@ -1145,7 +1126,6 @@
         "层间速度差过大导致错位",
         "文字也参与视差"
       ],
-      "gear_min": "mixed",
       "mechanism": null,
       "example": "examples/mechanisms/depth-parallax-image/",
       "example_kind": "近似示例，机制不同，只借接入骨架"
@@ -1204,7 +1184,6 @@
         "材质亮度差让正文对比低于 4.5:1",
         "首屏加载超过 3 秒才见内容"
       ],
-      "gear_min": "mixed",
       "mechanism": null,
       "example": "examples/mechanisms/instanced-field/",
       "example_kind": "近似示例，机制不同，只借接入骨架"
@@ -1256,7 +1235,6 @@
         "模型与业务无关",
         "手机上低于 20 fps"
       ],
-      "gear_min": "mixed",
       "mechanism": "examples/mechanisms/gltf-model-stage/index.html",
       "example": "examples/mechanisms/gltf-model-stage/",
       "example_kind": "同名示例"
@@ -1306,7 +1284,6 @@
         "实例颜色亮度差遮住正文",
         "实例排列与主题无关"
       ],
-      "gear_min": "mixed",
       "mechanism": null,
       "example": "examples/mechanisms/instanced-field/",
       "example_kind": "同名示例"
@@ -1355,7 +1332,6 @@
         "headless 软件渲染单帧超过 3 秒",
         "手机上低于 20 fps"
       ],
-      "gear_min": "show",
       "mechanism": null,
       "example": "examples/mechanisms/raymarch-backdrop/",
       "example_kind": "同名示例"
@@ -1411,7 +1387,6 @@
         "辉光让文字边缘模糊",
         "WebGLRenderer 与 WebGPU 两条后期路径混用"
       ],
-      "gear_min": "show",
       "mechanism": null,
       "example": "examples/mechanisms/webgl-scene/",
       "example_kind": "近似示例，机制不同，只借接入骨架"
@@ -1454,7 +1429,6 @@
         "参数手感未经 3 到 5 轮截图迭代",
         "动效占屏超过一半"
       ],
-      "gear_min": "mixed",
       "mechanism": "examples/mechanisms/fluid-ink-pointer/index.html",
       "example": "examples/mechanisms/fluid-ink-pointer/",
       "example_kind": "同名示例"
@@ -1503,7 +1477,6 @@
         "同屏运动层多于 2 个",
         "headless 下粒子数未降到 1 万导致无法截图"
       ],
-      "gear_min": "show",
       "mechanism": null,
       "example": "examples/mechanisms/fluid-ink-pointer/",
       "example_kind": "近似示例，机制不同，只借接入骨架"
@@ -1544,7 +1517,6 @@
         "渐变盖住正文",
         "与品牌色无关的随机配色"
       ],
-      "gear_min": "clear",
       "mechanism": null,
       "example": "examples/mechanisms/mesh-gradient/",
       "example_kind": "同名示例"
@@ -1608,7 +1580,6 @@
         "相机运动让正文不可读",
         "手机上低于 20 fps"
       ],
-      "gear_min": "mixed",
       "mechanism": "examples/mechanisms/scroll-camera-path/index.html",
       "example": "examples/mechanisms/scroll-camera-path/",
       "example_kind": "同名示例"
@@ -1622,7 +1593,7 @@
         "讲解页",
         "文章页",
         "产品介绍",
-        "所有档位的入场与视差"
+        "所有场合的入场与视差"
       ],
       "avoid": [
         "需要 Firefox 稳定表现且无降级方案的页面",
@@ -1650,7 +1621,6 @@
         "正文滚动中位移导致阅读困难",
         "不支持的浏览器上元素停在隐藏态"
       ],
-      "gear_min": "clear",
       "mechanism": "examples/mechanisms/css-scroll-timeline/index.html",
       "example": "examples/mechanisms/css-scroll-timeline/",
       "example_kind": "同名示例"
@@ -1691,7 +1661,6 @@
         "转场让首屏出现内容的时间超过 3 秒",
         "共享元素错位"
       ],
-      "gear_min": "mixed",
       "mechanism": null,
       "example": "examples/mechanisms/cross-doc-view-transition/",
       "example_kind": "同名示例"
@@ -1752,7 +1721,6 @@
         "用户无法滚动到页脚",
         "3D 状态变化与正文说明不同步"
       ],
-      "gear_min": "show",
       "mechanism": null,
       "example": "examples/mechanisms/pinned-3d-scrub/",
       "example_kind": "同名示例"
@@ -1812,7 +1780,6 @@
         "两个 requestAnimationFrame 循环造成抖动",
         "滚动手感被改变使用户找不到页脚"
       ],
-      "gear_min": "mixed",
       "mechanism": null,
       "example": "examples/mechanisms/lenis-webgl-sync/",
       "example_kind": "同名示例"
@@ -1867,7 +1834,6 @@
         "标题 3 秒内不可读",
         "troika 运行时取字体的用法未核"
       ],
-      "gear_min": "show",
       "mechanism": null,
       "example": "examples/mechanisms/webgl-scene/",
       "example_kind": "近似示例，机制不同，只借接入骨架"
@@ -1906,7 +1872,6 @@
         "整段正文做轴动画",
         "首屏可读内容被轴变化打乱"
       ],
-      "gear_min": "clear",
       "mechanism": null,
       "example": "examples/mechanisms/variable-font-axis/",
       "example_kind": "同名示例"
@@ -1954,7 +1919,6 @@
         "标题 3 秒内不可读",
         "入场动画与其他运动层叠加"
       ],
-      "gear_min": "mixed",
       "mechanism": null,
       "example": "examples/mechanisms/splittext-kinetic/",
       "example_kind": "同名示例"
@@ -1967,7 +1931,7 @@
       "fits": [
         "标题",
         "进度条",
-        "所有档位的基础排版"
+        "所有场合的基础排版"
       ],
       "avoid": [
         "超过 6 行的 text-wrap: balance 标题（Chromium 对 6 行以上无效）"
@@ -1992,7 +1956,6 @@
       "flash_signals": [
         "无限循环渐变动画多于 1 个"
       ],
-      "gear_min": "clear",
       "mechanism": null,
       "example": null,
       "example_kind": "无示例，按 research/R4-visual-tech.md 技术卡自写"
@@ -2033,7 +1996,6 @@
         "glb 体积让首屏出现内容超过 3 秒",
         "导出操作名在 Blender 5.2 是否改名未核"
       ],
-      "gear_min": "show",
       "mechanism": null,
       "example": "examples/mechanisms/blender-headless-glb/",
       "example_kind": "同名示例"
@@ -2072,7 +2034,6 @@
         "同屏运动元素过多",
         "深度边缘撕裂"
       ],
-      "gear_min": "mixed",
       "mechanism": "examples/mechanisms/depth-parallax-image/index.html",
       "example": "examples/mechanisms/depth-parallax-image/",
       "example_kind": "同名示例"
@@ -2081,9 +2042,9 @@
       "id": "capability-tiering",
       "name_zh": "偏好探测与能力分级",
       "layer": "interaction",
-      "expresses": "稳妥、可达、按设备给不同档位",
+      "expresses": "稳妥、可达、按设备给不同强度",
       "fits": [
-        "所有档位的 3D 与动效页面"
+        "各种强度的 3D 与动效页面"
       ],
       "avoid": [
         "缺 Reduce Motion 退路的任何页面"
@@ -2109,7 +2070,6 @@
         "缺少 Reduce Motion 退路",
         "阈值未实测却当作固定值"
       ],
-      "gear_min": "clear",
       "mechanism": "examples/mechanisms/capability-tiering/index.html",
       "example": "examples/mechanisms/capability-tiering/",
       "example_kind": "同名示例"
@@ -2144,7 +2104,6 @@
         "阴影用大面积 blur 导致滚动掉帧",
         "纸件和章节内容无关，只是装饰"
       ],
-      "gear_min": "clear",
       "mechanism": null,
       "example": null,
       "example_kind": "无示例，按卡面自写"
@@ -2180,7 +2139,6 @@
         "场景遮住标题或正文",
         "同屏所有路径同时画"
       ],
-      "gear_min": "clear",
       "mechanism": null,
       "example": null,
       "example_kind": "无示例，按卡面自写"
@@ -2216,7 +2174,6 @@
         "字内贴图对比度不足",
         "用图片代替真实文字"
       ],
-      "gear_min": "clear",
       "mechanism": null,
       "example": null,
       "example_kind": "无示例，按卡面自写"

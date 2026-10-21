@@ -3,7 +3,6 @@
 > 何时读：收到设计需求后第一件事。
 > 读完做什么：写接单槽位表，定载体，请 `content-blueprint` skill 出蓝图。
 > 产物：`00-接单.md`、`01-载体.md`、`01-内容规划/blueprint.md`，并在 `design.md` 第 0 节登记三个路径。
-> 来自：旧 `prompts/S0-intake.md`、`S1-carrier.md`、`S2-blueprint.md`。
 
 本阶段回答"页面说什么、给谁看、用什么载体"。不选颜色、字体、版式、动效。那是阶段 2 的事。
 
@@ -29,7 +28,7 @@
 
 ## 2. 载体
 
-1. 读 `library/carriers.json` 中本项目载体的对象。再读 `references/carriers.md` 的"HTML 平替"一节。
+1. 运行 `node toolbox/lib.mjs carriers <id>` 取本项目载体的对象（`lib.mjs carriers` 列 9 种）。再读 `references/carriers.md` 的"HTML 平替"一节。
 2. 把档案写进 `01-载体.md`：壳尺寸、字体栈、最小字号、最小命中区、断点、安全区、hover 有无、Reduce Motion 退路。
 3. 壳尺寸等于视口。小程序与 App 不画设备外框（用户 2026-10-16 决定）。
 4. 目标载体不能做原生时，写平替：字体栈、组件外观、手势替代、用 `:active` 代替 hover。
@@ -49,7 +48,7 @@
 
 单页且章数 ≤8 时，受众结果、证据索引、术语表写成 `blueprint.md` 的附录节。多页面产品才分文件。
 
-蓝图 front matter 里的 `reader_mode`（读、读看、看）是读者主要怎么用这页的提示，写进 design.md 第 0 节"第一眼要觉得什么"的依据。它不是分级，不决定收放。收放由阶段 2 的氛围决定。旧蓝图里的 `gear_suggestion` 按同样方式读。
+蓝图 front matter 里的 `reader_mode`（读、读看、看）是读者主要怎么用这页的提示，写进 design.md 第 0 节"第一眼要觉得什么"的依据。它不是分级，不决定收放。收放由阶段 2 的氛围决定。
 
 ## 4. 不做
 

@@ -3,10 +3,12 @@
 // Node 24, no dependencies.
 //
 // Usage
-//   node toolbox/deal.mjs --carrier web-desktop --gear mixed --topic 讲解 --audience 业务人员 [--mode read] [--options 3] [--seed 7]
-//   node toolbox/deal.mjs --commit <direction-id> --project <name> --carrier <c> --gear <g>
+//   node toolbox/deal.mjs --carrier web-desktop --topic 讲解 --audience 业务人员 [--mode read] [--options 3] [--seed 7]
+//   node toolbox/deal.mjs --commit <direction-id> --project <name> --carrier <c>
 //                         [--topic t] [--palette id] [--form id,id] [--outcome 好|一般|差] [--note text]
-//   node toolbox/deal.mjs --add-history <direction-id> --project <name> [--carrier c --gear g --topic t --note text]
+//   node toolbox/deal.mjs --add-history <direction-id> --project <name> [--carrier c --topic t --note text]
+//   node toolbox/deal.mjs --record --project <name> --carrier <c> [--theme T03] [--form P01] [--palette id] [--topic t] [--note text]
+//                         stage 2: after theme and form are fixed, log one entry for the cross-project usage history (no direction card)
 //   node toolbox/deal.mjs --slot <slot> --purpose "<goal>" --carrier <c> [--options 3] [--seed 7]
 //                         deal component pattern cards (S4) from library/component-patterns.json
 //   node toolbox/deal.mjs --list
@@ -14,7 +16,6 @@
 // Flags
 //   --carrier  carriers.json 的 9 个 id（wechat-mini alipay-mini ios android harmony mobile-web desktop-web macos windows），
 //              也接受卡片的 medium 写法（web-desktop web-mobile mp-weixin app-ios app-android mac win）。硬过滤 card.medium。
-//   --gear     clear | mixed | show (hard filter: gear must be >= card.gear_floor)
 //   --mode     persuade | operate | read | experience (optional hard filter)
 //   --topic, --audience  soft weights only (x3 per match, no hard filter)
 //   --options  number of cards to deal (default 3)
@@ -22,7 +23,9 @@
 //   --seed-history  id[,id...]  treat these direction ids as recently used (merged with history).
 //                   Use it when the last project did not run this plugin and history is empty.
 //   --add-history   id  write one manual record to history/history.json (no deal). Needs --project.
-//                   The record carries source:"manual". --carrier and --gear are optional.
+//                   The record carries source:"manual". --carrier is optional.
+//   --record        write one entry without a direction card (direction:null, source:"record"). Needs --project and --carrier.
+//                   --theme, if given, must be an id in library/themes.json.
 //
 // Rules (from the archived PLAN.md sections 6.2 and 6.3, 作者的私有归档（不在本仓库）)
 //   1. Skip the direction ids used in the last 5 history entries. If the pool is too small, use the full pool.
@@ -43,7 +46,6 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const HIST = join(ROOT, 'history', 'history.json');
-const GEARS = ['clear', 'mixed', 'show'];
 const AXES = ['paper_band', 'display_style', 'accent_hue', 'layout_family', 'stage_kind'];
 
 // ---------- args ----------
@@ -79,15 +81,16 @@ const CARRIER_IDS = Object.keys(CARRIER_MEDIUM);
 const normCarrier = (c) => (c ? (CARRIER_MEDIUM[c] ? c : MEDIUM_TO_ID[c] || null) : null);
 
 // ---------- 帮助 ----------
-const KNOWN = ['carrier', 'gear', 'mode', 'topic', 'audience', 'options', 'seed', 'seed-history', 'commit', 'add-history', 'project', 'palette', 'form', 'outcome', 'note', 'list', 'help', 'slot', 'components', 'set-components', 'purpose', 'theme'];
+const KNOWN = ['carrier', 'mode', 'topic', 'audience', 'options', 'seed', 'seed-history', 'commit', 'add-history', 'project', 'palette', 'form', 'outcome', 'note', 'list', 'help', 'slot', 'components', 'set-components', 'purpose', 'theme', 'record'];
 const SLOTS = ['nav', 'hero', 'cards', 'rows', 'steps', 'panel', 'overlay', 'footer'];
 const unknown = argv.filter((a) => a.startsWith('--') && !KNOWN.includes(a.slice(2)));
 if (opt.help || argv.length === 0 || unknown.length) {
   if (unknown.length) out(`未知参数：${unknown.join(' ')}`);
   out(`用法
   node toolbox/deal.mjs --carrier <id> --topic <主题> --audience <受众> [--mode persuade|operate|read|experience] [--options 3] [--seed 7]
-  node toolbox/deal.mjs --commit <方向id> --project <名> --carrier <id> [--gear 旧字段可省] [--topic t] [--palette id] [--form id,id] [--theme T03] [--outcome 好|一般|差] [--note 文字]
-  node toolbox/deal.mjs --add-history <方向id> --project <名> [--carrier c --gear g --topic t --note 文字]
+  node toolbox/deal.mjs --commit <方向id> --project <名> --carrier <id> [--topic t] [--palette id] [--form id,id] [--theme T03] [--outcome 好|一般|差] [--note 文字]
+  node toolbox/deal.mjs --add-history <方向id> --project <名> [--carrier c --topic t --note 文字]
+  node toolbox/deal.mjs --record --project <名> --carrier <id> [--theme T03] [--form id,id] [--palette id] [--topic t] [--note 文字]   阶段 2 定下主题与形态后记一条，供跨项目使用史
   node toolbox/deal.mjs --slot <槽> --purpose "<目的>" --carrier <id> [--options 3] [--seed 7]   阶段 3 发案例，槽见 library/cases.json
   --commit 与 --add-history 可加 --components slot:id,slot:id 记组件手法卡
   node toolbox/deal.mjs --set-components --project <名> --components slot:id,slot:id   阶段 3 选定后补写到该项目最近一条记录
@@ -114,7 +117,6 @@ function inferTaste(c) {
     ...c,
     medium: c.medium || ['web-desktop', 'web-mobile'],
     mode: c.mode || ['persuade'],
-    gear_floor: c.gear_floor || 'mixed',
     taboo: c.taboo || (c.pitfalls ? `代价：${c.pitfalls}` : ''),
     form: c.form || [],
     refs: c.refs || [],
@@ -270,7 +272,7 @@ if (opt.slot) {
 
 if (opt.list) {
   out(`可用方向卡 ${cards.length} 张`);
-  for (const c of cards) out(`${c.id.padEnd(26)} ${c.source.padEnd(16)} ${arr(c.medium).join(',')}  floor=${c.gear_floor}  ${c.name}`);
+  for (const c of cards) out(`${c.id.padEnd(26)} ${c.source.padEnd(16)} ${arr(c.medium).join(',')}  ${c.name}`);
   process.exit(0);
 }
 
@@ -281,7 +283,7 @@ if (opt['set-components']) {
   const h = loadHist(true);
   h.entries = h.entries || [];
   const idx = h.entries.map((e) => e.project).lastIndexOf(opt.project);
-  if (idx < 0) { console.error(`错误：history 里没有项目 ${opt.project}。先在 S3 用 --commit 记录。`); process.exit(1); }
+  if (idx < 0) { console.error(`错误：history 里没有项目 ${opt.project}。先用 --record 或 --commit 记录。`); process.exit(1); }
   const seen = new Set();
   h.entries[idx].components = [...arr(h.entries[idx].components), ...comps].filter((x) => { const k = `${x.slot}:${x.id}`; if (seen.has(k)) return false; seen.add(k); return true; });
   writeFileSync(HIST, JSON.stringify(h, null, 2) + '\n');
@@ -289,18 +291,47 @@ if (opt['set-components']) {
   process.exit(0);
 }
 
+if (opt.record) {
+  for (const k of ['project', 'carrier']) if (!opt[k] || opt[k] === true) { console.error(`错误：--record 需要 --${k}`); process.exit(1); }
+  const sv = (k) => (opt[k] && opt[k] !== true ? String(opt[k]) : null);
+  const theme = sv('theme');
+  if (theme) {
+    const ids = arr(readJson(join(ROOT, 'library', 'themes.json')).themes).map((t) => t.id);
+    if (!ids.includes(theme)) { console.error(`错误：未知主题 ${theme}。合法 id：${ids.join(' ')}`); process.exit(1); }
+  }
+  const h = loadHist(true);
+  const entry = {
+    date: new Date().toISOString().slice(0, 10),
+    project: opt.project,
+    carrier: opt.carrier,
+    topic: sv('topic'),
+    direction: null,
+    theme,
+    palette: sv('palette'),
+    form: sv('form') ? sv('form').split(',') : [],
+    outcome: null,
+    note: sv('note') || '',
+    components: [],
+    source: 'record',
+  };
+  h.entries = h.entries || [];
+  h.entries.push(entry);
+  mkdirSync(dirname(HIST), { recursive: true });
+  writeFileSync(HIST, JSON.stringify(h, null, 2) + '\n');
+  out(`已记录：${entry.date} ${entry.project} ${entry.carrier} theme=${theme || '无'}（history 共 ${h.entries.length} 条）`);
+  process.exit(0);
+}
+
 if (opt['add-history']) {
   const id = String(opt['add-history']);
   if (!cards.find((c) => c.id === id)) { console.error(`错误：未知方向 id ${id}。用 --list 查看。`); process.exit(1); }
   if (!opt.project || opt.project === true) { console.error('错误：--add-history 需要 --project'); process.exit(1); }
-  if (opt.gear && !GEARS.includes(opt.gear)) { console.error('错误：--gear 只能是 clear mixed show'); process.exit(1); }
   const sv = (k) => (opt[k] && opt[k] !== true ? opt[k] : null);
   const h = loadHist(true);
   const entry = {
     date: new Date().toISOString().slice(0, 10),
     project: opt.project,
     carrier: sv('carrier'),
-    gear: sv('gear'),
     topic: sv('topic'),
     direction: id,
     theme: sv('theme'),
@@ -323,14 +354,12 @@ if (opt.commit) {
   const id = String(opt.commit);
   if (!cards.find((c) => c.id === id)) { console.error(`错误：未知方向 id ${id}。用 --list 查看。`); process.exit(1); }
   for (const k of ['project', 'carrier']) if (!opt[k] || opt[k] === true) { console.error(`错误：--commit 需要 --${k}`); process.exit(1); }
-  if (opt.gear && !GEARS.includes(opt.gear)) { console.error('错误：--gear 只能是 clear mixed show'); process.exit(1); }
   if (opt.outcome && !['好', '一般', '差'].includes(opt.outcome)) { console.error('错误：--outcome 只能是 好 一般 差'); process.exit(1); }
   const h = loadHist(true);
   const entry = {
     date: new Date().toISOString().slice(0, 10),
     project: opt.project,
     carrier: opt.carrier,
-    gear: opt.gear && opt.gear !== true ? opt.gear : null,
     topic: opt.topic && opt.topic !== true ? opt.topic : null,
     direction: id,
     theme: opt.theme && opt.theme !== true ? String(opt.theme) : null,
@@ -344,7 +373,7 @@ if (opt.commit) {
   h.entries.push(entry);
   mkdirSync(dirname(HIST), { recursive: true });
   writeFileSync(HIST, JSON.stringify(h, null, 2) + '\n');
-  out(`已记录：${entry.date} ${entry.project} ${entry.carrier}/${entry.gear} -> ${id}（history 共 ${h.entries.length} 条）`);
+  out(`已记录：${entry.date} ${entry.project} ${entry.carrier} -> ${id}（history 共 ${h.entries.length} 条）`);
   process.exit(0);
 }
 
@@ -353,22 +382,19 @@ const carrierRaw = opt.carrier && opt.carrier !== true ? opt.carrier : null;
 const carrier = normCarrier(carrierRaw);
 if (carrierRaw && !carrier) { console.error(`错误：未知 --carrier ${carrierRaw}。合法 id：${CARRIER_IDS.join(' ')}`); process.exit(1); }
 const carrierMedium = carrier ? CARRIER_MEDIUM[carrier] : null;
-const gear = opt.gear && opt.gear !== true ? opt.gear : null;
 const mode = opt.mode && opt.mode !== true ? opt.mode : null;
 const topic = opt.topic && opt.topic !== true ? opt.topic : null;
 const audience = opt.audience && opt.audience !== true ? opt.audience : null;
 const N = Math.max(1, Number(opt.options) || 3);
-if (gear && !GEARS.includes(gear)) { console.error('错误：--gear 只能是 clear mixed show'); process.exit(1); }
 
 let pool = cards.filter((c) => {
   if (carrierMedium && !arr(c.medium).some((m) => carrierMedium.includes(m) || normCarrier(m) === carrier)) return false;
-  if (gear && GEARS.indexOf(gear) < GEARS.indexOf(c.gear_floor || 'clear')) return false;
   if (mode && !arr(c.mode).includes(mode)) return false;
   return true;
 });
-out(`发牌：carrier=${carrier || '任意'} gear=${gear || "任意"} mode=${mode || '任意'} topic=${topic || '-'} audience=${audience || '-'} seed=${startSeed}`);
+out(`发牌：carrier=${carrier || '任意'} mode=${mode || '任意'} topic=${topic || '-'} audience=${audience || '-'} seed=${startSeed}`);
 out(`过滤后可用 ${pool.length} 张。`);
-if (pool.length === 0) { out('没有可用卡。放宽 --gear 或 --mode，或先补自研卡。'); process.exit(0); }
+if (pool.length === 0) { out('没有可用卡。放宽 --mode，或先补自研卡。'); process.exit(0); }
 
 const hist = loadHist().entries || [];
 const seedHist = opt['seed-history'] && opt['seed-history'] !== true ? String(opt['seed-history']).split(',').map((x) => x.trim()).filter(Boolean) : [];
@@ -422,7 +448,7 @@ dealt.forEach((c, i) => {
   out(`=== 方向 ${String.fromCharCode(65 + i)}：${c.name}（${c.id}）  来源 ${c.source}`);
   out(`点子：${firstSentence(c.idea)}`);
   out(`axes：${AXES.map((k) => `${k}=${c.axes[k]}`).join('  ')}${c.axes.inferred ? '  （推断）' : ''}`);
-  out(`form：${arr(c.form).join(', ') || '无'}   载体：${arr(c.medium).join(',')}   模式：${arr(c.mode).join(',')}   预算预设下限：${c.gear_floor}`);
+  out(`form：${arr(c.form).join(', ') || '无'}   载体：${arr(c.medium).join(',')}   模式：${arr(c.mode).join(',')}`);
   const rf = arr(c.refs).slice(0, 2);
   if (rf.length) rf.forEach((r) => out(`参照：${r.name} ${r.url || ''}（${r.year || '?'}）${r.what || ''}`));
   else if (arr(c.seenIn).length) out(`参照：tasteskill 研究站 ${arr(c.seenIn).slice(0, 2).join(', ')}`);

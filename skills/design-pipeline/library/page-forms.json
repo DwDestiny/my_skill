@@ -2,7 +2,7 @@
   "_meta": {
     "source": "research/R5-page-forms.md（第 2 节形态卡、第 5.2 节字段）",
     "date": "2026-10-16",
-    "note": "页面形态库。形态在表现形式（expressions.json）之上：先选形态，再选每一幕的表现形式。选形态用 scripts/pick-form.mjs，规则见 R5 第 3.2 节。",
+    "note": "页面形态库。形态在表现形式（expressions.json）之上：先选形态，再选每一幕的表现形式。pick-form.mjs 按任务、章数、读法、载体打分，不设预设。",
     "fields": {
       "id": "P01 到 P15",
       "name_zh": "中文名",
@@ -13,8 +13,6 @@
       "nav": "导航方式",
       "fit": "四类任务适合度：high | mid | low。键 explainer（讲解页）launch（发布页）prototype（产品原型）datastory（数据叙事）。来源：作者判断，未在真实项目上校准",
       "carriers": "键 desktop_web mobile_web miniprogram。值 true、false 或 \"模式: 说明\" 字符串",
-      "min_gear": "能成立的最低档位 clear | mixed | show。用户档位低于它时不选该形态",
-      "gear_note": "档位补充说明",
       "chapter_range": "[最小, 最大] 内容单元数，单位见 unit，不等于章数",
       "chars_per_unit": "每单元字数上限，null 表示 R5 未给",
       "chapter_overflow": "超限时的处理",
@@ -34,8 +32,7 @@
       "vs_pure_waterfall": "仅 P13 有"
     },
     "status_values": {
-      "p1": "P1 必进。clear 或 mixed 档可用，载体覆盖广，退路简单，实现成本可控",
-      "p1-show": "P1 进，标 show。用户要 3D、WebGL、Blender 的主入口，要标注限制和降级",
+      "p1": "P1 必进。载体覆盖广，退路简单，实现成本可控。3D、WebGL、Blender 的主入口也在此，须标注限制和降级",
       "p2": "P2 进。题材特定，按条件触发",
       "not-recommended": "保留是为了决策表能写出排除理由。pick-form 只在没有其他候选时才给出"
     },
@@ -71,7 +68,6 @@
         "mobile_web": "points-only: 改为相机点序列，禁用自由拖拽缩放",
         "miniprogram": "points-only: 只用相机点序列，不用手势缩放"
       },
-      "gear_note": "clear 档可用，但相机移动要慢、要短，且每个图幅可读",
       "chapter_range": [
         7,
         12
@@ -140,7 +136,7 @@
     },
     {
       "id": "P02",
-      "status": "p1-show",
+      "status": "p1",
       "name_zh": "相机穿行 3D 场景",
       "name_en": "Camera-Path Journey",
       "one_liner": "滚动时相机沿一条路径穿过一个三维场景。每一站看到一个物件或一组文字。",
@@ -160,7 +156,6 @@
         "mobile_web": "reduced: 降采样，限帧 30，模型减面，弱设备走海报序列",
         "miniprogram": false
       },
-      "gear_note": "mixed 档只在 hero 用，不在整页用。小程序不可用，改用 P15 或 P03",
       "chapter_range": [
         5,
         8
@@ -208,7 +203,7 @@
       ],
       "reduce_motion": "不随滚动移动相机。显示每站一帧静态渲染图，点击进度点切换站，切换用淡入，保留侧边进度目录。",
       "no_js_fallback": "无 JS 或无 WebGL：显示“站序列”，每站一张预渲染的海报图加正文，保留侧边进度目录。",
-      "a11y": "canvas 对读屏不可见。每站在 DOM 里有一份文字，叠加在 canvas 上方，读屏按站顺序读。键盘：上下键或 PageUp/PageDown 逐站。焦点只落在文字层。加载 glTF 前检测设备档位。",
+      "a11y": "canvas 对读屏不可见。每站在 DOM 里有一份文字，叠加在 canvas 上方，读屏按站顺序读。键盘：上下键或 PageUp/PageDown 逐站。焦点只落在文字层。加载 glTF 前检测设备性能。",
       "overshoot_risk": [
         "first-content-time",
         "scroll-hijack"
@@ -270,7 +265,6 @@
         "mobile_web": "stage-top: 舞台固定为顶部 40vh，文字区至少 60vh",
         "miniprogram": "stage-top: 舞台固定在上半屏，文字在下半屏"
       },
-      "gear_note": "",
       "chapter_range": [
         3,
         12
@@ -371,7 +365,6 @@
         "mobile_web": "native-scroll: overflow-x: auto 加 scroll-snap，不用 pin",
         "miniprogram": "native-scroll: scroll-view 横向，不用 pin"
       },
-      "gear_note": "",
       "chapter_range": [
         5,
         8
@@ -463,7 +456,6 @@
         "mobile_web": "conditional: 只在每幕内容不超过一屏时可用",
         "miniprogram": "swiper: 纵向 swiper"
       },
-      "gear_note": "",
       "chapter_range": [
         6,
         10
@@ -540,7 +532,6 @@
         "mobile_web": "two-finger-pan: 两指平移，详情卡用底部抽屉",
         "miniprogram": "native-map: 原生 map 组件或静态平面图加热点"
       },
-      "gear_note": "",
       "chapter_range": [
         6,
         15
@@ -630,7 +621,6 @@
         "mobile_web": "single-page: 单页翻",
         "miniprogram": "single-page: 单页翻，用 transform 做简化"
       },
-      "gear_note": "",
       "chapter_range": [
         8,
         12
@@ -714,7 +704,6 @@
         "mobile_web": "vertical: 纵向轨道，节点单侧排列",
         "miniprogram": "vertical: 纵向轨道"
       },
-      "gear_note": "",
       "chapter_range": [
         8,
         20
@@ -803,7 +792,6 @@
         "mobile_web": "tap-place: 拖拽改为点选后放置",
         "miniprogram": "tap-place: 用点选，不用拖拽"
       },
-      "gear_note": "",
       "chapter_range": [
         8,
         24
@@ -885,7 +873,6 @@
         "mobile_web": "top-bottom: 上下分屏，或单屏加切换",
         "miniprogram": "top-bottom: 上下分屏"
       },
-      "gear_note": "",
       "chapter_range": [
         3,
         6
@@ -969,7 +956,6 @@
         "mobile_web": "true: Chrome 与 Safari 有转场，Firefox 无转场但可用，注意转场白屏",
         "miniprogram": "page-stack: 用页面栈和自定义转场"
       },
-      "gear_note": "协调者 2026-10-16 把最低档从 mixed 改为 clear：页面栈加 View Transitions 在 clear 档可用，R5 速查表也在 clear 原型场景推荐它。",
       "chapter_range": [
         5,
         12
@@ -1046,7 +1032,6 @@
         "mobile_web": true,
         "miniprogram": true
       },
-      "gear_note": "最稳的形态",
       "chapter_range": [
         4,
         10
@@ -1129,7 +1114,6 @@
         "mobile_web": true,
         "miniprogram": "simplified: 舞台章用 P03 或 P12 的简化版"
       },
-      "gear_note": "",
       "chapter_range": [
         8,
         14
@@ -1211,7 +1195,6 @@
         "mobile_web": "single-column: 单列堆叠",
         "miniprogram": "single-column: 单列卡片"
       },
-      "gear_note": "",
       "chapter_range": [
         4,
         12
@@ -1250,7 +1233,7 @@
     },
     {
       "id": "P15",
-      "status": "p1-show",
+      "status": "p1",
       "name_zh": "影片式卷轴",
       "name_en": "Scrubbed Film Reel",
       "one_liner": "滚动像拖动一段影片的时间轴。画面是预渲染的帧序列，文字在关键帧出现。",
@@ -1270,7 +1253,6 @@
         "mobile_web": "reduced: 减帧，缩小尺寸，分辨率减半，按需分段加载",
         "miniprogram": "video: 改为视频加进度条，或 P03 换图"
       },
-      "gear_note": "mixed 档只在 hero 用",
       "chapter_range": [
         3,
         6

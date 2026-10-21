@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""flash-check.py 浮夸度静态检查（flash-rules.md 第 2、3 节）。Python 3.12 标准库。
+"""flash-check.py 浮夸度静态检查（依据 references/restraint.md 第 4 节"动效气质"表）。Python 3.12 标准库。
 
 用途：对已构建的 HTML 页面做浮夸度判定表里"脚本能查"的静态项。
   无限循环、pin 总屏高、Reduce Motion 分支数、WebGL 画布数、backdrop-filter 元素数。
@@ -18,15 +18,18 @@
   - rAF 是否真的无限循环。脚本只查有无 cancelAnimationFrame 与暂停控件。
   - --shots 的像素差分需要 Pillow。没有 Pillow 时跳过并说明。
 
-用法：python3 -I flash-check.py index.html [--gear clear|mixed|show] [--shots 截图目录]
+用法：python3 -I flash-check.py index.html [--mood 静|呼吸|驱动|沉浸] [--shots 截图目录]
 """
 import argparse
 import os
 import re
 import sys
 
-PIN_MAX = 5.0  # 屏高，flash-rules.md 第 2 节"高"档上限，E1 校准后不变
-LOOP_MAX = {'clear': 0, 'mixed': 1, 'show': 2}
+# 动效气质（references/restraint.md 第 4 节）：无限循环数与 pin 总屏高的建议上限。
+# 通用过量线：无限循环 >2 或不可暂停；pin >5 屏。超过气质建议但未过通用线只给提示（WARN）。
+LOOP_MAX = {'静': 0, '呼吸': 1, '驱动': 1, '沉浸': 2}
+PIN_MAX = {'静': 0, '呼吸': 0, '驱动': 2, '沉浸': 5}  # 单位：屏高
+PIN_OVER = 5.0
 MANUAL = [
     ('动效占屏比例', '录屏逐帧差分，算变化像素占视口的最大值。可用 --shots 做两张图粗差分'),
     ('同屏运动元素数', '各停靠屏运行 `document.getAnimations().length`，取最大值'),
@@ -174,7 +177,7 @@ def shots_diff(shots_dir):
 def main():
     ap = argparse.ArgumentParser(description='浮夸度静态检查。读 HTML 与其本地 CSS、JS，输出 Markdown 表。有 FAIL 退出码为 1。')
     ap.add_argument('html', help='页面 index.html 路径')
-    ap.add_argument('--gear', default='mixed', choices=list(LOOP_MAX), help='档位：clear、mixed、show。默认 mixed')
+    ap.add_argument('--mood', default='驱动', choices=list(LOOP_MAX), help='动效气质：静、呼吸、驱动、沉浸。默认 驱动')
     ap.add_argument('--root', help='站点根目录。页面里以 / 开头的引用按此解析，默认为 HTML 所在目录')
     ap.add_argument('--shots', help='截图目录（shots.py 的输出）。有 Pillow 时做 d-fold 与 r-fold 差分')
     a = ap.parse_args()
@@ -198,15 +201,15 @@ def main():
     caf = len(re.findall(r'cancelAnimationFrame', js))
     pause = bool(re.search(r'暂停|pause|aria-pressed|data-pause', html, re.I))
     n_loop = inf_css + inf_js
-    lim = LOOP_MAX[a.gear]
-    if n_loop > 2 or (n_loop > 0 and not pause) or (n_loop > lim and a.gear == 'clear'):
+    lim = LOOP_MAX[a.mood]
+    if n_loop > 2 or (n_loop > 0 and not pause):
         res = 'FAIL'
     elif n_loop > lim:
         res = 'WARN'
     else:
         res = 'PASS'
     row('无限循环动效数', res, 'infinite/repeat:-1 共 %d（CSS %d，JS %d），暂停控件 %s' % (n_loop, inf_css, inf_js, '有' if pause else '无'),
-        '%s 档上限 %d，须可暂停。>2 或不可暂停为过量' % (a.gear, lim))
+        '%s 气质建议 ≤%d，须可暂停。>2 或不可暂停为过量；超出气质建议只提示' % (a.mood, lim))
     if raf:
         res = 'PASS' if (caf or pause) else 'WARN'
         row('rAF 循环', res, 'requestAnimationFrame %d 处，cancelAnimationFrame %d 处' % (raf, caf),
@@ -214,13 +217,13 @@ def main():
 
     # 2 pin 总屏高
     scr, src, est = pin_screens(html, css, js)
-    if scr > PIN_MAX:
+    if scr > PIN_OVER:
         res = 'FAIL'
-    elif scr > 0 and a.gear == 'clear':
+    elif scr > PIN_MAX[a.mood]:
         res = 'WARN'
     else:
         res = 'PASS'
-    row('pin 总屏高', res, '%.1f 屏（%s）%s' % (scr, src, '，估算' if est else ''), '上限 %g 屏。相机页按停靠与 pin 计' % PIN_MAX)
+    row('pin 总屏高', res, '%.1f 屏（%s）%s' % (scr, src, '，估算' if est else ''), '%s 气质建议 ≤%g 屏，>%g 屏为过量。相机页按停靠与 pin 计' % (a.mood, PIN_MAX[a.mood], PIN_OVER))
 
     # 3 Reduce Motion
     rm_css = len(re.findall(r'prefers-reduced-motion', css_all))
@@ -246,7 +249,7 @@ def main():
         ratio, msg = shots_diff(a.shots) if os.path.isdir(a.shots) else (None, '--shots 目录不存在')
         row('截图差分', 'PASS' if ratio is not None else '人工', msg, 'Reduce Motion 开关前后差异过大说明有内容只靠动效出现')
 
-    print('# flash-check %s（档位 %s）\n' % (os.path.basename(os.path.dirname(os.path.abspath(a.html))) + '/' + os.path.basename(a.html), a.gear))
+    print('# flash-check %s（动效气质 %s）\n' % (os.path.basename(os.path.dirname(os.path.abspath(a.html))) + '/' + os.path.basename(a.html), a.mood))
     print('| 项 | 结果 | 实测 | 判定依据 |')
     print('|---|---|---|---|')
     for r in rows:
