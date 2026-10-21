@@ -4,7 +4,6 @@
 > 读完做什么：为每一屏选一条最好的组件表达，写进 `design.md` 第 2 节。
 > 选案例前读 `references/why-good.md` 第 4、5 节。页面有卡片、列表、表单、弹窗时，读 `references/product-ui.md`：卡片先定回答什么问题再分主次，控件只有一层底色。想看有哪些手法可选，查 `references/technique-catalog.md`（手法目录与技术栈地图）。
 > 产物：`design.md` 第 2 节"每屏做法"。
-> 来自：旧 `references/component-patterns.md`、`prompts/S4-page-plan.md`、`references/page-plan.md`。
 
 本阶段回答"每个组件、每个目的，用哪种最好的视觉或交互表达"。表达来自案例库 `library/cases.json`，也可以库外自拟。整体氛围由阶段 2 定，本阶段的选择要放得进那个氛围。
 

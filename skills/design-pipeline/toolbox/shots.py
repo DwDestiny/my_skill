@@ -11,15 +11,15 @@
   页面用本地服务提供，例如在页面上级目录 `python3 -m http.server 8112 --bind 127.0.0.1`。
 
 等待：每张截图前等 1500 ms，stage-n 等 3000 ms。第一次 open 失败时重试一次。
---gear 只写进 SHOTS.md 并决定 h-* 是否必拍（mixed、show 必拍，clear 也拍，列为选拍）。
+h-rest 与 h-hover 一律必拍。
 --carrier [id]：读 library/carriers.json 的 viewport。窄载体（宽 <600）用载体视口代替 m-*，
   不拍 d-* 与 t-*。宽载体用载体主视口代替 d-*。不给 id 或找不到文件时用默认视口并提示。
 --docks：逗号分隔的 `#id` 或 hash。每个停靠点执行 location.hash='<id>'，等 3000 ms 后拍。
 
-已知不能拍：打印预览（print，clear 档必拍，需 `agent-browser pdf` 人工）、折叠展开后（fold-open）、
+已知不能拍：打印预览（print，人工，需 `agent-browser pdf` 人工）、折叠展开后（fold-open）、
   深色整页（dark-page）、减少动效整页（r-page）。这些在 SHOTS.md 末尾列为"未拍"。
 
-用法：python3 -I shots.py --url URL --out DIR [--gear clear|mixed|show] [--carrier [id]] [--docks "#s1,#s5"]
+用法：python3 -I shots.py --url URL --out DIR [--carrier [id]] [--docks "#s1,#s5"]
 """
 import argparse
 import json
@@ -98,7 +98,6 @@ def main():
     ap = argparse.ArgumentParser(description='按 review.md 截图清单批量截图，写 SHOTS.md 与 console.txt。')
     ap.add_argument('--url', required=True, help='页面地址，如 http://127.0.0.1:8112/page/index.html')
     ap.add_argument('--out', required=True, help='输出目录（不存在会创建）')
-    ap.add_argument('--gear', default='mixed', choices=['clear', 'mixed', 'show'], help='档位，写进 SHOTS.md')
     ap.add_argument('--carrier', nargs='?', const='', help='载体 id（见 library/carriers.json）')
     ap.add_argument('--docks', default='', help='停靠点列表，逗号分隔，如 "#s1,#s5"')
     a = ap.parse_args()
@@ -216,10 +215,10 @@ def main():
             f.write('\n## 脚本命令失败记录\n' + '\n'.join(LOG) + '\n')
 
     with open(os.path.join(a.out, 'SHOTS.md'), 'w', encoding='utf-8') as f:
-        f.write('# SHOTS\n\n页面：%s。档位：%s。\n\n| 文件名 | 视口 | 状态 | 用途 |\n|---|---|---|---|\n' % (a.url, a.gear))
+        f.write('# SHOTS\n\n页面：%s。\n\n| 文件名 | 视口 | 状态 | 用途 |\n|---|---|---|---|\n' % a.url)
         for r in rows:
             f.write('| %s |\n' % ' | '.join(r))
-        f.write('\n未拍（人工补）：print（clear 档必拍）、fold-open、dark-page、r-page。\n')
+        f.write('\n未拍（人工补）：print（人工）、fold-open、dark-page、r-page。\n')
         for n in notes:
             f.write('\n注：' + n)
         if LOG:

@@ -1,6 +1,6 @@
 ---
 name: content-blueprint
-description: design-pipeline 的子步骤，由 design-pipeline 阶段 1 调用，不要单独触发。内容与讲解方案：根据任务目标，把资料拆解成易于理解、阅读、学习或展示的方案：目标与受众、结果定义、内容取舍、叙事与讲解逻辑、形式选择（文字 / 表格 / 图 / 3D）、信息架构、章节蓝图、来源与可信度的表达。产物是 visual-motion-design 可直接读取的蓝图。触发词：讲解页、给人讲清楚、整理成一页、怎么组织内容、内容怎么拆、章节怎么排、先讲什么后讲什么、受众是谁、读完要会什么、哪些该删、用表还是用图、讲解逻辑、学习材料、培训页、汇报页、介绍页、科普页、说明页的内容规划。不适用：决定颜色、字号、间距、动效（那是 visual-motion-design）；写沟通话术、提问顺序、销售说法；替任何人作承诺；无资料凭空编内容。
+description: design-pipeline 阶段 1 的子步骤，只由 design-pipeline 调用，不要单独触发。内容与讲解方案：目标与受众、结果定义、内容取舍、叙事与讲解逻辑、形式选择（文字 / 表格 / 图 / 3D）、信息架构、章节蓝图、来源与可信度的表达。产物是 design-pipeline 阶段 2 读取的 blueprint.md。不适用：决定颜色、字号、间距、动效；写沟通话术、提问顺序、销售说法；替任何人作承诺；无资料凭空编内容。
 ---
 
 # 内容与讲解方案
@@ -196,7 +196,7 @@ description: design-pipeline 的子步骤，由 design-pipeline 阶段 1 调用�
 
 产品层与新字段的 A 侧读法见 `visual-motion-design/references/handoff.md` 第 1 节。
 
-A 可能退回七种问题：`over_budget`、`wont_fit`、`form_mismatch`、`missing_source`、`term_conflict`、`incomplete`、`gear_conflict`。B 对每条回复：调整 / 保留并说明 / 需用户裁决。
+A 可能退回七种问题：`over_budget`、`wont_fit`、`form_mismatch`、`missing_source`、`term_conflict`、`incomplete`。B 对每条回复：调整 / 保留并说明 / 需用户裁决。
 
 ## 7. 写法
 

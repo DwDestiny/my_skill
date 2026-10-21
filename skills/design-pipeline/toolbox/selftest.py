@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""selftest.py 工具自测：历史 bug 的回归检查（18 项）。Python 3.12 标准库。
+"""selftest.py 工具自测：历史 bug 的回归检查（20 项）。Python 3.12 标准库。
 
 用途：把 design-pipeline 复制到临时目录，对 shots、defaults-check、cases-index、deal、flash-check 各跑一个坏输入；floor-check（visual-motion-design）只读夹具，在临时目录跑。
 用法：python3 -I toolbox/selftest.py（需要 node）。每项输出 PASS 或 FAIL，任一失败退出码 1，不碰真实库与真实 history。
@@ -68,6 +68,38 @@ def t_deal(P, tmp):
     before = rd(hp)
     r = run(['node', deal, '--add-history', cid, '--project', 't'], tmp)
     return r.returncode != 0 and rd(hp) == before and '无法解析' in r.stderr, '退出码 %d，history %s，id=%s' % (r.returncode, '未变' if rd(hp) == before else '被改', cid)
+
+
+def t_lib(P, tmp):
+    """lib.mjs：简表小而含 id，单条有全文字段，过滤能取到高分锚点，未知库退出非 0。"""
+    L = os.path.join(P, 'toolbox', 'lib.mjs')
+    a = run(['node', L, 'themes'], tmp)
+    b = run(['node', L, 'themes', 'T03'], tmp)
+    c = run(['node', L, 'anchors', '--where', 'page_type=studio-home'], tmp)
+    d = run(['node', L, 'nolib'], tmp)
+    ok = (a.returncode == 0 and len(a.stdout.encode()) < 16000 and 'T03' in a.stdout
+          and b.returncode == 0 and 'signature_interaction' in b.stdout
+          and c.returncode == 0 and 'group: high' in c.stdout and d.returncode != 0)
+    return ok, '简表 %d B，单条 %s，过滤 %s，未知库退出 %d' % (len(a.stdout.encode()), 'signature_interaction' in b.stdout, 'group: high' in c.stdout, d.returncode)
+
+
+def t_record(P, tmp):
+    deal = os.path.join(P, 'toolbox', 'deal.mjs')
+    hp = os.path.join(P, 'history', 'history.json')
+    os.makedirs(os.path.dirname(hp), exist_ok=True)
+    if not os.path.exists(hp):
+        with open(hp, 'w', encoding='utf-8') as f:
+            f.write('{"entries": []}\n')
+    n0 = len(json.loads(rd(hp))['entries'])
+    r = run(['node', deal, '--record', '--project', 'rec-test', '--carrier', 'desktop-web', '--theme', 'T03'], tmp)
+    ents = json.loads(rd(hp))['entries']
+    last = ents[-1] if ents else {}
+    ok1 = r.returncode == 0 and len(ents) == n0 + 1 and last.get('project') == 'rec-test' and last.get('theme') == 'T03' \
+        and last.get('direction') is None and 'gear' not in last
+    before = rd(hp)
+    r2 = run(['node', deal, '--record', '--project', 'rec-test', '--carrier', 'desktop-web', '--theme', 'T99'], tmp)
+    ok2 = r2.returncode != 0 and rd(hp) == before
+    return ok1 and ok2, '写入 %s，坏主题 %s' % ('正常' if ok1 else '异常(%d) %s' % (r.returncode, r.stderr[:60]), '被拒且 history 未变' if ok2 else '未拒绝或 history 被改')
 
 
 def t_flash(P, tmp):
@@ -307,7 +339,8 @@ def t_floor_quoted_import(P, tmp):
 def main():
     tests = [('shots 失败截图不被旧 PNG 冒充', t_shots), ('defaults-check 读不到主 HTML', t_defaults),
              ('cases-index 同 id 缺字段不写库', t_cases), ('deal 损坏 history 不覆盖', t_deal),
-             ('flash-check 内联循环不重复计数', t_flash),
+             ('flash-check 内联循环不重复计数', t_flash), ('deal --record 写入主题，坏主题不写', t_record),
+             ('lib.mjs 简表、单条、过滤与未知库', t_lib),
              ('shots 失败时保留上次旧图', t_shots_keep), ('cases-index 类型错误不崩溃不写库', t_cases_types),
              ('根相对 CSS 缺失与外链列入未覆盖项', t_root_missing), ('根相对 CSS 存在时被读入', t_root_found),
              ('--compare 沿用 root，读不全时不判 PASS', t_compare_root), ('cases-index 第二次替换失败时退回', t_cases_rollback),

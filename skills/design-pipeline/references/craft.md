@@ -3,7 +3,6 @@
 > 何时读：设计已写进 `design.md`，开始写代码与看图时。
 > 读完做什么：从成品复制工艺层，接入动效，导出静帧，截图看图。
 > 本文件只管"怎么做出来"。创意在阶段 2 与阶段 3。
-> 来自：旧 `prompts/S5-build.md`、`prompts/S6-accept.md`、`references/sop.md` 第 9 节。
 
 ## 1. 起手复制
 
@@ -104,13 +103,13 @@ three.js 冷加载超过 2 s 时，首屏动效 deferred：先显示静帧和标
 |---|---|
 | `python3 toolbox/shots.py --url <url> --out <目录>` | 拍首屏、分屏、页尾、768、390、深色、减少动效、键盘焦点、悬停前后、各停靠点 |
 | `python3 toolbox/defaults-check.py <index.html> [--compare <另一页>]` | 查 X1 到 X17 里能 grep 的默认值，可与上一页比对。X18 到 X20 靠看截图查 |
-| `python3 toolbox/flash-check.py <index.html>` | 查 `references/restraint.md` 里能用脚本查的项 |
+| `python3 toolbox/flash-check.py <index.html> --mood <静|呼吸|驱动|沉浸>` | 按动效气质查 `references/restraint.md` 第 4 节里能用脚本查的项 |
 | `python3 ../visual-motion-design/assets/floor-check.py <index.html> --carrier <id>` | 参考值检查，不是门。C1 到 C3（最小字号、命中区、viewport）要过。F1 到 F6 量的是变量引用次数、标记与钩子，不是画面：不适用时在 design.md 写一句原因即可，不为清零加标记或动效，FAIL 清零也不证明好看 |
 | `node toolbox/deal.mjs ...` | 发牌与写使用史，见 `stages/3-components.md` |
 
 ## 9. 看图
 
-脚本通过不证明设计好。逐张真实截图对照看图清单，清单见 `visual-motion-design/references/review.md`。修完请评审者做视觉评审（首选第二个独立 agent，有 Fable 且用户要求时才用 Fable）。评审问法：哪里不像 `design.md`，哪里太素，先改哪三处。
+脚本通过不证明设计好。逐张真实截图对照看图清单，清单见 `templates/design.md` 第 3.5 节，看法见 `references/critique-method.md`。修完请评审者做视觉评审（首选第二个独立 agent，有 Fable 且用户要求时才用 Fable）。评审问法：哪里不像 `design.md`，哪里太素，先改哪三处。
 
 两个独立会话盲评是建议，不是必须。给它们只看截图目录，不给方案与代码。两份取低分。盲评只答一题："文档级还是商业级，1 到 5 分"。锚点：
 
