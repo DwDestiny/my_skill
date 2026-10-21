@@ -174,7 +174,7 @@
    ],
    "needs": "glTF 模型（Blender 建模/导出）、PBR 材质与环境光、three.js；备用静帧序列。",
    "feasibility_here": "中：Blender 4.0 可建模并导出 glTF，Cycles 只能出小预览；three.js 实时渲染本机可做。复杂材质用烘焙贴图，低端设备降级为静帧序列。",
-   "mediocre_version": "白底上放一个现成模型自转，旁边几行参数和一个购买按钮，滚动时模型无变化。",
+   "mediocre_version": "白底上放一个现成模型自转，旁边几行参数和一个购买按钮，滚动时模型无变化。 另一种失败是猎奇：把比喻字面做成模型（名字立起来、几个小人围桌），配高饱和撞色。主物要本身好看，不是把概念摆成道具。",
    "expressions": [
     "gltf-model-stage",
     "pinned-3d-scrub",
@@ -406,7 +406,7 @@
    ],
    "needs": "1 至 2 款有性格的字体（含可变字体更佳）、GSAP/SplitText 或 CSS 动画、少量主色；无需视频与 3D 素材。",
    "feasibility_here": "高：纯 CSS/JS 与字体即可，不依赖 GPU；复杂着色器文字（WebGL 扭曲）可用 CSS 变形与可变字体轴替代。",
-   "mediocre_version": "把标题放大再加一个淡入上移，所有章节都是同一个入场动画，字大但没有节奏变化，也没有字形层面的设计。",
+   "mediocre_version": "把标题放大再加一个淡入上移，所有章节都是同一个入场动画，字大但没有节奏变化，也没有字形层面的设计。 另一种失败是猎奇：把品牌名做成巨大的立体挤出字（像艺术字），字形本身不美，只靠大和立体吸引眼球（GPT r6，用户：\"审美不在线，有些猎奇了\"）。",
    "expressions": [
     "kinetic-type",
     "splittext-kinetic",
