@@ -13,7 +13,8 @@ description: 设计流水线入口。新页面走四个阶段：内容蓝图、�
 
 | 路线 | 什么时候 | 读 |
 |---|---|---|
-| 新页面 | 从一句委托做一个新页面，方向要自己找 | 下表四个阶段，按序 |
+| 像素优先最小路径（实验中） | 新页面默认。候选从 `library/case-map.md` 出，独立评审选，agent 换题复现，用户只打档 | `stages/minimal-path.md` |
+| 新页面 | 用户要完整流程、点名手法，或没人能选图 | 下表四个阶段，按序 |
 | 改版 | 已有产品要按一页确认过的设计统一，功能不变 | `stages/redesign.md` |
 
 | 阶段 | 回答的问题 | 产物 | 只读这一个文件 |
@@ -30,7 +31,7 @@ description: 设计流水线入口。新页面走四个阶段：内容蓝图、�
 1. 一个阶段只打开它的阶段文件。阶段文件写"做到某步读某节"时再读那一节，不提前整读参考文件。
 2. 库（`library/*.json`，最大 95 KB）不整读。`node toolbox/lib.mjs` 列库；`lib.mjs <库>` 看简表（每条一行）；`lib.mjs <库> <id>` 看一条全文；`--where k=v` 过滤。
 3. 同一个任务里，每个获奖锚点只现场打开一次，截图留在项目临时目录复用（`references/judging.md` 第 3 节）。
-4. 无人值守时，要问用户的事写进 `process/ASK.md` 然后停，不替用户选（`references/iteration-loop.md` 第 3 节）。
+4. 选方向、选候选默认由评审做，用户主动要求时才给用户选。真正只有用户能答的事（资料缺口、业务口径），写进 `process/ASK.md` 然后停（`references/iteration-loop.md` 第 3 节）。
 
 ## 3. 贯穿四条
 
@@ -47,6 +48,7 @@ description: 设计流水线入口。新页面走四个阶段：内容蓝图、�
 |---|---|
 | 设计原则（阶段 1 或 2 开始前读一次） | `frontend-design` skill：用 Skill 工具加载，或找宿主插件目录（Claude Code 是 `~/.claude/plugins/cache/*/frontend-design/*/skills/frontend-design/SKILL.md`，取最新版）。找不到就读 `references/anti-sameness.md`，并在 design.md 记"未读 frontend-design" |
 | 载体数值与平替 | `node toolbox/lib.mjs carriers <id>`，`references/carriers.md`。壳尺寸 = 视口尺寸，不画设备外框 |
+| 选方向、找最接近的获奖案例、怎么改成本题材、避免雷同 | `library/case-map.md`（先读这个，再查主题与锚点） |
 | 整体主题（视频、摄影、3D、流体、大字、交互玩具等）、主题打分 | `node toolbox/lib.mjs themes`，`stages/2-atmosphere.md` 2.1.3 |
 | 分清身份与例子、题材研究、发散方向 | `references/direction-and-appeal.md` |
 | 判断好坏、和获奖作品比、深化还是换方向 | `references/judging.md`，`node toolbox/lib.mjs anchors --where page_type=<页型>` |

@@ -21,7 +21,7 @@
 |---|---|
 | 2.1 身份句 | `references/direction-and-appeal.md` 第 1 节 |
 | 2.1.1 到 2.1.2 研究与参照 | `references/direction-and-appeal.md` 第 2.1 节 |
-| 2.1.3 主题打分 | `node toolbox/lib.mjs themes`（简表 12 KB）；入围的主题再 `lib.mjs themes <id>` |
+| 2.1.3 主题打分 | 先读 `library/case-map.md`（按世界分簇，约 11 KB）选 1 到 2 簇；再 `node toolbox/lib.mjs themes` 查手法；入围的主题再 `lib.mjs themes <id>` |
 | 2.2 点子与方向 | `references/direction-and-appeal.md` 第 2.2、3 节；`references/taste-method.md` 第 3 节（8 条做法，用来检查点子） |
 | 2.2.1 方向板、盲评、方向循环 | `references/judging.md` 第 2 到 5 节；`references/iteration-loop.md` 第 3、4.1 节；锚点 `node toolbox/lib.mjs anchors --where page_type=<页型>` |
 | 2.4 页面形态 | `node toolbox/pick-form.mjs` 或 `lib.mjs forms` |
@@ -77,6 +77,7 @@
 
 原因：不打分时，模型会落到最顺手的一种。团队页第六次（Grok 实测，2026-10-21）三个方向板全是生成照片，成品是"满屏照片加压字"，氛围到了 4 档，但交互只剩滚动，用户担心"每次做网站都搞这种放个图片背景的设计方式"。满屏摄影只是目录里的一种主题。
 
+0. 先读 `library/case-map.md`：用题材自己的世界（地方、光、谁在干什么）找簇，簇里挑 2 到 3 条案例，按它的第 2 节写换题四行，过第 3 节不雷同三问。主题库是手法库，在簇定了之后才查。
 1. 运行 `node toolbox/lib.mjs themes`，简表给每个主题的 `one_liner`、`feasibility_here`、`content_signals`。入围的 5 到 6 个再 `lib.mjs themes <id>` 看 `not_fit`、`cases`、`signature_interaction`、`mediocre_version`。
 2. 每个主题按 5 项各打 1 到 5 分，写一句依据：
 
