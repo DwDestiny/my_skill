@@ -3,8 +3,9 @@
   "what": "评审用的尺子。high 是 Awwwards 年度（SOTY）与月度（SOTM）获奖站，low 是我们自己做过、用户评价过的版本。用法见 references/judging.md。",
   "tier": "5 = SOTY 列表；4 = SOTM 列表或只有当日奖。档位描述见 judging.md 第 2 节。",
   "opened": "现场 = 用浏览器亲自打开看过；Awwwards 获奖截图 = 只看了 awwwards 字段作品页上的获奖截图（无 GPU 机器打不开重 WebGL 站）。",
-  "rule": "只存网址和文字，不存截图。评审时现场打开或看 awwwards 页；看完的临时图删除。",
-  "checked_at": "2026-10-20"
+  "rule": "只存网址和文字，不存截图。评审时现场打开或看 awwwards 页；看完的临时图删除。 借一条锚点前，先看它的 moves；写着未录的先录。",
+  "checked_at": "2026-10-20",
+  "moves": "每条的 moves 字段：{entry 入场, scroll 滚动时什么随进度变, pointer 指针带动什么, media 画面由 video/canvas-webgl/canvas-2d/svg/css 哪种做出来, evidence 现场录/作品页截图/看不出}。入库前跑 toolbox/record-motion.py 录帧和技术盘点再填；旧字段 motion 是 2026-10-20 只看截图写的，以 moves 为准。"
  },
  "high": [
   {

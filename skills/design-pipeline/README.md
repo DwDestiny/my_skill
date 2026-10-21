@@ -28,7 +28,7 @@
 | `references/carriers.md`、`asset-generation.md`、`blender-pipeline.md` | 载体细则、生成资产、Blender 管线 |
 | `examples/mechanisms/` | 21 个机制示例，单文件 HTML。说明在 `index.html` 头部注释，其中 9 个另带 `CARD.md` |
 | `examples/finished/` | 3 个成品。`mixed-01`：用户认可整体感觉的正向参考。`show-01`、`clear-01`：待改案例（用户评价：效果很一般），只学单处机制。实现起手从 `mixed-01` 复制工艺层 |
-| `toolbox/` | `lib.mjs` 查库（简表、单条、过滤，代替整读 JSON）、`pick.py` 选图页（候选目录起一页，用户排名与备注写 pick.jsonl，配 cloudflared 临时隧道给用户链接）、`deal.mjs` 组件发牌与使用史（`--record` 记主题与形态）、`pick-form.mjs` 选形态、`shots.py` 截图清单、`flash-check.py` 按动效气质查收放、`defaults-check.py` 反默认、`cases-index.py` 库体检、`selftest.py` 自测（20 项） |
+| `toolbox/` | `lib.mjs` 查库（简表、单条、过滤，代替整读 JSON）、`record-motion.py` 录一个站怎么动怎么跟手（入场、滚动、指针三组帧加技术盘点，入库和借案例前跑）、`pick.py` 选图页（候选目录起一页，用户排名与备注写 pick.jsonl，配 cloudflared 临时隧道给用户链接）、`deal.mjs` 组件发牌与使用史（`--record` 记主题与形态）、`pick-form.mjs` 选形态、`shots.py` 截图清单、`flash-check.py` 按动效气质查收放、`defaults-check.py` 反默认、`cases-index.py` 库体检、`selftest.py` 自测（20 项） |
 | `history/` | 使用史 `history.json`，运行时唯一会写进本目录的文件 |
 | `samples/design.md` | 填好的 design.md 样例（由 E2 发布页的氛围与每屏做法合成） |
 | （已归档） | `evals/`、`research/`、`PLAN.md` 于 2026-10-18 移出仓库，见 `作者的私有归档（不在本仓库）` |
