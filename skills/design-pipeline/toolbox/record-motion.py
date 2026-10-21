@@ -44,9 +44,40 @@ INVENTORY_JS = r"""
 })()
 """
 
-def ab(*args, timeout=60):
-    r = subprocess.run(['agent-browser', *args], capture_output=True, text=True, timeout=timeout)
+class Hung(Exception):
+    pass
+
+def ab(*args, timeout=45):
+    # 单条命令超时就当这个会话挂了：抛 Hung，由调用方关会话换名重开。不让一个站把后面的站都拖死。
+    try:
+        r = subprocess.run(['agent-browser', *args], capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        raise Hung(' '.join(args[:2]))
     return (r.stdout or '') + (r.stderr or '')
+
+def hard_close():
+    # close 本身也可能挂；挂了就按会话名杀掉它的守护进程和浏览器。只杀带本会话名的进程。
+    sess = os.environ.get('AGENT_BROWSER_SESSION', '')
+    try:
+        subprocess.run(['agent-browser', 'close'], capture_output=True, text=True, timeout=20)
+    except subprocess.TimeoutExpired:
+        pass
+    if not sess:
+        return
+    # 守护进程和浏览器的命令行里没有会话名，但环境变量里有：按 /proc/*/environ 找 AGENT_BROWSER_SESSION=<本会话> 的进程杀掉。
+    needle = f'AGENT_BROWSER_SESSION={sess}'.encode()
+    me = os.getpid()
+    for pid in os.listdir('/proc'):
+        if not pid.isdigit() or int(pid) == me:
+            continue
+        try:
+            env = open(f'/proc/{pid}/environ', 'rb').read()
+            cmd = open(f'/proc/{pid}/cmdline', 'rb').read()
+        except Exception:
+            continue
+        if needle in env and (b'agent-browser' in cmd or b'chrome' in cmd):
+            try: os.kill(int(pid), 9)
+            except Exception: pass
 
 def shot(path):
     ab('screenshot', str(path))
@@ -67,11 +98,23 @@ def main():
         url = hit[0].get('url'); print('url', url)
     if not url: sys.exit('需要 --url 或 --anchor')
     out = pathlib.Path(a.out); out.mkdir(parents=True, exist_ok=True)
-    os.environ['AGENT_BROWSER_SESSION'] = a.session
-    ab('set', 'viewport', str(a.width), str(a.height))
-    ok = 'error' not in ab('open', url, timeout=90).lower()
-    if not ok:
-        time.sleep(2); ab('open', url, timeout=90)
+    # 每个站一个独立会话名：上一个站把浏览器拖死，不影响这个站。
+    os.environ['AGENT_BROWSER_SESSION'] = f"{a.session}-{int(time.time()) % 100000}"
+    try:
+        ab('set', 'viewport', str(a.width), str(a.height))
+        ok = 'error' not in ab('open', url, timeout=90).lower()
+        if not ok:
+            time.sleep(2); ab('open', url, timeout=90)
+    except Hung as e:
+        hard_close(); sys.exit(f'打开阶段会话挂住（{e}），已关会话。重跑一次；再挂就是站太重，去 awwwards 作品页看')
+    try:
+        record(a, url, out)
+    except Hung as e:
+        hard_close()
+        (out / 'MOTION.md').write_text(f'# 动效证据：{url}\n\n录到一半会话挂住（{e}）。已有的帧可看，缺的部分写"帧看不出"。\n')
+        sys.exit(f'录制中途会话挂住（{e}），已关会话，保留已录的帧')
+
+def record(a, url, out):
     time.sleep(1.5); shot(out / '00-load.png')
     time.sleep(4.5); shot(out / '01-settled.png')
     inv_raw = ab('eval', INVENTORY_JS, timeout=60).strip()
@@ -113,7 +156,7 @@ def main():
         ab('mouse', 'move', str(int(x)), str(int(y))); time.sleep(1.0)
         shot(out / f'20-pointer-{name}.png')
     shot(out / '30-top-again.png')
-    ab('close')
+    hard_close()
     if isinstance(inv, dict):
         inv['gated'] = gated; inv['scrollYPerFrame'] = scroll_log
         inv['note'] = '每帧 scrollY 全为 0 且 pageHeight 不大：虚拟滚动或门没过，画面变化只能看帧；仍为 0 且帧全同：这站在无头浏览器里没动起来，去 awwwards 作品页看。'
