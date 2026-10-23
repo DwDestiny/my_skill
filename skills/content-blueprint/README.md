@@ -40,7 +40,8 @@ content-blueprint/
 ├── agents/openai.yaml
 ├── assets/templates/         五个产物模板
 └── references/               受众与结果、证据与可信度、结构模式、
-                              形式选择、蓝图模板与契约、写法、项目叠加层说明
+                              形式选择、蓝图模板与契约、写法、展示文案写法、
+                              项目叠加层说明
 ```
 
 ## 安装
