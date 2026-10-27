@@ -6,9 +6,9 @@
 <title>手绘讲课页</title>
 <!--
   Input: hand-drawn.js（画具包）、fonts/marker.woff2 + fonts/hand.woff2（子集字体，OFL-1.1）
-  Output: 两屏演示：首屏问题 + 配图（左右两栏），第二屏“六步 × 四条线”教学图（悬停切层）
-  Pos: hand-drawn 手法的起手页兼效果演示页。题材是一门中性的手作面包课；换题材时改 STEPS / ROWS / 文案与两个 geo 函数
-  调试参数：?p=2 直接到第二屏；?row=0..3 选中第几条线；?only=2 只显示第二屏（截图用）
+  Output: 两屏演示：首屏是一整幅手绘画（两岸各修半座桥，合不拢；标题写在天上），第二屏“六步 × 四条线”教学图（悬停切层）
+  Pos: hand-drawn 手法的起手页兼效果演示页。题材是一门中性的手作面包课；换题材时改 STEPS / ROWS / 文案与 sceneGeo、geo；首屏的桥与峡谷是这一幅画自己的，别的题材可整段重写，通用画具在 hand-drawn.js
+  调试参数：?p=2 直接到第二屏；?row=0..3 选中第几条线；?only=2 只显示第二屏（截图用）；首屏悬停“做不好”或错开处，红笔圈出来
 -->
 <style>
   /* 字：标题用霞鹜漫黑（记号笔），正文与批注用小赖（细钢笔）。两款均 OFL-1.1，见 fonts/ */
@@ -49,39 +49,56 @@
     0% { translate:0 0; rotate:0deg; } 33% { translate:0 -.04em; rotate:2.4deg; }
     66% { translate:0 .02em; rotate:-1.8deg; } 100% { translate:0 0; rotate:0deg; }
   }
-  li button:hover .name .ch, li.on .name .ch, .s1 .mk:hover .ch, .lb.band.on .ch { animation:boil .42s steps(1, end) calc(var(--i, 0) * 30ms) 1; }
+  li button:hover .name .ch, li.on .name .ch, .s1 .mk:hover .ch, .sc-t:hover .ch, .lb.band.on .ch { animation:boil .42s steps(1, end) calc(var(--i, 0) * 30ms) 1; }
 
-  /* 第一屏：一整幅钢笔场景铺满屏，标题放在场景左上的留白里 */
-  .s1 { display:block; overflow:hidden; }
-  .s1 .head { position:relative; max-width:60%; }
-  .s1 .q { position:relative; font-family:var(--marker); font-weight:400; font-size:clamp(34px, 4.4vw, 76px); line-height:1.3; margin:0; letter-spacing:.01em; }
+  /* 第一屏：一整张手绘画。标题写在天上，两岸各修半座桥，修到河中间一高一低，合不拢 */
+  .s1 { overflow:hidden; isolation:isolate; }
+  .s1 .head { position:relative; z-index:1; width:fit-content; max-width:100%; margin:0 auto; text-align:center; }
+  .s1 .kicker { margin-bottom:10px; }
+  .s1 .q { position:relative; z-index:1; font-family:var(--marker); font-weight:400; font-size:clamp(34px, 4.3vw, 76px); line-height:1.28; margin:0; letter-spacing:.01em; }
   .s1 .mk, .s1 .nw { white-space:nowrap; }
-  .s1 .ul { position:absolute; pointer-events:none; mix-blend-mode:multiply; clip-path:inset(0 100% 0 0); }
-  .hint { position:absolute; right:72px; bottom:40px; margin:0; font-size:18px; color:var(--mute); }
+  .s1 .ul { position:absolute; z-index:0; pointer-events:none; mix-blend-mode:multiply; clip-path:inset(0 100% 0 0); }
+  .hint { position:absolute; right:72px; bottom:40px; z-index:1; margin:0; font-size:18px; color:var(--mute); }
   .key { display:inline-block; padding:0 .5em; margin:0 .3em; }
-  /* 场景：一块大画布画桌面与静物；配方书、烤盘的烟单独成层，好做悬停和抖动 */
-  .scene { position:absolute; inset:0; pointer-events:none; }
-  .scene canvas { position:absolute; pointer-events:none; }
-  .sc-base, .sc-smoke { mix-blend-mode:multiply; }
-  .sc-hit { position:absolute; pointer-events:auto; }
-  .sc-book { opacity:0; transform:translateY(-18px) rotate(-3deg); transform-origin:50% 100%;
-    transition:opacity .3s var(--ease), transform .75s cubic-bezier(.34,1.5,.64,1); }
-  .sc-base { clip-path:inset(0 100% 0 0); transition:clip-path 1.8s var(--flow-in) .2s; }
-  .sc-arrow { clip-path:inset(0 100% 0 0); transition:clip-path 1.4s var(--flow-in) 1.6s; mix-blend-mode:multiply; }
-  .sc-smokeg, .sl { opacity:0; transition:opacity 1.2s var(--ease) 2.4s; }
-  .sc-smokeg { position:absolute; inset:0; }
-  /* 烤坏的面包上冒的烟：三帧轮换，只换线的种子 */
-  .sc-smoke { width:100%; height:100%; opacity:0; animation:flick 1.05s linear infinite; }
-  .sc-smoke:nth-child(2) { animation-delay:-.35s; } .sc-smoke:nth-child(3) { animation-delay:-.7s; }
+  /* 画面：每层一块画布叠起来。线稿层正片叠底；实心物体（地、桥、云、旗）自带纸底，挡住后面的线 */
+  .scene { position:absolute; inset:34px; margin:0; overflow:hidden; pointer-events:none; }
+  .scene canvas, .fr-g { position:absolute; mix-blend-mode:multiply; }
+  .fr-g { inset:0; }
+  .scene .solid { mix-blend-mode:normal; }
+  .sc-t { position:absolute; z-index:1; transform:translate(-50%, -50%); white-space:nowrap; line-height:1; pointer-events:auto; cursor:default; }
+  .sc-t.sign { font-family:var(--marker); }
+  #t-left { color:var(--c0-ink); } #t-right { color:var(--c3-ink); }
+  .sc-t.note { font-family:var(--hand); color:var(--c2-ink); }
+  .sc-hit { position:absolute; pointer-events:auto; border-radius:50%; }
+  /* 停住以后还在动的：水纹三帧轮换，小旗三帧，鸟两帧，云慢慢飘 */
+  .fr { opacity:0; animation:flick var(--d, 1.2s) linear infinite; }
+  .fr:nth-child(2) { animation-delay:calc(var(--d, 1.2s) / -3); } .fr:nth-child(3) { animation-delay:calc(var(--d, 1.2s) / -1.5); }
+  .flags { --d:.66s; }
   @keyframes flick { 0%, 33.3% { opacity:1; } 33.4%, 100% { opacity:0; } }
-  .sl { position:absolute; transform:translate(-50%, -50%); color:var(--mute); white-space:nowrap; line-height:1; }
-  .s1.go .sc-book { opacity:1; transform:none; }
-  .s1.go .sc-hit:hover + .sc-book { transform:translateY(-10px) rotate(1.5deg); transition-duration:.3s, .45s; }
-  .s1.go .sc-base, .s1.go .sc-arrow { clip-path:inset(0 0 0 0); }
-  .s1.go .sc-smokeg { opacity:1; }
-  .s1.go .sl { opacity:.95; }
+  .fr2 { opacity:0; animation:flick2 .72s linear infinite; } .fr2:nth-child(2) { animation-delay:-.36s; }
+  @keyframes flick2 { 0%, 49.9% { opacity:1; } 50%, 100% { opacity:0; } }
+  @keyframes drift { to { translate:22px 0; } }
+  /* 入场：天和山 → 地和河 → 两半桥从岸边往河心修 → 小旗 → 批注 */
+  .sc-sky, .sc-cloud, .sc-land, .fr-g, .sc-t { opacity:0; }
+  .sc-sky { transition:opacity 1.1s var(--ease); }
+  .sc-cloud { transition:opacity 1.4s var(--ease) .3s; }
+  .sc-land { transition:opacity 1s var(--ease) .35s; }
+  .fr-g.water { transition:opacity 1s var(--ease) .6s; }
+  .fr-g.birds { transition:opacity 1s var(--ease) 1s; }
+  #sc-bl { clip-path:inset(0 100% 0 0); transition:clip-path 2s var(--flow-in) .9s; }
+  #sc-br { clip-path:inset(0 0 0 100%); transition:clip-path 2s var(--flow-in) 1.05s; }
+  .fr-g.flags { transition:opacity .6s var(--ease) 2.7s; }
+  .sc-t.sign { transition:opacity .6s var(--ease) 1.5s; }
+  #sc-note { clip-path:inset(0 100% 0 0); transition:clip-path .9s var(--ease) 3.1s; }
+  .sc-t.note { transition:opacity .5s var(--ease) 3s; }
+  .s1.go .sc-sky, .s1.go .sc-cloud, .s1.go .sc-land, .s1.go .fr-g, .s1.go .sc-t { opacity:1; }
+  .s1.go #sc-bl, .s1.go #sc-br, .s1.go #sc-note { clip-path:inset(0 0 0 0); }
+  .s1.go .sc-cloud { animation:drift 24s ease-in-out 1.5s infinite alternate; }
   .s1.go #ul-a { clip-path:inset(0 0 0 0); transition:clip-path .65s var(--ease) .25s; }
   .s1.go #ul-b { clip-path:inset(0 0 0 0); transition:clip-path 1.5s var(--flow-in) .8s; }
+  /* 悬停“做不好”或错开的地方：红笔把它圈出来 */
+  #sc-ring { opacity:0; clip-path:inset(0 100% 0 0); transition:opacity .3s var(--ease), clip-path 0s linear .3s; }
+  .s1:has(#mk-b:hover, #sc-hit:hover, #t-gap:hover) #sc-ring { opacity:1; clip-path:inset(0 0 0 0); transition:opacity .15s var(--ease), clip-path .6s var(--ease); }
 
   /* 第二屏：左列表，右教学图 */
   .s2 { display:grid; grid-template-columns:35fr 65fr; gap:56px; align-items:center; }
@@ -120,8 +137,8 @@
   @media (max-width:760px) {
     .screen { padding:32px 16px 40px; min-height:auto; }
     .s1 { min-height:100svh; }
-    .s1 .head { max-width:none; }
     .s1 .q { font-size:38px; }
+    .scene { inset:16px; }
     .hint { right:auto; left:16px; bottom:20px; }
     .s2 { grid-template-columns:1fr; gap:34px; align-items:start; }
     h2 { font-size:31px; margin-bottom:22px; }
@@ -135,8 +152,8 @@
   }
   @media (min-width:761px) { html { scroll-snap-type:y mandatory; } .screen { scroll-snap-align:start; } }
   @media (prefers-reduced-motion:reduce) {
-    li .hl, li.on .hl, li .db, .name, .lb.band, .ov, .ov.on, .sc-book, .sc-base, .sc-arrow, .sc-smokeg, .sl, .s1 .ul, .s1.go .ul { transition:none !important; }
-    .sc-smoke { animation:none !important; } .sc-smoke:first-child { opacity:1; }
+    li .hl, li.on .hl, li .db, .name, .lb.band, .ov, .ov.on, .s1 .ul, .s1.go .ul, .scene canvas, .fr-g, .sc-t, #sc-ring { transition:none !important; }
+    .fr, .fr2, .sc-cloud { animation:none !important; } .fr:first-child, .fr2:first-child { opacity:1; }
     .ch { animation:none !important; }
   }
 </style>
@@ -144,6 +161,22 @@
 <body>
 <main>
   <section class="screen s1" id="p1" aria-label="第 1 屏">
+    <figure class="scene" id="scene" role="img" aria-label="两岸各修半座桥：左岸桥头牌写着配方，右岸写着手上。两边修到河中间，一高一低，没有接上。">
+      <canvas class="sc-sky" id="sc-sky"></canvas>
+      <canvas class="sc-cloud solid" id="sc-cloud"></canvas>
+      <div class="fr-g birds"><canvas class="fr2"></canvas><canvas class="fr2"></canvas></div>
+      <canvas class="sc-land solid" id="sc-land"></canvas>
+      <div class="fr-g water"><canvas class="fr"></canvas><canvas class="fr"></canvas><canvas class="fr"></canvas></div>
+      <canvas class="solid" id="sc-bl"></canvas>
+      <canvas class="solid" id="sc-br"></canvas>
+      <div class="fr-g flags solid"><canvas class="fr"></canvas><canvas class="fr"></canvas><canvas class="fr"></canvas></div>
+      <canvas id="sc-note"></canvas>
+      <canvas id="sc-ring"></canvas>
+      <i class="sc-hit" id="sc-hit"></i>
+      <span class="sc-t sign" id="t-left">配方</span>
+      <span class="sc-t sign" id="t-right">手上</span>
+      <span class="sc-t note" id="t-gap">接不上</span>
+    </figure>
     <canvas class="deco" id="c1" aria-hidden="true"></canvas>
     <div class="head" id="head">
       <canvas class="ul" id="ul-a" aria-hidden="true"></canvas>
@@ -151,14 +184,6 @@
       <p class="kicker"><span class="tag">手作面包课 · 开场</span></p>
       <h1 class="q"><span class="nw">照着配方做面包，</span><span class="nw">为什么常常</span><br><span class="mk" id="mk-a">看得懂</span>、<span class="mk" id="mk-b">做不好</span>？</h1>
     </div>
-    <figure class="scene" id="scene" role="img" aria-label="木桌上摊开一本配方书，书上画着一只饱满的面包；照着做，烤盘里却是一只塌掉、烤焦的面包">
-      <canvas class="sc-base" id="sc-base"></canvas>
-      <canvas class="sc-arrow" id="sc-arrow"></canvas>
-      <div class="sc-smokeg"><canvas class="sc-smoke"></canvas><canvas class="sc-smoke"></canvas><canvas class="sc-smoke"></canvas></div>
-      <i class="sc-hit" id="sc-hit"></i>
-      <canvas class="sc-book" id="sc-book"></canvas>
-      <span class="sl" id="sl-a">配方上</span><span class="sl" id="sl-b">照着做</span><span class="sl" id="sl-c">烤出来</span>
-    </figure>
     <p class="hint">按<span class="key" id="key">→</span>翻页</p>
   </section>
 
@@ -192,7 +217,7 @@ const ROWS = [
 const CAPTION = "四条线不是第七步：每一步都要照看，越往后越要紧";
 const FIG_NO = "图 2 · 六步四线", AXIS = "制作推进";
 
-const HD = HandDrawn, DPR = HD.DPR, {pen, pencil, ring, rbox, tape, sparkle, paperCard, paperize, place, placeIn, fitTo, rng, noise1, bez} = HD;
+const HD = HandDrawn, DPR = HD.DPR, {pen, pencil, ring, rbox, tape, sparkle, paperCard, paperize, place, placeIn, fitTo, rng, noise1, bez, pathOf, hatchIn, under, paperizeN, edgeMask, ridgeFn, mist, cloud, pine, bush, tuft, rock, strip} = HD;
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
 const mq = matchMedia("(max-width:760px)");
@@ -368,205 +393,503 @@ function drawP2() {
   tape(k, w - m - 36 * s, m + 8, 84 * s, 24 * s, .48, "rgba(224,168,79,.5)", 1531);
 }
 
-// ---------- 第一屏场景：木桌上摊开配方书，书上画着饱满的面包；照着做，烤盘里是一只塌掉、烤焦的面包 ----------
-// 场景铺满整屏，标题落在左上的留白里。精细来自细节密度：随形排线、多层彩铅叠色、物件的结构细节、物件周围的场景
-// 逻辑坐标：桌面版宽 1440、手机版宽 390；高度随屏。每个物件在自己的局部坐标里画，按 s 缩放
+// ---------- 第一屏场景：两岸各修半座桥，修到河中间一高一低，合不拢 ----------
+// 换题材时：改 sceneGeo 里的数字（地平线、桥位、树、云、鸟）和 HTML 里的两块桥头牌；桥、峡谷、河是这一幅画自己的，别题材可整段重写，通用画具在 hand-drawn.js 里
 function sceneGeo(vert) {
-  return vert
-    ? {vert, LW:390, s:.5, up:290, legEnd:66, legIn:40, book:120, sack:null, wheat:null, pin:[214, 40, 110, .03], tray:312, rail:[150, 372, 252], arc:150, ls:15}
-    : {vert, LW:1440, s:1.3, up:250, legEnd:30, legIn:250, book:340, sack:790, wheat:880, pin:[700, 36, 170, .1], tray:1130, rail:[990, 1370, 70], arc:260, ls:22};
+  return vert ? {
+    vert, W:560, H:1000, s:.78, WY:884,
+    far:{y:506, amp:62, seed:41}, mid:{y:574, amp:40, seed:42},
+    L:{top:668, rim:96, foot:152, seed:51}, R:{top:604, rim:468, foot:414, seed:52},
+    bl:{dir:1, x0:-40, x1:300, top:664, t0:26, np:5, p:36, th:40, piers:[196], col:"--c0", ink:"--c0-ink", pw:84, seed:600},
+    br:{dir:-1, x0:610, x1:262, top:600, t0:532, np:5, p:36, th:40, piers:[374], col:"--c3", ink:"--c3-ink", pw:66, seed:700},
+    sun:{x:456, y:250, R:36},
+    clouds:[[110, 330, .8, 81], [420, 420, .52, 82]],
+    birds:[[262, 300, .8], [292, 284, .62], [248, 326, .55]],
+    vp:{x:280, y:742},
+    trees:[[10, 664, .74], [-34, 666, .6], [544, 600, .8]],
+    rocks:[[176, 914, 15], [400, 934, 12]],
+    note:{x:126, y:540, to:[266, 634], fs:26},
+    ring:{x:282, y:632, rx:58, ry:44},
+  } : {
+    vert, W:1600, H:1000, s:1, WY:868,
+    far:{y:474, amp:76, seed:41}, mid:{y:548, amp:48, seed:42},
+    L:{top:592, rim:420, foot:492, seed:51}, R:{top:527, rim:1214, foot:1130, seed:52},
+    bl:{dir:1, x0:300, x1:832, top:588, t0:368, np:9, p:42, th:50, piers:[566, 706], col:"--c0", ink:"--c0-ink", pw:104, seed:600},
+    br:{dir:-1, x0:1300, x1:788, top:523, t0:1236, np:9, p:42, th:50, piers:[1036, 896], col:"--c3", ink:"--c3-ink", pw:84, seed:700},
+    sun:{x:1396, y:178, R:50},
+    clouds:[[236, 238, 1.25, 81], [1246, 374, .7, 82], [64, 432, .55, 83], [1536, 318, .5, 84]],
+    birds:[[372, 352, 1.25], [418, 334, 1], [340, 382, .8]],
+    vp:{x:812, y:694},
+    trees:[[-46, 586, .95], [52, 588, 1.12], [126, 590, .82], [1462, 521, 1.15], [1532, 523, .86], [1590, 522, .7]],
+    rocks:[[528, 902, 22], [1098, 922, 18], [430, 972, 30], [1196, 982, 26]],
+    note:{x:612, y:432, to:[794, 562], fs:30},
+    ring:{x:808, y:560, rx:76, ry:54},
+  };
 }
-let Z = 1; // 线宽补偿：缩小的物件线不能跟着细到看不见
-const zw = o => Object.assign({}, o, {w: (o.w ?? 1.3) * Z});
-const zpen = (c, pts, o = {}) => pen(c, pts, zw(o));
-function at(c, x, y, s, fn) { c.save(); c.translate(x, y); c.scale(s, s); Z = Math.pow(s, -.6); fn(); Z = 1; c.restore(); }
-// 随形排线：四层阈值逐档加上，tone(x,y) 越大越密；angle 顺着形体走
-function shade(c, clip, tone, o = {}) {
-  const box = HD.bounds(clip);
-  HD.HATCH_LAYERS.forEach(L => HD.hatch(c, clip, box, Object.assign({}, L, {
-    seed: (o.seed || 1) * 10 + L.seed, angle: (o.angle || 0) + L.angle, sp: L.sp * Z * (o.sp || 1), w: L.w * Z, alpha: L.alpha * (o.alpha ?? 1), tone: (x, y) => tone(x, y),
-  })));
+let SC = null, MASK = null;
+const bboxOf = HD.bounds, fade = cv => HD.fade(cv, MASK, SC.W, SC.H);
+// 在场景里放一块画布，按逻辑坐标作画
+function pl(cv, x0, y0, w, h) {
+  const {k, ox, oy} = SC, c = place(cv, (x0 + ox) * k, (y0 + oy) * k, w * k, h * k);
+  c.scale(k, k); c.translate(ox, oy); return c;
 }
-const halfEllipse = (cx, cy, rx, ry, n = 36, wob = 0, seed = 1) => { const w = noise1(seed), pts = [];
-  for (let i = 0; i <= n; i++) { const a = Math.PI + Math.PI * i / n; pts.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry * (1 + (w(i * .5) - .5) * wob)]); } return pts; };
-
-// 桌子：桌面（木纹彩铅 + 板缝）、前沿（排线加木纹）、两条腿、桌下阴影
-function drawTable(c, g, ty, LH) {
-  const x0 = 26, x1 = g.LW - 26, top = [[x0 + 22, ty], [x1 - 22, ty], [x1, ty + 46], [x0, ty + 46]], r = rng(2100);
-  pencil(c, top, HD.bounds(top), {seed: 2101, color: "#d6ad7c", len: 16, w: 1.6, density: .07, tooth: .55, alpha: (x, y) => .35 + .3 * (y - ty) / 46});
-  for (let i = 0; i < 4; i++) { const y = ty + 9 + i * 10, f = (y - ty) / 46, pts = [];
-    for (let x = x0 + 22 * (1 - f) + 4; x < x1 - 22 * (1 - f) - 4; x += 8) pts.push([x, y + (r() - .5) * .8]);
-    pen(c, pts, {w: .8, alpha: .3, color: "#8a6440", seed: 2110 + i, jit: .4}); }
-  pen(c, top, {closed: true, w: 1.4, seed: 2120, jit: .6});
-  const front = [[x0, ty + 46], [x1, ty + 46], [x1, ty + 90], [x0, ty + 90]];
-  pencil(c, front, HD.bounds(front), {seed: 2130, color: "#b07c4a", len: 14, w: 1.6, density: .14, tooth: .5, alpha: () => .75});
-  shade(c, front, (x, y) => .3 + .55 * (y - ty - 46) / 44, {seed: 213});
-  for (let i = 0; i < 3; i++) { const n = noise1(2140 + i), pts = []; // 木纹：长而起伏的线，遇到节疤绕开
-    for (let x = x0 + 6; x < x1 - 6; x += 6) pts.push([x, ty + 56 + i * 11 + (n(x * .02) - .5) * 6]);
-    pen(c, pts, {w: .7, alpha: .45, color: "#5e3d22", seed: 2150 + i, jit: .3}); }
-  pen(c, front, {closed: true, w: 1.5, seed: 2160, jit: .6});
-  pen(c, [[x0 + 2, ty + 47.5], [x1 - 2, ty + 47.5]], {w: 2.2, seed: 2161, jit: .5, alpha: .8});
-  [x0 + g.legIn, x1 - g.legIn - 36].forEach((lx, i) => { const leg = [[lx, ty + 90], [lx + 36, ty + 90], [lx + 33, LH - g.legEnd], [lx + 3, LH - g.legEnd]];
-    pencil(c, leg, HD.bounds(leg), {seed: 2170 + i, color: "#a8723f", len: 12, w: 1.5, density: .14, alpha: () => .7});
-    shade(c, leg, x => .35 + .5 * (x - lx) / 36, {seed: 217 + i, angle: Math.PI / 2});
-    pen(c, leg, {closed: true, w: 1.3, seed: 2180 + i, jit: .5}); });
-  const under = [[x0 + g.legIn + 40, ty + 92], [x1 - g.legIn - 40, ty + 92], [x1 - g.legIn - 90, ty + 128], [x0 + g.legIn + 90, ty + 128]]; // 桌下的影子：淡淡一层交叉排线
-  shade(c, under, (x, y) => .5 - .4 * (y - ty - 92) / 36, {seed: 219, alpha: .5, angle: .2});
+function putT(id, x, y, fs) { Object.assign(document.getElementById(id).style, {left: (x + SC.ox) * SC.k + "px", top: (y + SC.oy) * SC.k + "px", fontSize: fs * SC.k + "px"}); }
+// ---------- 天：彩铅天色、太阳、远山两层、山间雾 ----------
+function drawSky(g, C) {
+  const s = g.s, X0 = -SC.ox - 10, X1 = g.W + SC.ox + 10, Y0 = -SC.oy - 10, yb = g.WY + 40;
+  const cv = document.getElementById("sc-sky"), c = pl(cv, X0, Y0, X1 - X0, yb - Y0);
+  const far = ridgeFn(g.far), mid = ridgeFn(g.mid), xs = [], sun = g.sun, hz = g.far.y;
+  for (let x = X0; x <= X1 + 6; x += 6) xs.push(x);
+  const sky = [[X0, Y0], [X1, Y0], ...xs.slice().reverse().map(x => [x, far(x) + 3])];
+  // 天色：缓斜的长笔触成片铺，片与片之间留白；标题和太阳后面让出来
+  const [tx0, ty0, tx1, ty1] = g.title, tcx = (tx0 + tx1) / 2, tcy = (ty0 + ty1) / 2, thw = (tx1 - tx0) / 2 + 50 * s, thh = (ty1 - ty0) / 2 + 36 * s;
+  const pa = noise1(2002), pb = noise1(2003), cl = v => Math.min(1, Math.max(0, v));
+  pencil(c, sky, [X0, Y0, X1, hz + 30 * s], {seed: 2001, color: "#a6c3de", angle: -.4, len: 32 * s, w: 1.4 * s, density: .036 / (s * s), tooth: .55,
+    alpha: (x, y) => {
+      const v = .07 + .4 * Math.pow(Math.max(0, (hz - y) / (hz - Y0)), 1.1), patch = .35 + 1.1 * pa(x * .005 + pb(y * .009) * 2.6);
+      const d = Math.hypot(x - sun.x, y - sun.y) / sun.R, td = Math.hypot((x - tcx) / thw, (y - tcy) / thh);
+      return v * patch * cl((d - 1.9) / 1.8) * (.18 + .82 * cl((td - .7) / .55));
+    }});
+  // 太阳：左上留高光，外圈一圈长短相间的光芒
+  const sr = ring(sun.x, sun.y, sun.R, 2010, 44);
+  pencil(c, sr.slice(0, 41), [sun.x - sun.R, sun.y - sun.R, sun.x + sun.R, sun.y + sun.R], {seed: 2011, color: css("--c0"), angle: -1.08, len: 10 * s, w: 1.6 * s, density: .55 / (s * s), tooth: .5,
+    alpha: (x, y) => .45 + .5 * Math.min(1, Math.hypot(x - sun.x + sun.R * .35, y - sun.y + sun.R * .35) / (sun.R * 1.3))});
+  pen(c, sr, {w: 1.7 * s, seed: 2012, jit: .5, color: css("--c0-ink")});
+  for (let i = 0; i < 16; i++) {
+    const a = i / 16 * Math.PI * 2 + .12, r0 = sun.R * 1.3, r1 = sun.R * (i % 2 ? 1.6 : 1.95), bend = .05;
+    pen(c, [[sun.x + Math.cos(a) * r0, sun.y + Math.sin(a) * r0], [sun.x + Math.cos(a + bend) * (r0 + r1) / 2, sun.y + Math.sin(a + bend) * (r0 + r1) / 2], [sun.x + Math.cos(a) * r1, sun.y + Math.sin(a) * r1]],
+      {w: 1.5 * s, seed: 2020 + i, jit: .4, color: css("--c0-ink"), alpha: .78});
+  }
+  // 远山：蓝灰，背光的坡上顺坡排线，山脚化进雾里
+  const farTop = xs.map(x => [x, far(x)]), farP = [...farTop, [X1, yb], [X0, yb]], fb = [X0, hz - g.far.amp * 1.4, X1, yb];
+  pencil(c, farP, fb, {seed: 2030, color: "#a7b0ca", angle: -1.08, len: 14 * s, w: 1.3 * s, density: .2 / (s * s), tooth: .55, alpha: (x, y) => .72 * Math.max(0, 1 - (y - far(x)) / (120 * s))});
+  hatchIn(c, farP, [X0, fb[1], X1, hz + 60 * s], {seed: 2031, angle: 1.15, sp: 3.4 * s, w: .6 * s, alpha: .5, color: "#5b6783", wob: .6, step: 2.5,
+    tone: (x, y) => Math.min(1, Math.max(0, (far(x + 4) - far(x - 4)) / 8 * 1.5 + .1)) * Math.max(0, 1 - (y - far(x)) / (70 * s)), thr: .28});
+  pen(c, farTop, {w: .9 * s, seed: 2032, jit: .3, color: "#5b6783", alpha: .6});
+  mist(c, hz - 4 * s, hz + 80 * s, X0, X1, yb);
+  // 近一层山：灰绿，山脊上一排小树
+  const midTop = xs.map(x => [x, mid(x)]), midP = [...midTop, [X1, yb], [X0, yb]], my = g.mid.y;
+  pencil(c, midP, [X0, my - g.mid.amp * 1.4, X1, yb], {seed: 2040, color: "#a2b69b", angle: -1.08, len: 13 * s, w: 1.3 * s, density: .24 / (s * s), tooth: .55, alpha: (x, y) => .8 * Math.max(0, 1 - (y - mid(x)) / (110 * s))});
+  hatchIn(c, midP, [X0, my - g.mid.amp * 1.4, X1, my + 60 * s], {seed: 2041, angle: 1.2, sp: 3.2 * s, w: .6 * s, alpha: .55, color: "#4f654b", wob: .6, step: 2.5,
+    tone: (x, y) => Math.min(1, Math.max(0, (mid(x + 4) - mid(x - 4)) / 8 * 1.5 + .15)) * Math.max(0, 1 - (y - mid(x)) / (60 * s)), thr: .26});
+  pen(c, midTop, {w: 1 * s, seed: 2042, jit: .35, color: "#4f654b", alpha: .7});
+  const tr = rng(2043);
+  for (let x = X0 + tr() * 12; x < X1; x += (7 + tr() * 16) * s) {
+    if (tr() < .4) continue;
+    const ty = mid(x) + (2 + tr() * 9) * s, th = (6 + tr() * 5) * s;
+    c.save(); c.globalAlpha = .5; c.fillStyle = "#6f8d68"; pathOf(c, [[x - th * .32, ty], [x, ty - th], [x + th * .32, ty]]); c.fill(); c.restore();
+    pen(c, [[x - th * .32, ty], [x, ty - th], [x + th * .32, ty]], {w: .55 * s, seed: 2044 + Math.round(x), jit: .15, color: "#3f5538", alpha: .6});
+  }
+  mist(c, my + 4 * s, my + 96 * s, X0, X1, yb, .9);
+  paperize(cv); fade(cv);
 }
-// 配方书：蓝封面、两页纸、页边的纸叠、书脊的阴影、左页字迹、右页画着一只饱满的面包、书签带
-function drawBook(c) {
-  const cover = [[-182, 8], [182, 8], [170, -152], [-170, -152]];
-  pencil(c, cover, HD.bounds(cover), {seed: 2201, color: css("--c3"), len: 12, w: 1.5, density: .2, tooth: .5, alpha: () => .8});
-  zpen(c, cover, {closed: true, w: 1.4, seed: 2202, jit: .5});
-  const L = [[-170, 0], [-3, 8], [-3, -138], [-160, -146]], R = [[3, 8], [170, 0], [160, -146], [3, -138]];
-  [L, R].forEach((pg, k) => {
-    for (let d = 3; d >= 1; d--) zpen(c, pg.slice(0, 2).map(([x, y]) => [x + (k ? 1 : -1) * d, y + d * 1.6]), {w: .7, alpha: .5, seed: 2210 + d + k * 5, jit: .3});
-    c.save(); c.fillStyle = "rgba(252,248,238,.92)"; HD.pathOf(c, pg); c.fill(); c.restore();
-    shade(c, pg, x => (k ? .75 - x / 22 : .75 + x / 22), {seed: 222 + k, angle: Math.PI / 2, alpha: .7}); // 书脊附近的弯折阴影
-    zpen(c, pg, {closed: true, w: 1.2, seed: 2230 + k, jit: .4});
+// 云：自带纸底，慢慢飘
+function drawClouds(g) {
+  const X0 = -SC.ox - 10, X1 = g.W + SC.ox + 10, Y0 = -SC.oy - 10, cv = document.getElementById("sc-cloud"), c = pl(cv, X0, Y0, X1 - X0, g.mid.y - Y0);
+  g.clouds.forEach(([x, y, sc, seed]) => cloud(c, x, y, sc * g.s, seed));
+  paperizeN(cv, .4); fade(cv);
+}
+// 鸟：两帧，翅膀一上一下
+function drawBirds(g) {
+  const s = g.s, bb = bboxOf(g.birds), x0 = bb[0] - 24 * s, y0 = bb[1] - 20 * s, w = bb[2] - bb[0] + 48 * s, h = bb[3] - bb[1] + 34 * s;
+  const qd = (x0q, y0q, cx, cy, x1, y1) => Array.from({length: 9}, (_, i) => { const t = i / 8, m = 1 - t; return [m * m * x0q + 2 * m * t * cx + t * t * x1, m * m * y0q + 2 * m * t * cy + t * t * y1]; });
+  document.querySelectorAll(".birds canvas").forEach((cv, v) => {
+    const c = pl(cv, x0, y0, w, h);
+    g.birds.forEach(([x, y, sc], i) => {
+      const k = sc * s * 14, tip = v ? -.25 : -.75, ctl = v ? -.62 : -.95;
+      pen(c, qd(x - k, y + tip * k, x - k * .45, y + ctl * k, x, y), {w: 1.4 * s * Math.max(.75, sc), seed: 2100 + i * 4 + v, jit: .15});
+      pen(c, qd(x, y, x + k * .45, y + ctl * k, x + k, y + tip * k), {w: 1.4 * s * Math.max(.75, sc), seed: 2102 + i * 4 + v, jit: .15});
+    });
+    paperize(cv); fade(cv);
   });
-  const r = rng(2240), gray = css("--graphite");
-  zpen(c, [[-140, -124], [-70, -126]], {w: 2.2, seed: 2241, jit: .4, alpha: .85});
-  for (let i = 0; i < 8; i++) { const y = -106 + i * 12, x1 = -22 - (i % 4 === 3 ? 50 : r() * 18), pts = [];
-    for (let x = -146 + i * .6; x <= x1; x += 4) pts.push([x, y + Math.sin(x * .6) * 1.2 + (r() - .5)]);
-    zpen(c, pts, {w: .8, alpha: .5, color: gray, seed: 2250 + i, jit: .4}); }
-  drawLoaf(c, 86, -42, 1, false, 2300);
-  sparkle(c, 140, -118, 7 * Z, 2290, css("--c0")); sparkle(c, 30, -112, 4 * Z, 2291, css("--c0"));
-  zpen(c, [[0, 6], [4, 26], [-2, 40]], {w: 2.4, seed: 2295, jit: .4, color: css("--c2-ink")}); // 书签带
 }
-// 面包：good=true 是书上那只（圆鼓、三道割口、金黄），false 是烤盘里那只（塌、焦、裂）
-function drawLoaf(c, cx, cy, s, flat, seed) {
-  const rx = (flat ? 112 : 54) * s, ry = (flat ? 26 : 46) * s, dome = halfEllipse(cx, cy, rx, ry, 40, flat ? .35 : .05, seed), base = [...dome, [cx + rx * .96, cy + 4 * s], [cx - rx * .96, cy + 4 * s]];
-  const box = HD.bounds(base);
-  pencil(c, base, box, {seed: seed + 1, color: flat ? css("--c2") : css("--c0"), len: 9 * s, w: 1.5, density: .5 / s, tooth: .45,
-    alpha: (x, y) => .45 + .45 * (y - box[1]) / (box[3] - box[1])});
-  if (flat) pencil(c, base, box, {seed: seed + 2, color: "#6b4430", len: 7 * s, w: 1.4, density: .35 / s, tooth: .5, alpha: (x, y) => .2 + .6 * Math.max(0, (x - cx) / rx)}); // 焦斑压在上面
-  shade(c, base, (x, y) => (flat ? .45 : .1) + .5 * ((x - cx) / rx * .5 + (y - box[1]) / (box[3] - box[1]) * .6), {seed: seed % 97, angle: flat ? .1 : -.35});
-  zpen(c, base, {closed: true, w: 1.5, seed: seed + 3, jit: flat ? .7 : .4});
-  if (!flat) [-.5, 0, .5].forEach((o, i) => { const x = cx + o * rx * .9; // 割口：一道弧线加一道复描的亮边
-    zpen(c, [[x - 10 * s, cy - ry * .55 + Math.abs(o) * 12 * s], [x, cy - ry * .78 + Math.abs(o) * 14 * s], [x + 10 * s, cy - ry * .9 + Math.abs(o) * 16 * s]], {w: 1.6, seed: seed + 10 + i, jit: .3}); });
-  else { const r = rng(seed + 20); for (let i = 0; i < 4; i++) { const x = cx - rx * .6 + i * rx * .38, pts = []; // 裂缝
-    for (let k = 0; k < 4; k++) pts.push([x + k * 6 * s + (r() - .5) * 4 * s, cy - ry * .55 + (r() - .5) * 6 * s + k * 1.5]);
-    zpen(c, pts, {w: 1.1, seed: seed + 30 + i, jit: .3, alpha: .9}); } }
+// ---------- 地：河、两岸的崖、桥下的峡谷 ----------
+function bankGeo(g, side) {
+  const s = g.s, B = side < 0 ? g.L : g.R, dir = side < 0 ? 1 : -1, r = rng(B.seed), n = noise1(B.seed);
+  const xe = side < 0 ? -SC.ox - 30 : g.W + SC.ox + 30, edge = [], N = Math.ceil(Math.abs(B.rim - xe) / 12);
+  for (let i = 0; i <= N; i++) { const x = xe + (B.rim - xe) * i / N; edge.push([x, B.top + (i === N ? 0 : (n(x * .025) - .5) * 6 * s)]); }
+  // 崖面：一段段往下掉，每段底下横出一级台阶
+  const face = [[B.rim, B.top]], ledges = [], span = g.WY - B.top, run = B.foot - B.rim, steps = 5;
+  let x = B.rim, y = B.top;
+  for (let i = 0; i < steps; i++) {
+    const last = i === steps - 1, dy = last ? g.WY - y : span / steps * (.72 + r() * .5);
+    face.push([x + dir * (2 + r() * 8) * s, y + dy * (.35 + r() * .3)]);
+    y = Math.min(g.WY, y + dy); x += dir * (r() - .5) * 6 * s; face.push([x, y]);
+    const lx = last ? B.foot - x : run / steps * (.5 + r() * .9), ly = last ? 0 : 1.5 * s;
+    ledges.push([x, y, x + lx, y + ly]); x += lx; y += ly; face.push([x, y]);
+  }
+  const shore = [B.foot - dir * 170 * s, g.H + 30], mass = [...edge, ...face.slice(1), shore, [xe, g.H + 30]];
+  const shoreX = yy => B.foot + (shore[0] - B.foot) * (yy - g.WY) / (shore[1] - g.WY);
+  const faceX = yy => {
+    if (yy <= B.top) return B.rim;
+    for (let i = 1; i < face.length; i++) { const [xa, ya] = face[i - 1], [xb, yb2] = face[i]; if (yy <= yb2) return yb2 === ya ? xb : xa + (xb - xa) * (yy - ya) / (yb2 - ya); }
+    return shoreX(yy);
+  };
+  return {B, side, dir, xe, edge, face, ledges, mass, shore, shoreX, faceX, n};
 }
-// 面粉袋：鼓起的袋身、扎紧的袋口、袋口的褶、印着的麦穗圆标、洒在桌上的粉
-function drawSack(c) {
-  const body = [[-64, 0], [-20, 3], [24, 2], [64, 0], [70, -40], [68, -84], [58, -124], [36, -154], [16, -168], [-16, -168], [-36, -154], [-58, -124], [-68, -84], [-70, -40]];
-  pencil(c, body, HD.bounds(body), {seed: 2401, color: "#dccaa2", len: 12, w: 1.5, density: .18, tooth: .5, alpha: (x) => .45 + .35 * (x + 70) / 140});
-  shade(c, body, (x, y) => .05 + .55 * Math.max(0, (x + 10) / 80) + .25 * Math.max(0, (y + 30) / 30), {seed: 241, angle: -.9});
-  zpen(c, body, {closed: true, w: 1.5, seed: 2402, jit: .5});
-  for (let i = 0; i < 4; i++) zpen(c, [[-14 + i * 9, -166], [-20 + i * 12, -140 + i * 4]], {w: .8, alpha: .6, seed: 2410 + i, jit: .4}); // 袋口的褶
-  const ear = [[-18, -168], [-30, -196], [-8, -186], [2, -204], [12, -186], [30, -198], [18, -168]];
-  pencil(c, ear, HD.bounds(ear), {seed: 2420, color: "#dccaa2", len: 8, w: 1.3, density: .3, alpha: () => .6});
-  zpen(c, ear, {w: 1.3, seed: 2421, jit: .5});
-  zpen(c, [[-22, -170], [0, -173], [22, -170]], {w: 2.4, seed: 2422, jit: .3, color: css("--c2-ink")}); // 扎口的绳
-  zpen(c, [[16, -171], [30, -160], [24, -150]], {w: 1.4, seed: 2423, jit: .3, color: css("--c2-ink")});
-  zpen(c, ring(-2, -80, 30, 2430), {w: 1.2, seed: 2431, jit: .4, alpha: .8}); // 麦穗圆标
-  drawWheat(c, -2, -56, -Math.PI / 2, 44, 2440, .7);
-  const r = rng(2450); c.fillStyle = "rgba(255,253,246,.85)"; // 洒出的面粉：亮色小点
-  for (let i = 0; i < 60; i++) { const x = 40 + r() * 110, y = -2 + r() * 20; c.beginPath(); c.arc(x, y, (.6 + r() * 1.4) * Z, 0, 7); c.fill(); }
+function drawBank(c, g, K) {
+  const {B, side, dir, xe, edge, face, ledges, mass, shore, faceX, n} = K, s = g.s, r = rng(B.seed + 9), span = g.WY - B.top;
+  under(c, mass);
+  const bb = bboxOf(mass);
+  const depth = yy => Math.min(1, Math.max(0, (yy - B.top) / span));
+  // 光从左上来：左岸的崖面背光，右岸的崖面迎光。草沿下压一道暗，往下越画越松，散回纸里
+  const pn = noise1(B.seed + 40), pq = noise1(B.seed + 41), cl = v => Math.min(1, Math.max(0, v));
+  const lipK = py => Math.max(0, 1 - (py - B.top) / (70 * s)), lowK = py => 1 - .62 * cl((py - g.WY + 90 * s) / (g.H - g.WY + 90 * s));
+  const T = (px, py) => { const near = Math.max(0, 1 - (faceX(py) - px) * dir / (150 * s)), patch = .62 + .76 * pn(px * .018 + pq(py * .011) * 3);
+    return (side < 0 ? .1 + .32 * near + .22 * lipK(py) : .08 + .1 * near + .2 * lipK(py)) * patch * lowK(py); };
+  // 岩层：几道略斜的层线把崖面切成几层，每层一种土石色，横着铺；层线时断时续，线下的阴影一段段出现
+  const rows = []; for (let yy = B.top + 30 * s; yy < g.H - 10 * s; yy += (34 + r() * 50) * s) rows.push({yy, sl: (r() - .5) * .05, xf: faceX(yy) + dir * 8 * s});
+  const ly = (j, px) => j < 0 ? B.top - 30 * s : j >= rows.length ? g.H + 60 : rows[j].yy + (px - rows[j].xf) * rows[j].sl + ((n(j * 40 + px * .007) - .5) * 16 + (n(j * 40 + 300 + px * .03) - .5) * 6) * s;
+  const PAL = ["#b38e66", "#d4b98f", "#a9b0c2", "#c9a476", "#dcc7a0", "#b3b4c4", "#cfa97a"], wide = Math.abs(B.rim - xe) + 240 * s;
+  for (let j = -1; j < rows.length; j++) {
+    const ya = j < 0 ? B.top - 30 * s : rows[j].yy - 8 * s - Math.abs(rows[j].sl) * wide, yb2 = j + 1 < rows.length ? rows[j + 1].yy + 8 * s + Math.abs(rows[j + 1].sl) * wide : g.H + 30;
+    pencil(c, mass, [bb[0], ya, bb[2], yb2], {seed: B.seed * 7 + j + 9, color: PAL[(j + 1) % PAL.length], angle: -.14, len: 11 * s, w: 1.4 * s, density: .24 / (s * s), tooth: .55,
+      alpha: (px, py) => py < ly(j, px) || py >= ly(j + 1, px) ? 0 : .22 * lowK(py) + T(px, py)});
+  }
+  pencil(c, mass, bb, {seed: B.seed + 2, color: "#8492aa", angle: -1.08, len: 8 * s, w: 1.3 * s, density: .1 / (s * s), tooth: .6, alpha: (px, py) => Math.max(0, T(px, py) - .3) * 1.7});
+  c.save(); pathOf(c, mass); c.clip();
+  rows.forEach(({yy, sl, xf}, j) => {
+    const M = Math.max(2, Math.ceil(Math.abs(xf - xe) / 5)), line = [], fadeK = lowK(yy);
+    for (let i = 0; i <= M; i++) { const px = xe + (xf - xe) * i / M; line.push([px, ly(j, px)]); }
+    for (let i = 0, q = 0; i < line.length - 1; q++) { const L = 5 + Math.floor(r() * 24), gap = 1 + Math.floor(r() * 6), sg = line.slice(i, Math.min(line.length, i + L + 1)); if (sg.length > 1) pen(c, sg, {w: 1 * s, seed: B.seed * 10 + j * 31 + q, jit: .5, alpha: (.36 + r() * .26) * fadeK}); i += L + gap; }
+    const band = [...line, ...line.slice().reverse().map(([px, py]) => [px, py + 9 * s])], bx = bboxOf(band), bn = noise1(B.seed * 10 + j);
+    hatchIn(c, band, bx, {seed: B.seed * 10 + j, angle: Math.PI / 2 - .3 * dir, sp: 3 * s, w: .65 * s, alpha: .5 * fadeK, step: 2,
+      tone: (px, py) => (1 - (py - ly(j, px)) / (9 * s)) * cl((bn(px * .012) - .36) * 3.2), thr: .3, rag: .6});
+    const kind = (j + 1) % PAL.length, yn = rows[j + 1]?.yy ?? yy + 50 * s;
+    // 灰岩层里有竖缝；黄土层里嵌着卵石
+    if (kind === 2 || kind === 5) for (let jx = xe + dir * r() * 120 * s; (xf - jx) * dir > 20 * s; jx += dir * (90 + r() * 160) * s) {
+      if (r() < .3) continue;
+      const y0 = ly(j, jx), h2 = (ly(j + 1, jx) - y0) * (.4 + r() * .5), lean = (r() - .5) * 8 * s, sd = B.seed * 100 + j * 17 + Math.round(Math.abs(jx));
+      pen(c, [[jx, y0 + 3 * s], [jx + lean * .5, y0 + h2 * .5], [jx + lean, y0 + h2]], {w: .8 * s, seed: sd, jit: .6, alpha: .5 * fadeK});
+    }
+    if (kind === 3 || kind === 6) for (let i = 0; i < 18; i++) {
+      const px = xf - dir * r() * Math.min(520 * s, Math.abs(xf - xe)), top2 = ly(j + 1, px), py = ly(j, px) + 6 * s + r() * Math.max(0, top2 - ly(j, px) - 12 * s), R = (2.5 + r() * 4) * s;
+      const pts = ring(px, py, R, B.seed * 400 + j * 30 + i, 14).map(([qx, qy]) => [px + (qx - px) * 1.35, qy]);
+      c.save(); c.globalAlpha = .75 * fadeK; c.fillStyle = "#ece0c8"; pathOf(c, pts); c.fill(); c.restore();
+      pen(c, pts, {closed: true, w: .75 * s, seed: B.seed * 500 + j * 30 + i, jit: .2, alpha: .6 * fadeK});
+      pen(c, [[px - R * .6, py + R * .7], [px + R * 1.1, py + R * .5]], {w: .7 * s, seed: B.seed * 600 + j * 30 + i, jit: .2, alpha: .5 * fadeK});
+    }
+  });
+  // 石面上零星的小凹坑，草沿下垂下几缕根
+  for (let i = 0; i < 26; i++) {
+    const py = B.top + 20 * s + r() * (g.WY - B.top) * .8, xf = faceX(py), px = xf - dir * r() * Math.min(420 * s, Math.abs(xf - xe)), L = (3 + r() * 4) * s;
+    pen(c, [[px, py], [px + L * .5, py - L * .25], [px + L, py]], {w: .7 * s, seed: B.seed * 70 + i, jit: .2, alpha: .45 * lowK(py)});
+  }
+  edge.forEach(([px, py], i) => { if (i % 3 || r() < .5) return; const L = (5 + r() * 14) * s; pen(c, [[px, py + 2 * s], [px + (r() - .5) * 4 * s, py + L * .55], [px + (r() - .5) * 6 * s, py + L]], {w: .7 * s, seed: B.seed * 90 + i, jit: .3, color: "#4d6b3f", alpha: .55}); });
+  // 崖口那一面：贴着崖边顺坡排线，背光的一岸更密
+  const fband = [...face, ...face.slice().reverse().map(([px, py]) => [px - dir * 74 * s, py])], fa = Math.atan2(span, B.foot - B.rim);
+  hatchIn(c, fband, bboxOf(fband), {seed: B.seed + 5, angle: fa, sp: (side < 0 ? 3 : 4.4) * s, w: .75 * s, alpha: side < 0 ? .62 : .4, step: 2.5,
+    tone: (px, py) => 1 - (faceX(py) - px) * dir / (74 * s), thr: side < 0 ? .25 : .5, rag: .5});
+  c.restore();
+  // 台地：一条草地，前沿垂下草
+  const back = edge.map(([px, py]) => [px, py - (15 + n(px * .04 + 77) * 10) * s]), strip = [...edge, ...back.slice().reverse()];
+  under(c, strip);
+  pencil(c, strip, bboxOf(strip), {seed: B.seed + 6, color: "#a4c286", angle: -1.08, len: 9 * s, w: 1.3 * s, density: .55 / (s * s), tooth: .5, alpha: (px, py) => .5 + .35 * Math.min(1, (py - B.top + 26 * s) / (26 * s))});
+  pen(c, back, {w: .8 * s, alpha: .45, color: "#4d6b3f", jit: .6, seed: B.seed + 7});
+  pen(c, edge, {w: 1.4 * s, seed: B.seed + 8, jit: .6});
+  pen(c, face, {w: 1.9 * s, seed: B.seed + 11, jit: .7});
+  pen(c, [face[face.length - 1], shore], {w: 1.2 * s, seed: B.seed + 12, jit: .7, alpha: .8});
+  edge.forEach(([px, py], i) => { if (r() < .75) tuft(c, px + r() * 8, py + 1.5 * s, s, B.seed * 1000 + i); });
+  ledges.forEach(([ax, ay, bx2], q) => {
+    for (let t = .1; t < 1; t += .22) tuft(c, ax + (bx2 - ax) * t, ay + 1, s * .8, B.seed * 2000 + q * 10 + Math.round(t * 10));
+    if (q === 1 || q === 3) bush(c, ax + (bx2 - ax) * .55, ay + 1, 12 * s, B.seed * 3000 + q);
+  });
+  // 岸边的卵石
+  for (let i = 0; i < 12; i++) {
+    const t = r(), py = g.WY + (shore[1] - g.WY) * t * .9, px = K.shoreX(py) - dir * (3 + r() * 20) * s, R = (2 + r() * 3.5) * s;
+    pen(c, ring(px, py, R, B.seed * 50 + i, 12).map(([qx, qy]) => [qx, py + (qy - py) * .6]), {closed: false, w: .8 * s, seed: B.seed * 60 + i, jit: .2, alpha: .7});
+  }
 }
-// 麦穗：一根茎，末段两侧交替排麦粒（小圈填彩铅）
-function drawWheat(c, x, y, a, L, seed, k = 1) {
-  const dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx;
-  zpen(c, [[x, y], [x + dx * L, y + dy * L]], {w: 1.1, seed, jit: .3});
-  for (let i = 0; i < 7; i++) { const t = .45 + i * .08, side = i % 2 ? 1 : -1, px = x + dx * L * t + nx * side * 4 * k, py = y + dy * L * t + ny * side * 4 * k;
-    const g = ring(px, py, 3.4 * k, seed + i, 16).map(([qx, qy]) => [px + (qx - px) * 1 + dx * (qy - py) * .0, py + (qy - py)]);
-    pencil(c, g.slice(0, 13), [px - 4 * k, py - 4 * k, px + 4 * k, py + 4 * k], {seed: seed + 20 + i, color: css("--c0"), len: 3, w: 1, density: 2, alpha: () => .9});
-    zpen(c, g, {w: .9, seed: seed + 40 + i, jit: .2}); }
+// 河：近岸深、河心浅；崖脚一道暗；桥墩的倒影一截截晃开
+function drawWater(c, g, Lb, Rb, G) {
+  const s = g.s, {V, FLb, FRb} = G, WY = g.WY, poly = [[Lb.B.foot, WY], FLb, FRb, [Rb.B.foot, WY], [Rb.shore[0], g.H + 30], [Lb.shore[0], g.H + 30]], bb = bboxOf(poly);
+  const farK = y => Math.min(1, Math.max(.12, (y - V.y) / (WY - V.y)));
+  const lx = y => y >= WY ? Lb.shoreX(y) : Lb.B.foot + (FLb[0] - Lb.B.foot) * (WY - y) / (WY - V.y);
+  const rx = y => y >= WY ? Rb.shoreX(y) : Rb.B.foot + (FRb[0] - Rb.B.foot) * (WY - y) / (WY - V.y);
+  const edgeD = (x, y) => Math.min(x - lx(y), rx(y) - x) / farK(y);
+  // 河心映着天，留一道亮；远处的水淡，左壁背光那边的水暗
+  const glint = (x, y) => 1 - .6 * Math.exp(-Math.pow((x - (lx(y) + rx(y)) / 2 - (y - WY) * .12) / ((rx(y) - lx(y)) * .16), 2));
+  under(c, poly);
+  pencil(c, poly, bb, {seed: 3001, color: "#8db4d1", angle: -.04, len: 26 * s, w: 1.5 * s, density: .2 / (s * s), tooth: .5,
+    alpha: (x, y) => (.26 + .42 * Math.max(0, 1 - edgeD(x, y) / (150 * s))) * glint(x, y) * (.4 + .6 * farK(y))});
+  pencil(c, poly, bb, {seed: 3002, color: "#5b83a6", angle: -.03, len: 20 * s, w: 1.3 * s, density: .12 / (s * s), tooth: .55,
+    alpha: (x, y) => (Math.max(0, 1 - (x - lx(y)) / farK(y) / (70 * s)) * .6 + Math.max(0, 1 - (rx(y) - x) / farK(y) / (36 * s)) * .35) * (.45 + .55 * farK(y))});
+  const fr = rng(3005);
+  for (let i = 0; i < 22; i++) { // 远处的水纹：短、淡、越远越密
+    const t = Math.pow(fr(), 1.4), y = V.y + 6 * s + (WY - V.y - 10 * s) * t, x = lx(y) + (rx(y) - lx(y)) * (.15 + fr() * .7), L = (4 + 14 * t) * s;
+    pen(c, [[x - L / 2, y], [x + L / 2, y]], {w: (.6 + t * .4) * s, seed: 3006 + i, jit: .2, color: "#3d5d78", alpha: .25 + .3 * t});
+  }
+  pen(c, [[Lb.B.foot, WY], FLb], {w: .9 * s, seed: 3031, jit: .4, alpha: .45, color: "#3d5d78"});
+  pen(c, [[Rb.B.foot, WY], FRb], {w: .9 * s, seed: 3032, jit: .4, alpha: .4, color: "#3d5d78"});
+  const r = rng(3010);
+  [...g.bl.piers, ...g.br.piers].forEach((px, i) => {
+    const wb = 40 * s;
+    for (let y = g.WY + 6 * s, q = 0; y < g.WY + 130 * s; y += 3.6 * s, q++) {
+      if (r() < .22) continue;
+      const t = (y - g.WY) / (130 * s), off = Math.sin(y * .32 / s + i) * 2.6 * s * (1 + t * 2), hw = wb / 2 * (.8 + r() * .35) * (1 - t * .25);
+      pen(c, [[px - hw + off, y], [px + hw + off + 8 * s, y]], {w: 1.2 * s, seed: 3020 + i * 50 + q, jit: .3, alpha: .55 * Math.pow(1 - t, 1.3), color: "#6c685e"});
+    }
+  });
 }
-// 擀面杖：圆柱身（顺长排线，下半更暗）、两头手柄、端面椭圆
-function drawPin(c, len) {
-  const R = 14, hl = len / 2, body = [[-hl, -R], [hl, -R], [hl, R], [-hl, R]];
-  pencil(c, body, HD.bounds(body), {seed: 2501, color: "#c99a68", len: 14, w: 1.6, density: .3, tooth: .5, alpha: (x, y) => .4 + .45 * (y + R) / (2 * R)});
-  shade(c, body, (x, y) => .1 + .8 * (y + R) / (2 * R), {seed: 251});
-  zpen(c, body, {closed: true, w: 1.4, seed: 2502, jit: .4});
-  zpen(c, [[-hl + 6, -R * .45], [hl - 10, -R * .5]], {w: 1, alpha: .35, color: "#fffaf0", seed: 2503, jit: .3}); // 高光
-  [-1, 1].forEach((sd, i) => { const h = sd < 0 ? [[-hl - 44, -7], [-hl, -7], [-hl, 7], [-hl - 44, 7]] : [[hl, -7], [hl + 44, -7], [hl + 44, 7], [hl, 7]];
-    pencil(c, h, HD.bounds(h), {seed: 2510 + i, color: "#a8723f", len: 8, w: 1.4, density: .5, alpha: () => .8});
-    zpen(c, HD.rbox(...HD.bounds(h).slice(0, 2), 44, 14, 6), {closed: true, w: 1.3, seed: 2520 + i, jit: .3}); });
+// 桥下的峡谷：两壁朝远处收拢，河从拐弯处流出来；越远越淡、线越细
+function gorgeGeo(g) {
+  const s = g.s, V = g.vp;
+  return {V, FLt: [V.x - 30 * s, V.y - 46 * s], FRt: [V.x + 36 * s, V.y - 58 * s], FLb: [V.x - 16 * s, V.y], FRb: [V.x + 16 * s, V.y],
+    Lt: [g.L.rim, g.L.top], Ln: [g.L.foot, g.WY], Rt: [g.R.rim, g.R.top], Rn: [g.R.foot, g.WY]};
 }
-// 烤盘：盘面、前沿（金属排线）、盘里那只塌掉的面包、碎屑
-function drawTray(c) {
-  const top = [[-124, -36], [124, -36], [142, -6], [-142, -6]], lip = [[-142, -6], [142, -6], [138, 5], [-138, 5]];
-  pencil(c, top, HD.bounds(top), {seed: 2601, color: "#9d978c", len: 12, w: 1.4, density: .12, alpha: () => .45});
-  zpen(c, top, {closed: true, w: 1.4, seed: 2602, jit: .4});
-  zpen(c, [[-112, -31], [112, -31], [128, -10], [-128, -10]], {closed: true, w: .8, alpha: .5, seed: 2603, jit: .3});
-  shade(c, lip, () => .7, {seed: 261});
-  zpen(c, lip, {closed: true, w: 1.4, seed: 2604, jit: .4});
-  drawLoaf(c, -2, -16, 1, true, 2700);
-  const r = rng(2610); c.fillStyle = "#6b4430";
-  for (let i = 0; i < 14; i++) { c.beginPath(); c.arc(-110 + r() * 220, -26 + r() * 16, (.6 + r()) * Z, 0, 7); c.fill(); }
+const lerp2 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+function gorgeWall(c, g, G, side) {
+  const s = g.s, L = side < 0, [At, An, Ft, Fn] = L ? [G.Lt, G.Ln, G.FLt, G.FLb] : [G.Rt, G.Rn, G.FRt, G.FRb], d = L ? 1 : -1, sd = L ? 3500 : 3550, r = rng(sd);
+  const poly = [[At[0] - d * 34 * s, At[1] + 4 * s], Ft, Fn, [An[0] - d * 34 * s, An[1] + 2 * s]], bb = bboxOf(poly);
+  const u = x => Math.min(1, Math.max(0, (x - At[0]) / (Ft[0] - At[0]))), pn = noise1(sd + 1);
+  under(c, poly);
+  // 左壁朝右、背光：蓝灰压暗、斜排线；右壁朝左、迎光：只铺一层浅土色
+  pencil(c, poly, bb, {seed: sd + 2, color: "#c8ad86", angle: -1.08, len: 8 * s, w: 1.3 * s, density: .18 / (s * s), tooth: .55, alpha: (x, y) => (L ? .32 : .4) * (1 - .55 * u(x)) * (.7 + .6 * pn(x * .02 + y * .015))});
+  if (L) {
+    pencil(c, poly, bb, {seed: sd + 3, color: "#8f98b0", angle: -1.08, len: 8 * s, w: 1.3 * s, density: .2 / (s * s), tooth: .6, alpha: x => .5 * (1 - .55 * u(x))});
+    hatchIn(c, poly, bb, {seed: sd + 4, angle: 1.32, sp: 3.4 * s, w: .6 * s, alpha: .5, step: 2.5, color: "#4a5672", tone: (x, y) => .78 - .5 * u(x) + (pn(y * .03 + x * .01) - .5) * .3, thr: .42, rag: .5});
+  }
+  // 岩层朝远处收拢；竖缝越远越短
+  const fs = [.1, .21, .34, .46, .6, .73, .86].map(f => f + (r() - .5) * .05);
+  c.save(); pathOf(c, poly); c.clip();
+  fs.forEach((f, j) => {
+    const a = lerp2(At, An, f), b = lerp2(Ft, Fn, f), M = 40, line = [];
+    for (let i = 0; i <= M; i++) { const t = i / M, [x, y] = lerp2(a, b, t); line.push([x, y + (pn(j * 9 + t * 6) - .5) * 8 * s * (1 - t)]); }
+    for (let i = 0, q = 0; i < M; q++) { const n2 = 3 + Math.floor(r() * 9), sg = line.slice(i, Math.min(M + 1, i + n2 + 1)); if (sg.length > 1) { const t = i / M; pen(c, sg, {w: (1 - .55 * t) * s, seed: sd * 10 + j * 13 + q, jit: .4, alpha: (L ? .5 : .38) * (1 - .6 * t)}); } i += n2 + 1 + Math.floor(r() * 3); }
+    const a2 = lerp2(At, An, fs[j + 1] ?? 1), b2 = lerp2(Ft, Fn, fs[j + 1] ?? 1);
+    for (let t = .04 + r() * .1; t < .9; t += .1 + r() * .18) {
+      const p0 = lerp2(a, b, t), p1 = lerp2(a2, b2, t), h = .35 + r() * .5;
+      pen(c, [p0, lerp2(p0, p1, h)], {w: .7 * s * (1 - .5 * t), seed: sd * 20 + j * 7 + Math.round(t * 100), jit: .3, alpha: .42 * (1 - .6 * t)});
+    }
+  });
+  c.restore();
+  // 沿口：近处粗、远处细；台地边上一排越远越小的树
+  for (let q = 0; q < 3; q++) pen(c, [lerp2(At, Ft, q / 3), lerp2(At, Ft, (q + 1) / 3)], {w: (1.5 - q * .35) * s, seed: sd + 30 + q, jit: .5, alpha: .85 - q * .18});
+  for (let t = .3 + r() * .08; t < .95; t += .07 + r() * .1) {
+    if (r() < .3) continue;
+    const [x, y] = lerp2(At, Ft, t), h = (16 - 12 * t) * s * (.8 + r() * .4), w = h * .34, tri = [[x - w, y + 1 * s], [x, y - h], [x + w, y + 1 * s]];
+    under(c, tri);
+    c.save(); c.globalAlpha = .55 - .25 * t; c.fillStyle = "#79a26d"; pathOf(c, tri); c.fill(); c.restore();
+    pen(c, tri, {w: (.8 - .4 * t) * s, seed: sd + 60 + Math.round(t * 100), jit: .15, color: "#3f5538", alpha: .75 - .35 * t});
+  }
+  return poly;
 }
-// 冒的烟：三缕弯线，越往上越断；三帧只换线的种子
-function drawSmoke(c, v) {
-  const gray = css("--mute");
-  [-46, 4, 50].forEach((x0, i) => { const n = noise1(2800 + i * 7 + v * 31), pts = [];
-    for (let t = 0; t <= 1; t += .04) pts.push([x0 + Math.sin(t * 7 + i) * 9 + (n(t * 6) - .5) * 6, -44 - t * 110]);
-    for (let k = 0; k < pts.length - 2; k += 5) zpen(c, pts.slice(k, k + 4), {w: 1.6 * (1 - k / pts.length * .6), alpha: .95 - k / pts.length * .5, color: gray, seed: 2850 + i * 10 + k + v * 100, jit: .4}); });
+function drawGorge(c, g, G) {
+  const s = g.s, {V, FLt, FRt, FLb, FRb} = G, r = rng(3590);
+  // 拐弯处的远崖：最淡的一层，顶上一道起伏
+  const top = [FLt]; for (let i = 1; i < 6; i++) { const t = i / 6; top.push([FLt[0] + (FRt[0] - FLt[0]) * t, FLt[1] + (FRt[1] - FLt[1]) * t - (4 + r() * 10) * s]); }
+  const back = [...top, FRt, FRb, FLb];
+  under(c, back);
+  pencil(c, back, bboxOf(back), {seed: 3591, color: "#a9aec4", angle: -1.08, len: 7 * s, w: 1.2 * s, density: .2 / (s * s), tooth: .55, alpha: () => .42});
+  pen(c, [...top, FRt], {w: .7 * s, seed: 3592, jit: .3, color: "#5b6783", alpha: .5});
+  gorgeWall(c, g, G, 1); gorgeWall(c, g, G, -1);
+  // 右壁迎光，挂一道细瀑布，底下一团水汽
+  const t = .5, p0 = lerp2(G.Rt, G.FRt, t), p1 = lerp2(G.Rn, G.FRb, t), w = 6 * s * (1 - t * .5), fall = [[p0[0] - w, p0[1] + 3 * s], [p0[0] + w, p0[1] + 3 * s], [p1[0] + w * 1.6, p1[1]], [p1[0] - w * 1.6, p1[1]]];
+  under(c, fall);
+  c.save(); c.globalAlpha = .85; c.fillStyle = "#d3e3f0"; pathOf(c, fall); c.fill(); c.restore();
+  for (let i = 0; i < 5; i++) { const k = (i / 4 - .5) * 1.6; pen(c, [[p0[0] + w * k, p0[1] + 4 * s], [p1[0] + w * k * 1.5, p1[1] - 2 * s]], {w: .7 * s, seed: 3600 + i, jit: .5, color: "#5b83a6", alpha: .75}); }
+  for (let i = 0; i < 4; i++) { const a = Math.PI * (1.1 + i * .25), R = (5 + i * 1.5) * s; pen(c, Array.from({length: 7}, (_, q) => [p1[0] + Math.cos(a + q * .45) * R * 1.4, p1[1] - 2 * s + Math.sin(a + q * .45) * R * .6]), {w: .7 * s, seed: 3610 + i, jit: .3, color: "#5b83a6", alpha: .5}); }
 }
-// 挂杆：一根杆两个托架，挂着打蛋器、刮刀、汤勺（只在留白处画，不压标题）
-function drawRail(c, x0, x1, y) {
-  zpen(c, [[x0, y], [x1, y]], {w: 2.4, seed: 2900, jit: .3});
-  [x0 + 10, x1 - 10].forEach((x, i) => zpen(c, [[x, y - 12], [x, y + 4], [x - 8, y + 4]], {w: 1.6, seed: 2901 + i, jit: .2}));
-  const L = x1 - x0, hook = (hx, seed) => zpen(c, [[hx, y], [hx + 5, y + 6], [hx, y + 14], [hx - 4, y + 10]], {w: 1.1, seed, jit: .2});
-  // 打蛋器
-  let hx = x0 + L * .2; hook(hx, 2910);
-  zpen(c, HD.rbox(hx - 5, y + 14, 10, 70, 4), {closed: true, w: 1.3, seed: 2911, jit: .3});
-  for (let k = -2; k <= 2; k++) { const pts = []; for (let t = 0; t <= 1; t += .05) pts.push([hx + Math.sin(t * Math.PI) * k * 9, y + 84 + t * 92 + Math.sin(t * Math.PI) * 6]); zpen(c, pts, {w: .9, seed: 2915 + k, jit: .2}); }
-  // 刮刀
-  hx = x0 + L * .5; hook(hx, 2920);
-  const blade = [[hx - 22, y + 104], [hx + 22, y + 104], [hx + 24, y + 160], [hx - 24, y + 160]];
-  pencil(c, blade, HD.bounds(blade), {seed: 2921, color: css("--c1"), len: 10, w: 1.4, density: .4, alpha: () => .75});
-  shade(c, blade, x => .2 + .6 * (x - hx + 22) / 46, {seed: 292, angle: Math.PI / 2});
-  zpen(c, blade, {closed: true, w: 1.3, seed: 2922, jit: .3});
-  zpen(c, HD.rbox(hx - 4, y + 14, 8, 92, 3), {closed: true, w: 1.3, seed: 2923, jit: .3});
-  for (let k = -1; k <= 1; k++) zpen(c, [[hx + k * 11, y + 118], [hx + k * 11, y + 146]], {w: 1, seed: 2925 + k, jit: .2});
-  // 汤勺
-  hx = x0 + L * .8; hook(hx, 2930);
-  zpen(c, HD.rbox(hx - 4, y + 14, 8, 100, 3), {closed: true, w: 1.3, seed: 2931, jit: .3});
-  const bowl = halfEllipse(hx, y + 114, 30, -28, 24);
-  pencil(c, bowl, HD.bounds(bowl), {seed: 2932, color: "#a39d92", len: 8, w: 1.3, density: .4, alpha: () => .6});
-  shade(c, bowl, (x, yy) => .2 + .6 * (yy - y - 114) / 28 + .2 * (x - hx) / 30, {seed: 293, angle: -.4});
-  zpen(c, bowl, {closed: true, w: 1.3, seed: 2933, jit: .3});
+function drawLand(g, Lb, Rb) {
+  const s = g.s, X0 = -SC.ox - 10, X1 = g.W + SC.ox + 10, y0 = Math.min(g.L.top, g.R.top) - 120 * s;
+  const cv = document.getElementById("sc-land"), c = pl(cv, X0, y0, X1 - X0, g.H - y0);
+  const G = gorgeGeo(g);
+  drawGorge(c, g, G); drawWater(c, g, Lb, Rb, G);
+  drawBank(c, g, Lb); drawBank(c, g, Rb);
+  g.rocks.forEach(([x, y, R], i) => rock(c, x, y, R * s, 3100 + i * 7));
+  g.trees.forEach(([x, y, sc], i) => pine(c, x, y, sc * s, 3300 + i * 40));
+  paperizeN(cv); fade(cv);
 }
-// 从书上的面包到烤盘里的面包：一道虚线弧，带箭头
-function drawArrow(c, P0, P1, P2) {
-  const pts = []; for (let t = 0; t <= 1.0001; t += .01) { const m = 1 - t; pts.push([m * m * P0[0] + 2 * m * t * P1[0] + t * t * P2[0], m * m * P0[1] + 2 * m * t * P1[1] + t * t * P2[1]]); }
-  for (let i = 0; i < pts.length - 4; i += 6) zpen(c, pts.slice(i, i + 4), {w: 1.5, seed: 3000 + i, jit: .3, alpha: .85});
-  const [x2, y2] = pts[pts.length - 1], [x1, y1] = pts[pts.length - 4], a = Math.atan2(y2 - y1, x2 - x1);
-  [a + 2.6, a - 2.6].forEach((b, k) => zpen(c, [[x2 + Math.cos(b) * 14, y2 + Math.sin(b) * 14], [x2, y2]], {w: 1.6, seed: 3100 + k, jit: .2}));
+// 水波：三帧，位置不变、长短和抖动换一换
+function drawRipples(g, Lb, Rb) {
+  const s = g.s, x0 = Lb.shore[0], x1 = Rb.shore[0], y0 = g.WY, piers = [...g.bl.piers, ...g.br.piers];
+  document.querySelectorAll(".water canvas").forEach((cv, v) => {
+    const c = pl(cv, x0, y0, x1 - x0, g.H - y0), r = rng(3200), j = rng(3300 + v);
+    for (let i = 0; i < (g.vert ? 46 : 90); i++) {
+      const t = r(), y = g.WY + 8 * s + (g.H - g.WY - 8 * s) * Math.pow(t, .8), xl = Lb.shoreX(y) + 10 * s, xr = Rb.shoreX(y) - 10 * s, x = xl + (xr - xl) * r();
+      const L = (6 + 26 * t) * s * (.6 + r() * .8) * (.8 + j() * .4), dx = (j() - .5) * 5 * s;
+      pen(c, [[x - L / 2 + dx, y], [x + dx, y + (j() - .5) * 1.4 * s], [x + L / 2 + dx, y]], {w: (.8 + t * .6) * s, seed: 3400 + i * 3 + v, jit: .3, color: "#3d5d78", alpha: .55 + r() * .3});
+    }
+    piers.forEach((px, i) => { // 墩脚两边的水纹
+      const hw = 20 * s + (j() - .5) * 2 * s, y = g.WY + 4 * s;
+      pen(c, [[px - hw - 2 * s, y], [px - hw - 10 * s, y + 4 * s], [px - hw - 22 * s, y + 6 * s]], {w: s, seed: 3600 + i * 5 + v, jit: .3, color: "#3d5d78", alpha: .7});
+      pen(c, [[px + hw + 10 * s, y - 1 * s], [px + hw + 20 * s, y + 3 * s], [px + hw + 34 * s, y + 5 * s]], {w: s, seed: 3620 + i * 5 + v, jit: .3, color: "#3d5d78", alpha: .7});
+    });
+    paperize(cv); fade(cv);
+  });
+}
+// ---------- 桥：两岸各修半座。斜投影看得到桥面和远侧桁架 ----------
+const DZ = [.26, -.36]; // 往纸里一个单位，屏幕上偏多少
+function drawPier(c, x, y0, y1, s, sd, C) {
+  const wt = 30 * s, wb = 40 * s, cw = 5 * s, ch = 9 * s, dz = DZ[0] * 48 * s, dzy = DZ[1] * 48 * s, yb = y0 + ch;
+  const capF = [[x - wt / 2 - cw, y0], [x + wt / 2 + cw, y0], [x + wt / 2 + cw, yb], [x - wt / 2 - cw, yb]];
+  const capS = [[x + wt / 2 + cw, y0], [x + wt / 2 + cw + dz, y0 + dzy], [x + wt / 2 + cw + dz, yb + dzy], [x + wt / 2 + cw, yb]];
+  const front = [[x - wt / 2, yb], [x + wt / 2, yb], [x + wb / 2, y1], [x - wb / 2, y1]];
+  const side = [[x + wt / 2, yb], [x + wt / 2 + dz, yb + dzy], [x + wb / 2 + dz, y1 + dzy], [x + wb / 2, y1]];
+  [side, front, capS, capF].forEach(p => under(c, p));
+  const hwAt = y => wt / 2 + (wb - wt) / 2 * (y - yb) / (y1 - yb);
+  pencil(c, front, bboxOf(front), {seed: sd, color: "#bdae95", angle: -1.08, len: 9 * s, w: 1.4 * s, density: .55 / (s * s), tooth: .5, alpha: (px, py) => .35 + .3 * (py - yb) / (y1 - yb) + .25 * (px - x + wt) / (2 * wt)});
+  pencil(c, front, [x - wb / 2, y1 - 30 * s, x + wb / 2, y1], {seed: sd + 1, color: "#7f9a78", angle: -1.08, len: 7 * s, w: 1.3 * s, density: .8 / (s * s), tooth: .5, alpha: (px, py) => .75 * Math.max(0, (py - y1 + 30 * s) / (30 * s))});
+  pencil(c, side, bboxOf(side), {seed: sd + 2, color: "#8b8273", angle: -1.08, len: 8 * s, w: 1.4 * s, density: .8 / (s * s), tooth: .5, alpha: () => .8});
+  hatchIn(c, side, bboxOf(side), {seed: sd + 3, angle: Math.PI / 2 + .08, sp: 2.6 * s, w: .6 * s, alpha: .55});
+  // 桥面压下来的影子
+  hatchIn(c, front, [x - wb / 2, yb, x + wb / 2, yb + 30 * s], {seed: sd + 4, angle: -.25, sp: 2.4 * s, w: .6 * s, alpha: .6, tone: (px, py) => 1 - (py - yb) / (30 * s), thr: .2, rag: .5});
+  // 砌石：一层层错缝
+  for (let y = yb + 13 * s, q = 0; y < y1 - 4 * s; y += 13 * s, q++) {
+    const hw = hwAt(y);
+    pen(c, [[x - hw, y], [x + hw, y]], {w: .7 * s, alpha: .5, seed: sd + 10 + q, jit: .35});
+    pen(c, [[x + hw, y], [x + hw + dz * (1 - .02 * q), y + dzy]], {w: .6 * s, alpha: .4, seed: sd + 200 + q, jit: .2});
+    for (let jx = x - hw + (q % 2 ? 8 : 16) * s; jx < x + hw - 4 * s; jx += 17 * s) pen(c, [[jx, y], [jx + .5 * s, y + 13 * s]], {w: .6 * s, alpha: .45, seed: sd + 400 + q * 7 + Math.round(jx), jit: .2});
+  }
+  [capF, capS].forEach((p, i) => { pencil(c, p, bboxOf(p), {seed: sd + 5 + i, color: i ? "#7d7466" : "#a99c86", angle: -1.08, len: 7 * s, w: 1.3 * s, density: .9 / (s * s), tooth: .5, alpha: () => .85}); pen(c, p, {closed: true, w: .9 * s, seed: sd + 7 + i, jit: .25}); });
+  pen(c, [[x - wt / 2, yb], [x - wb / 2, y1]], {w: 1.4 * s, seed: sd + 8, jit: .4});
+  pen(c, [[x + wt / 2, yb], [x + wb / 2, y1]], {w: 1.2 * s, seed: sd + 9, jit: .4});
+  pen(c, [[x + wt / 2 + dz, yb + dzy], [x + wb / 2 + dz, y1 + dzy]], {w: 1 * s, seed: sd + 11, jit: .4, alpha: .8});
+  pen(c, [[x - wb / 2, y1], [x + wb / 2, y1], [x + wb / 2 + dz, y1 + dzy]], {w: .9 * s, seed: sd + 12, jit: .5, alpha: .6, color: "#3d5d78"});
+}
+function drawHalf(h, id, C) {
+  const g = SC.g, s = g.s, d = h.dir, B = d > 0 ? g.L : g.R, gd = 15 * s, BW = 38 * s, fx = DZ[0] * BW, fy = DZ[1] * BW;
+  const top = h.top, tc = top - h.th, col = css(h.col), ink = css(h.ink), X = i => h.t0 + d * i * h.p, x1t = X(h.np);
+  const xa = Math.min(h.x0, h.x1) - 80 * s, xb = Math.max(h.x0, h.x1) + 50 * s, ya = tc - 110 * s, yb = g.WY + 16 * s;
+  const cv = document.getElementById(id), c = pl(cv, xa, ya, xb - xa, yb - ya);
+  // 桥墩
+  h.piers.forEach((px, i) => drawPier(c, px, top + gd, g.WY + 3 * s, s, h.seed + 10 + i * 40, C));
+  // 桥台：崖口一块砌石
+  const inner = B.rim + d * 10 * s, outer = B.rim - d * 60 * s, abB = top + gd + 96 * s;
+  const ab = [[outer, top + gd], [inner, top + gd], [inner + d * 4 * s, abB - 14 * s], [inner - d * 14 * s, abB], [outer, abB + 8 * s]];
+  under(c, ab);
+  pencil(c, ab, bboxOf(ab), {seed: h.seed + 4, color: "#b9ab92", angle: -1.08, len: 9 * s, w: 1.4 * s, density: .6 / (s * s), tooth: .5, alpha: (px, py) => .4 + .4 * (py - top) / (abB - top)});
+  for (let y = top + gd + 14 * s, q = 0; y < abB - 4 * s; y += 14 * s, q++) {
+    pen(c, [[outer, y], [inner + d * 3 * s * (y - top) / (abB - top), y]], {w: .7 * s, alpha: .5, seed: h.seed + 40 + q, jit: .35});
+    for (let jx = Math.min(outer, inner) + (q % 2 ? 9 : 20) * s; jx < Math.max(outer, inner) - 5 * s; jx += 23 * s) pen(c, [[jx, y], [jx, y + 14 * s]], {w: .6 * s, alpha: .45, seed: h.seed + 60 + q * 9 + Math.round(jx), jit: .2});
+  }
+  pen(c, ab, {closed: true, w: 1.2 * s, seed: h.seed + 5, jit: .5});
+  // 桥面顶：铺木板
+  const deck = [[h.x0, top], [h.x1, top], [h.x1 + fx, top + fy], [h.x0 + fx, top + fy]], gx0 = Math.min(h.x0, h.x1), gx1 = Math.max(h.x0, h.x1);
+  under(c, deck);
+  pencil(c, deck, bboxOf(deck), {seed: h.seed + 1, color: "#cdbb95", angle: -1.08, len: 8 * s, w: 1.2 * s, density: .5 / (s * s), tooth: .5, alpha: () => .6});
+  for (let x = gx0 + 4 * s, q = 0; x < gx1; x += 6.5 * s, q++) pen(c, [[x, top], [x + fx, top + fy]], {w: .55 * s, alpha: .32, seed: h.seed + 1000 + q, jit: .12, color: C.graphite});
+  pen(c, [[h.x0 + fx, top + fy], [h.x1 + fx, top + fy]], {w: .9 * s, alpha: .75, seed: h.seed + 6, jit: .4});
+  // 桁架：端斜杆、上弦、竖杆、W 形斜杆
+  const mem = [[[X(0), top], [X(1), tc], 4.8]];
+  for (let i = 1; i <= h.np; i++) mem.push([[X(i), top], [X(i), tc], 3.4]);
+  for (let i = 1; i < h.np; i++) mem.push(i % 2 ? [[X(i), tc], [X(i + 1), top], 4] : [[X(i), top], [X(i + 1), tc], 4]);
+  mem.push([[X(1), tc], [X(h.np), tc], 5.8]);
+  // 远侧那片桁架：一根根细线，淡
+  mem.forEach(([a, b], i) => pen(c, [[a[0] + fx, a[1] + fy], [b[0] + fx, b[1] + fy]], {w: 1.6 * s, alpha: .6, seed: h.seed + 100 + i, jit: .25, color: C.graphite}));
+  // 上平联：近侧和远侧上弦之间的横撑
+  for (let i = 1; i <= h.np; i++) {
+    pen(c, [[X(i), tc], [X(i) + fx, tc + fy]], {w: 1.4 * s, alpha: .8, seed: h.seed + 200 + i, jit: .2, color: ink});
+    if (i < h.np) pen(c, [[X(i), tc], [X(i + 1) + fx, tc + fy]], {w: .6 * s, alpha: .4, seed: h.seed + 230 + i, jit: .2});
+  }
+  // 近侧主梁：彩铅上色，下半压排线，加劲肋和两排铆钉
+  const gir = [[h.x0, top], [h.x1, top], [h.x1, top + gd], [h.x0, top + gd]];
+  under(c, gir);
+  pencil(c, gir, [gx0, top, gx1, top + gd], {seed: h.seed + 2, color: col, angle: -1.08, len: 9 * s, w: 1.5 * s, density: 1 / (s * s), tooth: .45, alpha: (x, y) => .62 + .35 * (y - top) / gd});
+  hatchIn(c, gir, [gx0, top, gx1, top + gd], {seed: h.seed + 3, angle: 0, sp: 2.1 * s, w: .6 * s, alpha: .55, tone: (x, y) => (y - top) / gd, thr: .5, color: ink});
+  for (let x = gx0 + 10 * s, q = 0; x < gx1 - 4; x += h.p / 2, q++) pen(c, [[x, top + 1], [x, top + gd - 1]], {w: .7 * s, alpha: .6, seed: h.seed + 300 + q, jit: .15, color: ink});
+  c.fillStyle = C.ink;
+  for (let x = gx0 + 5 * s; x < gx1; x += 6.5 * s) for (const yy of [top + 3.2 * s, top + gd - 3.2 * s]) { c.globalAlpha = .55; c.beginPath(); c.arc(x, yy, .85 * s, 0, 7); c.fill(); }
+  c.globalAlpha = 1;
+  pen(c, [[h.x0, top], [h.x1, top]], {w: 1.2 * s, seed: h.seed + 7, jit: .4});
+  pen(c, [[h.x0, top + gd], [h.x1, top + gd]], {w: 1.9 * s, seed: h.seed + 8, jit: .4});
+  // 近侧桁架：每根杆一条色带，两条边线，背光一边重一点
+  const polys = mem.map(([a, b, w]) => strip(a, b, w * s));
+  polys.forEach(p => under(c, p));
+  c.save(); c.fillStyle = col; c.globalAlpha = .8; pathOf(c, polys); c.fill(); c.restore();
+  pencil(c, polys, [Math.min(X(0), x1t) - 6, tc - 6, Math.max(X(0), x1t) + 6, top + 6], {seed: h.seed + 9, color: ink, angle: -1.08, len: 6 * s, w: 1.1 * s, density: .35 / (s * s), tooth: .5, alpha: () => .35});
+  polys.forEach((p, i) => { pen(c, [p[0], p[1]], {w: .75 * s, seed: h.seed + 400 + i, jit: .2, alpha: .8}); pen(c, [p[3], p[2]], {w: 1.05 * s, seed: h.seed + 440 + i, jit: .2}); });
+  // 节点板与铆钉
+  const nodes = [[X(0), top]]; for (let i = 1; i <= h.np; i++) nodes.push([X(i), top], [X(i), tc]);
+  nodes.forEach(([nx, ny], i) => {
+    const R = 7.5 * s, rr = rng(h.seed + 500 + i), pts = Array.from({length: 6}, (_, q) => { const a = q / 6 * Math.PI * 2 + .3; return [nx + Math.cos(a) * R * (.9 + rr() * .2), ny + Math.sin(a) * R * .8 * (.9 + rr() * .2)]; });
+    under(c, pts); c.save(); c.fillStyle = col; c.globalAlpha = .9; pathOf(c, pts); c.fill(); c.fillStyle = ink; c.globalAlpha = .2; c.fill(); c.restore();
+    pen(c, pts, {closed: true, w: .75 * s, seed: h.seed + 550 + i, jit: .2});
+    c.fillStyle = C.ink; c.globalAlpha = .75;
+    for (let q = 0; q < 4; q++) { const a = q / 4 * Math.PI * 2 + .8; c.beginPath(); c.arc(nx + Math.cos(a) * R * .48, ny + Math.sin(a) * R * .4, .8 * s, 0, 7); c.fill(); }
+    c.globalAlpha = 1;
+  });
+  // 桥头牌：挂在头两节上弦上
+  const bx = h.t0 + d * h.p * 1.5, pw = h.pw * s, ph = 40 * s, by = tc - 26 * s - ph / 2;
+  for (const k of [-.3, .3]) pen(c, [[bx + k * pw, by + ph / 2], [bx + k * pw, tc - 2.5 * s]], {w: 1.5 * s, seed: h.seed + 600 + (k > 0 ? 1 : 0), jit: .2});
+  const board = rbox(bx - pw / 2, by - ph / 2, pw, ph, 4 * s);
+  under(c, board);
+  pencil(c, board, bboxOf(board), {seed: h.seed + 610, color: "#e5d2a6", angle: -1.08, len: 8 * s, w: 1.3 * s, density: .7 / (s * s), tooth: .5, alpha: () => .6});
+  for (let q = 0; q < 3; q++) { const yy = by - ph / 2 + ph * (q + 1) / 4, pts = []; for (let x = bx - pw / 2 + 6 * s; x < bx + pw / 2 - 6 * s; x += 4 * s) pts.push([x, yy + Math.sin(x * .12 / s + q * 2) * 1.2 * s]); pen(c, pts, {w: .5 * s, alpha: .22, seed: h.seed + 620 + q, jit: .2, color: C.graphite}); }
+  pen(c, board, {closed: true, w: 1.5 * s, seed: h.seed + 630, jit: .35});
+  pen(c, rbox(bx - pw / 2 + 4.5 * s, by - ph / 2 + 4.5 * s, pw - 9 * s, ph - 9 * s, 2.5 * s), {closed: true, w: .7 * s, alpha: .6, seed: h.seed + 631, jit: .25, color: ink});
+  c.fillStyle = C.ink; [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([u, v]) => { c.beginPath(); c.arc(bx + u * (pw / 2 - 2.6 * s), by + v * (ph / 2 - 2.6 * s), 1.1 * s, 0, 7); c.fill(); });
+  // 修到头的地方：断面、外露的钢筋、临时栏杆、旗杆
+  if (d > 0) {
+    const ef = [[h.x1, top], [h.x1 + fx, top + fy], [h.x1 + fx, top + gd + fy], [h.x1, top + gd]];
+    under(c, ef); c.save(); c.fillStyle = col; c.globalAlpha = .7; pathOf(c, ef); c.fill(); c.fillStyle = C.ink; c.globalAlpha = .38; c.fill(); c.restore();
+    pen(c, ef, {closed: true, w: .9 * s, seed: h.seed + 700, jit: .2});
+  }
+  const rr = rng(h.seed + 710), ex = h.x1 + (d > 0 ? fx * .35 : 0);
+  for (let q = 0; q < 4; q++) { const yy = top + gd * (.18 + q * .22) + (d > 0 ? fy * .35 : 0), L = (9 + rr() * 10) * s; pen(c, [[ex, yy], [ex + d * L * .6, yy + rr() * 1.5 * s], [ex + d * L, yy + (1 + rr() * 3) * s]], {w: 1 * s, seed: h.seed + 720 + q, jit: .2}); }
+  const posts = []; for (let x = x1t + d * 18 * s; (h.x1 - d * 6 * s - x) * d > 0; x += d * 22 * s) posts.push(x);
+  posts.forEach((x, q) => pen(c, [[x, top], [x, top - 17 * s]], {w: 1.1 * s, seed: h.seed + 740 + q, jit: .2}));
+  [x1t, ...posts].forEach((x, q, arr) => { if (q === arr.length - 1) return; const xn = arr[q + 1], yy = top - 16 * s; pen(c, [[x, yy], [(x + xn) / 2, yy + 4 * s], [xn, yy]], {w: .8 * s, seed: h.seed + 760 + q, jit: .2, alpha: .75}); });
+  const xp = x1t + d * 8 * s;
+  pen(c, [[xp, top], [xp, top - 76 * s]], {w: 1.5 * s, seed: h.seed + 780, jit: .2});
+  c.fillStyle = C.ink; c.beginPath(); c.arc(xp, top - 77 * s, 2.2 * s, 0, 7); c.fill();
+  paperizeN(cv); fade(cv);
+  return [bx, by];
+}
+// 小旗：三帧，风从右边来
+function drawFlags(g) {
+  const s = g.s, H = [g.bl, g.br].map(h => ({h, xp: h.t0 + h.dir * h.np * h.p + h.dir * 8 * s, yt: h.top - 74 * s}));
+  const x0 = Math.min(...H.map(f => f.xp)) - 46 * s, x1 = Math.max(...H.map(f => f.xp)) + 6 * s, y0 = Math.min(...H.map(f => f.yt)) - 10 * s, y1 = Math.max(...H.map(f => f.yt)) + 28 * s;
+  document.querySelectorAll(".flags canvas").forEach((cv, v) => {
+    const c = pl(cv, x0, y0, x1 - x0, y1 - y0);
+    H.forEach(({h, xp, yt}, i) => {
+      const L = 34 * s, FH = 16 * s, ph = v * 2.1 + i, tp = [], bt = [];
+      for (let q = 0; q <= 10; q++) { const t = q / 10, x = xp - t * L, w = Math.sin(t * 5.5 + ph) * 2.4 * s * t; tp.push([x, yt + t * FH * .5 + w]); bt.push([x, yt + FH - t * FH * .5 + w]); }
+      const poly = [...tp, ...bt.reverse()];
+      under(c, poly); c.save(); c.fillStyle = css(h.col); c.globalAlpha = .9; pathOf(c, poly); c.fill(); c.restore();
+      hatchIn(c, poly, bboxOf(poly), {seed: 3700 + i * 10 + v, angle: .25, sp: 2.4 * s, w: .5 * s, alpha: .5, color: css(h.ink), tone: (x, y) => (y - yt) / FH, thr: .5});
+      pen(c, poly, {closed: true, w: 1 * s, seed: 3720 + i * 10 + v, jit: .2});
+    });
+    paperizeN(cv); fade(cv);
+  });
+}
+// 批注：一句“接不上”，一支箭头指到错开的地方；悬停时红笔圈出来
+function drawNote(g, C) {
+  const s = g.s, N = g.note, fs = N.fs * s, [tx, ty] = N.to, sx = N.x + fs * 1.65, sy = N.y + fs * .15;
+  const P = [[sx, sy], [sx + (tx - sx) * .55, sy - 12 * s], [tx - 28 * s, ty - (ty - sy) * .35], [tx, ty]], pts = [];
+  for (let i = 0; i <= 40; i++) { const t = i / 40, m = 1 - t; pts.push([0, 1].map(k => m * m * m * P[0][k] + 3 * m * m * t * P[1][k] + 3 * m * t * t * P[2][k] + t * t * t * P[3][k])); }
+  const cv = document.getElementById("sc-note"), bb = bboxOf(pts), c = pl(cv, bb[0] - 20 * s, bb[1] - 20 * s, bb[2] - bb[0] + 40 * s, bb[3] - bb[1] + 40 * s);
+  pen(c, pts, {w: 1.9 * s, seed: 3800, jit: .4, color: C.expInk});
+  const a = Math.atan2(ty - pts[36][1], tx - pts[36][0]), L = 13 * s;
+  pen(c, [[tx - Math.cos(a - .5) * L, ty - Math.sin(a - .5) * L], [tx, ty], [tx - Math.cos(a + .5) * L, ty - Math.sin(a + .5) * L]], {w: 1.9 * s, seed: 3801, jit: .3, color: C.expInk});
+  paperize(cv);
+  const R = g.ring, rp = ring(0, 0, 1, 3810, 46).map(([x, y]) => [R.x + x * R.rx, R.y + y * R.ry]);
+  const rv = document.getElementById("sc-ring"), rc = pl(rv, R.x - R.rx - 16 * s, R.y - R.ry - 16 * s, 2 * R.rx + 32 * s, 2 * R.ry + 32 * s);
+  pencil(rc, rp.slice(0, 43), [R.x - R.rx, R.y - R.ry, R.x + R.rx, R.y + R.ry], {seed: 3811, color: C.exp, angle: -1.08, len: 10 * s, w: 1.3 * s, density: .05 / (s * s), tooth: .6, alpha: () => .5});
+  pen(rc, rp, {w: 2.4 * s, seed: 3812, jit: .7, color: C.expInk});
+  pen(rc, ring(0, 0, 1, 3813, 46).map(([x, y]) => [R.x + x * R.rx * 1.04, R.y + y * R.ry * .96]), {w: 1.1 * s, seed: 3814, jit: .6, color: C.expInk, alpha: .6});
+  paperize(rv);
+  Object.assign(document.getElementById("sc-hit").style, {left: (R.x - R.rx + SC.ox) * SC.k + "px", top: (R.y - R.ry + SC.oy) * SC.k + "px", width: 2 * R.rx * SC.k + "px", height: 2 * R.ry * SC.k + "px"});
 }
 function drawScene() {
-  const sec = document.getElementById("p1"), g = sceneGeo(mq.matches), W = sec.clientWidth, H = sec.clientHeight;
-  const k = W / g.LW, LH = H / k, ty = LH - g.up, s = g.s, yb = ty + 26;
-  const full = cv => { const c = fitTo(cv, sec); c.scale(k, k); return c; };
-  const base = document.getElementById("sc-base"); Object.assign(base.style, {left: 0, top: 0, width: W + "px", height: H + "px"});
-  let c = full(base);
-  if (g.rail) drawRail(c, ...g.rail);
-  drawTable(c, g, ty, LH);
-  if (g.sack) at(c, g.sack, yb, s, () => drawSack(c));
-  if (g.wheat) at(c, g.wheat, yb, s, () => { drawWheat(c, 0, 0, -1.25, 150, 2460); drawWheat(c, 14, 0, -1.4, 130, 2470); drawWheat(c, 26, 2, -1.05, 120, 2480); });
-  at(c, g.tray, yb, s, () => drawTray(c));
-  at(c, g.pin[0], ty + g.pin[1], s, () => { c.rotate(g.pin[3]); drawPin(c, g.pin[2]); });
-  paperize(base);
-  // 配方书单独一块画布：悬停时抬起
-  const bx = g.book, bw = 400 * s, bh = 220 * s, book = document.getElementById("sc-book");
-  const bc = placeIn(book, k, bx - bw / 2, yb - 170 * s, bw, bh); at(bc, bx, yb, s, () => drawBook(bc)); paperize(book, .4);
-  Object.assign(document.getElementById("sc-hit").style, {left: (bx - 180 * s) * k + "px", top: (yb - 155 * s) * k + "px", width: 360 * s * k + "px", height: 165 * s * k + "px"});
-  c = full(document.getElementById("sc-arrow"));
-  const A0 = [bx + 110 * s, yb - 125 * s], A2 = [g.tray - 60 * s, yb - 62 * s], A1 = [(A0[0] + A2[0]) / 2, Math.min(A0[1], A2[1]) - g.arc * s * 1.6];
-  drawArrow(c, A0, A1, A2);
-  document.querySelectorAll(".sc-smoke").forEach((cv, v) => { const sc = full(cv); at(sc, g.tray, yb, s, () => drawSmoke(sc, v)); paperize(cv, .3); });
-  // 三处标注：书上方、弧线顶上、烟的上方
-  const top = (A0[1] + 2 * A1[1] + A2[1]) / 4;
-  [["sl-a", bx, yb - 182 * s], ["sl-b", (A0[0] + 2 * A1[0] + A2[0]) / 4, top - 22 / k], ["sl-c", g.tray, yb - 182 * s]].forEach(([id, x, y]) =>
-    Object.assign(document.getElementById(id).style, {left: x * k + "px", top: y * k + "px", fontSize: g.ls + "px"}));
+  const sc = document.getElementById("scene"), W = sc.clientWidth, H = sc.clientHeight, g = sceneGeo(mq.matches), k = Math.min(W / g.W, H / g.H);
+  SC = {g, k, ox: (W / k - g.W) / 2, oy: H / k - g.H, W, H};
+  MASK = edgeMask(W, H);
+  const C = {ink: css("--ink"), graphite: css("--graphite"), exp: css("--c2"), expInk: css("--c2-ink")};
+  const Lb = bankGeo(g, -1), Rb = bankGeo(g, 1), hr = document.querySelector("#p1 .head").getBoundingClientRect(), sr = sc.getBoundingClientRect();
+  g.title = [(hr.left - sr.left) / k - SC.ox, (hr.top - sr.top) / k - SC.oy, (hr.right - sr.left) / k - SC.ox, (hr.bottom - sr.top) / k - SC.oy];
+  drawSky(g, C); drawClouds(g); drawBirds(g); drawLand(g, Lb, Rb); drawRipples(g, Lb, Rb);
+  const pb = drawHalf(g.bl, "sc-bl", C), pr = drawHalf(g.br, "sc-br", C);
+  drawFlags(g); drawNote(g, C);
+  putT("t-left", pb[0], pb[1], 30 * g.s); putT("t-right", pr[0], pr[1], 30 * g.s); putT("t-gap", g.note.x, g.note.y, g.note.fs * g.s);
 }
+let p1Key = "";
 function drawP1() {
-  if (!document.getElementById("p1").offsetParent) return; // 截图时可能隐藏了第一屏
+  const sec = document.getElementById("p1");
+  if (!sec.offsetParent) return; // 截图时可能隐藏了第一屏
+  const q = sec.querySelector(".q"); p1Key = [sec.clientWidth, sec.clientHeight, q.offsetWidth, q.offsetHeight].join();
   drawScene();
-  const sec = document.getElementById("p1"), S = sec.getBoundingClientRect(), H = sec.querySelector(".head").getBoundingClientRect();
+  const S = sec.getBoundingClientRect(), H = sec.querySelector(".head").getBoundingClientRect();
   const rel = el => { const r = el.getBoundingClientRect(); return {x: r.left - S.left, y: r.top - S.top, w: r.width, h: r.height}; };
   const relH = el => { const r = el.getBoundingClientRect(); return {x: r.left - H.left, y: r.top - H.top, w: r.width, h: r.height}; };
   const cv = document.getElementById("c1"), c = fitTo(cv, sec); // 整屏画布：花边、页眉胶带、翻页键
@@ -621,7 +944,7 @@ function handsetAll() {
   HD.handset(document.querySelector(".s2 h2"), 62);
   document.querySelectorAll(".kicker").forEach((el, i) => HD.handset(el, 63 + i, .6));
   list.querySelectorAll(".name").forEach((el, i) => HD.handset(el, 70 + i));
-  document.querySelectorAll(".sl").forEach((el, i) => HD.handset(el, 80 + i));
+  document.querySelectorAll(".sc-t").forEach((el, i) => HD.handset(el, 80 + i, .8));
 }
 
 const qs = new URLSearchParams(location.search);
@@ -635,9 +958,12 @@ mq.addEventListener("change", all);
 Promise.all([HD.init(), HD.fontsReady([["HD Marker", "配方看得懂"], ["HD Hand", "面包"]])]).then(() => {
   all();
   // 标题换行或整屏高度变了（手机地址栏收起、无头截图视口变化）都重画装饰
-  let t1; const ro = new ResizeObserver(() => { clearTimeout(t1); t1 = setTimeout(() => { drawP1(); drawList(); drawP2(); }, 60); });
+  let t1; const ro = new ResizeObserver(() => { clearTimeout(t1); t1 = setTimeout(() => {
+    const sec = document.getElementById("p1"), q = sec.querySelector(".q");
+    if ([sec.clientWidth, sec.clientHeight, q.offsetWidth, q.offsetHeight].join() !== p1Key) drawP1();
+    drawList(); drawP2(); }, 60); });
   [".s1 .q", "#p1", "#p2"].forEach(q => ro.observe(document.querySelector(q)));
-  const p1 = document.getElementById("p1"); // 首屏入场：场景从左往右画出 → 书落下 → 下划线 → 箭头画过去 → 烟冒出来
+  const p1 = document.getElementById("p1"); // 首屏入场：天和山 → 两岸和河 → 两半桥从岸边往河心修 → 小旗 → 批注 → 下划线
   if (reduce) p1.classList.add("go"); else requestAnimationFrame(() => requestAnimationFrame(() => p1.classList.add("go")));
   const p2 = document.getElementById("p2"); // 第二屏第一次进入视野时，当前这层重新画一遍
   if (!reduce) new IntersectionObserver((es, io) => {
