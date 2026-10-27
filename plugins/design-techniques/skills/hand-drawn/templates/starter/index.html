@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>手绘讲课页</title>
+<!--
+  Input: hand-drawn.js（画具包）、fonts/marker.woff2 + fonts/hand.woff2（子集字体，OFL-1.1）
+  Output: 两屏演示：首屏问题 + 配图（左右两栏），第二屏“六步 × 四条线”教学图（悬停切层）
+  Pos: hand-drawn 手法的起手页兼效果演示页。题材是一门中性的手作面包课；换题材时改 STEPS / ROWS / 文案与两个 geo 函数
+  调试参数：?p=2 直接到第二屏；?row=0..3 选中第几条线；?only=2 只显示第二屏（截图用）
+-->
+<style>
+  /* 字：标题用霞鹜漫黑（记号笔），正文与批注用小赖（细钢笔）。两款均 OFL-1.1，见 fonts/ */
+  @font-face { font-family:"HD Marker"; src:url(fonts/marker.woff2) format("woff2"); font-display:block; }
+  @font-face { font-family:"HD Hand"; src:url(fonts/hand.woff2) format("woff2"); font-display:block; }
+  :root {
+    --paper:#f1e9d6; --ink:#2b2420; --mute:#5b5147; --rule:#b3a487; --graphite:#8f8471;
+    --c0:#e0a84f; --c0-ink:#83540e;
+    --c1:#86b596; --c1-ink:#2b6650;
+    --c2:#e39478; --c2-ink:#9b3f27;
+    --c3:#86a6d8; --c3-ink:#2b5085;
+    --marker:"HD Marker","Kaiti SC","STKaiti",cursive;
+    --hand:"HD Hand","Kaiti SC","STKaiti",cursive;
+    --ease:cubic-bezier(.22,.61,.36,1);
+    --flow-in:cubic-bezier(.2,.75,.35,1);
+  }
+  * { box-sizing:border-box; }
+  /* 纸：脚本生成一张可平铺的纸纹，铺在整页，随页面滚动 */
+  html { margin:0; background-color:var(--paper); background-image:var(--paper-img, none); background-size:512px 512px; }
+  body { margin:0; background:transparent; color:var(--ink); font-family:var(--hand); overflow-x:hidden; }
+  /* 纸的大块明暗：几团极淡的深浅加四角略暗，固定在视口 */
+  body::before { content:""; position:fixed; inset:0; pointer-events:none; z-index:0; mix-blend-mode:multiply;
+    background:
+      radial-gradient(55% 45% at 16% 20%, rgba(150,118,70,.05), transparent 70%),
+      radial-gradient(45% 55% at 84% 78%, rgba(150,118,70,.06), transparent 70%),
+      radial-gradient(130% 120% at 50% 45%, transparent 62%, rgba(120,92,58,.10) 100%); }
+  /* 容器不设 z-index：设了就成隔离组，里面的 multiply 压不到纸纹 */
+  main { position:relative; }
+  .screen { position:relative; min-height:100vh; padding:64px 72px; }
+  .deco { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; mix-blend-mode:multiply; }
+  .kicker { position:relative; font-size:20px; line-height:1.55; color:var(--mute); letter-spacing:.04em; margin:0 0 18px; }
+  .ch { display:inline-block; }
+  @media (min-width:761px) { .kicker .nw { white-space:nowrap; } }
+  /* 墨落在纸上：大字在纸的深坑处缺一点墨 */
+  h1, h2, .name, .lb.mk { -webkit-mask-image:var(--ink-mask, none); mask-image:var(--ink-mask, none); -webkit-mask-size:512px 512px; mask-size:512px 512px; }
+  /* 手写字的“抖”：悬停或刚被选中时，字一拍一拍跳一下（逐字错开 30ms） */
+  @keyframes boil {
+    0% { translate:0 0; rotate:0deg; } 33% { translate:0 -.04em; rotate:2.4deg; }
+    66% { translate:0 .02em; rotate:-1.8deg; } 100% { translate:0 0; rotate:0deg; }
+  }
+  li button:hover .name .ch, li.on .name .ch, .s1 .mk:hover .ch, .lb.band.on .ch { animation:boil .42s steps(1, end) calc(var(--i, 0) * 30ms) 1; }
+
+  /* 第一屏：桌面左右两栏，左栏问题，右栏整幅配图 */
+  .s1 { display:grid; grid-template-columns:46fr 54fr; column-gap:40px; align-items:center; }
+  .s1 .q { position:relative; font-family:var(--marker); font-weight:400; font-size:4.5vw; line-height:1.3; margin:0; letter-spacing:.01em; }
+  .s1 .mk, .s1 .nw { white-space:nowrap; }
+  .s1 .head { position:relative; }
+  .s1 .ul { position:absolute; pointer-events:none; mix-blend-mode:multiply; clip-path:inset(0 100% 0 0); }
+  .hint { position:absolute; right:72px; bottom:40px; margin:0; font-size:18px; color:var(--mute); }
+  .key { display:inline-block; padding:0 .5em; margin:0 .3em; }
+  /* 配图：一张配方卡，出发的路越走越断，没走到“做出来” */
+  .road { position:relative; margin:0; justify-self:center; width:min(100%, calc((100svh - 128px) * 640 / 600)); aspect-ratio:640/600; container-type:inline-size; }
+  .road.vert { width:100%; aspect-ratio:360/470; }
+  .road canvas { position:absolute; pointer-events:none; }
+  .rd-path, .rd-destg { mix-blend-mode:multiply; }
+  .rd-hit { position:absolute; pointer-events:auto; }
+  .rd-card { opacity:0; transform:translateY(-22px) rotate(-6deg) scale(1.03);
+    transition:opacity .3s var(--ease), transform .75s cubic-bezier(.34,1.5,.64,1); }
+  .rd-path { clip-path:inset(0 100% 0 0); transition:clip-path 2.4s var(--flow-in) .7s; }
+  .road.vert .rd-path { clip-path:inset(0 0 100% 0); }
+  .rd-destg, .rl { opacity:0; transition:opacity 1.4s var(--ease) 2.4s; }
+  .rd-destg { position:absolute; inset:0; }
+  /* 还没做到的终点：铅笔稿，线条干净；三帧只换线的种子，轻轻地抖 */
+  .rd-dest { width:100%; height:100%; opacity:0; animation:flick 1.05s linear infinite; }
+  .rd-dest:nth-child(2) { animation-delay:-.35s; } .rd-dest:nth-child(3) { animation-delay:-.7s; }
+  @keyframes flick { 0%, 33.3% { opacity:1; } 33.4%, 100% { opacity:0; } }
+  .rl { position:absolute; transform:translate(-50%, -50%); color:var(--graphite); white-space:nowrap; line-height:1; }
+  .s1.go .rd-card { opacity:1; transform:none; }
+  .s1.go .rd-hit:hover + .rd-card { transform:translateY(-8px) rotate(2deg); transition-duration:.3s, .45s; }
+  .s1.go .rd-path { clip-path:inset(0 0 0 0); }
+  .s1.go .rd-destg { opacity:1; }
+  .s1.go .rl { opacity:.9; }
+  .s1.go #ul-a { clip-path:inset(0 0 0 0); transition:clip-path .65s var(--ease) .25s; }
+  .s1.go #ul-b { clip-path:inset(0 0 0 0); transition:clip-path 1.5s var(--flow-in) .8s; }
+
+  /* 第二屏：左列表，右教学图 */
+  .s2 { display:grid; grid-template-columns:35fr 65fr; gap:56px; align-items:center; }
+  .s2 > div, .s2 > figure { position:relative; }
+  h2 { font-family:var(--marker); font-weight:400; font-size:clamp(32px, 2.9vw, 46px); line-height:1.3; margin:0 0 38px; }
+  ol { list-style:none; margin:0; padding:0; display:grid; gap:24px; }
+  li { position:relative; }
+  li canvas { position:absolute; left:-14px; top:-10px; width:calc(100% + 28px); height:calc(100% + 20px); pointer-events:none; mix-blend-mode:multiply; }
+  li .hl { opacity:0; clip-path:inset(0 100% 0 0); transition:opacity .3s var(--ease), clip-path 0s linear .3s; }
+  li.on .hl { opacity:1; clip-path:inset(0 0 0 0); transition:opacity .15s var(--ease), clip-path .6s var(--ease); }
+  li:not(.on) .db { opacity:.45; }
+  li .db { transition:opacity .36s var(--ease); }
+  li button { all:unset; position:relative; cursor:pointer; display:grid; grid-template-columns:22px 1fr; column-gap:14px; }
+  li button:focus-visible { outline:2px dashed var(--ink); outline-offset:8px; border-radius:6px; }
+  .dot { width:17px; height:17px; margin-top:12px; }
+  .name { font-family:var(--marker); font-size:28px; line-height:1.4; transition:color .36s var(--ease); }
+  .desc .nw { white-space:nowrap; }
+  .desc { text-wrap:balance; grid-column:2; font-size:20px; line-height:1.6; color:var(--mute); margin-top:2px; }
+  li button[aria-pressed="false"] .name { color:var(--mute) !important; }
+  figure { margin:0; }
+  /* 图贴在一张浅色卡纸上（z-index:-1 垫在后面），两角压胶带 */
+  .fig-card { position:absolute; left:-30px; top:-30px; width:calc(100% + 60px); height:calc(100% + 60px); z-index:-1; pointer-events:none; }
+  .plate { position:relative; width:100%; aspect-ratio:1000/600; container-type:inline-size; }
+  .plate.vert { aspect-ratio:360/680; }
+  .plate canvas { position:absolute; inset:0; width:100%; height:100%; mix-blend-mode:multiply; pointer-events:none; }
+  .ov { opacity:0; clip-path:inset(0 100% 0 0); transition:opacity .35s var(--ease), clip-path 0s linear .35s; }
+  .vert .ov { clip-path:inset(0 0 100% 0); }
+  .ov.on { opacity:1; clip-path:inset(0 0 0 0); transition:opacity .2s var(--ease), clip-path .95s var(--ease); }
+  .reset .ov, .reset li .hl { transition:none !important; }
+  .labels { position:absolute; inset:0; pointer-events:none; }
+  .lb { position:absolute; white-space:nowrap; line-height:1; }
+  .lb.mk { font-family:var(--marker); }
+  .lb.band { color:var(--mute); transition:color .36s var(--ease); }
+  .lb.band.on { color:var(--c); }
+
+  @media (max-width:760px) {
+    .screen { padding:32px 16px 40px; min-height:auto; }
+    .s1 { grid-template-columns:1fr; align-content:center; min-height:100svh; row-gap:2px; }
+    .s1 .q { font-size:40px; }
+    .hint { right:auto; left:16px; bottom:20px; }
+    .s2 { grid-template-columns:1fr; gap:34px; align-items:start; }
+    h2 { font-size:31px; margin-bottom:22px; }
+    .kicker { font-size:15px; }
+    .kicker .nw:first-child { display:block; width:fit-content; }
+    ol { gap:16px; }
+    .name { font-size:22px; }
+    .desc { font-size:17px; }
+    .dot { margin-top:8px; width:15px; height:15px; }
+    .fig-card { left:-9px; top:-14px; width:calc(100% + 18px); height:calc(100% + 28px); }
+  }
+  @media (min-width:761px) { html { scroll-snap-type:y mandatory; } .screen { scroll-snap-align:start; } }
+  @media (prefers-reduced-motion:reduce) {
+    li .hl, li.on .hl, li .db, .name, .lb.band, .ov, .ov.on, .rd-card, .rd-path, .rd-destg, .rl, .s1 .ul, .s1.go .ul { transition:none !important; }
+    .rd-dest { animation:none !important; } .rd-dest:first-child { opacity:1; }
+    .ch { animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <section class="screen s1" id="p1" aria-label="第 1 屏">
+    <canvas class="deco" id="c1" aria-hidden="true"></canvas>
+    <div class="head">
+      <canvas class="ul" id="ul-a" aria-hidden="true"></canvas>
+      <canvas class="ul" id="ul-b" aria-hidden="true"></canvas>
+      <p class="kicker"><span class="tag">手作面包课 · 开场</span></p>
+      <h1 class="q"><span class="nw">照着配方做面包，</span><br><span class="nw">为什么常常</span><br><span class="mk" id="mk-a">看得懂</span>、<span class="mk" id="mk-b">做不好</span>？</h1>
+    </div>
+    <figure class="road" id="road" role="img" aria-label="一张贴好的配方卡，出发的路越走越断，没有走到“做出来”">
+      <div class="rd-destg"><canvas class="rd-dest"></canvas><canvas class="rd-dest"></canvas><canvas class="rd-dest"></canvas></div>
+      <canvas class="rd-path" id="rd-path"></canvas>
+      <i class="rd-hit" id="rd-hit"></i>
+      <canvas class="rd-card" id="rd-card"></canvas>
+      <span class="rl" id="rl">做出来</span>
+    </figure>
+    <p class="hint">按<span class="key" id="key">→</span>翻页</p>
+  </section>
+
+  <section class="screen s2" id="p2" aria-label="第 2 屏">
+    <canvas class="deco" id="c2" aria-hidden="true"></canvas>
+    <div>
+      <p class="kicker"><span class="nw tag">第 3 课 · 怎样做：</span><span class="nw">把一块面团从和面做到出炉</span></p>
+      <h2>四条线：每一步都要<br>照看的四样东西</h2>
+      <ol id="list"></ol>
+    </div>
+    <figure aria-label="图 2 六步四线：四样东西横跨六个步骤，越往后越要紧">
+      <canvas class="fig-card" id="fig-card" aria-hidden="true"></canvas>
+      <div class="plate" id="plate">
+        <canvas id="base" aria-hidden="true"></canvas>
+        <canvas id="top" aria-hidden="true"></canvas>
+        <div class="labels" id="labels" aria-hidden="true"></div>
+      </div>
+    </figure>
+  </section>
+</main>
+<script src="hand-drawn.js"></script>
+<script>
+// ---------- 内容：换题材时只改这里和两个 geo 函数 ----------
+const STEPS = ["选粉","和面","发酵","整形","烘烤","出炉"];
+const ROWS = [
+  {name:"风味", desc:"麦香、酸甜和咸淡，决定这块面包值不值得做。"},
+  {name:"筋度", desc:"面筋怎样长出来，揉多久，<span class=\"nw\">停在哪一刻</span>。"},
+  {name:"湿度", desc:"面团的含水和手感，表皮与内心的干湿。"},
+  {name:"温度", desc:"面温、室温和炉温，决定发酵快慢与上色。"},
+];
+const CAPTION = "四条线不是第七步：每一步都要照看，越往后越要紧";
+const FIG_NO = "图 2 · 六步四线", AXIS = "制作推进";
+
+const HD = HandDrawn, DPR = HD.DPR, {pen, pencil, ring, rbox, tape, sparkle, paperCard, paperize, place, placeIn, fitTo, rng, noise1, bez} = HD;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
+const mq = matchMedia("(max-width:760px)");
+
+// ---------- 教学图版面：u 是推进方向，w 是横穿方向；横版 x=u，竖版 y=u ----------
+function geo(vert) {
+  return vert
+    ? {vert, W:360, H:680, a0:96, aEnd:600, tip:18, bw:46, gap:10, c0:118}
+    : {vert, W:1000, H:600, a0:24, aEnd:834, tip:26, bw:72, gap:22, c0:136};
+}
+const XY = (g, u, w) => g.vert ? [w, u] : [u, w];
+const UV = (g, x, y) => g.vert ? [y, x] : [x, y];
+const bandC = (g, j) => g.c0 + j * (g.bw + g.gap);
+const stepW = g => (g.aEnd - g.a0) / STEPS.length;
+const stepOf = (g, u) => Math.min(5, Math.max(0, Math.floor((u - g.a0) / stepW(g))));
+
+// 一条色带：两边略抖的长带，末端收成箭头，表示一路贯穿
+function bandUV(g, j) {
+  const c = bandC(g, j), n = noise1(300 + j), L = g.aEnd - g.a0, N = Math.ceil(L / 6), pts = [];
+  for (let i = 0; i <= N; i++) pts.push([g.a0 + L * i / N, c + (n(i * .33) - .5) * 2.4]);
+  pts.push([g.aEnd + g.tip, c + g.bw / 2]);
+  for (let i = N; i >= 0; i--) pts.push([g.a0 + L * i / N, c + g.bw + (n(90 + i * .33) - .5) * 2.4]);
+  pts.push([g.a0 + (n(7) - .5) * 3, c + g.bw * .5]);
+  return pts;
+}
+// 深度：每过一步深一档；同一带里下沿更暗、上沿留一道亮
+function tone(g, j, u, w) {
+  const d = stepOf(g, u) / 5, s = (w - bandC(g, j)) / g.bw;
+  return .78 * d + .34 * Math.pow(Math.max(0, s), 1.4) * (.3 + .7 * d) - (s < .17 ? .3 : 0);
+}
+function drawBand(c, g, j, active) {
+  const uv = bandUV(g, j), clip = uv.map(([u, w]) => XY(g, u, w)), box = HD.bounds(clip), col = css(`--c${j}`);
+  pencil(c, clip, box, {
+    seed: 50 + j + (active ? 7 : 0), color: col, angle: -1.08, len: 13, w: 1.6,
+    density: active ? .28 : .12, tooth: active ? .5 : .65, op: active ? 1 : .3,
+    alpha: (x, y) => { const [u, w] = UV(g, x, y), s = (w - bandC(g, j)) / g.bw;
+      return active ? Math.max(.06, .16 + .74 * stepOf(g, u) / 5 - (s < .15 ? .2 : 0)) : .55; },
+  });
+  if (active) {
+    // 排线顺着带走；每根线在步与步的分界处错开起笔，越往后墨越实
+    const shift = lr => (lr - .5) * stepW(g) * .45;
+    HD.HATCH_LAYERS.forEach(L => HD.hatch(c, clip, box, Object.assign({}, L, {
+      seed: 1000 + j * 10 + L.seed, angle: g.vert ? Math.PI / 2 - L.angle : L.angle,
+      tone: (x, y, lr) => { const [u, w] = UV(g, x, y); return tone(g, j, u + shift(lr), w); },
+      level: (x, y, lr) => stepOf(g, UV(g, x, y)[0] + shift(lr)) / 5,
+    })));
+  }
+  pen(c, clip, {closed: true, w: active ? 1.5 : 1.05, alpha: active ? 1 : .38, seed: 70 + j, jit: .6});
+  if (active) { // 下沿是背光的一边，再压一道粗线
+    const bot = uv.filter(([u, w]) => w > bandC(g, j) + g.bw * .8 && u <= g.aEnd).sort((a, b) => a[0] - b[0]).map(([u, w]) => XY(g, u, w));
+    pen(c, bot, {w: 2.1, seed: 90 + j, jit: .5, alpha: .9});
+  }
+}
+function drawBase(c, g) {
+  const sw = stepW(g);
+  STEPS.forEach((_, i) => { // 六步：手画圆圈加浅铅笔底
+    const u = g.a0 + sw * (i + .5), [cx, cy] = g.vert ? [16, u - 14] : [u, 34], R = g.vert ? 11 : 15, rg = ring(cx, cy, R, 405 + i);
+    pencil(c, rg.slice(0, 37), [cx - R, cy - R, cx + R, cy + R], {seed: 400 + i, color: "#b8a98d", len: 7, w: 1.2, density: .5, alpha: () => .55});
+    pen(c, rg, {w: 1.25, seed: 410 + i, jit: .5});
+  });
+  const axis = g.vert ? [[106, 84], [106, 640]] : [[12, 106], [868, 106]]; // 推进方向：一根钢笔轴线，手画箭头
+  pen(c, axis, {w: 1.3, seed: 500, jit: .7});
+  const [ex, ey] = axis[1], hd = g.vert ? [[-6, -12], [6, -12]] : [[-13, -6], [-13, 6]];
+  hd.forEach(([dx, dy], k) => pen(c, [[ex + dx, ey + dy], [ex, ey]], {w: 1.3, seed: 510 + k, jit: .3}));
+  ROWS.forEach((_, j) => drawBand(c, g, j, false));
+}
+function drawTop(c, g, capEnd) {
+  const sw = stepW(g), bEnd = bandC(g, 3) + g.bw;
+  for (let i = 1; i < STEPS.length; i++) { // 六步分隔：浅色虚线穿过四条带
+    const u = g.a0 + sw * i, r = rng(600 + i);
+    for (let w = g.c0 - 12; w < bEnd + 10; w += 9)
+      pen(c, [XY(g, u + (r() - .5) * 1.2, w), XY(g, u + (r() - .5) * 1.2, w + 4.5)], {w: .9, alpha: .7, color: css("--rule"), seed: 620 + i * 50 + w, jit: .2});
+  }
+  if (!g.vert) { // 图注箭头：从图注右端起笔，指向最深的一端
+    const p = [], n = noise1(800), P0 = [capEnd + 12, 554], P1 = [capEnd + (796 - capEnd) * .65, 557], P2 = [796, 500];
+    for (let t = 0; t <= 1.0001; t += .04) { const m = 1 - t; p.push([m * m * P0[0] + 2 * m * t * P1[0] + t * t * P2[0], m * m * P0[1] + 2 * m * t * P1[1] + t * t * P2[1] + (n(t * 9) - .5)]); }
+    pen(c, p, {w: 1.1, seed: 801, jit: .4, alpha: .85});
+    const [x2, y2] = p[p.length - 1], [x1, y1] = p[p.length - 3], a = Math.atan2(y2 - y1, x2 - x1);
+    [a + 2.6, a - 2.6].forEach((b, k) => pen(c, [[x2 + Math.cos(b) * 10, y2 + Math.sin(b) * 10], [x2, y2]], {w: 1.1, seed: 810 + k, jit: .2, alpha: .85}));
+  }
+}
+function drawLabels(box, g) {
+  box.innerHTML = ""; const sw = stepW(g), L = (x, y, t, o) => HD.label(box, g.W, g.H, x, y, t, o);
+  STEPS.forEach((t, i) => {
+    const u = g.a0 + sw * (i + .5);
+    if (g.vert) { L(16, u - 13, String(i + 1), {size: 14, jitter: 30 + i}); L(32, u - 14, t, {size: 16, cls: "mk", ax: 0, jitter: 20 + i}); }
+    else { L(u, 35, String(i + 1), {size: 18, jitter: 30 + i}); L(u, 76, t, {size: 21, cls: "mk", jitter: 20 + i}); }
+  });
+  if (g.vert) L(4, 64, AXIS + " ↓", {size: 14, ax: 0, jitter: 41, color: css("--mute")});
+  else L(880, 106, AXIS, {size: 18, ax: 0, jitter: 41, color: css("--mute")});
+  ROWS.forEach((r, j) => {
+    const c = bandC(g, j), el = g.vert ? L(c + g.bw / 2, 80, r.name, {size: 16, cls: "mk band", jitter: 45 + j})
+      : L(880, c + g.bw / 2, r.name, {size: 23, cls: "mk band", ax: 0, jitter: 45 + j});
+    el.style.setProperty("--c", css(`--c${j}-ink`)); el.dataset.j = j;
+  });
+  if (g.vert) { L(4, 662, CAPTION, {size: 13.5, ax: 0, jitter: 50, color: css("--mute")}); return null; }
+  L(1000, 590, FIG_NO, {size: 15, ax: -100, color: css("--mute")});
+  return L(24, 556, CAPTION, {size: 20, ax: 0, jitter: 50, color: css("--ink")});
+}
+
+// ---------- 组装教学图：一层底图 + 每条线一层叠加画布，悬停切层 ----------
+const plate = document.getElementById("plate"), labels = document.getElementById("labels"), list = document.getElementById("list");
+let cur = 0, overlays = [], G = geo(false);
+function sizeCanvas(cv, g) {
+  const w = plate.clientWidth, h = w * g.H / g.W;
+  cv.width = Math.round(w * DPR); cv.height = Math.round(h * DPR);
+  const c = cv.getContext("2d"); c.setTransform(DPR * w / g.W, 0, 0, DPR * w / g.W, 0, 0); return c;
+}
+function render() {
+  const g = G = geo(mq.matches); plate.classList.toggle("vert", g.vert);
+  const base = document.getElementById("base"), top = document.getElementById("top");
+  drawBase(sizeCanvas(base, g), g); paperize(base);
+  overlays.forEach(o => o.remove());
+  overlays = ROWS.map((_, j) => {
+    const cv = document.createElement("canvas"); cv.className = "ov"; cv.setAttribute("aria-hidden", "true");
+    plate.insertBefore(cv, top); drawBand(sizeCanvas(cv, g), g, j, true); paperize(cv); return cv;
+  });
+  // 先排 HTML 标签，箭头再从图注右端起笔
+  const cap = drawLabels(labels, g), pr = plate.getBoundingClientRect();
+  drawTop(sizeCanvas(top, g), g, cap ? (cap.getBoundingClientRect().right - pr.left) / pr.width * g.W : 0); paperize(top);
+  show(cur, true);
+}
+function show(i, instant) {
+  cur = i;
+  list.querySelectorAll("li").forEach((li, k) => { li.classList.toggle("on", k === i); li.querySelector("button").setAttribute("aria-pressed", k === i); });
+  labels.querySelectorAll(".lb.band").forEach(el => el.classList.toggle("on", +el.dataset.j === i));
+  overlays.forEach((cv, k) => {
+    if (instant) { cv.style.transition = "none"; cv.classList.toggle("on", k === i); cv.getBoundingClientRect(); cv.style.transition = ""; }
+    else cv.classList.toggle("on", k === i);
+  });
+}
+// 换一层：鼠标悬停就换，触屏点按，键盘聚焦也换
+function pick(i) { if (i !== cur) { show(i); pos = 1 + i; } }
+list.innerHTML = ROWS.map((r, i) => `<li><canvas class="db" aria-hidden="true"></canvas><canvas class="hl" aria-hidden="true"></canvas><button data-i="${i}" aria-pressed="false">
+  <span class="dot"></span><span class="name" style="color:var(--c${i}-ink)">${r.name}</span><span class="desc">${r.desc}</span></button></li>`).join("");
+list.addEventListener("pointerover", e => { const b = e.target.closest("button"); if (b && e.pointerType === "mouse") pick(+b.dataset.i); });
+list.addEventListener("click", e => { const b = e.target.closest("button"); if (b) pick(+b.dataset.i); });
+list.addEventListener("focusin", e => { const b = e.target.closest("button"); if (b) pick(+b.dataset.i); });
+plate.addEventListener("pointermove", e => { // 图上也能悬停：指到哪条带，就换到哪一层
+  if (e.pointerType !== "mouse") return;
+  const g = G, R = plate.getBoundingClientRect(), [u, w] = UV(g, (e.clientX - R.left) / R.width * g.W, (e.clientY - R.top) / R.height * g.H);
+  const j = Math.floor((w - g.c0 + g.gap / 2) / (g.bw + g.gap));
+  if (u > (g.vert ? 60 : g.a0 - 10) && j >= 0 && j < ROWS.length) pick(j);
+});
+// 列表：圆点是彩铅填色的手画圈；选中项名字底下一抹彩铅加一道同色钢笔线（高亮宽度用 Range 量字本身）
+function drawList() {
+  list.querySelectorAll("li").forEach((li, i) => {
+    const [cb, ch] = li.querySelectorAll("canvas"), L = li.getBoundingClientRect(), ox = L.left - 14, oy = L.top - 10, W = L.width + 28, H = L.height + 20;
+    const rr = document.createRange(); rr.selectNodeContents(li.querySelector(".name"));
+    const D = li.querySelector(".dot").getBoundingClientRect(), N = rr.getBoundingClientRect();
+    const prep = cv => { cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); const c = cv.getContext("2d"); c.setTransform(DPR, 0, 0, DPR, 0, 0); return c; };
+    let c = prep(cb);
+    const cx = D.left + D.width / 2 - ox, cy = D.top + D.height / 2 - oy, R = D.width / 2 + 1, rg = ring(cx, cy, R, 1300 + i, 34);
+    pencil(c, rg.slice(0, 31), [cx - R, cy - R, cx + R, cy + R], {seed: 1310 + i, color: css(`--c${i}`), len: 5, w: 1.3, density: 1.4, tooth: .45, alpha: () => .95});
+    pen(c, rg, {w: 1.2, seed: 1320 + i, jit: .35}); paperize(cb);
+    c = prep(ch);
+    const x0 = N.left - ox - 4, x1 = N.right - ox + 8, yT = N.top - oy + N.height * .52, yB = N.bottom - oy - N.height * .08;
+    pencil(c, null, [x0, yT, x1, yB], {seed: 1330 + i, color: css(`--c${i}`), len: N.height * .3, w: 1.6, density: .1, tooth: .45, alpha: () => .85});
+    pen(c, [[x0 + 2, yB + 1], [(x0 + x1) / 2, yB + 2.2], [x1 + 4, yB]], {w: 1.7, seed: 1340 + i, jit: .5, color: css(`--c${i}-ink`)});
+    paperize(ch);
+  });
+}
+// 第二屏装饰：花边、页眉胶带、图下卡纸
+function drawP2() {
+  const sec = document.getElementById("p2"), S = sec.getBoundingClientRect(), cv = document.getElementById("c2"), c = fitTo(cv, sec);
+  HD.frame(c, sec.clientWidth, sec.clientHeight, mq.matches ? 6 : 20, 1500);
+  const T = sec.querySelector(".tag").getBoundingClientRect();
+  HD.tagTape(c, {x: T.left - S.left, y: T.top - S.top, w: T.width, h: T.height}, 1510);
+  paperize(cv);
+  const fc = document.getElementById("fig-card"), k = fitTo(fc, fc), w = fc.clientWidth, h = fc.clientHeight, m = mq.matches ? 2 : 6, s = mq.matches ? .66 : 1;
+  paperCard(k, m, m, w - 2 * m, h - 2 * m - 6, 1520, 1);
+  tape(k, m + 34 * s, m + 6, 92 * s, 26 * s, -.5, "rgba(134,181,150,.5)", 1530);
+  tape(k, w - m - 36 * s, m + 8, 84 * s, 24 * s, .48, "rgba(224,168,79,.5)", 1531);
+}
+
+// ---------- 第一屏配图：配方卡在左上，路呈 J 形弯向右下，越走越断，没到“做出来” ----------
+function roadGeo(vert) {
+  return vert
+    ? {vert, W:360, H:470, ps:.65, card:{x:104, y:132, w:150, h:196, rot:-.07}, P:[[150, 228], [140, 420], [250, 430], [292, 330]],
+       dest:{x:298, y:250, s:.55}, label:[298, 300], ls:15, spark:[[200, 34, 9], [224, 62, 5]]}
+    : {vert, W:640, H:600, ps:1, card:{x:170, y:175, w:220, h:278, rot:-.07}, P:[[190, 318], [170, 560], [430, 560], [520, 410]],
+       dest:{x:528, y:318, s:.85}, label:[528, 380], ls:24, spark:[[310, 62, 13], [342, 98, 7], [292, 116, 5]]};
+}
+// 配方卡：卡纸、标题、几行字迹、签名、红章、两角胶带
+function drawRecipe(c, g, k) {
+  const cd = g.card, w = cd.w, h = cd.h, u = w / 230, gray = css("--graphite");
+  c.save(); c.translate(cd.x, cd.y); c.rotate(cd.rot);
+  paperCard(c, -w / 2, -h / 2, w, h, 1600, k);
+  c.fillStyle = css("--ink"); c.font = `${Math.round(30 * u)}px "HD Marker"`; c.textAlign = "center"; c.fillText("配方", 0, -h / 2 + 52 * u);
+  pen(c, [[-26 * u, -h / 2 + 63 * u], [26 * u, -h / 2 + 64 * u]], {w: 1.2 * u, seed: 1601, jit: .4, alpha: .8});
+  const r = rng(1610);
+  for (let i = 0; i < 7; i++) { // 字迹：几行小波浪线，不写具体内容
+    const y = -h / 2 + 92 * u + i * 21 * u, x0 = -w / 2 + 26 * u, x1 = w / 2 - 26 * u - (i === 6 ? 70 * u : r() * 20 * u), pts = [];
+    for (let x = x0; x <= x1; x += 4 * u) pts.push([x, y + Math.sin(x * .55 / u) * 1.4 * u + (r() - .5) * 1.2 * u]);
+    pen(c, pts, {w: u, seed: 1620 + i, jit: .5, alpha: .5, color: gray});
+  }
+  const sy = h / 2 - 50 * u, sx0 = -w / 2 + 26 * u, sig = [];
+  pen(c, [[sx0, sy], [sx0 + 100 * u, sy]], {w: .9 * u, seed: 1640, jit: .3, alpha: .5, color: gray});
+  for (let t = 0; t <= 1.0001; t += .01) sig.push([sx0 + 6 * u + t * 92 * u + 7 * u * Math.cos(t * 24), sy - 10 * u - 9 * u * Math.sin(t * 24) * (1 - .4 * t) + t * 3 * u]);
+  pen(c, sig, {w: 1.5 * u, seed: 1641, jit: .25, color: "#24365e"});
+  const scx = w / 2 - 62 * u, scy = h / 2 - 64 * u, R = 31 * u, red = "#c4483d", rg = ring(scx, scy, R, 1650, 44), st = []; // 红章：只有圈和星
+  pencil(c, rg.slice(0, 41), [scx - R, scy - R, scx + R, scy + R], {seed: 1651, color: "#d9675b", len: 6 * u, w: 1.3 * u, density: .35, tooth: .55, alpha: () => .5});
+  pen(c, rg, {w: 2 * u, seed: 1652, jit: .5, color: red, alpha: .9});
+  pen(c, ring(scx, scy, R * .8, 1653), {w: .8 * u, seed: 1654, jit: .4, color: red, alpha: .8});
+  for (let q = 0; q < 10; q++) { const a = -Math.PI / 2 + q * Math.PI / 5, rr = q % 2 ? R * .22 : R * .5; st.push([scx + Math.cos(a) * rr, scy + Math.sin(a) * rr]); }
+  c.save(); c.globalAlpha = .7; c.fillStyle = red; HD.pathOf(c, st); c.fill(); c.restore();
+  tape(c, -w / 2 + 20 * u, -h / 2 + 2 * u, 80 * u, 24 * u, -.62, "rgba(224,168,79,.5)", 1660);
+  tape(c, w / 2 - 18 * u, -h / 2 + 4 * u, 72 * u, 22 * u, .58, "rgba(134,166,216,.5)", 1661);
+  c.restore();
+}
+// 路：前段一笔实线压一抹彩铅（和“看得懂”同一种标法），后段越断越淡，最后只剩几个点
+function drawPath(c, g) {
+  const N = 400, pts = [], cum = [0], ps = g.ps;
+  for (let i = 0; i <= N; i++) pts.push(bez(g.P, i / N));
+  for (let i = 1; i <= N; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  const T = cum[N], SOL = T * .36;
+  const at = s => { let lo = 0, hi = N; while (hi - lo > 1) { const m = (lo + hi) >> 1; cum[m] < s ? lo = m : hi = m; } const f = (s - cum[lo]) / ((cum[hi] - cum[lo]) || 1); return [pts[lo][0] + (pts[hi][0] - pts[lo][0]) * f, pts[lo][1] + (pts[hi][1] - pts[lo][1]) * f]; };
+  const run = (s0, s1) => { const n = Math.max(2, Math.ceil((s1 - s0) / 3)); return Array.from({length: n + 1}, (_, i) => at(s0 + (s1 - s0) * i / n)); };
+  const L = [], Rt = []; // 彩铅底：沿路两侧各让开一点，尾端收窄
+  for (let s = 0; s <= SOL * 1.08; s += 4) {
+    const [x, y] = at(s), [x2, y2] = at(Math.min(T, s + 2)), d = Math.hypot(x2 - x, y2 - y) || 1, nx = -(y2 - y) / d, ny = (x2 - x) / d;
+    const hw = 11 * ps * (s > SOL * .8 ? Math.max(.15, 1 - (s - SOL * .8) / (SOL * .28)) : 1);
+    L.push([x + nx * hw, y + ny * hw]); Rt.unshift([x - nx * hw, y - ny * hw]);
+  }
+  const poly = [...L, ...Rt];
+  pencil(c, poly, HD.bounds(poly), {seed: 1700, color: css("--c0"), len: 12 * ps, w: 1.5 * ps, density: .3 / (ps * ps), tooth: .5, alpha: () => .85});
+  pen(c, run(0, SOL), {w: 3 * ps, seed: 1710, jit: .6});
+  HD.fadeDash(c, at, SOL + 4 * ps, T, {seed: 1720, scale: ps});
+  g.spark.forEach(([x, y, R], k) => sparkle(c, x, y, R, 1790 + k, css("--c0")));
+}
+// 还没做到的终点：一间小面包房的铅笔稿。线不出头、抖动 .3；屋顶一层较实的石墨，墙只铺很浅一层；
+// 窗有十字格，门有把手。三帧只换线的种子（v），填色每帧相同
+function drawDest(c, g, v = 0) {
+  const {x, y, s} = g.dest, gray = css("--graphite"), P = (px, py) => [x + px * s, y + py * s];
+  const lw = .95 * Math.max(s, .7), line = (pts, i, o = {}) => pen(c, pts, Object.assign({w: lw, alpha: .75, color: gray, seed: 1810 + i + v * 100, jit: .3}, o));
+  const wall = [P(-55, -35), P(55, -35), P(55, 50), P(-55, 50)], roof = [P(-64, -33), P(0, -80), P(64, -33)];
+  pencil(c, wall, HD.bounds(wall), {seed: 1800, color: "#b3a893", len: 9 * s, w: 1.1 * s, density: .05 / (s * s), tooth: .7, alpha: () => .25});
+  pencil(c, roof, HD.bounds(roof), {seed: 1801, color: "#7d7262", len: 9 * s, w: 1.2 * s, density: .4 / (s * s), tooth: .5, alpha: () => .85});
+  line(roof, 0, {closed: true});
+  line([P(-55, -33), P(-55, 50), P(55, 50), P(55, -33)], 1);
+  line([P(-12, 50), P(-12, 14), P(12, 14), P(12, 50)], 2);                       // 门
+  line(ring(...P(7, 33), 1.8 * s, 1830 + v, 14), 3, {w: lw * .9});               // 门把手
+  [[-40, -20], [20, -20]].forEach(([wx, wy], i) => {                              // 两扇窗，十字格
+    line(HD.rbox(...P(wx, wy), 20 * s, 20 * s, 1.5 * s), 4 + i * 3, {closed: true});
+    line([P(wx + 10, wy), P(wx + 10, wy + 20)], 5 + i * 3, {w: lw * .8});
+    line([P(wx, wy + 10), P(wx + 20, wy + 10)], 6 + i * 3, {w: lw * .8});
+  });
+  line([P(26, -58), P(26, -78), P(38, -78), P(38, -49)], 12);                     // 烟囱
+  line([P(-85, 50), P(85, 50)], 13, {alpha: .55});                                // 地面
+}
+function drawRoad() {
+  const box = document.getElementById("road"), g = roadGeo(mq.matches); box.classList.toggle("vert", g.vert);
+  const k = box.clientWidth / g.W, cd = g.card, cs = Math.cos(cd.rot), sn = Math.abs(Math.sin(cd.rot));
+  const bw = cd.w * cs + cd.h * sn, bh = cd.h * cs + cd.w * sn, m = 46 * cd.w / 230, card = document.getElementById("rd-card");
+  // 旋转的画布外接框会挡住别的悬停：画布不接指针，另放一个同样旋转的透明热区
+  Object.assign(document.getElementById("rd-hit").style, {left: (cd.x - cd.w / 2) * k + "px", top: (cd.y - cd.h / 2) * k + "px", width: cd.w * k + "px", height: cd.h * k + "px", transform: `rotate(${cd.rot}rad)`});
+  drawRecipe(placeIn(card, k, cd.x - bw / 2 - m, cd.y - bh / 2 - m, bw + 2 * m, bh + 2 * m), g, k); paperize(card, .4);
+  const pc = document.getElementById("rd-path"); drawPath(placeIn(pc, k, 0, 0, g.W, g.H), g); paperize(pc);
+  document.querySelectorAll(".rd-dest").forEach((dc, v) => { drawDest(placeIn(dc, k, 0, 0, g.W, g.H), g, v); paperize(dc, .35); });
+  const lb = document.getElementById("rl");
+  lb.style.left = g.label[0] / g.W * 100 + "%"; lb.style.top = g.label[1] / g.H * 100 + "%"; lb.style.fontSize = g.ls / g.W * 100 + "cqw";
+}
+function drawP1() {
+  drawRoad();
+  const sec = document.getElementById("p1"), S = sec.getBoundingClientRect(), H = sec.querySelector(".head").getBoundingClientRect();
+  const rel = el => { const r = el.getBoundingClientRect(); return {x: r.left - S.left, y: r.top - S.top, w: r.width, h: r.height}; };
+  const relH = el => { const r = el.getBoundingClientRect(); return {x: r.left - H.left, y: r.top - H.top, w: r.width, h: r.height}; };
+  const cv = document.getElementById("c1"), c = fitTo(cv, sec); // 整屏画布：花边、页眉胶带、翻页键
+  HD.frame(c, sec.clientWidth, sec.clientHeight, mq.matches ? 6 : 20, 1400);
+  HD.tagTape(c, rel(sec.querySelector(".tag")), 1410);
+  const key = document.getElementById("key");
+  if (key) {
+    const K = rel(key);
+    pen(c, rbox(K.x, K.y - 3, K.w, K.h + 5, 6), {closed: true, w: 1.2, seed: 920, jit: .5, color: css("--mute")});
+    pen(c, [[K.x + 4, K.y + K.h + 4.5], [K.x + K.w - 4, K.y + K.h + 4]], {w: 1.6, seed: 921, jit: .4, color: css("--mute"), alpha: .8});
+  }
+  paperize(cv);
+  // 标题下的标记挂在 .head 里，按标题坐标画（整屏坐标会在视口高度变化时错位）
+  const fs = parseFloat(getComputedStyle(sec.querySelector(".q")).fontSize), lw = Math.max(1.4, fs / 34);
+  const A = relH(document.getElementById("mk-a")), ca = document.getElementById("ul-a"); // 看得懂：一抹彩铅加两道肯定的钢笔线
+  let u = place(ca, A.x - 20, A.y + A.h * .3, A.w + 44, A.h * .7 + lw * 10);
+  pencil(u, null, [A.x - 4, A.y + A.h * .5, A.x + A.w + 4, A.y + A.h * .92], {seed: 900, color: css("--c0"), len: fs * .3, w: lw * 1.1, density: .045, tooth: .45, alpha: () => .9});
+  const yA = A.y + A.h * .94;
+  pen(u, [[A.x - 4, yA], [A.x + A.w * .5, yA + 1.5], [A.x + A.w + 10, yA - 1]], {w: lw * 1.3, seed: 901, jit: .6});
+  pen(u, [[A.x + 6, yA + lw * 4.5], [A.x + A.w + 2, yA + lw * 4]], {w: lw * 1.1, seed: 902, jit: .6});
+  paperize(ca);
+  const B = relH(document.getElementById("mk-b")), cb = document.getElementById("ul-b"); // 做不好：同样起笔，越往后越断、越淡
+  u = place(cb, B.x - 10, B.y + B.h * .78, B.w + 34, B.h * .22 + 14);
+  const yB = B.y + B.h * .94, r = rng(903);
+  let t = 0, seg = 0;
+  while (t < B.w + 14) {
+    const Lb = B.w + 14, f = t / Lb, len = (1 - f) * 34 + 4 + r() * 6, gap = f * f * 26 + r() * 3, x1 = B.x - 4 + t, x2 = Math.min(B.x - 4 + Lb, x1 + len);
+    pen(u, [[x1, yB + (r() - .5) * 1.5], [x2, yB + (r() - .5) * 1.5 + f * 2]], {w: lw * 1.3 * (1 - f * .5), alpha: 1 - f * .7, seed: 910 + seg++, jit: .5});
+    t += len + gap;
+  }
+  paperize(cb);
+}
+
+// ---------- 翻页：第一屏 → 第二屏逐层 ----------
+const SEQ = [{s:"p1"}, {s:"p2", j:0}, {s:"p2", j:1}, {s:"p2", j:2}, {s:"p2", j:3}];
+let pos = 0;
+function go(i) {
+  pos = Math.max(0, Math.min(SEQ.length - 1, i)); const it = SEQ[pos];
+  document.getElementById(it.s).scrollIntoView({behavior: reduce ? "auto" : "smooth"});
+  if (it.j !== undefined) show(it.j);
+}
+addEventListener("keydown", e => {
+  if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); go(pos + 1); }
+  if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); go(pos - 1); }
+});
+if (matchMedia("(pointer:coarse)").matches) document.querySelector(".hint").textContent = "往下滑 ↓"; // 触屏没有方向键
+
+// 手写排字：标题、条目名、页眉、图里的“做出来”
+handsetAll();
+function handsetAll() {
+  HD.handset(document.querySelector(".s1 .q"), 61);
+  HD.handset(document.querySelector(".s2 h2"), 62);
+  document.querySelectorAll(".kicker").forEach((el, i) => HD.handset(el, 63 + i, .6));
+  list.querySelectorAll(".name").forEach((el, i) => HD.handset(el, 70 + i));
+  HD.handset(document.getElementById("rl"), 80);
+}
+
+const qs = new URLSearchParams(location.search);
+if (qs.has("row")) cur = +qs.get("row");
+if (qs.get("only") === "2") document.getElementById("p1").style.display = "none";
+let t0;
+function all() { render(); drawList(); drawP2(); drawP1(); }
+addEventListener("resize", () => { clearTimeout(t0); t0 = setTimeout(all, 160); });
+mq.addEventListener("change", all);
+// 纸先生成，字体显式加载完再画（canvas 的 fillText 也要等网页字体）
+Promise.all([HD.init(), HD.fontsReady([["HD Marker", "配方看得懂"], ["HD Hand", "面包"]])]).then(() => {
+  all();
+  // 标题换行或整屏高度变了（手机地址栏收起、无头截图视口变化）都重画装饰
+  let t1; const ro = new ResizeObserver(() => { clearTimeout(t1); t1 = setTimeout(() => { drawP1(); drawList(); drawP2(); }, 60); });
+  [".s1 .q", "#p1", "#p2"].forEach(q => ro.observe(document.querySelector(q)));
+  const p1 = document.getElementById("p1"); // 首屏入场：卡片落下 → 下划线 → 路一段段画出去 → 远处浮出终点
+  if (reduce) p1.classList.add("go"); else requestAnimationFrame(() => requestAnimationFrame(() => p1.classList.add("go")));
+  const p2 = document.getElementById("p2"); // 第二屏第一次进入视野时，当前这层重新画一遍
+  if (!reduce) new IntersectionObserver((es, io) => {
+    if (!es[0].isIntersecting) return; io.disconnect();
+    p2.classList.add("reset"); overlays.forEach(cv => cv.classList.remove("on")); list.querySelectorAll("li").forEach(li => li.classList.remove("on"));
+    p2.getBoundingClientRect(); p2.classList.remove("reset"); requestAnimationFrame(() => show(cur));
+  }, {threshold: .35}).observe(p2);
+  if (qs.get("p") === "2") { p2.scrollIntoView(); pos = 1 + cur; }
+  document.documentElement.dataset.ready = "1";
+});
+</script>
+</body>
+</html>
