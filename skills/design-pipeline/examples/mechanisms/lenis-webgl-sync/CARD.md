@@ -1,6 +1,0 @@
-- id：lenis-webgl-sync
-- 机制：Lenis 平滑滚动，gsap.ticker 单循环同时驱动 ScrollTrigger.update 与 three 着色器 uniform uProg，静止时不渲染。
-- 依赖（固定版本）：gsap 与 ScrollTrigger 3.15.0，lenis 1.3.11，three 0.186.0（jsDelivr）
-- 文件体积：index.html 5065 字节
-- Reduce Motion 行为：不创建 Lenis，原生 scroll 事件写 uProg，终态由滚动位置决定。
-- 已验证项：1440 与 390 截图已看，console 0 error，http 外链只有 jsDelivr 与 Google Fonts。 减少动态下 uniform 仍随滚动变化（截图为进度 0.5 的环形）。

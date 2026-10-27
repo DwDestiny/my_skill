@@ -2,7 +2,7 @@
 
 **内容与讲解方案。** 把资料和目标拆成一份"蓝图"：读者是谁、读完能做什么、保留什么、按什么顺序讲、每块用什么形式、每条断言的来源与可信度。
 
-它不决定颜色、字号、间距和动效。这些由配对的 [`visual-motion-design`](../visual-motion-design/README.md) 负责。
+它不决定颜色、字号、间距和动效。这些由视觉侧负责，例如 [`design-techniques`](../../plugins/design-techniques/README.md) 插件的手法子 skill。
 
 ## 什么时候触发
 
@@ -17,7 +17,7 @@
 ## 配对方式
 
 1. `content-blueprint` 读资料，产出蓝图文件。
-2. `visual-motion-design` 只读蓝图，不读原始资料，搭建 HTML 页面。
+2. 视觉侧（所选手法的子 skill）读蓝图，搭建 HTML 页面。
 3. 视觉侧发现蓝图问题时，在 `handoff-log.md` 追加退回条目。内容侧回复。
 
 | 产物 | 内容 |
@@ -28,9 +28,9 @@
 | `blueprint.md` | front matter、逐章块、删除清单、信息架构 |
 | `handoff-log.md` | 两侧往来记录，只追加不改旧条目 |
 
-退回有 7 种类型：`over_budget`、`wont_fit`、`form_mismatch`、`missing_source`、`term_conflict`、`incomplete`、`gear_conflict`。契约见 `references/blueprint-template.md` 与对侧的 `visual-motion-design/references/handoff.md`。改契约时两边同改。
+退回有 7 种类型：`over_budget`、`wont_fit`、`form_mismatch`、`missing_source`、`term_conflict`、`incomplete`、`gear_conflict`。契约见 `references/blueprint-template.md`。
 
-蓝图里的 `reader_mode` 取 `读`、`读看`、`看` 之一。它只提示读者主要怎么用这页，不是分级。视觉氛围与动效预算由 [`visual-motion-design`](../visual-motion-design/README.md) 在设计阶段决定。
+蓝图里的 `reader_mode` 取 `读`、`读看`、`看` 之一。它只提示读者主要怎么用这页，不是分级。视觉氛围与动效由所选手法决定。
 
 ## 目录
 
@@ -47,7 +47,7 @@ content-blueprint/
 ## 安装
 
 1. 把本目录放进你的 agent skills 目录，或用仓库根 `README.md` 的安装方式。
-2. 同时安装 `visual-motion-design`，才能完成"蓝图到页面"的链路。
+2. 同时安装 `design-techniques` 插件，才能完成"蓝图到页面"的链路。
 
 本 skill 没有脚本，没有网络依赖，没有第三方 skill 依赖。
 

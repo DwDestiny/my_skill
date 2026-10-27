@@ -21,6 +21,14 @@
       "author": { "name": "麦总玩AI" },
       "category": "productivity",
       "tags": ["grok", "xai", "cli", "subagent", "headless", "structured-output"]
+    },
+    {
+      "name": "design-techniques",
+      "source": "./plugins/design-techniques",
+      "description": "设计手法库:只收在真实项目里做出好效果的视觉手法(叠图晕染、手绘风格化),每个手法带效果图、适用场景、工具依赖和完整的风格化 skill",
+      "author": { "name": "DwDestiny" },
+      "category": "design",
+      "tags": ["design", "visual-technique", "webgl", "hand-drawn", "html"]
     }
   ]
 }

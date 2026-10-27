@@ -1,0 +1,6 @@
+interface:
+  display_name: "叠图晕染"
+  short_description: "对齐的两层同构图，光照到哪里，下一层就像水墨一样在哪里晕开显现"
+  default_prompt: "Use $layered-reveal to build a page where a pointer light reveals an aligned second layer of the same picture through an ink-wash edge."
+policy:
+  allow_implicit_invocation: true

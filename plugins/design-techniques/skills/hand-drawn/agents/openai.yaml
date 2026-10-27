@@ -1,0 +1,6 @@
+interface:
+  display_name: "手绘风格化"
+  short_description: "用代码画出纸纹、钢笔、彩铅排线和手写字的手绘讲课页与讲解图"
+  default_prompt: "Use $hand-drawn to restyle a page or teaching diagram as code-drawn pen, coloured pencil and handwriting on textured paper."
+policy:
+  allow_implicit_invocation: true

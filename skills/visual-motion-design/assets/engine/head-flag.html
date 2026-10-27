@@ -1,8 +1,0 @@
-<!-- 放在 <head> 内、任何样式表之后、首帧绘制之前。
-     作用：JS 可运行时加 html.js；用户未要求减少动效时加 html.motion。
-     engine.css 的"入场前隐藏"只对 html.motion 生效，所以无 JS 或减少动效时内容始终可见。
-     派生自 juliobsz/skills (awwwards) engine_head，MIT。 -->
-<script>
-  document.documentElement.classList.add('js');
-  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('motion');
-</script>

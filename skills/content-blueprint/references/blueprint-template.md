@@ -1,6 +1,6 @@
 # 蓝图模板与交接契约（B 侧）
 
-A 侧对应文件：`visual-motion-design/references/handoff.md`。改契约两边同改。
+A 侧是所选手法的子 skill（例如 `design-techniques:layered-reveal`、`design-techniques:hand-drawn`）。
 
 ## 1. `blueprint.md` 结构
 
@@ -149,7 +149,7 @@ notes: <与用户原话冲突的处理、口径差异等>
 | `kind` | 信息形状：`data`（数据）/ `mechanism`（机制、过程、结构）/ `atmosphere`（氛围、场景） |
 | `size` | 版面位置与比例，例如"全宽 16:9""侧栏 1:1" |
 
-蓝图只写需求。做法（生成图像或自绘矢量）、风格与提示词由 A 侧在 S3 资产清单定。
+蓝图只写需求。做法（生成图像或自绘矢量）、风格与提示词由 A 侧按所选手法定。
 
 ## 2. A 开工的门禁（B 自检同一清单）
 
