@@ -51,36 +51,35 @@
   }
   li button:hover .name .ch, li.on .name .ch, .s1 .mk:hover .ch, .lb.band.on .ch { animation:boil .42s steps(1, end) calc(var(--i, 0) * 30ms) 1; }
 
-  /* 第一屏：桌面左右两栏，左栏问题，右栏整幅配图 */
-  .s1 { display:grid; grid-template-columns:46fr 54fr; column-gap:40px; align-items:center; }
-  .s1 .q { position:relative; font-family:var(--marker); font-weight:400; font-size:4.5vw; line-height:1.3; margin:0; letter-spacing:.01em; }
+  /* 第一屏：一整幅钢笔场景铺满屏，标题放在场景左上的留白里 */
+  .s1 { display:block; overflow:hidden; }
+  .s1 .head { position:relative; max-width:60%; }
+  .s1 .q { position:relative; font-family:var(--marker); font-weight:400; font-size:clamp(34px, 4.4vw, 76px); line-height:1.3; margin:0; letter-spacing:.01em; }
   .s1 .mk, .s1 .nw { white-space:nowrap; }
-  .s1 .head { position:relative; }
   .s1 .ul { position:absolute; pointer-events:none; mix-blend-mode:multiply; clip-path:inset(0 100% 0 0); }
   .hint { position:absolute; right:72px; bottom:40px; margin:0; font-size:18px; color:var(--mute); }
   .key { display:inline-block; padding:0 .5em; margin:0 .3em; }
-  /* 配图：一张配方卡，出发的路越走越断，没走到“做出来” */
-  .road { position:relative; margin:0; justify-self:center; width:min(100%, calc((100svh - 128px) * 640 / 600)); aspect-ratio:640/600; container-type:inline-size; }
-  .road.vert { width:100%; aspect-ratio:360/470; }
-  .road canvas { position:absolute; pointer-events:none; }
-  .rd-path, .rd-destg { mix-blend-mode:multiply; }
-  .rd-hit { position:absolute; pointer-events:auto; }
-  .rd-card { opacity:0; transform:translateY(-22px) rotate(-6deg) scale(1.03);
+  /* 场景：一块大画布画桌面与静物；配方书、烤盘的烟单独成层，好做悬停和抖动 */
+  .scene { position:absolute; inset:0; pointer-events:none; }
+  .scene canvas { position:absolute; pointer-events:none; }
+  .sc-base, .sc-smoke { mix-blend-mode:multiply; }
+  .sc-hit { position:absolute; pointer-events:auto; }
+  .sc-book { opacity:0; transform:translateY(-18px) rotate(-3deg); transform-origin:50% 100%;
     transition:opacity .3s var(--ease), transform .75s cubic-bezier(.34,1.5,.64,1); }
-  .rd-path { clip-path:inset(0 100% 0 0); transition:clip-path 2.4s var(--flow-in) .7s; }
-  .road.vert .rd-path { clip-path:inset(0 0 100% 0); }
-  .rd-destg, .rl { opacity:0; transition:opacity 1.4s var(--ease) 2.4s; }
-  .rd-destg { position:absolute; inset:0; }
-  /* 还没做到的终点：铅笔稿，线条干净；三帧只换线的种子，轻轻地抖 */
-  .rd-dest { width:100%; height:100%; opacity:0; animation:flick 1.05s linear infinite; }
-  .rd-dest:nth-child(2) { animation-delay:-.35s; } .rd-dest:nth-child(3) { animation-delay:-.7s; }
+  .sc-base { clip-path:inset(0 100% 0 0); transition:clip-path 1.8s var(--flow-in) .2s; }
+  .sc-arrow { clip-path:inset(0 100% 0 0); transition:clip-path 1.4s var(--flow-in) 1.6s; mix-blend-mode:multiply; }
+  .sc-smokeg, .sl { opacity:0; transition:opacity 1.2s var(--ease) 2.4s; }
+  .sc-smokeg { position:absolute; inset:0; }
+  /* 烤坏的面包上冒的烟：三帧轮换，只换线的种子 */
+  .sc-smoke { width:100%; height:100%; opacity:0; animation:flick 1.05s linear infinite; }
+  .sc-smoke:nth-child(2) { animation-delay:-.35s; } .sc-smoke:nth-child(3) { animation-delay:-.7s; }
   @keyframes flick { 0%, 33.3% { opacity:1; } 33.4%, 100% { opacity:0; } }
-  .rl { position:absolute; transform:translate(-50%, -50%); color:var(--graphite); white-space:nowrap; line-height:1; }
-  .s1.go .rd-card { opacity:1; transform:none; }
-  .s1.go .rd-hit:hover + .rd-card { transform:translateY(-8px) rotate(2deg); transition-duration:.3s, .45s; }
-  .s1.go .rd-path { clip-path:inset(0 0 0 0); }
-  .s1.go .rd-destg { opacity:1; }
-  .s1.go .rl { opacity:.9; }
+  .sl { position:absolute; transform:translate(-50%, -50%); color:var(--mute); white-space:nowrap; line-height:1; }
+  .s1.go .sc-book { opacity:1; transform:none; }
+  .s1.go .sc-hit:hover + .sc-book { transform:translateY(-10px) rotate(1.5deg); transition-duration:.3s, .45s; }
+  .s1.go .sc-base, .s1.go .sc-arrow { clip-path:inset(0 0 0 0); }
+  .s1.go .sc-smokeg { opacity:1; }
+  .s1.go .sl { opacity:.95; }
   .s1.go #ul-a { clip-path:inset(0 0 0 0); transition:clip-path .65s var(--ease) .25s; }
   .s1.go #ul-b { clip-path:inset(0 0 0 0); transition:clip-path 1.5s var(--flow-in) .8s; }
 
@@ -120,8 +119,9 @@
 
   @media (max-width:760px) {
     .screen { padding:32px 16px 40px; min-height:auto; }
-    .s1 { grid-template-columns:1fr; align-content:center; min-height:100svh; row-gap:2px; }
-    .s1 .q { font-size:40px; }
+    .s1 { min-height:100svh; }
+    .s1 .head { max-width:none; }
+    .s1 .q { font-size:38px; }
     .hint { right:auto; left:16px; bottom:20px; }
     .s2 { grid-template-columns:1fr; gap:34px; align-items:start; }
     h2 { font-size:31px; margin-bottom:22px; }
@@ -135,8 +135,8 @@
   }
   @media (min-width:761px) { html { scroll-snap-type:y mandatory; } .screen { scroll-snap-align:start; } }
   @media (prefers-reduced-motion:reduce) {
-    li .hl, li.on .hl, li .db, .name, .lb.band, .ov, .ov.on, .rd-card, .rd-path, .rd-destg, .rl, .s1 .ul, .s1.go .ul { transition:none !important; }
-    .rd-dest { animation:none !important; } .rd-dest:first-child { opacity:1; }
+    li .hl, li.on .hl, li .db, .name, .lb.band, .ov, .ov.on, .sc-book, .sc-base, .sc-arrow, .sc-smokeg, .sl, .s1 .ul, .s1.go .ul { transition:none !important; }
+    .sc-smoke { animation:none !important; } .sc-smoke:first-child { opacity:1; }
     .ch { animation:none !important; }
   }
 </style>
@@ -145,18 +145,19 @@
 <main>
   <section class="screen s1" id="p1" aria-label="第 1 屏">
     <canvas class="deco" id="c1" aria-hidden="true"></canvas>
-    <div class="head">
+    <div class="head" id="head">
       <canvas class="ul" id="ul-a" aria-hidden="true"></canvas>
       <canvas class="ul" id="ul-b" aria-hidden="true"></canvas>
       <p class="kicker"><span class="tag">手作面包课 · 开场</span></p>
-      <h1 class="q"><span class="nw">照着配方做面包，</span><br><span class="nw">为什么常常</span><br><span class="mk" id="mk-a">看得懂</span>、<span class="mk" id="mk-b">做不好</span>？</h1>
+      <h1 class="q"><span class="nw">照着配方做面包，</span><span class="nw">为什么常常</span><br><span class="mk" id="mk-a">看得懂</span>、<span class="mk" id="mk-b">做不好</span>？</h1>
     </div>
-    <figure class="road" id="road" role="img" aria-label="一张贴好的配方卡，出发的路越走越断，没有走到“做出来”">
-      <div class="rd-destg"><canvas class="rd-dest"></canvas><canvas class="rd-dest"></canvas><canvas class="rd-dest"></canvas></div>
-      <canvas class="rd-path" id="rd-path"></canvas>
-      <i class="rd-hit" id="rd-hit"></i>
-      <canvas class="rd-card" id="rd-card"></canvas>
-      <span class="rl" id="rl">做出来</span>
+    <figure class="scene" id="scene" role="img" aria-label="木桌上摊开一本配方书，书上画着一只饱满的面包；照着做，烤盘里却是一只塌掉、烤焦的面包">
+      <canvas class="sc-base" id="sc-base"></canvas>
+      <canvas class="sc-arrow" id="sc-arrow"></canvas>
+      <div class="sc-smokeg"><canvas class="sc-smoke"></canvas><canvas class="sc-smoke"></canvas><canvas class="sc-smoke"></canvas></div>
+      <i class="sc-hit" id="sc-hit"></i>
+      <canvas class="sc-book" id="sc-book"></canvas>
+      <span class="sl" id="sl-a">配方上</span><span class="sl" id="sl-b">照着做</span><span class="sl" id="sl-c">烤出来</span>
     </figure>
     <p class="hint">按<span class="key" id="key">→</span>翻页</p>
   </section>
@@ -186,7 +187,7 @@ const ROWS = [
   {name:"风味", desc:"麦香、酸甜和咸淡，决定这块面包值不值得做。"},
   {name:"筋度", desc:"面筋怎样长出来，揉多久，<span class=\"nw\">停在哪一刻</span>。"},
   {name:"湿度", desc:"面团的含水和手感，表皮与内心的干湿。"},
-  {name:"温度", desc:"面温、室温和炉温，决定发酵快慢与上色。"},
+  {name:"温度", desc:"面温、室温和炉温，<span class=\"nw\">决定发酵快慢</span>与上色。"},
 ];
 const CAPTION = "四条线不是第七步：每一步都要照看，越往后越要紧";
 const FIG_NO = "图 2 · 六步四线", AXIS = "制作推进";
@@ -367,95 +368,204 @@ function drawP2() {
   tape(k, w - m - 36 * s, m + 8, 84 * s, 24 * s, .48, "rgba(224,168,79,.5)", 1531);
 }
 
-// ---------- 第一屏配图：配方卡在左上，路呈 J 形弯向右下，越走越断，没到“做出来” ----------
-function roadGeo(vert) {
+// ---------- 第一屏场景：木桌上摊开配方书，书上画着饱满的面包；照着做，烤盘里是一只塌掉、烤焦的面包 ----------
+// 场景铺满整屏，标题落在左上的留白里。精细来自细节密度：随形排线、多层彩铅叠色、物件的结构细节、物件周围的场景
+// 逻辑坐标：桌面版宽 1440、手机版宽 390；高度随屏。每个物件在自己的局部坐标里画，按 s 缩放
+function sceneGeo(vert) {
   return vert
-    ? {vert, W:360, H:470, ps:.65, card:{x:104, y:132, w:150, h:196, rot:-.07}, P:[[150, 228], [140, 420], [250, 430], [292, 330]],
-       dest:{x:298, y:250, s:.55}, label:[298, 300], ls:15, spark:[[200, 34, 9], [224, 62, 5]]}
-    : {vert, W:640, H:600, ps:1, card:{x:170, y:175, w:220, h:278, rot:-.07}, P:[[190, 318], [170, 560], [430, 560], [520, 410]],
-       dest:{x:528, y:318, s:.85}, label:[528, 380], ls:24, spark:[[310, 62, 13], [342, 98, 7], [292, 116, 5]]};
+    ? {vert, LW:390, s:.5, up:290, legEnd:66, legIn:40, book:120, sack:null, wheat:null, pin:[214, 40, 110, .03], tray:312, rail:[150, 372, 252], arc:150, ls:15}
+    : {vert, LW:1440, s:1.3, up:250, legEnd:30, legIn:250, book:340, sack:790, wheat:880, pin:[700, 36, 170, .1], tray:1130, rail:[990, 1370, 70], arc:260, ls:22};
 }
-// 配方卡：卡纸、标题、几行字迹、签名、红章、两角胶带
-function drawRecipe(c, g, k) {
-  const cd = g.card, w = cd.w, h = cd.h, u = w / 230, gray = css("--graphite");
-  c.save(); c.translate(cd.x, cd.y); c.rotate(cd.rot);
-  paperCard(c, -w / 2, -h / 2, w, h, 1600, k);
-  c.fillStyle = css("--ink"); c.font = `${Math.round(30 * u)}px "HD Marker"`; c.textAlign = "center"; c.fillText("配方", 0, -h / 2 + 52 * u);
-  pen(c, [[-26 * u, -h / 2 + 63 * u], [26 * u, -h / 2 + 64 * u]], {w: 1.2 * u, seed: 1601, jit: .4, alpha: .8});
-  const r = rng(1610);
-  for (let i = 0; i < 7; i++) { // 字迹：几行小波浪线，不写具体内容
-    const y = -h / 2 + 92 * u + i * 21 * u, x0 = -w / 2 + 26 * u, x1 = w / 2 - 26 * u - (i === 6 ? 70 * u : r() * 20 * u), pts = [];
-    for (let x = x0; x <= x1; x += 4 * u) pts.push([x, y + Math.sin(x * .55 / u) * 1.4 * u + (r() - .5) * 1.2 * u]);
-    pen(c, pts, {w: u, seed: 1620 + i, jit: .5, alpha: .5, color: gray});
-  }
-  const sy = h / 2 - 50 * u, sx0 = -w / 2 + 26 * u, sig = [];
-  pen(c, [[sx0, sy], [sx0 + 100 * u, sy]], {w: .9 * u, seed: 1640, jit: .3, alpha: .5, color: gray});
-  for (let t = 0; t <= 1.0001; t += .01) sig.push([sx0 + 6 * u + t * 92 * u + 7 * u * Math.cos(t * 24), sy - 10 * u - 9 * u * Math.sin(t * 24) * (1 - .4 * t) + t * 3 * u]);
-  pen(c, sig, {w: 1.5 * u, seed: 1641, jit: .25, color: "#24365e"});
-  const scx = w / 2 - 62 * u, scy = h / 2 - 64 * u, R = 31 * u, red = "#c4483d", rg = ring(scx, scy, R, 1650, 44), st = []; // 红章：只有圈和星
-  pencil(c, rg.slice(0, 41), [scx - R, scy - R, scx + R, scy + R], {seed: 1651, color: "#d9675b", len: 6 * u, w: 1.3 * u, density: .35, tooth: .55, alpha: () => .5});
-  pen(c, rg, {w: 2 * u, seed: 1652, jit: .5, color: red, alpha: .9});
-  pen(c, ring(scx, scy, R * .8, 1653), {w: .8 * u, seed: 1654, jit: .4, color: red, alpha: .8});
-  for (let q = 0; q < 10; q++) { const a = -Math.PI / 2 + q * Math.PI / 5, rr = q % 2 ? R * .22 : R * .5; st.push([scx + Math.cos(a) * rr, scy + Math.sin(a) * rr]); }
-  c.save(); c.globalAlpha = .7; c.fillStyle = red; HD.pathOf(c, st); c.fill(); c.restore();
-  tape(c, -w / 2 + 20 * u, -h / 2 + 2 * u, 80 * u, 24 * u, -.62, "rgba(224,168,79,.5)", 1660);
-  tape(c, w / 2 - 18 * u, -h / 2 + 4 * u, 72 * u, 22 * u, .58, "rgba(134,166,216,.5)", 1661);
-  c.restore();
+let Z = 1; // 线宽补偿：缩小的物件线不能跟着细到看不见
+const zw = o => Object.assign({}, o, {w: (o.w ?? 1.3) * Z});
+const zpen = (c, pts, o = {}) => pen(c, pts, zw(o));
+function at(c, x, y, s, fn) { c.save(); c.translate(x, y); c.scale(s, s); Z = Math.pow(s, -.6); fn(); Z = 1; c.restore(); }
+// 随形排线：四层阈值逐档加上，tone(x,y) 越大越密；angle 顺着形体走
+function shade(c, clip, tone, o = {}) {
+  const box = HD.bounds(clip);
+  HD.HATCH_LAYERS.forEach(L => HD.hatch(c, clip, box, Object.assign({}, L, {
+    seed: (o.seed || 1) * 10 + L.seed, angle: (o.angle || 0) + L.angle, sp: L.sp * Z * (o.sp || 1), w: L.w * Z, alpha: L.alpha * (o.alpha ?? 1), tone: (x, y) => tone(x, y),
+  })));
 }
-// 路：前段一笔实线压一抹彩铅（和“看得懂”同一种标法），后段越断越淡，最后只剩几个点
-function drawPath(c, g) {
-  const N = 400, pts = [], cum = [0], ps = g.ps;
-  for (let i = 0; i <= N; i++) pts.push(bez(g.P, i / N));
-  for (let i = 1; i <= N; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
-  const T = cum[N], SOL = T * .36;
-  const at = s => { let lo = 0, hi = N; while (hi - lo > 1) { const m = (lo + hi) >> 1; cum[m] < s ? lo = m : hi = m; } const f = (s - cum[lo]) / ((cum[hi] - cum[lo]) || 1); return [pts[lo][0] + (pts[hi][0] - pts[lo][0]) * f, pts[lo][1] + (pts[hi][1] - pts[lo][1]) * f]; };
-  const run = (s0, s1) => { const n = Math.max(2, Math.ceil((s1 - s0) / 3)); return Array.from({length: n + 1}, (_, i) => at(s0 + (s1 - s0) * i / n)); };
-  const L = [], Rt = []; // 彩铅底：沿路两侧各让开一点，尾端收窄
-  for (let s = 0; s <= SOL * 1.08; s += 4) {
-    const [x, y] = at(s), [x2, y2] = at(Math.min(T, s + 2)), d = Math.hypot(x2 - x, y2 - y) || 1, nx = -(y2 - y) / d, ny = (x2 - x) / d;
-    const hw = 11 * ps * (s > SOL * .8 ? Math.max(.15, 1 - (s - SOL * .8) / (SOL * .28)) : 1);
-    L.push([x + nx * hw, y + ny * hw]); Rt.unshift([x - nx * hw, y - ny * hw]);
-  }
-  const poly = [...L, ...Rt];
-  pencil(c, poly, HD.bounds(poly), {seed: 1700, color: css("--c0"), len: 12 * ps, w: 1.5 * ps, density: .3 / (ps * ps), tooth: .5, alpha: () => .85});
-  pen(c, run(0, SOL), {w: 3 * ps, seed: 1710, jit: .6});
-  HD.fadeDash(c, at, SOL + 4 * ps, T, {seed: 1720, scale: ps});
-  g.spark.forEach(([x, y, R], k) => sparkle(c, x, y, R, 1790 + k, css("--c0")));
+const halfEllipse = (cx, cy, rx, ry, n = 36, wob = 0, seed = 1) => { const w = noise1(seed), pts = [];
+  for (let i = 0; i <= n; i++) { const a = Math.PI + Math.PI * i / n; pts.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry * (1 + (w(i * .5) - .5) * wob)]); } return pts; };
+
+// 桌子：桌面（木纹彩铅 + 板缝）、前沿（排线加木纹）、两条腿、桌下阴影
+function drawTable(c, g, ty, LH) {
+  const x0 = 26, x1 = g.LW - 26, top = [[x0 + 22, ty], [x1 - 22, ty], [x1, ty + 46], [x0, ty + 46]], r = rng(2100);
+  pencil(c, top, HD.bounds(top), {seed: 2101, color: "#d6ad7c", len: 16, w: 1.6, density: .07, tooth: .55, alpha: (x, y) => .35 + .3 * (y - ty) / 46});
+  for (let i = 0; i < 4; i++) { const y = ty + 9 + i * 10, f = (y - ty) / 46, pts = [];
+    for (let x = x0 + 22 * (1 - f) + 4; x < x1 - 22 * (1 - f) - 4; x += 8) pts.push([x, y + (r() - .5) * .8]);
+    pen(c, pts, {w: .8, alpha: .3, color: "#8a6440", seed: 2110 + i, jit: .4}); }
+  pen(c, top, {closed: true, w: 1.4, seed: 2120, jit: .6});
+  const front = [[x0, ty + 46], [x1, ty + 46], [x1, ty + 90], [x0, ty + 90]];
+  pencil(c, front, HD.bounds(front), {seed: 2130, color: "#b07c4a", len: 14, w: 1.6, density: .14, tooth: .5, alpha: () => .75});
+  shade(c, front, (x, y) => .3 + .55 * (y - ty - 46) / 44, {seed: 213});
+  for (let i = 0; i < 3; i++) { const n = noise1(2140 + i), pts = []; // 木纹：长而起伏的线，遇到节疤绕开
+    for (let x = x0 + 6; x < x1 - 6; x += 6) pts.push([x, ty + 56 + i * 11 + (n(x * .02) - .5) * 6]);
+    pen(c, pts, {w: .7, alpha: .45, color: "#5e3d22", seed: 2150 + i, jit: .3}); }
+  pen(c, front, {closed: true, w: 1.5, seed: 2160, jit: .6});
+  pen(c, [[x0 + 2, ty + 47.5], [x1 - 2, ty + 47.5]], {w: 2.2, seed: 2161, jit: .5, alpha: .8});
+  [x0 + g.legIn, x1 - g.legIn - 36].forEach((lx, i) => { const leg = [[lx, ty + 90], [lx + 36, ty + 90], [lx + 33, LH - g.legEnd], [lx + 3, LH - g.legEnd]];
+    pencil(c, leg, HD.bounds(leg), {seed: 2170 + i, color: "#a8723f", len: 12, w: 1.5, density: .14, alpha: () => .7});
+    shade(c, leg, x => .35 + .5 * (x - lx) / 36, {seed: 217 + i, angle: Math.PI / 2});
+    pen(c, leg, {closed: true, w: 1.3, seed: 2180 + i, jit: .5}); });
+  const under = [[x0 + g.legIn + 40, ty + 92], [x1 - g.legIn - 40, ty + 92], [x1 - g.legIn - 90, ty + 128], [x0 + g.legIn + 90, ty + 128]]; // 桌下的影子：淡淡一层交叉排线
+  shade(c, under, (x, y) => .5 - .4 * (y - ty - 92) / 36, {seed: 219, alpha: .5, angle: .2});
 }
-// 还没做到的终点：一间小面包房的铅笔稿。线不出头、抖动 .3；屋顶一层较实的石墨，墙只铺很浅一层；
-// 窗有十字格，门有把手。三帧只换线的种子（v），填色每帧相同
-function drawDest(c, g, v = 0) {
-  const {x, y, s} = g.dest, gray = css("--graphite"), P = (px, py) => [x + px * s, y + py * s];
-  const lw = .95 * Math.max(s, .7), line = (pts, i, o = {}) => pen(c, pts, Object.assign({w: lw, alpha: .75, color: gray, seed: 1810 + i + v * 100, jit: .3}, o));
-  const wall = [P(-55, -35), P(55, -35), P(55, 50), P(-55, 50)], roof = [P(-64, -33), P(0, -80), P(64, -33)];
-  pencil(c, wall, HD.bounds(wall), {seed: 1800, color: "#b3a893", len: 9 * s, w: 1.1 * s, density: .05 / (s * s), tooth: .7, alpha: () => .25});
-  pencil(c, roof, HD.bounds(roof), {seed: 1801, color: "#7d7262", len: 9 * s, w: 1.2 * s, density: .4 / (s * s), tooth: .5, alpha: () => .85});
-  line(roof, 0, {closed: true});
-  line([P(-55, -33), P(-55, 50), P(55, 50), P(55, -33)], 1);
-  line([P(-12, 50), P(-12, 14), P(12, 14), P(12, 50)], 2);                       // 门
-  line(ring(...P(7, 33), 1.8 * s, 1830 + v, 14), 3, {w: lw * .9});               // 门把手
-  [[-40, -20], [20, -20]].forEach(([wx, wy], i) => {                              // 两扇窗，十字格
-    line(HD.rbox(...P(wx, wy), 20 * s, 20 * s, 1.5 * s), 4 + i * 3, {closed: true});
-    line([P(wx + 10, wy), P(wx + 10, wy + 20)], 5 + i * 3, {w: lw * .8});
-    line([P(wx, wy + 10), P(wx + 20, wy + 10)], 6 + i * 3, {w: lw * .8});
+// 配方书：蓝封面、两页纸、页边的纸叠、书脊的阴影、左页字迹、右页画着一只饱满的面包、书签带
+function drawBook(c) {
+  const cover = [[-182, 8], [182, 8], [170, -152], [-170, -152]];
+  pencil(c, cover, HD.bounds(cover), {seed: 2201, color: css("--c3"), len: 12, w: 1.5, density: .2, tooth: .5, alpha: () => .8});
+  zpen(c, cover, {closed: true, w: 1.4, seed: 2202, jit: .5});
+  const L = [[-170, 0], [-3, 8], [-3, -138], [-160, -146]], R = [[3, 8], [170, 0], [160, -146], [3, -138]];
+  [L, R].forEach((pg, k) => {
+    for (let d = 3; d >= 1; d--) zpen(c, pg.slice(0, 2).map(([x, y]) => [x + (k ? 1 : -1) * d, y + d * 1.6]), {w: .7, alpha: .5, seed: 2210 + d + k * 5, jit: .3});
+    c.save(); c.fillStyle = "rgba(252,248,238,.92)"; HD.pathOf(c, pg); c.fill(); c.restore();
+    shade(c, pg, x => (k ? .75 - x / 22 : .75 + x / 22), {seed: 222 + k, angle: Math.PI / 2, alpha: .7}); // 书脊附近的弯折阴影
+    zpen(c, pg, {closed: true, w: 1.2, seed: 2230 + k, jit: .4});
   });
-  line([P(26, -58), P(26, -78), P(38, -78), P(38, -49)], 12);                     // 烟囱
-  line([P(-85, 50), P(85, 50)], 13, {alpha: .55});                                // 地面
+  const r = rng(2240), gray = css("--graphite");
+  zpen(c, [[-140, -124], [-70, -126]], {w: 2.2, seed: 2241, jit: .4, alpha: .85});
+  for (let i = 0; i < 8; i++) { const y = -106 + i * 12, x1 = -22 - (i % 4 === 3 ? 50 : r() * 18), pts = [];
+    for (let x = -146 + i * .6; x <= x1; x += 4) pts.push([x, y + Math.sin(x * .6) * 1.2 + (r() - .5)]);
+    zpen(c, pts, {w: .8, alpha: .5, color: gray, seed: 2250 + i, jit: .4}); }
+  drawLoaf(c, 86, -42, 1, false, 2300);
+  sparkle(c, 140, -118, 7 * Z, 2290, css("--c0")); sparkle(c, 30, -112, 4 * Z, 2291, css("--c0"));
+  zpen(c, [[0, 6], [4, 26], [-2, 40]], {w: 2.4, seed: 2295, jit: .4, color: css("--c2-ink")}); // 书签带
 }
-function drawRoad() {
-  const box = document.getElementById("road"), g = roadGeo(mq.matches); box.classList.toggle("vert", g.vert);
-  const k = box.clientWidth / g.W, cd = g.card, cs = Math.cos(cd.rot), sn = Math.abs(Math.sin(cd.rot));
-  const bw = cd.w * cs + cd.h * sn, bh = cd.h * cs + cd.w * sn, m = 46 * cd.w / 230, card = document.getElementById("rd-card");
-  // 旋转的画布外接框会挡住别的悬停：画布不接指针，另放一个同样旋转的透明热区
-  Object.assign(document.getElementById("rd-hit").style, {left: (cd.x - cd.w / 2) * k + "px", top: (cd.y - cd.h / 2) * k + "px", width: cd.w * k + "px", height: cd.h * k + "px", transform: `rotate(${cd.rot}rad)`});
-  drawRecipe(placeIn(card, k, cd.x - bw / 2 - m, cd.y - bh / 2 - m, bw + 2 * m, bh + 2 * m), g, k); paperize(card, .4);
-  const pc = document.getElementById("rd-path"); drawPath(placeIn(pc, k, 0, 0, g.W, g.H), g); paperize(pc);
-  document.querySelectorAll(".rd-dest").forEach((dc, v) => { drawDest(placeIn(dc, k, 0, 0, g.W, g.H), g, v); paperize(dc, .35); });
-  const lb = document.getElementById("rl");
-  lb.style.left = g.label[0] / g.W * 100 + "%"; lb.style.top = g.label[1] / g.H * 100 + "%"; lb.style.fontSize = g.ls / g.W * 100 + "cqw";
+// 面包：good=true 是书上那只（圆鼓、三道割口、金黄），false 是烤盘里那只（塌、焦、裂）
+function drawLoaf(c, cx, cy, s, flat, seed) {
+  const rx = (flat ? 112 : 54) * s, ry = (flat ? 26 : 46) * s, dome = halfEllipse(cx, cy, rx, ry, 40, flat ? .35 : .05, seed), base = [...dome, [cx + rx * .96, cy + 4 * s], [cx - rx * .96, cy + 4 * s]];
+  const box = HD.bounds(base);
+  pencil(c, base, box, {seed: seed + 1, color: flat ? css("--c2") : css("--c0"), len: 9 * s, w: 1.5, density: .5 / s, tooth: .45,
+    alpha: (x, y) => .45 + .45 * (y - box[1]) / (box[3] - box[1])});
+  if (flat) pencil(c, base, box, {seed: seed + 2, color: "#6b4430", len: 7 * s, w: 1.4, density: .35 / s, tooth: .5, alpha: (x, y) => .2 + .6 * Math.max(0, (x - cx) / rx)}); // 焦斑压在上面
+  shade(c, base, (x, y) => (flat ? .45 : .1) + .5 * ((x - cx) / rx * .5 + (y - box[1]) / (box[3] - box[1]) * .6), {seed: seed % 97, angle: flat ? .1 : -.35});
+  zpen(c, base, {closed: true, w: 1.5, seed: seed + 3, jit: flat ? .7 : .4});
+  if (!flat) [-.5, 0, .5].forEach((o, i) => { const x = cx + o * rx * .9; // 割口：一道弧线加一道复描的亮边
+    zpen(c, [[x - 10 * s, cy - ry * .55 + Math.abs(o) * 12 * s], [x, cy - ry * .78 + Math.abs(o) * 14 * s], [x + 10 * s, cy - ry * .9 + Math.abs(o) * 16 * s]], {w: 1.6, seed: seed + 10 + i, jit: .3}); });
+  else { const r = rng(seed + 20); for (let i = 0; i < 4; i++) { const x = cx - rx * .6 + i * rx * .38, pts = []; // 裂缝
+    for (let k = 0; k < 4; k++) pts.push([x + k * 6 * s + (r() - .5) * 4 * s, cy - ry * .55 + (r() - .5) * 6 * s + k * 1.5]);
+    zpen(c, pts, {w: 1.1, seed: seed + 30 + i, jit: .3, alpha: .9}); } }
+}
+// 面粉袋：鼓起的袋身、扎紧的袋口、袋口的褶、印着的麦穗圆标、洒在桌上的粉
+function drawSack(c) {
+  const body = [[-64, 0], [-20, 3], [24, 2], [64, 0], [70, -40], [68, -84], [58, -124], [36, -154], [16, -168], [-16, -168], [-36, -154], [-58, -124], [-68, -84], [-70, -40]];
+  pencil(c, body, HD.bounds(body), {seed: 2401, color: "#dccaa2", len: 12, w: 1.5, density: .18, tooth: .5, alpha: (x) => .45 + .35 * (x + 70) / 140});
+  shade(c, body, (x, y) => .05 + .55 * Math.max(0, (x + 10) / 80) + .25 * Math.max(0, (y + 30) / 30), {seed: 241, angle: -.9});
+  zpen(c, body, {closed: true, w: 1.5, seed: 2402, jit: .5});
+  for (let i = 0; i < 4; i++) zpen(c, [[-14 + i * 9, -166], [-20 + i * 12, -140 + i * 4]], {w: .8, alpha: .6, seed: 2410 + i, jit: .4}); // 袋口的褶
+  const ear = [[-18, -168], [-30, -196], [-8, -186], [2, -204], [12, -186], [30, -198], [18, -168]];
+  pencil(c, ear, HD.bounds(ear), {seed: 2420, color: "#dccaa2", len: 8, w: 1.3, density: .3, alpha: () => .6});
+  zpen(c, ear, {w: 1.3, seed: 2421, jit: .5});
+  zpen(c, [[-22, -170], [0, -173], [22, -170]], {w: 2.4, seed: 2422, jit: .3, color: css("--c2-ink")}); // 扎口的绳
+  zpen(c, [[16, -171], [30, -160], [24, -150]], {w: 1.4, seed: 2423, jit: .3, color: css("--c2-ink")});
+  zpen(c, ring(-2, -80, 30, 2430), {w: 1.2, seed: 2431, jit: .4, alpha: .8}); // 麦穗圆标
+  drawWheat(c, -2, -56, -Math.PI / 2, 44, 2440, .7);
+  const r = rng(2450); c.fillStyle = "rgba(255,253,246,.85)"; // 洒出的面粉：亮色小点
+  for (let i = 0; i < 60; i++) { const x = 40 + r() * 110, y = -2 + r() * 20; c.beginPath(); c.arc(x, y, (.6 + r() * 1.4) * Z, 0, 7); c.fill(); }
+}
+// 麦穗：一根茎，末段两侧交替排麦粒（小圈填彩铅）
+function drawWheat(c, x, y, a, L, seed, k = 1) {
+  const dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx;
+  zpen(c, [[x, y], [x + dx * L, y + dy * L]], {w: 1.1, seed, jit: .3});
+  for (let i = 0; i < 7; i++) { const t = .45 + i * .08, side = i % 2 ? 1 : -1, px = x + dx * L * t + nx * side * 4 * k, py = y + dy * L * t + ny * side * 4 * k;
+    const g = ring(px, py, 3.4 * k, seed + i, 16).map(([qx, qy]) => [px + (qx - px) * 1 + dx * (qy - py) * .0, py + (qy - py)]);
+    pencil(c, g.slice(0, 13), [px - 4 * k, py - 4 * k, px + 4 * k, py + 4 * k], {seed: seed + 20 + i, color: css("--c0"), len: 3, w: 1, density: 2, alpha: () => .9});
+    zpen(c, g, {w: .9, seed: seed + 40 + i, jit: .2}); }
+}
+// 擀面杖：圆柱身（顺长排线，下半更暗）、两头手柄、端面椭圆
+function drawPin(c, len) {
+  const R = 14, hl = len / 2, body = [[-hl, -R], [hl, -R], [hl, R], [-hl, R]];
+  pencil(c, body, HD.bounds(body), {seed: 2501, color: "#c99a68", len: 14, w: 1.6, density: .3, tooth: .5, alpha: (x, y) => .4 + .45 * (y + R) / (2 * R)});
+  shade(c, body, (x, y) => .1 + .8 * (y + R) / (2 * R), {seed: 251});
+  zpen(c, body, {closed: true, w: 1.4, seed: 2502, jit: .4});
+  zpen(c, [[-hl + 6, -R * .45], [hl - 10, -R * .5]], {w: 1, alpha: .35, color: "#fffaf0", seed: 2503, jit: .3}); // 高光
+  [-1, 1].forEach((sd, i) => { const h = sd < 0 ? [[-hl - 44, -7], [-hl, -7], [-hl, 7], [-hl - 44, 7]] : [[hl, -7], [hl + 44, -7], [hl + 44, 7], [hl, 7]];
+    pencil(c, h, HD.bounds(h), {seed: 2510 + i, color: "#a8723f", len: 8, w: 1.4, density: .5, alpha: () => .8});
+    zpen(c, HD.rbox(...HD.bounds(h).slice(0, 2), 44, 14, 6), {closed: true, w: 1.3, seed: 2520 + i, jit: .3}); });
+}
+// 烤盘：盘面、前沿（金属排线）、盘里那只塌掉的面包、碎屑
+function drawTray(c) {
+  const top = [[-124, -36], [124, -36], [142, -6], [-142, -6]], lip = [[-142, -6], [142, -6], [138, 5], [-138, 5]];
+  pencil(c, top, HD.bounds(top), {seed: 2601, color: "#9d978c", len: 12, w: 1.4, density: .12, alpha: () => .45});
+  zpen(c, top, {closed: true, w: 1.4, seed: 2602, jit: .4});
+  zpen(c, [[-112, -31], [112, -31], [128, -10], [-128, -10]], {closed: true, w: .8, alpha: .5, seed: 2603, jit: .3});
+  shade(c, lip, () => .7, {seed: 261});
+  zpen(c, lip, {closed: true, w: 1.4, seed: 2604, jit: .4});
+  drawLoaf(c, -2, -16, 1, true, 2700);
+  const r = rng(2610); c.fillStyle = "#6b4430";
+  for (let i = 0; i < 14; i++) { c.beginPath(); c.arc(-110 + r() * 220, -26 + r() * 16, (.6 + r()) * Z, 0, 7); c.fill(); }
+}
+// 冒的烟：三缕弯线，越往上越断；三帧只换线的种子
+function drawSmoke(c, v) {
+  const gray = css("--mute");
+  [-46, 4, 50].forEach((x0, i) => { const n = noise1(2800 + i * 7 + v * 31), pts = [];
+    for (let t = 0; t <= 1; t += .04) pts.push([x0 + Math.sin(t * 7 + i) * 9 + (n(t * 6) - .5) * 6, -44 - t * 110]);
+    for (let k = 0; k < pts.length - 2; k += 5) zpen(c, pts.slice(k, k + 4), {w: 1.6 * (1 - k / pts.length * .6), alpha: .95 - k / pts.length * .5, color: gray, seed: 2850 + i * 10 + k + v * 100, jit: .4}); });
+}
+// 挂杆：一根杆两个托架，挂着打蛋器、刮刀、汤勺（只在留白处画，不压标题）
+function drawRail(c, x0, x1, y) {
+  zpen(c, [[x0, y], [x1, y]], {w: 2.4, seed: 2900, jit: .3});
+  [x0 + 10, x1 - 10].forEach((x, i) => zpen(c, [[x, y - 12], [x, y + 4], [x - 8, y + 4]], {w: 1.6, seed: 2901 + i, jit: .2}));
+  const L = x1 - x0, hook = (hx, seed) => zpen(c, [[hx, y], [hx + 5, y + 6], [hx, y + 14], [hx - 4, y + 10]], {w: 1.1, seed, jit: .2});
+  // 打蛋器
+  let hx = x0 + L * .2; hook(hx, 2910);
+  zpen(c, HD.rbox(hx - 5, y + 14, 10, 70, 4), {closed: true, w: 1.3, seed: 2911, jit: .3});
+  for (let k = -2; k <= 2; k++) { const pts = []; for (let t = 0; t <= 1; t += .05) pts.push([hx + Math.sin(t * Math.PI) * k * 9, y + 84 + t * 92 + Math.sin(t * Math.PI) * 6]); zpen(c, pts, {w: .9, seed: 2915 + k, jit: .2}); }
+  // 刮刀
+  hx = x0 + L * .5; hook(hx, 2920);
+  const blade = [[hx - 22, y + 104], [hx + 22, y + 104], [hx + 24, y + 160], [hx - 24, y + 160]];
+  pencil(c, blade, HD.bounds(blade), {seed: 2921, color: css("--c1"), len: 10, w: 1.4, density: .4, alpha: () => .75});
+  shade(c, blade, x => .2 + .6 * (x - hx + 22) / 46, {seed: 292, angle: Math.PI / 2});
+  zpen(c, blade, {closed: true, w: 1.3, seed: 2922, jit: .3});
+  zpen(c, HD.rbox(hx - 4, y + 14, 8, 92, 3), {closed: true, w: 1.3, seed: 2923, jit: .3});
+  for (let k = -1; k <= 1; k++) zpen(c, [[hx + k * 11, y + 118], [hx + k * 11, y + 146]], {w: 1, seed: 2925 + k, jit: .2});
+  // 汤勺
+  hx = x0 + L * .8; hook(hx, 2930);
+  zpen(c, HD.rbox(hx - 4, y + 14, 8, 100, 3), {closed: true, w: 1.3, seed: 2931, jit: .3});
+  const bowl = halfEllipse(hx, y + 114, 30, -28, 24);
+  pencil(c, bowl, HD.bounds(bowl), {seed: 2932, color: "#a39d92", len: 8, w: 1.3, density: .4, alpha: () => .6});
+  shade(c, bowl, (x, yy) => .2 + .6 * (yy - y - 114) / 28 + .2 * (x - hx) / 30, {seed: 293, angle: -.4});
+  zpen(c, bowl, {closed: true, w: 1.3, seed: 2933, jit: .3});
+}
+// 从书上的面包到烤盘里的面包：一道虚线弧，带箭头
+function drawArrow(c, P0, P1, P2) {
+  const pts = []; for (let t = 0; t <= 1.0001; t += .01) { const m = 1 - t; pts.push([m * m * P0[0] + 2 * m * t * P1[0] + t * t * P2[0], m * m * P0[1] + 2 * m * t * P1[1] + t * t * P2[1]]); }
+  for (let i = 0; i < pts.length - 4; i += 6) zpen(c, pts.slice(i, i + 4), {w: 1.5, seed: 3000 + i, jit: .3, alpha: .85});
+  const [x2, y2] = pts[pts.length - 1], [x1, y1] = pts[pts.length - 4], a = Math.atan2(y2 - y1, x2 - x1);
+  [a + 2.6, a - 2.6].forEach((b, k) => zpen(c, [[x2 + Math.cos(b) * 14, y2 + Math.sin(b) * 14], [x2, y2]], {w: 1.6, seed: 3100 + k, jit: .2}));
+}
+function drawScene() {
+  const sec = document.getElementById("p1"), g = sceneGeo(mq.matches), W = sec.clientWidth, H = sec.clientHeight;
+  const k = W / g.LW, LH = H / k, ty = LH - g.up, s = g.s, yb = ty + 26;
+  const full = cv => { const c = fitTo(cv, sec); c.scale(k, k); return c; };
+  const base = document.getElementById("sc-base"); Object.assign(base.style, {left: 0, top: 0, width: W + "px", height: H + "px"});
+  let c = full(base);
+  if (g.rail) drawRail(c, ...g.rail);
+  drawTable(c, g, ty, LH);
+  if (g.sack) at(c, g.sack, yb, s, () => drawSack(c));
+  if (g.wheat) at(c, g.wheat, yb, s, () => { drawWheat(c, 0, 0, -1.25, 150, 2460); drawWheat(c, 14, 0, -1.4, 130, 2470); drawWheat(c, 26, 2, -1.05, 120, 2480); });
+  at(c, g.tray, yb, s, () => drawTray(c));
+  at(c, g.pin[0], ty + g.pin[1], s, () => { c.rotate(g.pin[3]); drawPin(c, g.pin[2]); });
+  paperize(base);
+  // 配方书单独一块画布：悬停时抬起
+  const bx = g.book, bw = 400 * s, bh = 220 * s, book = document.getElementById("sc-book");
+  const bc = placeIn(book, k, bx - bw / 2, yb - 170 * s, bw, bh); at(bc, bx, yb, s, () => drawBook(bc)); paperize(book, .4);
+  Object.assign(document.getElementById("sc-hit").style, {left: (bx - 180 * s) * k + "px", top: (yb - 155 * s) * k + "px", width: 360 * s * k + "px", height: 165 * s * k + "px"});
+  c = full(document.getElementById("sc-arrow"));
+  const A0 = [bx + 110 * s, yb - 125 * s], A2 = [g.tray - 60 * s, yb - 62 * s], A1 = [(A0[0] + A2[0]) / 2, Math.min(A0[1], A2[1]) - g.arc * s * 1.6];
+  drawArrow(c, A0, A1, A2);
+  document.querySelectorAll(".sc-smoke").forEach((cv, v) => { const sc = full(cv); at(sc, g.tray, yb, s, () => drawSmoke(sc, v)); paperize(cv, .3); });
+  // 三处标注：书上方、弧线顶上、烟的上方
+  const top = (A0[1] + 2 * A1[1] + A2[1]) / 4;
+  [["sl-a", bx, yb - 182 * s], ["sl-b", (A0[0] + 2 * A1[0] + A2[0]) / 4, top - 22 / k], ["sl-c", g.tray, yb - 182 * s]].forEach(([id, x, y]) =>
+    Object.assign(document.getElementById(id).style, {left: x * k + "px", top: y * k + "px", fontSize: g.ls + "px"}));
 }
 function drawP1() {
-  drawRoad();
+  if (!document.getElementById("p1").offsetParent) return; // 截图时可能隐藏了第一屏
+  drawScene();
   const sec = document.getElementById("p1"), S = sec.getBoundingClientRect(), H = sec.querySelector(".head").getBoundingClientRect();
   const rel = el => { const r = el.getBoundingClientRect(); return {x: r.left - S.left, y: r.top - S.top, w: r.width, h: r.height}; };
   const relH = el => { const r = el.getBoundingClientRect(); return {x: r.left - H.left, y: r.top - H.top, w: r.width, h: r.height}; };
@@ -504,14 +614,14 @@ addEventListener("keydown", e => {
 });
 if (matchMedia("(pointer:coarse)").matches) document.querySelector(".hint").textContent = "往下滑 ↓"; // 触屏没有方向键
 
-// 手写排字：标题、条目名、页眉、图里的“做出来”
+// 手写排字：标题、条目名、页眉、场景里的标注
 handsetAll();
 function handsetAll() {
   HD.handset(document.querySelector(".s1 .q"), 61);
   HD.handset(document.querySelector(".s2 h2"), 62);
   document.querySelectorAll(".kicker").forEach((el, i) => HD.handset(el, 63 + i, .6));
   list.querySelectorAll(".name").forEach((el, i) => HD.handset(el, 70 + i));
-  HD.handset(document.getElementById("rl"), 80);
+  document.querySelectorAll(".sl").forEach((el, i) => HD.handset(el, 80 + i));
 }
 
 const qs = new URLSearchParams(location.search);
@@ -527,7 +637,7 @@ Promise.all([HD.init(), HD.fontsReady([["HD Marker", "配方看得懂"], ["HD Ha
   // 标题换行或整屏高度变了（手机地址栏收起、无头截图视口变化）都重画装饰
   let t1; const ro = new ResizeObserver(() => { clearTimeout(t1); t1 = setTimeout(() => { drawP1(); drawList(); drawP2(); }, 60); });
   [".s1 .q", "#p1", "#p2"].forEach(q => ro.observe(document.querySelector(q)));
-  const p1 = document.getElementById("p1"); // 首屏入场：卡片落下 → 下划线 → 路一段段画出去 → 远处浮出终点
+  const p1 = document.getElementById("p1"); // 首屏入场：场景从左往右画出 → 书落下 → 下划线 → 箭头画过去 → 烟冒出来
   if (reduce) p1.classList.add("go"); else requestAnimationFrame(() => requestAnimationFrame(() => p1.classList.add("go")));
   const p2 = document.getElementById("p2"); // 第二屏第一次进入视野时，当前这层重新画一遍
   if (!reduce) new IntersectionObserver((es, io) => {

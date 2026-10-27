@@ -17,7 +17,7 @@ MARKER_OFL="https://raw.githubusercontent.com/lxgw/LxgwMarkerGothic/main/OFL.txt
 HAND_OFL="https://raw.githubusercontent.com/lxgw/kose-font/master/OFL.txt"
 
 "$PY" -I -c "import fontTools, brotli" 2>/dev/null || { echo "缺 fontTools 或 brotli：$PY -m pip install fonttools brotli" >&2; exit 1; }
-mkdir -p "$OUT" "$CACHE"
+mkdir -p "$OUT"
 
 # 找一个文件：先 FONT_SRC，再缓存
 find_one() { local name="$1" d; for d in "${FONT_SRC:-}" "$CACHE"; do [ -n "$d" ] && [ -d "$d" ] || continue; find "$d" -type f -name "$name" -print -quit; done | head -n 1; }
