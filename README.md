@@ -18,7 +18,7 @@
 |---|---|---|---|
 | wxops | `plugins/wxops/` | v0.6.0 · 可 plugin 安装 | 公众号**多账号编辑部**：账号 / 数据分析 / 选题 / 写作 / 配图 / 发布（草稿箱止步）/ 复盘 八个工位全环节（详见该目录 [`README.md`](plugins/wxops/README.md)） |
 | ui-delivery | `plugins/ui-delivery/` | v0.2.1 · 完整插件源码；便携包验证通过，托管更新及回读确认 | 总调度及八个独立阶段 Skill，贯通旅程、页面/状态/必需元素、视觉基线、实现映射与真实浏览器验收 |
-| design-techniques | `plugins/design-techniques/` | v0.1.1 · 可 plugin 安装 | 设计**手法库**：只收真实项目里做出好效果的视觉手法（叠图晕染、手绘风格化），每个手法带效果图、适用场景、工具依赖和完整的风格化子 skill（详见该目录 [`README.md`](plugins/design-techniques/README.md)） |
+| design-techniques | `plugins/design-techniques/` | v0.2.0 · 可 plugin 安装 | 设计**手法库**：只收真实项目里做出好效果的视觉手法（叠图晕染、手绘风格化），每个手法带效果图、适用场景、工具依赖和完整的风格化子 skill（详见该目录 [`README.md`](plugins/design-techniques/README.md)） |
 
 ## Skill 目录
 
@@ -39,9 +39,9 @@
 | ui-visual-qa | [`plugins/ui-delivery/skills/ui-visual-qa/`](plugins/ui-delivery/skills/ui-visual-qa/SKILL.md) | v0.2.1 · UI 交付套件；`skills/ui-visual-qa/` 为兼容软链 | 在真实浏览器逐步点击旅程，对照视觉基线并记录页面证据和结论 |
 | ui-visual-walkthrough | `skills/ui-visual-walkthrough/` | 已入库 | 对真实运行站点做无基线逐屏视觉走查：双视口截图 + DOM/CSS 探针实证（容器边界/hover 死区/字号分布/截断溢出），产出每条内嵌截图的分级 issue 台账 |
 | content-blueprint | `skills/content-blueprint/` | v0.1 · 配对使用 | 把资料和目标拆成讲解蓝图：受众、可测结果、内容取舍、形式选择、断言来源与可信度；产物交给 design-techniques 的手法子 skill（详见该目录 `README.md`） |
-| catalog | [`plugins/design-techniques/skills/catalog/`](plugins/design-techniques/skills/catalog/SKILL.md) | v0.1.0 · design-techniques 插件入口 | 手法索引：按内容选已验证的视觉手法，再交给对应子 skill |
-| layered-reveal | [`plugins/design-techniques/skills/layered-reveal/`](plugins/design-techniques/skills/layered-reveal/SKILL.md) | v0.1.0 · design-techniques 手法 | 叠图晕染：构图对齐的多层画面，指针、灯或滚动推开水墨边揭示下一层（WebGL2 + 成对生图） |
-| hand-drawn | [`plugins/design-techniques/skills/hand-drawn/`](plugins/design-techniques/skills/hand-drawn/SKILL.md) | v0.1.1 · design-techniques 手法 | 手绘风格化：用代码在颗粒纸上画钢笔线、彩铅与手写字；首屏是一整幅手绘画，讲解图图文同色对应（Canvas2D + OFL 手写字体） |
+| catalog | [`plugins/design-techniques/skills/catalog/`](plugins/design-techniques/skills/catalog/SKILL.md) | v0.2.0 · design-techniques 插件入口 | 手法索引：按内容选已验证的视觉手法，再交给对应子 skill |
+| layered-reveal | [`plugins/design-techniques/skills/layered-reveal/`](plugins/design-techniques/skills/layered-reveal/SKILL.md) | v0.2.0 · design-techniques 手法 | 叠图晕染：构图对齐的多层画面，指针、灯或滚动推开水墨边揭示下一层（WebGL2 + 成对生图） |
+| hand-drawn | [`plugins/design-techniques/skills/hand-drawn/`](plugins/design-techniques/skills/hand-drawn/SKILL.md) | v0.2.0 · design-techniques 手法 | 手绘风格化：用代码在颗粒纸上画钢笔线、彩铅与手写字；首屏是一整幅手绘画，讲解图图文同色对应（Canvas2D + OFL 手写字体） |
 
 ### 内容 + 手法配对
 
@@ -286,7 +286,7 @@ Instead of growing one giant global prompt, each workflow becomes a focused Skil
 |---|---|---|---|
 | wxops | `plugins/wxops/` | v0.6.0 · plugin | WeChat Official Account **multi-account editorial desk**: accounts, analytics, topic selection, writing, illustration, publishing (stops at the draft box), and post-publish review — eight stations covering the full pipeline |
 | ui-delivery | `plugins/ui-delivery/` | v0.2.1 · complete plugin source; portable package verified and hosted update/readback confirmed | Dispatcher and eight independent UI Skills linking journey coverage, required elements, visual baselines, implementation mapping, and real-browser QA |
-| design-techniques | `plugins/design-techniques/` | v0.1.1 · plugin | Design **technique library**: only visual techniques proven in real projects (layered ink reveal, hand-drawn styling), each with showcase images, fit, tools and dependencies, and a complete style skill |
+| design-techniques | `plugins/design-techniques/` | v0.2.0 · plugin | Design **technique library**: only visual techniques proven in real projects (layered ink reveal, hand-drawn styling), each with showcase images, fit, tools and dependencies, and a complete style skill |
 
 ## Skills
 
