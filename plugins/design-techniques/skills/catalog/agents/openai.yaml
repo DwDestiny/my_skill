@@ -1,0 +1,6 @@
+interface:
+  display_name: "设计手法库 · 索引"
+  short_description: "列出真实项目验证过的视觉手法，选一个再交给对应的风格化子 skill"
+  default_prompt: "Use $catalog to pick a proven visual technique for this page and hand off to its style skill."
+policy:
+  allow_implicit_invocation: true
