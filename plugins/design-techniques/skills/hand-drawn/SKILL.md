@@ -92,7 +92,7 @@ description: 用代码在网页上画出“纸 + 画具 + 手写字”的手绘�
 | 文件 | 用途 | 怎么用 |
 |---|---|---|
 | `templates/starter/hand-drawn.js` | 画具包，全局 `HandDrawn`，无依赖 | 阅读 + 引入。`HandDrawn.init(opts)` 生成纸并写 CSS 变量 `--paper-img`、`--ink-mask` |
-| `templates/starter/index.html` | 演示页：首屏场景 + 教学图 | 运行。复制后改内容；`?p=2`、`?row=0..3`、`?only=2` 用于截图 |
+| `templates/starter/index.html` | 演示页：首屏桥景（达标样例）+ 教学图 | 运行。复制后改内容；`?p=2`、`?row=0..3`、`?only=2` 用于截图 |
 | `templates/starter/fonts/` | 两款字体子集 + OFL 许可证 | 随页面发布，许可证文件一起带上 |
 | `scripts/fonts.sh` | 下载字体（缺时）+ 按页面取字子集化 | 运行：`FONT_SRC=<已有原件目录> bash ${CLAUDE_SKILL_DIR}/scripts/fonts.sh <输出目录> <页面.html> [更多 .js]` |
 
@@ -107,6 +107,11 @@ description: 用代码在网页上画出“纸 + 画具 + 手写字”的手绘�
 | `paperize(cv, a)` | 画完一层后按纸的深坑擦掉一些墨 |
 | `fitTo` / `place` / `placeIn` | 画布铺满元素 / 放在父元素坐标 / 按图的逻辑坐标放 |
 | `handset(el, seed, amp)` / `label(box, W, H, x, y, text, o)` / `fontsReady(specs)` | HTML 逐字手写排；图内标签；字体显式加载 |
+| `hatchIn(c, clip, box, {angle, sp, w, alpha, tone, thr, rag, wob, step, color, seed})` | 单层排线：背光坡、岩层线下阴影、云底 |
+| `under(c, poly)` / `paperizeN(cv, a)` | 实心物体先垫同纹纸挡住后面的线；自带纸底的画布在纸坑里补纸色（不擦成透明） |
+| `edgeMask(W, H)` + `fade(cv, mask, W, H)` | 画面四边按噪声淡回纸里，顶上淡得更慢 |
+| `ridgeFn({y, amp, seed})` / `mist(c, y0, y1, X0, X1, yb, a)` | 山脊起伏 `x → y`；把一段高度往下擦淡成雾 |
+| `cloud` / `pine` / `bush` / `tuft` / `rock` / `strip` | 云、松树、灌木、草簇、水中石、把线段加宽成杆 |
 
 ## 6. 载体与降级
 
