@@ -1,6 +1,0 @@
-- id：blender-headless-glb
-- 机制：blender -b --python make-model.py 在 Blender 里程序化建模（6 块倒角薄板螺旋叠放加中柱，Principled BSDF），导出 model.glb。three.js GLTFLoader 加载。
-- 依赖（固定版本）：Blender 4.0.2（仅构建时），three 0.186.0（jsDelivr）
-- 文件体积：index.html 4592 字节，model.glb 49276 字节（官方导出器），preview.png 约 200 KB
-- Reduce Motion 行为：不自转，只渲染一帧。
-- 已验证项：1440、390 与减少动态截图已看，模型可见，console 0 error，http 外链只有 jsDelivr。官方 glTF 导出器在装 `python3-numpy` 后走通。缺 numpy 时脚本自动退到内置标准库写入器（40660 字节版）。
