@@ -26,7 +26,13 @@
 
 ## 安装
 
-在 Claude Code 里运行：
+在 Claude Code 2.1.275 或更新版本里，一步安装：
+
+```text
+/plugin install design-techniques --marketplace DwDestiny/my_skill
+```
+
+更早的版本分两步：
 
 ```text
 /plugin marketplace add DwDestiny/my_skill
