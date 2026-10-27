@@ -30,12 +30,13 @@ main{position:relative;z-index:1}
 .hint{position:absolute;left:50%;bottom:4vh;transform:translateX(-50%);font-size:12px;letter-spacing:.25em;color:var(--muted);white-space:nowrap}
 .readout{display:none}
 /* 文字 */
-.copy{position:absolute;left:6vw;top:50%;transform:translateY(-55%);max-width:30vw}
+.copy{position:absolute;left:6vw;top:50%;transform:translateY(-55%);max-width:27vw}
 .eb{font-size:13px;letter-spacing:.2em;color:var(--muted);margin-bottom:24px}
 h1,h2{font-family:var(--serif);font-weight:700;margin:0;letter-spacing:.02em}
 h1{font-size:clamp(34px,3.6vw,56px);line-height:1.28;margin-bottom:26px}
 h2{font-size:clamp(26px,2.6vw,40px);line-height:1.35;margin-bottom:20px}
 .sub{font-size:16px;line-height:1.9;color:var(--soft);margin:0}
+#s0 .sub{max-width:24vw}
 /* 过渡章：只有底纹与光 */
 .chap{max-width:880px;margin:0 auto;padding:22vh 6vw}
 .axes{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:48px;border-top:1px solid rgba(236,230,218,.12);padding-top:28px}
@@ -55,7 +56,7 @@ footer{text-align:center;padding:10vh 6vw 8vh;font-size:12px;line-height:2;color
 .lr-nogl .stage{background-size:cover}
 @media (max-width:760px){
  .copy{left:16px;right:16px;top:9vh;transform:none;max-width:none}
- h1{font-size:30px;margin-bottom:16px}.sub{font-size:15px}
+ h1{font-size:30px;margin-bottom:16px}.sub{font-size:15px}#s0 .sub{max-width:none}
  .count,.lit,.hint{display:none}
  .pins .card,.zc{display:none}
  .readout{display:block;position:absolute;left:16px;right:16px;bottom:22px;min-height:72px}
