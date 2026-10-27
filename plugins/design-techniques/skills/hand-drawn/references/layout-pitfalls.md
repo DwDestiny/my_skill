@@ -15,5 +15,6 @@
 | 断出“哪 / 一步” | `text-wrap:balance` 只看长度 | 词组用 `.nw` 的 nowrap span 包住 |
 | 手机标题剩孤字 | 字号与行宽不配 | `.nw` 分组 + 调字号（演示页手机 38px） |
 | 悬停被挡 | 旋转画布的外接框盖住别的元素 | 画布 `pointer-events:none`，另放旋转的透明热区，`.hit:hover + .card`；注意选择器优先级 |
+| 图内标签跑到别处、字号不对 | 首屏标签用了通用类名（`.plate`），和另一屏同名类的定位规则叠在一起 | 每屏的类名带前缀（`.sc-t.sign`），或选择器写在屏内（`.s01 .sign`）；加新类前先 `grep` 全页 |
 | 隐藏的屏报错 | `display:none` 的屏宽为 0 | 画之前检查 `offsetParent` |
 | 本机没 unzip | — | `python3 -I -c "import zipfile..."` 解压 |
