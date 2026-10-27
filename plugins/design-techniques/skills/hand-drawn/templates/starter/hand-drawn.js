@@ -1,6 +1,6 @@
 /*
  * Input: 页面里的 canvas 与 HTML 元素；HandDrawn.init(opts) 的纸色、墨色、纸纹参数
- * Output: 全局 HandDrawn（纸面高度场、钢笔、彩铅、排线、圈、框、胶带、星、卡纸、花边、手写排字、画布摆放）
+ * Output: 全局 HandDrawn（纸面高度场、钢笔、彩铅、排线、圈、框、胶带、星、卡纸、花边、手写排字、画布摆放，以及画风景用的 hatchIn、under、云、松、灌木、石、山脊、雾、四边淡出）
  * Pos: hand-drawn 手法的画具包。无依赖，经典 <script> 引入，file:// 直接打开也能用
  *
  * 默认数值来自已验证的一次讲课页（2026-10-27），用户评价纸面、颗粒、字体“很好了”。数值是锚点，可按题材改。
@@ -86,6 +86,10 @@
       drop: mk((D, p) => { D[p * 4 + 3] = clamp((O.dropThr - h[p]) / O.dropSoft) * 255; }),
       keep: mk((D, p) => { D[p * 4 + 3] = (1 - O.keepMax * clamp((O.keepThr - h[p]) / O.keepSoft)) * 255; }),
     };
+    // 深坑处的纸色：自带纸底的画布（paperizeN）不能擦成透明，改成在坑里补回纸色
+    const pit = document.createElement("canvas"); pit.width = pit.height = S;
+    { const q = pit.getContext("2d"); q.drawImage(bg, 0, 0); q.globalCompositeOperation = "destination-in"; q.drawImage(HD.paper.drop, 0, 0); }
+    HD.paper.pit = pit;
     // 页面背景用 --paper-img，HTML 大字用 --ink-mask（background-size / mask-size 写 tile px）
     const set = (cv, name) => new Promise(res => cv.toBlob(b => { document.documentElement.style.setProperty(name, `url(${URL.createObjectURL(b)})`); res(); }));
     return Promise.all([set(HD.paper.bg, "--paper-img"), set(HD.paper.keep, "--ink-mask")]);
@@ -120,7 +124,7 @@
   HD.placeIn = function (cv, k, x0, y0, w, h) { const c = HD.place(cv, x0 * k, y0 * k, w * k, h * k); c.scale(k, k); return c; };
 
   // ---------- 几何小工具 ----------
-  HD.pathOf = function (c, pts) { c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath(); };
+  HD.pathOf = function (c, pts) { c.beginPath(); (Array.isArray(pts[0][0]) ? pts : [pts]).forEach(P => { P.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath(); }); }; // pts 可以是多个多边形
   HD.resample = function (pts, step, closed) {
     const P = closed ? [...pts, pts[0]] : pts, out = [];
     for (let i = 0; i < P.length - 1; i++) {
@@ -155,10 +159,16 @@
   HD.pencil = function (c, clip, box, o) {
     const cv = c.canvas;
     if (!SCR || SCR.width !== cv.width || SCR.height !== cv.height) { SCR = document.createElement("canvas"); SCR.width = cv.width; SCR.height = cv.height; }
-    const s = SCR.getContext("2d"); s.setTransform(1, 0, 0, 1, 0, 0); s.clearRect(0, 0, SCR.width, SCR.height);
-    s.setTransform(c.getTransform()); s.save(); if (clip) { HD.pathOf(s, clip); s.clip(); }
-    const r = HD.rng(o.seed || 1), [x0, y0, x1, y1] = box, N = Math.round((x1 - x0) * (y1 - y0) * o.density);
     const ang = o.angle ?? -1.08, len = o.len ?? 13, w = o.w ?? 1.6, al = o.alpha || (() => .8);
+    // 只在这一笔用到的矩形里清、打颗粒、合成：大画布上画小块也不慢
+    const s = SCR.getContext("2d"), T = c.getTransform(), m = len + w * 2, [x0, y0, x1, y1] = box;
+    const P = [[x0 - m, y0 - m], [x1 + m, y0 - m], [x0 - m, y1 + m], [x1 + m, y1 + m]].map(([x, y]) => T.transformPoint(new DOMPoint(x, y)));
+    const rx = Math.max(0, Math.floor(Math.min(...P.map(p => p.x)))), ry = Math.max(0, Math.floor(Math.min(...P.map(p => p.y))));
+    const rw = Math.min(cv.width, Math.ceil(Math.max(...P.map(p => p.x)))) - rx, rh = Math.min(cv.height, Math.ceil(Math.max(...P.map(p => p.y)))) - ry;
+    if (rw <= 0 || rh <= 0) return;
+    s.setTransform(1, 0, 0, 1, 0, 0); s.clearRect(rx, ry, rw, rh);
+    s.setTransform(T); s.save(); if (clip) { HD.pathOf(s, clip); s.clip(); }
+    const r = HD.rng(o.seed || 1), N = Math.round((x1 - x0) * (y1 - y0) * o.density);
     s.lineCap = "round"; s.strokeStyle = o.color;
     for (let i = 0; i < N; i++) {
       const x = x0 + r() * (x1 - x0), y = y0 + r() * (y1 - y0);
@@ -169,9 +179,9 @@
     }
     s.restore();
     s.setTransform(1, 0, 0, 1, 0, 0); s.globalCompositeOperation = "destination-out"; s.globalAlpha = o.tooth ?? .6;
-    s.fillStyle = HD.paperPattern(s, HD.paper.tooth, cv); s.fillRect(0, 0, SCR.width, SCR.height);
+    s.fillStyle = HD.paperPattern(s, HD.paper.tooth, cv); s.fillRect(rx, ry, rw, rh);
     s.globalCompositeOperation = "source-over"; s.globalAlpha = 1;
-    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = "multiply"; c.drawImage(SCR, 0, 0); c.restore();
+    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = "multiply"; c.drawImage(SCR, rx, ry, rw, rh, rx, ry, rw, rh); c.restore();
   };
 
   // 墨线排线：一组平行线，只画在 tone(x,y,lr) > thr 的地方；几层不同阈值、角度叠起来，暗处自然更密
@@ -318,6 +328,135 @@
   // 字体先显式加载再画：fonts.ready 可能在字体开始加载前就返回
   HD.fontsReady = function (specs) {
     return Promise.all(specs.map(([fam, sample]) => document.fonts.load(`1em "${fam}"`, sample))).then(() => document.fonts.ready);
+  };
+
+  // ---------- 场景画具：画一幅有远近的画（天、山、岸、树、云、石）时用 ----------
+  // 通用的意思是不依赖具体几何；放进场景、按场景坐标作画的 pl()/几何函数由页面自己写（见 templates/starter/index.html）
+  // 钢笔排线（短版）：一组略抖的平行线铺满 box、按 clip 裁；给了 tone(x,y) 就只在比 thr 深的地方下笔。o:{seed, angle, sp, w, alpha, color, step 3, wob 1.2, tone, thr .5, rag .3, gaps .008}
+  HD.hatchIn = function (c, clip, box, o) {
+    const r = HD.rng(o.seed), n = HD.noise1(o.seed + 5), [x0, y0, x1, y1] = box, st = o.step ?? 3;
+    const du = Math.cos(o.angle), dv = Math.sin(o.angle), pu = -dv, pv = du;
+    const cs = [[x0, y0], [x1, y0], [x0, y1], [x1, y1]], offs = cs.map(([x, y]) => x * pu + y * pv), ts = cs.map(([x, y]) => x * du + y * dv);
+    const oMax = Math.max(...offs), tMin = Math.min(...ts), tMax = Math.max(...ts);
+    c.save(); if (clip) { HD.pathOf(c, clip); c.clip(); }
+    c.strokeStyle = o.color || HD.opts.ink; c.lineCap = c.lineJoin = "round";
+    for (let off = Math.min(...offs) + r() * o.sp, li = 0; off < oMax; off += o.sp * (.75 + r() * .5), li++) {
+      c.lineWidth = o.w * (.7 + r() * .6); c.globalAlpha = o.alpha * (.65 + r() * .35);
+      c.beginPath(); let on = false;
+      for (let t = tMin; t <= tMax; t += st) {
+        const k = off + (n(li * 3.1 + t * .02) - .5) * (o.wob ?? 1.2), x = pu * k + du * t, y = pv * k + dv * t;
+        if (x < x0 - 2 || x > x1 + 2 || y < y0 - 2 || y > y1 + 2) { on = false; continue; }
+        const draw = (!o.tone || o.tone(x, y) > (o.thr ?? .5) + (n(li * 7.7 + t * .06 + 99) - .5) * (o.rag ?? .3)) && r() > (o.gaps ?? .008);
+        if (draw) { on ? c.lineTo(x, y) : c.moveTo(x, y); on = true; } else on = false;
+      }
+      c.stroke();
+    }
+    c.restore(); c.globalAlpha = 1;
+  };
+  // 实心物体：先垫一块和页面同纹的纸，挡住后面的线，再在上面画。poly 是点列或多边形数组
+  HD.under = function (c, poly) {
+    c.save(); HD.pathOf(c, poly); c.setTransform(1, 0, 0, 1, 0, 0);
+    c.globalCompositeOperation = "source-over"; c.globalAlpha = 1; c.fillStyle = HD.paperPattern(c, HD.paper.bg, c.canvas); c.fill(); c.restore();
+  };
+  // 自带纸底的画布不能擦成透明：纸的深坑里改成补回纸色（画布本身是 normal 混合时用这个，线稿层用 paperize）
+  HD.paperizeN = function (cv, a = .5) {
+    const c = cv.getContext("2d"); c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
+    c.globalCompositeOperation = "source-atop"; c.globalAlpha = a; c.fillStyle = HD.paperPattern(c, HD.paper.pit, cv); c.fillRect(0, 0, cv.width, cv.height); c.restore();
+  };
+  // 画面四边不画死：返回一张小遮罩，边缘按噪声一截截淡回纸里，顶上淡得更慢。W,H 是场景的 CSS 像素
+  HD.edgeMask = function (W, H) {
+    const q = 4, w = Math.ceil(W / q), h = Math.ceil(H / q), cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+    const c = cv.getContext("2d"), D = c.createImageData(w, h), n = HD.noise1(91), m = HD.noise1(92), F = 30 / q, Ft = 64 / q, A = 20 / q;
+    const wob = (o, t) => (n(o + t * .05) - .5) * A * 2 + (m(o + t * .3) - .5) * A * .7;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const e = Math.min((x + wob(0, y)) / F, (w - 1 - x + wob(150, y)) / F, (y + wob(300, x)) / Ft, (h - 1 - y + wob(450, x)) / F);
+      const v = Math.min(1, Math.max(0, e)); D.data[(y * w + x) * 4 + 3] = (1 - v * v * (3 - 2 * v)) * 255;
+    }
+    c.putImageData(D, 0, 0); return cv;
+  };
+  // 把画布按场景遮罩淡进纸里：mask 来自 edgeMask(W, H)，画布在场景里的位置取 style.left/top，W、H 是场景的 CSS 像素
+  HD.fade = function (cv, mask, W, H) {
+    const c = cv.getContext("2d"), L = parseFloat(cv.style.left) || 0, T = parseFloat(cv.style.top) || 0, D = HD.DPR;
+    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = "destination-out";
+    c.drawImage(mask, -L * D, -T * D, W * D, H * D); c.restore();
+  };
+  // 山脊：几层噪声叠出来的起伏，返回 x -> y。R:{y 基线, amp 起伏, seed}
+  HD.ridgeFn = function (R) {
+    const a = HD.noise1(R.seed), b = HD.noise1(R.seed + 1), d = HD.noise1(R.seed + 2);
+    return x => R.y - R.amp * (1.6 * (.6 * a(x * .0042 + 3) + .28 * b(x * .013 + 7) + .12 * d(x * .05)) - .3);
+  };
+  // 雾：把 y0..y1 一段往下一层层擦淡（destination-out），yb 是擦到的底，a 是最深处擦掉多少
+  HD.mist = function (c, y0, y1, X0, X1, yb, a = .82) {
+    c.save(); c.globalCompositeOperation = "destination-out";
+    const gr = c.createLinearGradient(0, y0, 0, y1); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, `rgba(0,0,0,${a})`);
+    c.fillStyle = gr; c.fillRect(X0, y0, X1 - X0, yb - y0); c.restore();
+  };
+  // 一根杆：把线段 a→b 加宽成宽 w 的四边形（给 under/填色用）
+  HD.strip = function (a, b, w) { const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L * w / 2, ny = dx / L * w / 2; return [[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]]; }
+  // 云：自带纸底，一圈鼓包的上沿，底下阴面排线。(x,y) 云底中心，sc 大小（宽约 200*sc）
+  HD.cloud = function (c, x, y, sc, seed) {
+    const r = HD.rng(seed), n = 4 + Math.floor(r() * 3), w = 200 * sc, out = [], tops = [];
+    const bumps = Array.from({length: n}, (_, i) => { const t = (i + .5) / n, R = (19 + r() * 11 + Math.sin(t * Math.PI) * 21) * sc; return [x - w / 2 + t * w, y - Math.sin(t * Math.PI) * 13 * sc - R * .15, R]; });
+    const base = y + 13 * sc, [fx0, , fR] = bumps[0], [lx, , lR] = bumps[n - 1];
+    out.push([fx0 - fR * .85, base]);
+    bumps.forEach(([bx, by, R], i) => {
+      const a0 = i ? Math.PI * 1.1 : Math.PI * .92, a1 = i === n - 1 ? Math.PI * 2.08 : Math.PI * 1.9, seg = [];
+      for (let q = 0; q <= 10; q++) { const a = a0 + (a1 - a0) * q / 10; seg.push([bx + Math.cos(a) * R, by + Math.sin(a) * R]); }
+      out.push(...seg); tops.push(seg);
+    });
+    out.push([lx + lR * .85, base]);
+    const bot = []; for (let px = lx + lR * .85; px > fx0 - fR * .85; px -= 12 * sc) bot.push([px, base + Math.sin(px * .07 + seed) * 1.6 * sc]);
+    out.push(...bot);
+    HD.under(c, out);
+    c.save(); c.fillStyle = "rgba(255,253,248,.55)"; HD.pathOf(c, out); c.fill(); c.restore();
+    const bb = HD.bounds(out);
+    HD.pencil(c, out, bb, {seed: seed + 1, color: "#a3b8d2", angle: -1.08, len: 9 * sc, w: 1.3 * sc, density: .5 / (sc * sc), tooth: .5, alpha: (px, py) => .8 * Math.max(0, Math.min(1, (py - (y - 12 * sc)) / (26 * sc)))});
+    HD.hatchIn(c, out, [bb[0], y - 2 * sc, bb[2], base + 2], {seed: seed + 2, angle: -.12, sp: 2.6 * sc, w: .55 * sc, alpha: .5, color: "#5d6f8c", tone: (px, py) => (py - y) / (13 * sc), thr: .35, rag: .5});
+    tops.forEach((sg, i) => HD.pen(c, sg, {w: 1.3 * sc, seed: seed + 10 + i, jit: .35}));
+    HD.pen(c, [[lx + lR * .85, base], ...bot], {w: .8 * sc, seed: seed + 30, jit: .5, alpha: .45});
+    // 鼓包相接处向里卷一小笔
+    for (let i = 1; i < n; i += 2) { const [bx, by, R] = bumps[i]; const a = Math.PI * 1.25; HD.pen(c, [[bx + Math.cos(a) * R * .55, by + Math.sin(a) * R * .55 + 6 * sc], [bx + Math.cos(a + .5) * R * .5, by + Math.sin(a + .5) * R * .5 + 8 * sc], [bx + Math.cos(a + 1) * R * .38, by + Math.sin(a + 1) * R * .38 + 9 * sc]], {w: .8 * sc, seed: seed + 40 + i, jit: .2, alpha: .4}); }
+  };
+  // 松树：一根干加四层锯齿枝，从下往上画，上一层的纸底盖住下一层的线。(x,y) 是树根，高约 84*sc
+  HD.pine = function (c, x, y, sc, seed) {
+    const top = y - 84 * sc, tiers = 4;
+    HD.under(c, [[x - 1.6 * sc, y], [x - 1.6 * sc, y - 22 * sc], [x + 1.6 * sc, y - 22 * sc], [x + 1.6 * sc, y]]);
+    HD.pen(c, [[x, y], [x, y - 22 * sc]], {w: 2.2 * sc, seed, jit: .3});
+    for (let i = tiers - 1; i >= 0; i--) { // 从下往上：上一层的纸底盖住下一层的线
+      const ya = top + i * 15 * sc, yb = ya + 30 * sc, hw = (9 + i * 6.5) * sc, rr = HD.rng(seed + i), pts = [[x, ya], [x + hw * .5, ya + (yb - ya) * .55], [x + hw, yb]];
+      const zz = 5 + i; for (let q = 1; q < zz; q++) pts.push([x + hw - 2 * hw * q / zz, yb - (q % 2 ? 4.5 : 0) * sc - rr() * 1.5 * sc]);
+      pts.push([x - hw, yb], [x - hw * .5, ya + (yb - ya) * .55]);
+      HD.under(c, pts);
+      HD.pencil(c, pts, [x - hw, ya, x + hw, yb], {seed: seed + 10 + i, color: "#79a26d", angle: -1.08, len: 7 * sc, w: 1.3 * sc, density: 1 / (sc * sc), tooth: .45, alpha: px => px > x ? .9 : .6});
+      HD.hatchIn(c, pts, [x - hw, ya, x + hw, yb], {seed: seed + 20 + i, angle: 1.2, sp: 2.4 * sc, w: .65 * sc, alpha: .65, tone: (px, py) => (px - x) / hw * .8 + (py - ya) / (yb - ya) * .5, thr: .4});
+      HD.pen(c, pts, {closed: true, w: 1.1 * sc, seed: seed + 30 + i, jit: .3});
+    }
+  };
+  // 灌木：半圆的一丛，彩铅打绿、右下排线。(x,y) 是底，R 半径
+  HD.bush = function (c, x, y, R, seed) {
+    const n = HD.noise1(seed), pts = [];
+    for (let i = 0; i < 26; i++) { const a = Math.PI + i / 25 * Math.PI, rr = R * (1 + .14 * Math.sin(a * 6 + seed) + (n(i * .5) - .5) * .2); pts.push([x + Math.cos(a) * rr * 1.25, y + Math.sin(a) * rr]); }
+    HD.under(c, pts);
+    HD.pencil(c, pts, HD.bounds(pts), {seed: seed + 1, color: "#86ab73", angle: -1.08, len: 6 * R / 14, w: 1.2, density: 1, tooth: .45, alpha: () => .8});
+    HD.hatchIn(c, pts, HD.bounds(pts), {seed: seed + 2, angle: 1.1, sp: 2.3, w: .6, alpha: .6, tone: (px, py) => (px - x) / R * .7 + (py - y + R) / R * .4, thr: .55});
+    HD.pen(c, pts, {w: 1, seed: seed + 3, jit: .3});
+  };
+  // 草丛：三笔短草。(tx,ty) 是根，sz 大小
+  HD.tuft = function (c, tx, ty, sz, sd) {
+    const rr = HD.rng(sd);
+    for (let q = 0; q < 3; q++) { const a = -Math.PI / 2 + (rr() - .5) * 1.1, L = (4 + rr() * 6) * sz, bx = tx + (q - 1) * 1.7 * sz; HD.pen(c, [[bx, ty], [bx + Math.cos(a) * L, ty + Math.sin(a) * L]], {w: .8 * sz, seed: sd + q, jit: .15, color: "#3d5c34", alpha: .85}); }
+  };
+  // 河里的石头：半露出水面，两边各一道水纹。(x,y) 是水面位置，R 大小
+  HD.rock = function (c, x, y, R, seed) {
+    const n = HD.noise1(seed), pts = [];
+    for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2, rr = R * (.82 + n(i * .7) * .36); pts.push([x + Math.cos(a) * rr * 1.25, Math.min(y + R * .3, y + Math.sin(a) * rr * .8)]); }
+    const bb = HD.bounds(pts);
+    HD.under(c, pts);
+    HD.pencil(c, pts, bb, {seed: seed + 1, color: "#a99e8c", angle: -1.08, len: R * .4, w: 1.3, density: 1.2 * 22 / R, tooth: .5, alpha: (px, py) => .45 + .4 * ((px - bb[0]) / (bb[2] - bb[0]))});
+    HD.hatchIn(c, pts, bb, {seed: seed + 2, angle: 1.0, sp: 2.6, w: .65, alpha: .6, tone: (px, py) => (px - x) / R * .6 + (py - y + R * .6) / R * .6, thr: .55});
+    HD.pen(c, pts, {closed: true, w: 1.3, seed: seed + 3, jit: .4});
+    HD.pen(c, [[x - R * 1.5, y + R * .36], [x - R * 1.2, y + R * .34]], {w: .9, seed: seed + 4, jit: .2, alpha: .7, color: "#3d5d78"});
+    HD.pen(c, [[x + R * 1.2, y + R * .38], [x + R * 1.6, y + R * .36]], {w: .9, seed: seed + 5, jit: .2, alpha: .7, color: "#3d5d78"});
   };
 
   root.HandDrawn = HD;
