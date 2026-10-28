@@ -172,6 +172,7 @@ class PreviewScriptTest(unittest.TestCase):
             run = lambda *a: subprocess.run(['bash', str(SCRIPTS / 'preview.sh'), *a, str(work)],
                                             capture_output=True, text=True, timeout=30)
             self.assertEqual(run('reload').returncode, 0)
+            self.assertIn('批注：0 条\n', run('status').stdout)
             self.assertEqual(socket.socket().connect_ex(('127.0.0.1', port)), 0)
             self.assertEqual(run('stop').returncode, 0)
             for _ in range(20):

@@ -79,7 +79,9 @@ case "$cmd" in
     alive "$work/server.pid" && echo "服务：运行中" || echo "服务：未运行"
     alive "$work/tunnel.pid" && echo "隧道：运行中" || echo "隧道：未运行"
     [ -f "$work/url" ] && echo "链接：$(cat "$work/url")"
-    echo "批注：$(grep -c '"comment"' "$work/annotations.json" 2>/dev/null || echo 0) 条"
+    # 没有匹配时 grep -c 输出 0 且返回 1，不能再用 || echo 0，否则打印两次
+    n="$(grep -c '"comment"' "$work/annotations.json" 2>/dev/null || true)"
+    echo "批注：${n:-0} 条"
     ;;
   stop)
     work="$(cd "$1" && pwd)"
