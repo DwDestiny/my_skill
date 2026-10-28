@@ -38,6 +38,7 @@
 | ui-frontend-implementation | [`plugins/ui-delivery/skills/ui-frontend-implementation/`](plugins/ui-delivery/skills/ui-frontend-implementation/SKILL.md) | v0.2.1 · UI 交付套件；`skills/ui-frontend-implementation/` 为兼容软链 | 将必需元素和组件映射到可核对的页面实现与运行版本 |
 | ui-visual-qa | [`plugins/ui-delivery/skills/ui-visual-qa/`](plugins/ui-delivery/skills/ui-visual-qa/SKILL.md) | v0.2.1 · UI 交付套件；`skills/ui-visual-qa/` 为兼容软链 | 在真实浏览器逐步点击旅程，对照视觉基线并记录页面证据和结论 |
 | ui-visual-walkthrough | `skills/ui-visual-walkthrough/` | 已入库 | 对真实运行站点做无基线逐屏视觉走查：双视口截图 + DOM/CSS 探针实证（容器边界/hover 死区/字号分布/截断溢出），产出每条内嵌截图的分级 issue 台账 |
+| preview-annotate | [`skills/preview-annotate/`](skills/preview-annotate/README.md) | 已入库 | 把静态前端构建发成临时公开链接（Cloudflare 快速隧道，不用账号），评审人在页面上点选组件写批注，智能体读批注逐条修改 |
 | content-blueprint | `skills/content-blueprint/` | v0.1 · 配对使用 | 把资料和目标拆成讲解蓝图：受众、可测结果、内容取舍、形式选择、断言来源与可信度；产物交给 design-techniques 的手法子 skill（详见该目录 `README.md`） |
 | catalog | [`plugins/design-techniques/skills/catalog/`](plugins/design-techniques/skills/catalog/SKILL.md) | v0.2.0 · design-techniques 插件入口 | 手法索引：按内容选已验证的视觉手法，再交给对应子 skill |
 | layered-reveal | [`plugins/design-techniques/skills/layered-reveal/`](plugins/design-techniques/skills/layered-reveal/SKILL.md) | v0.2.0 · design-techniques 手法 | 叠图晕染：构图对齐的多层画面，指针、灯或滚动推开水墨边揭示下一层（WebGL2 + 成对生图） |
@@ -157,6 +158,8 @@ ln -sfn "$(pwd)/skills/geb-project-doc-system" ~/.grok/skills/geb-project-doc-sy
 scripts/check_skill_structure.sh skills/geb-project-doc-system
 python3 tests/test_geb_project_doc_system.py
 tests/smoke_visual_ppt_deck_builder.sh
+scripts/check_skill_structure.sh skills/preview-annotate
+python3 tests/test_preview_annotate.py
 ```
 
 ## 一键安装（公众号运营）
@@ -217,6 +220,12 @@ skills/
     README.md                    # 手册门面 + 前置条件 + 最小可跑示例
     agents/openai.yaml
     references/cookbook.md       # 进阶配方与排障速查
+  preview-annotate/
+    SKILL.md
+    README.md                    # 门面：截图、前置条件、安装
+    agents/openai.yaml
+    scripts/                     # preview.sh 启停、server.mjs 服务、annot.js 批注层、list.py 读批注
+    assets/overlay.png           # README 截图
   ui-delivery -> ../plugins/ui-delivery/skills/ui-delivery/  # 兼容软链，真源在 plugins/ui-delivery/skills/
   ui-product-planning -> ../plugins/ui-delivery/skills/ui-product-planning/
   ui-ux-architecture -> ../plugins/ui-delivery/skills/ui-ux-architecture/
@@ -256,6 +265,20 @@ templates/
 - 先写压力场景或测试，再写 Skill。
 - README 的 Skill 目录必须同步更新。
 - 不提交密钥、账号、令牌或私有日志。
+
+## 已归档的旧仓库
+
+2026-10-28 起，在用的 Skill 都放在本仓。下列旧仓库已在 GitHub 上归档：仓库只读，原链接仍能打开。
+
+| 仓库 | 说明 |
+|---|---|
+| [`dw-skills`](https://github.com/DwDestiny/dw-skills) | 早期的 OpenClaw 与新闻证据截图 Skill，不再维护 |
+| [`openclaw-personhood-system`](https://github.com/DwDestiny/openclaw-personhood-system) | 与 `dw-skills` 里的同名包重复，不再维护 |
+| [`codex-visual-ppt-deck-builder`](https://github.com/DwDestiny/codex-visual-ppt-deck-builder) | Skill 本体以本仓 `skills/visual-ppt-deck-builder/` 为准；演示样张和效果测试留在归档仓库 |
+| [`tacit-knowledge-lens-skill`](https://github.com/DwDestiny/tacit-knowledge-lens-skill) | 不再维护 |
+| [`super-design`](https://github.com/DwDestiny/super-design) | 不再维护 |
+
+[`codex-visual-asset-skills`](https://github.com/DwDestiny/codex-visual-asset-skills)（透明素材与精灵动画）星标较多，继续独立维护。
 
 ## 致谢与许可证边界
 
@@ -306,6 +329,7 @@ Instead of growing one giant global prompt, each workflow becomes a focused Skil
 | ui-frontend-implementation | [`plugins/ui-delivery/skills/ui-frontend-implementation/`](plugins/ui-delivery/skills/ui-frontend-implementation/SKILL.md) | v0.2.1 · UI Delivery suite; `skills/ui-frontend-implementation/` is a compatibility symlink | Map required elements and components to implementation files and runtime revision |
 | ui-visual-qa | [`plugins/ui-delivery/skills/ui-visual-qa/`](plugins/ui-delivery/skills/ui-visual-qa/SKILL.md) | v0.2.1 · UI Delivery suite; `skills/ui-visual-qa/` is a compatibility symlink | Click real user journeys, compare running pages to baselines, and record evidence and verdict |
 | ui-visual-walkthrough | `skills/ui-visual-walkthrough/` | Available | Baseline-free screen-by-screen visual audit of a running site: dual-viewport screenshots plus DOM/CSS probes (container boundaries, hover dead zones, font-size census, truncation/overflow), producing a severity-graded issue ledger with inline screenshots |
+| preview-annotate | [`skills/preview-annotate/`](skills/preview-annotate/README.md) | Available | Publish a static front-end build as a temporary public link (Cloudflare quick tunnel, no account); reviewers click components on the page to leave comments, and the agent reads and fixes each one |
 
 ## Topic Indexes
 
@@ -423,7 +447,23 @@ Keep global prompts short. Load the Skill when detail is needed.
 scripts/check_skill_structure.sh skills/geb-project-doc-system
 python3 tests/test_geb_project_doc_system.py
 tests/smoke_visual_ppt_deck_builder.sh
+scripts/check_skill_structure.sh skills/preview-annotate
+python3 tests/test_preview_annotate.py
 ```
+
+## Archived Repositories
+
+Since 2026-10-28, all maintained Skills live in this repository. The old repositories below are archived on GitHub: they are read-only, and their links still work.
+
+| Repository | Note |
+|---|---|
+| [`dw-skills`](https://github.com/DwDestiny/dw-skills) | Early OpenClaw and news-evidence-screenshot Skills; no longer maintained |
+| [`openclaw-personhood-system`](https://github.com/DwDestiny/openclaw-personhood-system) | Duplicate of the package in `dw-skills`; no longer maintained |
+| [`codex-visual-ppt-deck-builder`](https://github.com/DwDestiny/codex-visual-ppt-deck-builder) | The Skill itself is maintained here in `skills/visual-ppt-deck-builder/`; demo decks and effect tests stay in the archive |
+| [`tacit-knowledge-lens-skill`](https://github.com/DwDestiny/tacit-knowledge-lens-skill) | No longer maintained |
+| [`super-design`](https://github.com/DwDestiny/super-design) | No longer maintained |
+
+[`codex-visual-asset-skills`](https://github.com/DwDestiny/codex-visual-asset-skills) (transparent assets and sprite animation) remains a separately maintained repository.
 
 ## Acknowledgements and License Boundaries
 
