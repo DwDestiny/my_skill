@@ -1,0 +1,7 @@
+interface:
+  display_name: "预览链接与组件批注"
+  short_description: "临时公开链接，页面上选组件写批注"
+  default_prompt: "Use $preview-annotate to publish a static front-end build as a temporary trycloudflare.com link with a component annotation overlay, then read the annotations and fix each one."
+
+policy:
+  allow_implicit_invocation: true
