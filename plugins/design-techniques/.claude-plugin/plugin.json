@@ -1,7 +1,7 @@
 {
   "name": "design-techniques",
   "displayName": "设计手法库",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "只收在真实项目里做出好效果的视觉手法。每个手法带效果图、适用场景、所需工具与依赖，以及一个完整的风格化子 skill（规范、SOP、起手代码、踩坑）。",
   "author": {
     "name": "DwDestiny"
