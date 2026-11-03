@@ -20,6 +20,12 @@
 ## 3. 逐字抖动
 
 - `handset(el, seed, amp)` 把文字逐字包成 `.ch`，每字随机基线（±.035em）和倾角（±1.6°），写在行内 transform 里。
+- 连着的英文字母和数字（`get_weather`、`44,300`）先整体包进 `.wd`（`white-space:nowrap`），再逐字包 `.ch`。逐字包成 inline-block 以后，浏览器把每个字母都当成可断点，代码名和数字会从中间断开。
+
+  | 平庸 | 好 |
+  |---|---|
+  | 卡片里 `get_weather` 断成 `get_wea` / `ther`，读者以为是两个词 | `get_weather` 整个挪到下一行，中文照常逐字换行 |
+
 - “抖一下”动画用独立的 `translate`、`rotate` 属性 + `steps(1,end)`，才能和行内 transform 叠加；逐字错开 `--i × 30ms`。
 - 图内标签用 `label()`：HTML 绝对定位，坐标按图的逻辑单位换算成百分比，字号用 `cqw`，容器设 `container-type:inline-size`。
 
