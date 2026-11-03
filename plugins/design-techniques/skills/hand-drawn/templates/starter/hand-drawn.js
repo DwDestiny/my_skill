@@ -297,15 +297,20 @@
   // ---------- HTML 文字也按手写排：每个字的基线和倾斜略有不同 ----------
   // 逐字包 <span class="ch" style="--i:序号">；CSS 里给 .ch 写 display:inline-block，
   // “抖一下”的动画用独立的 translate / rotate 属性，才能和这里的 transform 叠加
+  // 连着的英文字母和数字（get_weather、44,300、0.5）先包进 <span class="wd">，CSS 给 .wd 写 white-space:nowrap，
+  // 换行就不会从词中间断开：逐字包成 inline-block 以后，浏览器把每个字母都当成可断点
   HD.handset = function (el, seed, amp = 1) {
     const r = HD.rng(seed); let idx = 0;
     const walk = node => [...node.childNodes].forEach(ch => {
       if (ch.nodeType === 3) {
         const f = document.createDocumentFragment();
-        [...ch.textContent].forEach(t => {
-          if (!t.trim()) { f.append(t); return; }
-          const s = document.createElement("span"); s.className = "ch"; s.textContent = t; s.style.setProperty("--i", idx++);
-          s.style.transform = `translateY(${((r() - .5) * .07 * amp).toFixed(3)}em) rotate(${((r() - .5) * 3.2 * amp).toFixed(2)}deg)`; f.append(s);
+        ch.textContent.split(/([A-Za-z0-9_.,%¥$+-]+)/).forEach((run, wi) => {
+          const to = wi % 2 && run.length > 1 ? f.appendChild(Object.assign(document.createElement("span"), {className: "wd"})) : f;
+          [...run].forEach(t => {
+            if (!t.trim()) { to.append(t); return; }
+            const s = document.createElement("span"); s.className = "ch"; s.textContent = t; s.style.setProperty("--i", idx++);
+            s.style.transform = `translateY(${((r() - .5) * .07 * amp).toFixed(3)}em) rotate(${((r() - .5) * 3.2 * amp).toFixed(2)}deg)`; to.append(s);
+          });
         });
         ch.replaceWith(f);
       } else if (ch.nodeType === 1 && ch.tagName !== "BR") walk(ch);

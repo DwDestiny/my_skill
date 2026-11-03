@@ -176,7 +176,7 @@ description: 用代码在网页上画出“纸 + 画具 + 手写字”的手绘�
 |---|---|
 | `references/principles.md` | 构思新画面、换题材、判断“为什么不好看”时。先读这个 |
 | `references/scenes.md` | 做首屏、章节页这类情绪画面：步骤、已验证实例、换题材推演 |
-| `references/diagrams.md` | 做讲解图：按关系类型选画法、版面坐标、悬停切层、滚动推镜头、手机竖排 |
+| `references/diagrams.md` | 做讲解图：按关系类型选画法、版面坐标、悬停切层、滚动推镜头、手机竖排、一门课多讲的统一尺寸 |
 | `references/anchors.md` | 需要一组初始参数时 |
 | `references/paper.md` | 改纸色、换纸面（牛皮纸、黑板、蓝图）或颗粒不对时 |
 | `references/pens.md` | 调钢笔、彩铅、排线，或新增画具（马克笔、水彩、粉笔）时 |
