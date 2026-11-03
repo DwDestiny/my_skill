@@ -297,20 +297,34 @@
   // ---------- HTML 文字也按手写排：每个字的基线和倾斜略有不同 ----------
   // 逐字包 <span class="ch" style="--i:序号">；CSS 里给 .ch 写 display:inline-block，
   // “抖一下”的动画用独立的 translate / rotate 属性，才能和这里的 transform 叠加
-  // 连着的英文字母和数字（get_weather、44,300、0.5）先包进 <span class="wd">，CSS 给 .wd 写 white-space:nowrap，
-  // 换行就不会从词中间断开：逐字包成 inline-block 以后，浏览器把每个字母都当成可断点
+  // 逐字包成 inline-block 以后，浏览器把每个字都当成可断点：英文词会从中间断开，句读号也会落到行首。
+  // 所以先切成不可断的小块，多于一个字的块包进 <span class="wd">（CSS 给 .wd 写 white-space:nowrap）：
+  //   连着的英文字母和数字（get_weather、44,300、0.5）整个一块；
+  //   中文按“开引号 + 一个字 + 跟着的句读号”一块（“忽、令，、除。”）；
+  //   英文词后面紧跟的句读号粘回那个词（Agent，）
+  const UNIT = /\s|[“‘（《「『【]*[^\s][，。、；：？！”’）》」』】…,.;:?!)]*/gu, CLOSE = /^[，。、；：？！”’）》」』】…,.;:?!)]/;
   HD.handset = function (el, seed, amp = 1) {
     const r = HD.rng(seed); let idx = 0;
+    const mk = t => {
+      const s = document.createElement("span"); s.className = "ch"; s.textContent = t; s.style.setProperty("--i", idx++);
+      s.style.transform = `translateY(${((r() - .5) * .07 * amp).toFixed(3)}em) rotate(${((r() - .5) * 3.2 * amp).toFixed(2)}deg)`; return s;
+    };
+    const grp = () => Object.assign(document.createElement("span"), {className: "wd"});
     const walk = node => [...node.childNodes].forEach(ch => {
       if (ch.nodeType === 3) {
-        const f = document.createDocumentFragment();
+        const f = document.createDocumentFragment(); let last = null;
+        const put = (chars, word) => {
+          if (!word && last && CLOSE.test(chars)) {
+            if (last.className !== "wd") { const g = grp(); last.replaceWith(g); g.append(last); last = g; }
+            [...chars].forEach(t => last.append(mk(t))); return;
+          }
+          if ([...chars].length === 1) { last = f.appendChild(mk(chars)); return; }
+          const g = grp(); [...chars].forEach(t => g.append(mk(t))); last = f.appendChild(g);
+        };
         ch.textContent.split(/([A-Za-z0-9_.,%¥$+-]+)/).forEach((run, wi) => {
-          const to = wi % 2 && run.length > 1 ? f.appendChild(Object.assign(document.createElement("span"), {className: "wd"})) : f;
-          [...run].forEach(t => {
-            if (!t.trim()) { to.append(t); return; }
-            const s = document.createElement("span"); s.className = "ch"; s.textContent = t; s.style.setProperty("--i", idx++);
-            s.style.transform = `translateY(${((r() - .5) * .07 * amp).toFixed(3)}em) rotate(${((r() - .5) * 3.2 * amp).toFixed(2)}deg)`; to.append(s);
-          });
+          if (!run) return;
+          if (wi % 2) { put(run, true); return; }
+          (run.match(UNIT) || []).forEach(u => { if (!u.trim()) { f.append(u); last = null; } else put(u, false); });
         });
         ch.replaceWith(f);
       } else if (ch.nodeType === 1 && ch.tagName !== "BR") walk(ch);
