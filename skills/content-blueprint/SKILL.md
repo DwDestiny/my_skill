@@ -35,7 +35,7 @@ description: 页面的内容与讲解方案：目标与受众、结果定义、�
 |---|---|---|---|
 | 1 到 2 | `audience-outcomes.md` | 用户原话；典型读者；已知 5 条、不知 5 条；使用方式；错误代价；语言；结果 O1…（动词可测、自测题、优先级） | `assets/templates/audience-outcomes.md` |
 | 3 | `evidence-index.md`（单页且章数 ≤8 时可写在 `blueprint.md` 附录） | 断言 ID、原话、类型、来源、定位、日期、可信度、范围、反面证据 | `assets/templates/evidence-index.md` |
-| 4 | `glossary.md`（同上，可写在 `blueprint.md` 附录） | 首选词、禁用同义词、一句话定义、类比、例子、边界、前置概念、首次出现章节 | `assets/templates/glossary.md` |
+| 4 | `glossary.md`（同上，可写在 `blueprint.md` 附录） | 首选词、官方名称、禁用同义词、一句话定义、类比、例子、边界、前置概念、首次出现章节 | `assets/templates/glossary.md` |
 | 5 到 9 | `blueprint.md` | front matter + 逐章块 + 删除清单 + 信息架构 | `assets/templates/blueprint.md` |
 | 0.5、7、9 | `blueprint.md` 增补 | 产品层（根本目标、工作故事、职责卡）放在顶部摘要之后、第一章之前。每章 `stage` 与 `image_needs` | 同上，字段定义见 `references/blueprint-template.md` 第 1.1 节 |
 | 10 | `handoff-log.md` | 与 A 的往来记录 | `assets/templates/handoff-log.md` |
@@ -114,8 +114,9 @@ description: 页面的内容与讲解方案：目标与受众、结果定义、�
 ### 步骤 4：术语表
 
 1. 一个概念一个词。登记首选词与禁用同义词。
-2. 每个术语：一句话定义、类比、例子、边界、前置概念。
-3. 按首次出现顺序排列。
+2. 登记官方名称：中文通用名加英文原名。页面在讲清这个概念的地方写出它。官方名称不进禁用同义词。没有统一叫法的写“无统一叫法”，不造名字。
+3. 每个术语：一句话定义、类比、例子、边界、前置概念。
+4. 按首次出现顺序排列。
 
 ### 步骤 5：取舍
 
@@ -244,6 +245,8 @@ A 可能退回七种问题：`over_budget`、`wont_fit`、`form_mismatch`、`mis
 2. 把改法写成正向做法，放回该文件的方法节，配一组"平庸 / 好"的对照例子。不只加禁止项。
 
 ## 11. 变更记录
+
+- 2026-11-03 术语表加“官方名称”列，步骤 4 第 2 条；4.1 第 1 条“一句白话”后给官方名称，新增第 9 条“白话是讲法，不替代名字”（S10）
 
 - 2026-11-03 4.1 第 1 条费曼顺序改为“一件小事 → 一句白话 → 拆开看 → 换个情况 → 讲回一遍”，新增第 2 条“例子的大小按要讲的东西选”，原第 2–7 条顺延（S9）
 
