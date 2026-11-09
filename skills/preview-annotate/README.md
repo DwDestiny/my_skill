@@ -77,6 +77,10 @@ cp -r my_skill/skills/preview-annotate ~/.codex/skills/    # Codex
 | “看一下批注，改掉” | 读批注，按页面分组，逐条修改，重新构建并 `reload` |
 | “停掉预览” | `stop`，链接失效 |
 
+### 发布 answer-me-with-html 页面
+
+[answer-me-with-html](https://github.com/QingYunA/answer-me-with-html)（MIT）把 Markdown 草稿渲染成一页 HTML，页面自带回复和标注。`scripts/am-pub.sh ensure` 在 `am serve` 前面接一条快速隧道，之后 `am render` 的输出会多一行公开链接。服务常驻，隧道断了时再运行一次 `ensure` 即可。步骤见 [`SKILL.md`](SKILL.md) 第 6 节。
+
 完整步骤、批注操作说明和已知限制见 [`SKILL.md`](SKILL.md)。
 
 ## 安全
