@@ -77,8 +77,21 @@ async function handle(req, res) {
   fs.createReadStream(file).on('error', () => res.destroy()).pipe(res);
 }
 
+// 闲置自动退出（2026-11-09）：PREVIEW_IDLE_HOURS 小时（默认 24，0 表示不退出）没有请求时，
+// 先停掉同一工作目录里 tunnel.pid 记录的隧道，删掉 pid 文件，再退出。批注文件保留。
+const idleMs = Number(process.env.PREVIEW_IDLE_HOURS ?? 24) * 3600 * 1000;
+let lastHit = Date.now();
+if (idleMs > 0) setInterval(() => {
+  if (Date.now() - lastHit < idleMs) return;
+  const work = path.dirname(store);
+  try { process.kill(Number(fs.readFileSync(path.join(work, 'tunnel.pid'), 'utf8')), 'SIGTERM'); } catch {}
+  for (const f of ['tunnel.pid', 'server.pid']) { try { fs.unlinkSync(path.join(work, f)); } catch {} }
+  console.log(`闲置 ${idleMs / 3600000} 小时，自动退出`);
+  process.exit(0);
+}, Math.min(10 * 60 * 1000, Math.max(1000, idleMs / 2))).unref();
+
 // 单个请求出错只返回 500，不让公开链接上的异常请求打垮服务
-http.createServer((req, res) => handle(req, res).catch(() => {
+http.createServer((req, res) => { lastHit = Date.now(); return handle(req, res).catch(() => {
   if (res.headersSent) res.destroy(); else send(res, 500, { error: 'server' });
-})).on('error', (e) => { console.error(`服务启动失败：${e.message}`); process.exit(1); })
+}); }).on('error', (e) => { console.error(`服务启动失败：${e.message}`); process.exit(1); })
   .listen(port, '127.0.0.1', () => console.log(`preview on http://127.0.0.1:${port}  dist=${dist}  store=${store}`));
