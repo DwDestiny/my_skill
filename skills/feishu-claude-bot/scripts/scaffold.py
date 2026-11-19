@@ -10,6 +10,8 @@ import json, os, platform, shutil, sys, datetime
 
 SKILL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 T = os.path.join(SKILL, "assets", "templates")
+VERSION = next((l.split(":", 1)[1].strip().strip('"') for l in open(os.path.join(SKILL, "SKILL.md"), encoding="utf-8")
+                if l.strip().startswith("version:")), "unknown")
 if len(sys.argv) < 2: sys.exit(__doc__)
 INST = os.path.abspath(os.path.expanduser(sys.argv[1]))
 CFG = json.load(open(os.path.join(INST, "config.json")))
@@ -37,7 +39,7 @@ if not os.path.exists(rules) or "--rules" in sys.argv:
     body = open(os.path.join(T, "rules", "base.md")).read()
     body = body.replace("{{PERSONA}}", persona.strip()).replace("{{STYLE}}", style)
     body = body.replace("{{PERSONA_LABEL}}", {"work": "工作分身", "personal": "私人助理"}[CFG.get("persona", "work")])
-    body = body.replace("{{STYLE_LABEL}}", label).replace("{{DATE}}", datetime.date.today().isoformat())
+    body = body.replace("{{STYLE_LABEL}}", label).replace("{{DATE}}", datetime.date.today().isoformat()).replace("{{VERSION}}", VERSION)
     body = body.replace("{{NAME}}", CFG["name"]).replace("{{OWNER}}", CFG["owner_name"]).replace("{{OWNER_OPEN_ID}}", CFG["owner_open_id"])
     open(rules, "w").write(body)
     print("写了", rules)
@@ -99,4 +101,4 @@ WantedBy=default.target
     print(f"服务文件：{svc}\n安装：ln -sf {svc} ~/.config/systemd/user/ && systemctl --user daemon-reload && systemctl --user enable --now {slug}"
           f"\n服务器上还要：sudo loginctl enable-linger $USER")
 open(os.path.join(INST, ".gitignore"), "w").write("state/\nlogs/\n__pycache__/\n")
-print("完成。下一步：python3 bridge.py --cache-check 3")
+print(f"完成（feishu-claude-bot v{VERSION}）。下一步：python3 bridge.py --cache-check 3")
