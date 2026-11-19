@@ -19,6 +19,13 @@
 | `context.group_window_h` / `p2p_window_h` | 2 / 24 | 只取这段时间内的消息 |
 | `context.max_chars` | 400 | 单条前文截断长度 |
 | `context.read_as` | `user` | 读前文用的身份。`bot` 读不了群历史 |
+| `ambient.enabled` | `true` | 允许旁听。开了也只对主人用命令加进白名单的群生效，默认没有群 |
+| `ambient.command` | `/旁听` | 主人在群里 @ 机器人发这个命令开关；加“ 状态”查看，加“ 关”关闭 |
+| `ambient.poll_seconds` | 40 | 多久拉一次白名单群的新消息 |
+| `ambient.quiet_seconds` / `max_wait_seconds` | 25 / 180 | 群里安静多久后整批处理；最多攒多久 |
+| `ambient.max_batch` | 30 | 一批最多几条 |
+| `ambient.cooldown_min` | 10 | 插话后多久内不再主动插话 |
+| `ambient.rotate_turns` | 40 | 旁听会话处理多少批后换新会话 |
 | `prime` | `true` | 固定开场白，见 cache.md |
 | `disable_mcp` | `true` | 不加载 MCP，见 cache.md |
 | `p2p_idle_hours` | 6 | 私聊闲置多久开新会话 |

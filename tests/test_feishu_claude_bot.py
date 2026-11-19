@@ -10,6 +10,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -41,10 +42,22 @@ class SkillDocsTest(unittest.TestCase):
         for s in styles:
             self.assertTrue(s.read_text(encoding='utf-8').startswith('<!-- label: '), s.name)
 
+    def test_version_consistent(self):
+        skill = (SKILL_DIR / 'SKILL.md').read_text(encoding='utf-8')
+        m = re.search(r'^  version: "(\d+\.\d+\.\d+)"$', skill, re.M)
+        self.assertIsNotNone(m, 'SKILL.md frontmatter 缺 metadata.version')
+        v = m.group(1)
+        self.assertIn(f'> v{v} ·', skill)
+        self.assertIn(f'- {v}（', skill, '变更记录缺当前版本')
+        self.assertIn(f'版本 {v}', (SKILL_DIR / 'README.md').read_text(encoding='utf-8'))
+        root = (SKILL_DIR.parents[1] / 'README.md').read_text(encoding='utf-8')
+        row = '| feishu-claude-bot | [`skills/feishu-claude-bot/`](skills/feishu-claude-bot/README.md) | v' + v + ' ·'
+        self.assertEqual(root.count(row), 2, '仓库 README 中英目录表的版本号要和 SKILL.md 一致')
+
     def test_no_real_ids_in_skill(self):
         pat = re.compile(r'\b(ou|oc|cli)_[0-9a-f]{12,}\b')
         for f in SKILL_DIR.rglob('*'):
-            if f.is_file():
+            if f.is_file() and f.suffix in ('.md', '.py', '.sh', '.json', '.yaml', '.yml'):
                 self.assertIsNone(pat.search(f.read_text(encoding='utf-8')), f'{f} 含疑似真实 ID')
 
 
@@ -76,6 +89,9 @@ class ScaffoldTest(unittest.TestCase):
         self.assertNotIn('{{', rules)
         self.assertIn('测试助理', rules)
         self.assertIn(OWNER, rules)
+        self.assertIn('群聊旁听', rules)
+        v = re.search(r'version: "([\d.]+)"', (SKILL_DIR / 'SKILL.md').read_text(encoding='utf-8')).group(1)
+        self.assertIn(f'skill v{v} 生成', rules)
 
     def test_rules_kept_on_rerun(self):
         p = self.inst / 'rules.md'
@@ -150,6 +166,111 @@ class ScaffoldTest(unittest.TestCase):
         self.assertEqual(self.bash('private_guard.py', p, 'find ~/wiki/wiki -name x').returncode, 2)
         self.assertEqual(self.hook('private_guard.py', p, 'Grep', {'pattern': 'x', 'path': f'{self.home}/wiki/wiki'}).returncode, 2)
         self.assertEqual(self.hook('private_guard.py', p, 'Grep', {'pattern': 'x', 'path': f'{self.home}/wiki/wiki/concepts'}).returncode, 0)
+
+
+class AmbientTest(unittest.TestCase):
+    """旁听：用假 lark 和假 Claude 跑 bridge 的旁听逻辑，不连飞书、不调 Claude。"""
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        import types
+        cls.tmp = tempfile.TemporaryDirectory()
+        inst = Path(cls.tmp.name)
+        cfg = json.loads((TEMPLATES / 'config.example.json').read_text(encoding='utf-8'))
+        cfg.update(name='测试助理', owner_name='小王', owner_open_id=OWNER, bot_open_id=BOT)
+        (inst / 'config.json').write_text(json.dumps(cfg, ensure_ascii=False), encoding='utf-8')
+        (inst / 'bridge.py').write_text((TEMPLATES / 'bridge.py').read_text(encoding='utf-8'), encoding='utf-8')
+        spec = importlib.util.spec_from_file_location('fcb_bridge_test', inst / 'bridge.py')
+        b = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(b)
+        cls.b, cls.types = b, types
+        cls.sent = []
+        b.reply = lambda ev, text, in_thread: cls.sent.append((ev['message_id'], text)) or 'om_out'
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def setUp(self):
+        self.sent.clear()
+        self.b.amb.clear()
+        self.b.amb_buf.clear()
+
+    def msg(self, i, typ='user', at=False, old=False):
+        now = time.strftime('%Y-%m-%d %H:%M')
+        return {'message_id': f'om_p{i}', 'create_time': '2020-01-01 00:00' if old else now, 'content': f'msg{i}',
+                'sender': {'name': 'x', 'sender_type': typ}, 'mentions': [{'id': BOT}] if at else []}
+
+    def test_default_off_and_command_toggles(self):
+        b = self.b
+        b.lark = lambda args, **k: self.types.SimpleNamespace(stdout=json.dumps({'data': {'messages': []}}), returncode=0)
+        self.assertEqual(b.ambient_chats(), {})
+        self.assertIn('开始旁听', b.ambient_cmd('oc_a', '/旁听'))
+        self.assertIn('oc_a', b.ambient_chats())
+        self.assertIn('在旁听', b.ambient_cmd('oc_a', '/旁听 状态'))
+        self.assertIn('不旁听', b.ambient_cmd('oc_a', '/旁听'))
+        self.assertEqual(b.ambient_chats(), {})
+
+    def test_poll_filters_and_cooldown(self):
+        b = self.b
+        batches = [[self.msg(1), self.msg(2)],
+                   [self.msg(3), self.msg(4, typ='app'), self.msg(5, at=True), self.msg(6, old=True)]]
+        batches[1][0]['thread_replies'] = [self.msg(7)]
+        cur = {'i': 0}
+        b.lark = lambda args, **k: self.types.SimpleNamespace(
+            stdout=json.dumps({'data': {'messages': batches[cur['i']]}}), returncode=0)
+        b.ambient_cmd('oc_p', '/旁听')                 # 开启时群里已有 om_p1、om_p2
+        batches[0].append(self.msg(9))                 # 开启后、第一轮拉取前到的消息不能被吞
+        flushed = []
+        orig_flush, orig_quiet = b.ambient_flush, b.AMB['quiet_seconds']
+        b.ambient_flush = lambda c, msgs: flushed.append([m['message_id'] for m in msgs])
+        b.AMB['quiet_seconds'] = 0
+        try:
+            b.ambient_poll_once()
+            self.assertEqual(flushed, [['om_p9']], '开启前已有的不处理，开启后到的要处理')
+            flushed.clear()
+            cur['i'] = 1
+            b.ambient_poll_once()
+            self.assertEqual(flushed, [['om_p3', 'om_p7']], '跳过机器人、@ 机器人、过期消息，收话题回复')
+            b.amb['oc_p']['cool_until'] = time.time() + 999
+            batches[1].append(self.msg(8))
+            b.ambient_poll_once()
+            self.assertEqual(len(flushed), 1, '冷却期内不处理')
+            self.assertEqual([m['message_id'] for m in b.amb_buf['oc_p']['msgs']], ['om_p8'])
+        finally:
+            b.ambient_flush, b.AMB['quiet_seconds'] = orig_flush, orig_quiet
+            b.ambient_cmd('oc_p', '/旁听 关')
+
+    def flush_with(self, output):
+        b = self.b
+        seen = {}
+        def fake(key, s, prompt, owner, private, chat_id, quiet=False):
+            seen.update(owner=owner, private=private, quiet=quiet)
+            return output
+        orig = b.run_claude
+        b.run_claude = fake
+        try:
+            b.ambient_flush('oc_f', [self.msg(1), self.msg(2)])
+        finally:
+            b.run_claude = orig
+        return seen
+
+    def test_silent_sends_nothing(self):
+        self.flush_with('[不回]')
+        self.assertEqual(self.sent, [])
+
+    def test_failure_sends_nothing(self):
+        seen = self.flush_with(None)
+        self.assertEqual(self.sent, [])
+        self.assertTrue(seen['quiet'])
+
+    def test_reply_targets_chosen_message_without_owner_rights(self):
+        seen = self.flush_with('回复：om_p1\n接个梗')
+        self.assertEqual(self.sent, [('om_p1', '接个梗')])
+        self.assertFalse(seen['owner'])
+        self.assertFalse(seen['private'])
+        self.assertGreater(self.b.amb['oc_f']['cool_until'], time.time())
 
 
 if __name__ == '__main__':

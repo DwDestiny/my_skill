@@ -23,6 +23,16 @@
     "max_chars": 400,
     "read_as": "user"
   },
+  "ambient": {
+    "enabled": true,
+    "poll_seconds": 40,
+    "quiet_seconds": 25,
+    "max_wait_seconds": 180,
+    "max_batch": 30,
+    "cooldown_min": 10,
+    "rotate_turns": 40,
+    "command": "/旁听"
+  },
   "private": {
     "paths": [
       "~/personal",

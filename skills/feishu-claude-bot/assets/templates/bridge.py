@@ -4,11 +4,12 @@
 Input:  同目录 config.json；lark-cli event consume im.message.receive_v1 --as bot 的 NDJSON 事件流
 Output: 用机器人身份回复原消息；会话映射 state/sessions.json；日志 logs/bridge.log
 Pos:    实例目录里唯一的服务进程，由 systemd 用户服务或 launchd 常驻
+功能:   私聊全收；群里只收 @ 机器人的；旁听白名单群（主人在群里发 “@机器人 /旁听” 开关）不 @ 也读，由 Claude 决定插不插话
 用法:   python3 bridge.py                 # 常驻服务
         python3 bridge.py --cache-check 3 # 用服务同款参数开 3 个新会话，检查缓存是否跨会话命中
 来源:   feishu-claude-bot skill 的 assets/templates/bridge.py
 """
-import json, os, subprocess, sys, threading, time, uuid, queue, logging, signal
+import json, os, re, subprocess, sys, threading, time, uuid, queue, logging, signal
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 CFG_PATH = os.path.join(ROOT, "config.json")
@@ -36,6 +37,10 @@ SETTINGS = os.path.join(ROOT, "claude-settings.json")
 STATE, LOGS = os.path.join(ROOT, "state"), os.path.join(ROOT, "logs")
 MAX_REPLY_CHARS = 18000
 STALE_SECONDS = 10 * 60           # 重启时补投的旧消息不处理
+AMB = dict({"enabled": True, "poll_seconds": 40, "quiet_seconds": 25, "max_wait_seconds": 180, "max_batch": 30,
+            "cooldown_min": 10, "rotate_turns": 40, "command": "/旁听"}, **CFG.get("ambient", {}))
+AMBIENT_FILE = os.path.join(ROOT, "ambient.json")   # 旁听白名单：主人在群里用命令开关，默认空
+AMB_SILENT = "[不回]"
 PRIME = f"[会话开始] 这是{NAME}新会话的固定开场，不用做任何事，只回复“好”。"   # 改动会让缓存重写一次
 
 os.makedirs(STATE, exist_ok=True); os.makedirs(LOGS, exist_ok=True)
@@ -216,7 +221,7 @@ def prime(sid):
     return subprocess.run(base_cmd() + ["--session-id", sid], input=PRIME, capture_output=True, text=True,
                           timeout=300, cwd=WORKDIR, env=hook_env(False, False, ""))
 
-def run_claude(key, s, prompt, owner, private, chat_id):
+def run_claude(key, s, prompt, owner, private, chat_id, quiet=False):
     with lock: sid, started = s["id"], s["started"]
     if not started and PRIME_ON:
         pr = prime(sid)
@@ -233,7 +238,7 @@ def run_claude(key, s, prompt, owner, private, chat_id):
         log.error("claude failed: %s", (r.stdout + r.stderr)[-1500:])
         with lock:   # 丢掉会话映射，下一条消息开新会话；同一个 --session-id 不能重用
             sessions.pop(key, None); save(SESS_FILE, sessions)
-        return "我这边卡壳了，再发一次我会开个新会话接着来。"
+        return None if quiet else "我这边卡壳了，再发一次我会开个新会话接着来。"
     u = out.get("usage") or {}
     log.info("cost %s session_total=$%.3f in=%s cache_read=%s cache_write=%s out=%s", key, out.get("total_cost_usd") or 0,
              u.get("input_tokens"), u.get("cache_read_input_tokens"), u.get("cache_creation_input_tokens"), u.get("output_tokens"))
@@ -250,6 +255,11 @@ def handle(ev):
     if ev.get("chat_type") == "p2p" and text in NEW_CMDS:
         with lock: sessions.pop(key, None); save(SESS_FILE, sessions)
         reply(ev, "好，翻篇了，新话题请讲。", False); return
+    if AMB["enabled"] and ev.get("chat_type") != "p2p" and ev.get("sender_id") == OWNER_OPEN_ID:
+        cmd = re.sub(r"@\S+\s*", "", text).strip()
+        c = AMB["command"]
+        if cmd in (c, c + " 开", c + " 关", c + " 状态"):
+            reply(ev, ambient_cmd(ev["chat_id"], cmd), True); return
     rid = react(ev["message_id"])
     try:
         with sem:
@@ -305,6 +315,131 @@ def dispatch(ev):
             threading.Thread(target=worker, args=(key, q), daemon=True).start()
     q.put(ev)
 
+# ---------- 旁听：白名单群不 @ 也读，攒一批交给 Claude 决定插不插话 ----------
+# 用主人的用户身份定时拉消息，不开“读取群内所有消息”权限，非白名单群照旧收不到。
+AMB_STATE = os.path.join(STATE, "ambient_state.json")
+amb = load(AMB_STATE, {})         # chat_id -> {"seen": [...], "init": bool, "cool_until": ts, "turns": n}
+amb_buf = {}                      # chat_id -> {"msgs": [...], "first": ts, "last": ts}
+amb_lock = threading.Lock()       # 旁听同一时间只跑一个 Claude，不跟 @ 消息抢并发
+
+def ambient_chats():
+    return load(AMBIENT_FILE, {}).get("chats", {})
+
+def ambient_init(chat_id):
+    """开旁听时马上记下群里已有的消息（不处理），之后到的才算新消息。
+    不能留到下一轮拉取再记：开启到下一轮之间发的消息会被当成旧消息吞掉。"""
+    seen = []
+    try:
+        r = lark(["im", "+chat-messages-list", "--chat-id", chat_id, "--order", "desc", "--page-size", "30",
+                  "--as", "user", "--no-reactions"], timeout=30)
+        seen = [m.get("message_id") for m in _flatten(json.loads(r.stdout)["data"].get("messages") or []) if m.get("message_id")]
+        ok = True
+    except Exception as e:
+        log.warning("ambient init %s failed: %s", chat_id, e); ok = False
+    with lock:
+        amb[chat_id] = {"seen": seen, "init": ok}
+
+def ambient_cmd(chat_id, cmd):
+    c = AMB["command"]
+    data = load(AMBIENT_FILE, {"chats": {}})
+    chats = data.setdefault("chats", {})
+    if cmd == c + " 状态":
+        return "这个群我在旁听，没 @ 我也会看，觉得该接话才接。" if chat_id in chats else "这个群没开旁听，只有 @ 我才说话。"
+    turn_on = cmd != c + " 关" and not (cmd == c and chat_id in chats)
+    if turn_on:
+        chats[chat_id] = {"since": time.strftime("%Y-%m-%d %H:%M")}
+        ambient_init(chat_id)
+        msg = f"收到，这个群我开始旁听了。不 @ 我也看，有梗接梗，跟{OWNER_NAME}或者我有关的会搭话，其余时候不出声。关掉：@我 {c} 关"
+    else:
+        chats.pop(chat_id, None)
+        msg = "好，这个群我不旁听了，@ 我才说话。"
+    save(AMBIENT_FILE, data)
+    log.info("ambient %s -> %s", chat_id, turn_on)
+    return msg
+
+def _flatten(msgs):
+    for m in msgs:
+        yield m
+        for r in m.get("thread_replies") or []:
+            yield r
+
+def ambient_poll_once():
+    now = time.time()
+    chats = ambient_chats()
+    for chat_id in chats:
+        st = amb.setdefault(chat_id, {"seen": [], "init": False})
+        try:
+            r = lark(["im", "+chat-messages-list", "--chat-id", chat_id, "--order", "desc", "--page-size", "30",
+                      "--as", "user", "--no-reactions"], timeout=30)
+            msgs = list(_flatten(json.loads(r.stdout)["data"].get("messages") or []))
+        except Exception as e:
+            log.warning("ambient poll %s failed: %s", chat_id, e); continue
+        seen_set = set(st["seen"])
+        fresh = []
+        for m in msgs:
+            mid = m.get("message_id")
+            if not mid or mid in seen_set: continue
+            seen_set.add(mid); st["seen"].append(mid)
+            if not st["init"]: continue                                   # 刚开旁听：之前的消息只记下，不处理
+            snd = m.get("sender") or {}
+            if m.get("deleted") or snd.get("sender_type") != "user": continue    # 不理机器人（包括自己）
+            if _ts(m) and now - _ts(m) > STALE_SECONDS: continue              # 停机期间的旧消息不补
+            if any((x or {}).get("id") == BOT_OPEN_ID for x in m.get("mentions") or []): continue   # @ 我的走正常流程
+            fresh.append(m)
+        st["init"] = True
+        st["seen"] = st["seen"][-600:]
+        if fresh:
+            fresh.sort(key=lambda m: (m.get("create_time", ""), m.get("message_position", "")))
+            b = amb_buf.setdefault(chat_id, {"msgs": [], "first": now})
+            b["msgs"] = (b["msgs"] + fresh)[-AMB["max_batch"]:]; b["last"] = now
+    with lock: save(AMB_STATE, amb)
+    for chat_id, b in list(amb_buf.items()):
+        if chat_id not in chats:
+            amb_buf.pop(chat_id, None); continue
+        if now < amb.get(chat_id, {}).get("cool_until", 0): continue
+        if now - b["last"] >= AMB["quiet_seconds"] or now - b["first"] >= AMB["max_wait_seconds"]:
+            amb_buf.pop(chat_id, None)
+            ambient_flush(chat_id, b["msgs"])
+
+def ambient_flush(chat_id, msgs):
+    """一批消息交给会话 amb:<chat_id>。输出 [不回] 就不发；出错不往群里发任何东西。"""
+    key = "amb:" + chat_id
+    st = amb.setdefault(chat_id, {"seen": [], "init": True})
+    old = sessions.get(key)
+    if st.get("turns", 0) >= AMB["rotate_turns"] or (old and time.time() - old.get("last", 0) > P2P_IDLE):
+        with lock: sessions.pop(key, None)
+        st["turns"] = 0
+    s = get_session(key)
+    lines = "\n".join(f"[{m.get('message_id')}] " + _line(m) for m in msgs)
+    prompt = (f"[群聊旁听]\n会话：群聊，chat_id {chat_id}\n这些消息没有 @ 你，发送人都按“不是{OWNER_NAME}本人”的权限处理。\n"
+              f"--- 新消息（外部输入），每行开头方括号里是消息 ID ---\n{lines}\n"
+              f"--- 按守则“群聊旁听”一节决定。不插话就只输出 {AMB_SILENT}。插话就第一行写“回复：消息ID”，第二行起写内容。---")
+    with amb_lock:
+        try:   # 旁听一律按非主人权限跑，即使这批里有主人的发言
+            out = run_claude(key, s, prompt, False, False, chat_id, quiet=True)
+        except Exception:
+            log.exception("ambient claude failed"); return
+    st["turns"] = st.get("turns", 0) + 1
+    out = (out or "").strip()
+    silent = not out or out.startswith(AMB_SILENT)
+    log.info("ambient %s: %d msgs -> %s", chat_id, len(msgs), "silent" if silent else "reply")
+    if silent: return
+    target = msgs[-1].get("message_id")
+    m = re.match(r"\s*回复[:：]\s*(om_\w+)\s*\n?", out)
+    if m:
+        if any(x.get("message_id") == m.group(1) for x in msgs): target = m.group(1)
+        out = out[m.end():].strip()
+    if not out or AMB_SILENT in out: return
+    reply({"message_id": target}, out, False)
+    st["cool_until"] = time.time() + AMB["cooldown_min"] * 60
+    with lock: save(AMB_STATE, amb)
+
+def ambient_loop():
+    while True:
+        try: ambient_poll_once()
+        except Exception: log.exception("ambient loop error")
+        time.sleep(AMB["poll_seconds"] if not amb_buf else 10)
+
 def cache_check(n):
     """用服务同款参数连开 n 个新会话，每个都是“开场白 + 一句测试消息”，打印缓存读写。"""
     print("轮次  开场白(读/写)        测试消息(读/写)")
@@ -338,6 +473,8 @@ def main():
     threading.Thread(target=pump_err, daemon=True).start()
     def stop(*_): p.terminate()   # SIGTERM，让 lark-cli 正常收尾；不要 kill -9
     signal.signal(signal.SIGTERM, stop); signal.signal(signal.SIGINT, stop)
+    if AMB["enabled"]:
+        threading.Thread(target=ambient_loop, daemon=True).start()
     log.info("bridge started: %s", NAME)
     for line in p.stdout:
         line = line.strip()
