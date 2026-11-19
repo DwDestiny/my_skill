@@ -1,0 +1,7 @@
+interface:
+  display_name: "飞书 Claude 机器人"
+  short_description: "把本机 Claude Code 接进飞书群聊和私聊"
+  default_prompt: "Use $feishu-claude-bot to connect this machine's Claude Code to Feishu as a group and private chat bot: ask where it runs, which Feishu app, persona, speaking style and boundaries, then scaffold the instance and verify the cache."
+
+policy:
+  allow_implicit_invocation: true

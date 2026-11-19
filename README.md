@@ -39,6 +39,7 @@
 | ui-visual-qa | [`plugins/ui-delivery/skills/ui-visual-qa/`](plugins/ui-delivery/skills/ui-visual-qa/SKILL.md) | v0.2.1 · UI 交付套件；`skills/ui-visual-qa/` 为兼容软链 | 在真实浏览器逐步点击旅程，对照视觉基线并记录页面证据和结论 |
 | ui-visual-walkthrough | `skills/ui-visual-walkthrough/` | 已入库 | 对真实运行站点做无基线逐屏视觉走查：双视口截图 + DOM/CSS 探针实证（容器边界/hover 死区/字号分布/截断溢出），产出每条内嵌截图的分级 issue 台账 |
 | preview-annotate | [`skills/preview-annotate/`](skills/preview-annotate/README.md) | 已入库 | 把静态前端构建发成临时公开链接（Cloudflare 快速隧道，不用账号），评审人在页面上点选组件写批注，智能体读批注逐条修改 |
+| feishu-claude-bot | [`skills/feishu-claude-bot/`](skills/feishu-claude-bot/README.md) | v1 · 已入库 | 把本机 Claude Code 接进飞书做群聊/私聊机器人：先问运行位置、飞书应用、人设、表达风格和边界，再生成实例；钩子硬拦身份和私密路径，附跨会话缓存验证 |
 | content-blueprint | `skills/content-blueprint/` | v0.1 · 配对使用 | 把资料和目标拆成讲解蓝图：受众、可测结果、内容取舍、形式选择、断言来源与可信度；产物交给 design-techniques 的手法子 skill（详见该目录 `README.md`） |
 | catalog | [`plugins/design-techniques/skills/catalog/`](plugins/design-techniques/skills/catalog/SKILL.md) | v0.2.0 · design-techniques 插件入口 | 手法索引：按内容选已验证的视觉手法，再交给对应子 skill |
 | layered-reveal | [`plugins/design-techniques/skills/layered-reveal/`](plugins/design-techniques/skills/layered-reveal/SKILL.md) | v0.2.0 · design-techniques 手法 | 叠图晕染：构图对齐的多层画面，指针、灯或滚动推开水墨边揭示下一层（WebGL2 + 成对生图） |
@@ -160,6 +161,8 @@ python3 tests/test_geb_project_doc_system.py
 tests/smoke_visual_ppt_deck_builder.sh
 scripts/check_skill_structure.sh skills/preview-annotate
 python3 tests/test_preview_annotate.py
+scripts/check_skill_structure.sh skills/feishu-claude-bot
+python3 tests/test_feishu_claude_bot.py
 ```
 
 ## 一键安装（公众号运营）
@@ -226,6 +229,13 @@ skills/
     agents/openai.yaml
     scripts/                     # preview.sh 启停、server.mjs 服务、annot.js 批注层、list.py 读批注
     assets/overlay.png           # README 截图
+  feishu-claude-bot/
+    SKILL.md
+    README.md                    # 门面：工作方式、可选项、前置条件、安装
+    agents/openai.yaml
+    references/                  # setup 安装、boundary 边界、cache 缓存、config 字段
+    scripts/                     # scaffold.py 生成实例、ids.sh 查 open_id
+    assets/templates/            # bridge.py、hooks/、rules/ 守则模板、config.example.json
   ui-delivery -> ../plugins/ui-delivery/skills/ui-delivery/  # 兼容软链，真源在 plugins/ui-delivery/skills/
   ui-product-planning -> ../plugins/ui-delivery/skills/ui-product-planning/
   ui-ux-architecture -> ../plugins/ui-delivery/skills/ui-ux-architecture/
@@ -330,6 +340,7 @@ Instead of growing one giant global prompt, each workflow becomes a focused Skil
 | ui-visual-qa | [`plugins/ui-delivery/skills/ui-visual-qa/`](plugins/ui-delivery/skills/ui-visual-qa/SKILL.md) | v0.2.1 · UI Delivery suite; `skills/ui-visual-qa/` is a compatibility symlink | Click real user journeys, compare running pages to baselines, and record evidence and verdict |
 | ui-visual-walkthrough | `skills/ui-visual-walkthrough/` | Available | Baseline-free screen-by-screen visual audit of a running site: dual-viewport screenshots plus DOM/CSS probes (container boundaries, hover dead zones, font-size census, truncation/overflow), producing a severity-graded issue ledger with inline screenshots |
 | preview-annotate | [`skills/preview-annotate/`](skills/preview-annotate/README.md) | Available | Publish a static front-end build as a temporary public link (Cloudflare quick tunnel, no account); reviewers click components on the page to leave comments, and the agent reads and fixes each one |
+| feishu-claude-bot | [`skills/feishu-claude-bot/`](skills/feishu-claude-bot/README.md) | v1 · Available | Connect your local Claude Code to Feishu (Lark) as a group and private chat bot: asks where it runs, which app, persona, speaking style and boundaries, then scaffolds the instance; hooks enforce identity and private paths; includes a cross-session cache check |
 
 ## Topic Indexes
 
@@ -449,6 +460,8 @@ python3 tests/test_geb_project_doc_system.py
 tests/smoke_visual_ppt_deck_builder.sh
 scripts/check_skill_structure.sh skills/preview-annotate
 python3 tests/test_preview_annotate.py
+scripts/check_skill_structure.sh skills/feishu-claude-bot
+python3 tests/test_feishu_claude_bot.py
 ```
 
 ## Archived Repositories
