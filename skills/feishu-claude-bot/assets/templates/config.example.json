@@ -1,0 +1,51 @@
+{
+  "name": "小助理",
+  "owner_name": "张三",
+  "owner_open_id": "ou_主人的open_id（scripts/ids.sh 查）",
+  "bot_open_id": "ou_机器人的open_id（scripts/ids.sh 查）",
+  "persona": "work",
+  "style": "veteran",
+  "workdir": "~/work",
+  "add_dirs": [
+    "~/wiki"
+  ],
+  "permission_mode": "auto",
+  "identity": {
+    "owner": "user_no_speak",
+    "others": "bot_read_im"
+  },
+  "context": {
+    "enabled": true,
+    "max": 20,
+    "topic_max": 50,
+    "group_window_h": 2,
+    "p2p_window_h": 24,
+    "max_chars": 400,
+    "read_as": "user"
+  },
+  "private": {
+    "paths": [
+      "~/personal",
+      "/\\.private(/|\\b)",
+      "~/.claude/projects",
+      "~/.claude/history"
+    ],
+    "search_roots": [
+      {
+        "root": "~/wiki/wiki",
+        "exclude": [
+          "**/people/**",
+          "**/entities/People*",
+          "**/daily/**",
+          "**/drafts/**"
+        ]
+      }
+    ]
+  },
+  "deny_extra": [],
+  "prime": true,
+  "disable_mcp": true,
+  "p2p_idle_hours": 6,
+  "max_parallel": 3,
+  "claude_timeout_min": 40
+}
