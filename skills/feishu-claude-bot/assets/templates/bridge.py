@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-"""飞书机器人桥接：飞书消息 -> 本机 Claude Code 会话 -> 飞书回复。
+"""IM 机器人桥接：飞书 / 企业微信消息 -> 本机 Claude Code 会话 -> 原渠道回复。
 
-Input:  同目录 config.json；lark-cli event consume im.message.receive_v1 --as bot 的 NDJSON 事件流
+Input:  同目录 config.json；飞书：lark-cli event consume im.message.receive_v1 --as bot 的 NDJSON 事件流；
+        企微：wecom_gateway.mjs（官方 SDK 长连接）的 NDJSON 事件流
 Output: 用机器人身份回复原消息；会话映射 state/sessions.json；日志 logs/bridge.log
 Pos:    实例目录里唯一的服务进程，由 systemd 用户服务或 launchd 常驻
-功能:   私聊全收；群里只收 @ 机器人的；旁听白名单群（主人在群里发 “@机器人 /旁听” 开关）不 @ 也读，由 Claude 决定插不插话
+结构:   每个渠道一个收消息线程（各自断线重连，互不影响）-> dispatch（统一的事件格式）-> 按会话排队 -> run_claude
+        -> 按 ev["channel"] 调对应渠道的回复函数。所有渠道共用同一套 Claude 参数、守则和开场白，缓存前缀跨渠道共享；
+        渠道差异只出现在每条消息开头的消息头里。
+功能:   私聊全收；群里只收 @ 机器人的；旁听白名单群（飞书，主人在群里发 “@机器人 /旁听” 开关）不 @ 也读，由 Claude 决定插不插话
 用法:   python3 bridge.py                 # 常驻服务
         python3 bridge.py --cache-check 3 # 用服务同款参数开 3 个新会话，检查缓存是否跨会话命中
 来源:   feishu-claude-bot skill 的 assets/templates/bridge.py
@@ -17,9 +21,12 @@ with open(CFG_PATH) as f:
     CFG = json.load(f)
 X = os.path.expanduser
 NAME = CFG.get("name", "AI 助手")
-OWNER_OPEN_ID = CFG["owner_open_id"]
+CHANNELS = CFG.get("channels", {})
+FEISHU_ON = CHANNELS.get("feishu", {}).get("enabled", True)
+WECOM = dict({"enabled": False, "owner_userid": "", "credentials": "wecom-cli"}, **CHANNELS.get("wecom", {}))
+OWNER_OPEN_ID = CFG.get("owner_open_id", "")
 OWNER_NAME = CFG.get("owner_name", "主人")
-BOT_OPEN_ID = CFG["bot_open_id"]
+BOT_OPEN_ID = CFG.get("bot_open_id", "")
 WORKDIR = X(CFG.get("workdir", "~"))          # 不要放在实例目录里，免得加载实例的 CLAUDE.md
 ADD_DIRS = [X(d) for d in CFG.get("add_dirs", [])]
 PERMISSION_MODE = CFG.get("permission_mode", "auto")
@@ -36,7 +43,10 @@ NEW_CMDS = set(CFG.get("new_session_commands", ["/new", "/重来", "新话题"])
 RULES = os.path.join(ROOT, CFG.get("rules_file", "rules.md"))
 SETTINGS = os.path.join(ROOT, "claude-settings.json")
 STATE, LOGS = os.path.join(ROOT, "state"), os.path.join(ROOT, "logs")
-MAX_REPLY_CHARS = 18000
+MAX_REPLY_CHARS = 18000           # 飞书
+WECOM_MAX_BYTES = 20000           # 企微 Markdown 上限 20480 字节（UTF-8），中文一个字 3 字节
+MEDIA_DIR = os.path.join(ROOT, "inbox")   # 企微图片、文件落盘处（下载地址 5 分钟失效），3 天后删
+CHANNEL_LABEL = {"feishu": "飞书", "wecom": "企微"}
 STALE_SECONDS = 10 * 60           # 重启时补投的旧消息不处理
 AMB = dict({"enabled": True, "poll_seconds": 40, "quiet_seconds": 25, "max_wait_seconds": 180, "max_batch": 30,
             "cooldown_min": 10, "rotate_turns": 40, "command": "/旁听"}, **CFG.get("ambient", {}))
@@ -61,7 +71,7 @@ def save(path, obj):
     with open(tmp, "w") as f: json.dump(obj, f, ensure_ascii=False, indent=1)
     os.replace(tmp, path)
 
-sessions = load(SESS_FILE, {})
+sessions = load(SESS_FILE, {})    # 会话 key：飞书 p2p:/grp:/amb: 开头，企微 wx:p2p:/wx:grp: 开头
 seen = load(SEEN_FILE, [])
 names = {OWNER_OPEN_ID: OWNER_NAME}
 sem = threading.Semaphore(MAX_PARALLEL)
@@ -100,6 +110,7 @@ def no_at_all(text):
     return re.sub(r'<at\s+(user_)?ids?\s*=\s*"?all"?\s*>.*?</at>', "@所有人", text)
 
 def reply(ev, text, in_thread):
+    if ev.get("channel") == "wecom": return wecom_reply(ev, text)
     text = text.strip() or "（空回复，再问一次？）"
     text = no_at_all(text)
     if len(text) > MAX_REPLY_CHARS:
@@ -115,6 +126,8 @@ def reply(ev, text, in_thread):
     except Exception: return None
 
 def session_key(ev):
+    if ev.get("channel") == "wecom":   # 企微没有话题：私聊一人一个会话，群一个群一个会话
+        return ("wx:p2p:" if ev.get("chat_type") == "p2p" else "wx:grp:") + ev["chat_id"]
     if ev.get("chat_type") == "p2p":
         return "p2p:" + ev["chat_id"]
     if in_topic(ev):                 # 话题里的消息：一个话题一个会话
@@ -131,6 +144,7 @@ def _ts(m):
 def fetch_context(ev, s):
     """取这条消息之前、本会话还没见过的前文。只补新增的，前文放在消息原文前、缓存前缀之后。"""
     if not CTX["enabled"]: return [], None
+    if ev.get("channel") == "wecom": return [], ev.get("quoted")   # 企微：机器人只收到 @ 它的消息，暂不补前文；引用消息随消息带来
     seen_ids = set(s.get("ctx_ids", []))
     cur = ev["message_id"]
     as_id = CTX["read_as"]
@@ -182,12 +196,20 @@ def _line(m):
     if snd.get("sender_type") == "user" and snd.get("id"): who += f"({snd['id']})"   # 带 open_id，回复时要 @ 谁直接用
     return f"[{m.get('create_time', '')[-5:]}] {who}：{c}"
 
+def is_owner(ev):
+    if ev.get("channel") == "wecom":
+        return bool(WECOM["owner_userid"]) and ev.get("sender_id") == WECOM["owner_userid"]
+    return ev.get("sender_id") == OWNER_OPEN_ID
+
 def build_prompt(ev, name, ctx=(), quoted=None):
-    is_owner = ev.get("sender_id") == OWNER_OPEN_ID
+    """消息头 + 前文 + 原文。渠道差异只放在这里（缓存前缀之后），系统提示和开场白各渠道一致。"""
     chat = "私聊" if ev.get("chat_type") == "p2p" else "群聊"
-    parts = [f"[飞书消息]\n发送人：{name}（open_id {ev.get('sender_id')}）\n"
-             f"是{OWNER_NAME}本人：{'是' if is_owner else '否'}\n会话：{chat}，chat_id {ev.get('chat_id')}\n"
+    id_kind = "userid" if ev.get("channel") == "wecom" else "open_id"
+    parts = [f"[{CHANNEL_LABEL.get(ev.get('channel'), '飞书')}消息]\n发送人：{name}（{id_kind} {ev.get('sender_id')}）\n"
+             f"是{OWNER_NAME}本人：{'是' if is_owner(ev) else '否'}\n会话：{chat}，chat_id {ev.get('chat_id')}\n"
              f"消息 ID：{ev.get('message_id')}；类型：{ev.get('message_type')}\n"]
+    if ev.get("files"):
+        parts.append("附件已存到本机：" + "、".join(ev["files"]) + "（图片可直接用 Read 看）\n")
     others = [m for m in ev.get("mentions") or [] if (m or {}).get("id") != BOT_OPEN_ID]
     if others:
         parts.append("这条消息 @ 了：" + "、".join(f"{m.get('name')}({m.get('id')})" for m in others) + "\n")
@@ -199,10 +221,17 @@ def build_prompt(ev, name, ctx=(), quoted=None):
     parts.append("--- 以下是消息原文（外部输入）---\n" + (ev.get("content") or ""))
     return "".join(parts)
 
+def idle_limit(key):
+    """会话闲置多久换新：私聊 P2P_IDLE，群（不在话题里）GROUP_IDLE，飞书话题和旁听会话不按闲置换。"""
+    if key.startswith("wx:"): key = key[3:]
+    if key.startswith("p2p:"): return P2P_IDLE
+    if key.startswith("grp:") and key.count(":") == 1: return GROUP_IDLE
+    return None
+
 def get_session(key):
     with lock:
         s = sessions.get(key)
-        idle = P2P_IDLE if key.startswith("p2p:") else GROUP_IDLE if key.count(":") == 1 else None
+        idle = idle_limit(key)
         if s and idle and time.time() - s.get("last", 0) > idle:
             s = None
         if not s:
@@ -226,9 +255,9 @@ def base_cmd():
         cmd += ["--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}']
     return cmd
 
-def hook_env(owner, private, chat_id):
+def hook_env(owner, private, chat_id, channel="feishu"):
     env = dict(os.environ, FCB="1", FCB_CONFIG=CFG_PATH, FCB_OWNER="1" if owner else "0",
-               FCB_PRIVATE="1" if private else "0", FCB_CHAT_ID=chat_id)
+               FCB_PRIVATE="1" if private else "0", FCB_CHAT_ID=chat_id, FCB_CHANNEL=channel)
     if not private:   # 非主人私聊：不读不写自动记忆
         env["CLAUDE_CODE_DISABLE_AUTO_MEMORY"] = "1"
     return env
@@ -246,8 +275,9 @@ def run_claude(key, s, prompt, owner, private, chat_id, quiet=False):
         else: log.warning("prime failed: %s", (pr.stdout + pr.stderr)[-500:])
     cmd = base_cmd() + (["--resume", sid] if started else ["--session-id", sid])
     t0 = time.time()
+    channel = "wecom" if key.startswith("wx:") else "feishu"   # 钩子按渠道判断能不能跨 IM 读聊天记录
     r = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=CLAUDE_TIMEOUT,
-                       cwd=WORKDIR, env=hook_env(owner, private, chat_id))
+                       cwd=WORKDIR, env=hook_env(owner, private, chat_id, channel))
     log.info("claude %s rc=%s %.0fs", key, r.returncode, time.time() - t0)
     try: out = json.loads(r.stdout)
     except Exception: out = None
@@ -266,21 +296,21 @@ def run_claude(key, s, prompt, owner, private, chat_id, quiet=False):
 
 def handle(ev):
     key = session_key(ev)
-    name = sender_name(ev.get("sender_id", ""))
+    name = ev.get("sender_name") or sender_name(ev.get("sender_id", ""))
     text = (ev.get("content") or "").strip()
     in_thread = in_topic(ev)          # 默认引用原消息直接回在群里；原消息在话题里才回在话题里
     if ev.get("chat_type") == "p2p" and text in NEW_CMDS:
         with lock: sessions.pop(key, None); save(SESS_FILE, sessions)
         reply(ev, "好，翻篇了，新话题请讲。", False); return
-    if AMB["enabled"] and ev.get("chat_type") != "p2p" and ev.get("sender_id") == OWNER_OPEN_ID:
+    if AMB["enabled"] and ev.get("channel") == "feishu" and ev.get("chat_type") != "p2p" and is_owner(ev):
         cmd = re.sub(r"@\S+\s*", "", text).strip()
         c = AMB["command"]
         if cmd in (c, c + " 开", c + " 关", c + " 状态"):
             reply(ev, ambient_cmd(ev["chat_id"], cmd), in_thread); return
-    rid = react(ev["message_id"])
+    rid = wecom_send({"op": "thinking", "msgid": ev["message_id"]}) if ev.get("channel") == "wecom" else react(ev["message_id"])
     try:
         with sem:
-            owner = ev.get("sender_id") == OWNER_OPEN_ID
+            owner = is_owner(ev)
             s = get_session(key)
             ctx, quoted = fetch_context(ev, s)
             mark_seen(s, [m.get("message_id") for m in ctx] + [ev["message_id"], (quoted or {}).get("message_id")],
@@ -297,7 +327,7 @@ def handle(ev):
     out_id = reply(ev, result, in_thread)
     with lock: cur_s = sessions.get(key)
     if cur_s is not None: mark_seen(cur_s, [out_id])
-    unreact(ev["message_id"], rid)
+    if ev.get("channel") != "wecom": unreact(ev["message_id"], rid)
 
 def worker(key, q):
     while True:
@@ -307,7 +337,9 @@ def worker(key, q):
         finally: q.task_done()
 
 def should_handle(ev):
-    """私聊全收；群聊只收明确 @ 了机器人的（@所有人 不算）。其他机器人的消息不收。"""
+    """私聊全收；群聊只收明确 @ 了机器人的（@所有人 不算）。其他机器人的消息不收。
+    企微：平台只把私聊和群里 @ 机器人的消息推给机器人，收到的都处理。"""
+    if ev.get("channel") == "wecom": return bool(ev.get("content") or ev.get("files"))
     if ev.get("sender_type") != "user": return False
     if ev.get("chat_type") == "p2p": return True
     return any((m or {}).get("id") == BOT_OPEN_ID for m in (ev.get("mentions") or []))
@@ -481,26 +513,129 @@ def cache_check(n):
                      f"异常。第 2 轮起开场白仍写 {first_w} token，按 references/cache.md 排查。"))
     return 0 if ok else 1
 
+# ---------- 企业微信：wecom_gateway.mjs 子进程负责长连接，bridge 通过它的 stdin/stdout 收发 ----------
+wecom_proc = None
+wecom_lock = threading.Lock()
+
+def wecom_send(cmd):
+    """给网关发一条指令（thinking / reply / send）。网关没在跑时记日志，不抛异常。"""
+    with wecom_lock:
+        p = wecom_proc
+        if not p or p.poll() is not None:
+            log.warning("wecom gateway not running, drop %s", cmd.get("op")); return None
+        try:
+            p.stdin.write(json.dumps(cmd, ensure_ascii=False) + "\n"); p.stdin.flush()
+        except Exception as e:
+            log.warning("wecom send failed: %s", e)
+    return None
+
+def wecom_trim(text):
+    b = text.encode("utf-8")
+    if len(b) <= WECOM_MAX_BYTES: return text
+    return b[:WECOM_MAX_BYTES - 200].decode("utf-8", "ignore") + "\n\n……太长了，后面截掉了。"
+
+def wecom_reply(ev, text):
+    text = (text or "").strip() or "（空回复，再问一次？）"
+    text = re.sub(r"<@all>|@all\b", "@所有人", text)   # 不许 @所有人
+    wecom_send({"op": "reply", "msgid": ev["message_id"], "content": wecom_trim(text)})
+    return None
+
+def wecom_event(raw):
+    """网关事件 -> 统一事件格式（字段名和飞书事件对齐，handle 不用区分渠道）。"""
+    group = raw.get("chattype") == "group"
+    uid = raw.get("userid", "")
+    t = int(raw.get("create_time") or 0)
+    t = t * 1000 if 0 < t < 10**12 else (t or int(time.time() * 1000))   # 秒或毫秒都转成毫秒
+    text = (raw.get("text") or "").strip()
+    if group:   # 群消息开头带 “@机器人名”，去掉
+        text = re.sub(r"^\s*@" + re.escape(NAME) + r"\s*", "", text)
+    files = raw.get("files") or []
+    if files and not group and WECOM["owner_userid"] and uid == WECOM["owner_userid"]:
+        # 主人私聊发来的附件挪到 inbox/private/，钩子会挡住别的会话去读
+        os.makedirs(os.path.join(MEDIA_DIR, "private"), exist_ok=True)
+        moved = []
+        for f in files:
+            dst = os.path.join(MEDIA_DIR, "private", os.path.basename(f))
+            try: os.replace(f, dst); moved.append(dst)
+            except OSError: moved.append(f)
+        files = moved
+    q = raw.get("quote") or {}
+    quoted = {"content": q.get("text") or f"[{q.get('msgtype')}]", "sender": {}, "create_time": ""} if q else None
+    return {"channel": "wecom", "message_id": raw.get("msgid"), "chat_type": "group" if group else "p2p",
+            "chat_id": raw.get("chatid") if group else uid, "sender_id": uid,
+            "sender_name": OWNER_NAME if WECOM["owner_userid"] and uid == WECOM["owner_userid"] else uid,
+            "sender_type": "user", "content": text, "message_type": raw.get("msgtype"), "create_time": str(t),
+            "files": files, "quoted": quoted}
+
+def wecom_clean_inbox():
+    for d in (MEDIA_DIR, os.path.join(MEDIA_DIR, "private")):
+        try:
+            for f in os.listdir(d):
+                p = os.path.join(d, f)
+                if os.path.isfile(p) and time.time() - os.path.getmtime(p) > 3 * 86400: os.remove(p)
+        except FileNotFoundError: pass
+
+def wecom_loop(stopping):
+    """长连接网关常驻；退出就隔一会儿重启。被别处的新连接挤下线（退出码 3）时等久一点，免得两边互相挤。"""
+    global wecom_proc
+    gw = os.path.join(ROOT, "wecom_gateway.mjs")
+    while not stopping.is_set():
+        wecom_clean_inbox()
+        env = dict(os.environ, FCB_WECOM_CREDENTIALS=X(WECOM["credentials"]), FCB_WECOM_MEDIA_DIR=MEDIA_DIR)
+        p = subprocess.Popen(["node", gw], cwd=ROOT, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE, text=True)
+        with wecom_lock: wecom_proc = p
+        threading.Thread(target=lambda: [log.info("%s", l.rstrip()) for l in p.stderr], daemon=True).start()
+        for line in p.stdout:
+            try: raw = json.loads(line)
+            except Exception: continue
+            if raw.get("type") == "ready": log.info("wecom ready")
+            elif raw.get("type") == "message":
+                try: dispatch(wecom_event(raw))
+                except Exception: log.exception("bad wecom event: %s", line[:300])
+        rc = p.wait()
+        log.warning("wecom gateway exited rc=%s", rc)
+        stopping.wait(300 if rc == 3 else 10)
+
+# ---------- 飞书：lark-cli event consume ----------
+feishu_proc = None
+
+def feishu_loop(stopping):
+    global feishu_proc
+    while not stopping.is_set():
+        # stdin 用管道保持打开：lark-cli 在不限时运行时把 stdin EOF 当退出信号
+        p = subprocess.Popen(["lark-cli", "event", "consume", "im.message.receive_v1", "--as", "bot"],
+                             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        feishu_proc = p
+        threading.Thread(target=lambda: [log.info("[lark] %s", l.rstrip()) for l in p.stderr], daemon=True).start()
+        for line in p.stdout:
+            line = line.strip()
+            if not line: continue
+            try: dispatch(dict(json.loads(line), channel="feishu"))
+            except Exception: log.exception("bad event: %s", line[:300])
+        rc = p.wait()
+        log.warning("lark-cli exited rc=%s", rc)
+        stopping.wait(10)
+
 def main():
-    # stdin 用管道保持打开：lark-cli 在不限时运行时把 stdin EOF 当退出信号
-    p = subprocess.Popen(["lark-cli", "event", "consume", "im.message.receive_v1", "--as", "bot"],
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    def pump_err():
-        for line in p.stderr: log.info("[lark] %s", line.rstrip())
-    threading.Thread(target=pump_err, daemon=True).start()
-    def stop(*_): p.terminate()   # SIGTERM，让 lark-cli 正常收尾；不要 kill -9
+    """每个渠道一个线程，各自断线重连；一个渠道挂了不影响另一个，也不打断正在跑的 Claude。"""
+    stopping = threading.Event()
+    def stop(*_):
+        stopping.set()
+        for p in (feishu_proc, wecom_proc):   # SIGTERM，让子进程正常收尾；不要 kill -9
+            if p and p.poll() is None: p.terminate()
     signal.signal(signal.SIGTERM, stop); signal.signal(signal.SIGINT, stop)
-    if AMB["enabled"]:
+    loops = []
+    if FEISHU_ON: loops.append(feishu_loop)
+    if WECOM["enabled"]: loops.append(wecom_loop)
+    if not loops: sys.exit("config.json 里没有启用任何渠道")
+    for f in loops: threading.Thread(target=f, args=(stopping,), daemon=True).start()
+    if FEISHU_ON and AMB["enabled"]:
         threading.Thread(target=ambient_loop, daemon=True).start()
-    log.info("bridge started: %s", NAME)
-    for line in p.stdout:
-        line = line.strip()
-        if not line: continue
-        try: dispatch(json.loads(line))
-        except Exception: log.exception("bad event: %s", line[:300])
-    rc = p.wait()
-    log.info("lark-cli exited rc=%s", rc)
-    sys.exit(rc or 1)   # 交给 systemd / launchd 重启
+    log.info("bridge started: %s (%s)", NAME, "+".join(f.__name__.split("_")[0] for f in loops))
+    while not stopping.wait(3600): pass
+    log.info("bridge stopping")
+    sys.exit(0)
 
 if __name__ == "__main__":
     if len(sys.argv) >= 2 and sys.argv[1] == "--cache-check":

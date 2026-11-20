@@ -6,6 +6,7 @@
 |---|---|---|
 | 守则 `rules.md` | 什么能说、对谁说、什么事要主人点头 | Claude 自己判断 |
 | 钩子 `lark_identity.py` | lark-cli 用哪个身份 | 硬拦，exit 2 |
+| 钩子 `wecom_guard.py` | wecom-cli 能调什么 | 硬拦，exit 2 |
 | 钩子 `private_guard.py` + 权限拒绝表 | 私密路径能不能读 | 硬拦 |
 
 守则管“说不说”，钩子管“碰不碰”。能用钩子拦的就别只靠守则。
@@ -19,6 +20,7 @@ bridge 给每次调用设环境变量，钩子据此判断：
 | `FCB_OWNER` | 1 = 发消息的是主人本人 |
 | `FCB_PRIVATE` | 1 = 主人本人的私聊（只有这里放开私密资料） |
 | `FCB_CHAT_ID` | 当前会话的 chat_id |
+| `FCB_CHANNEL` | `feishu` / `wecom`，消息从哪个渠道来 |
 
 主人在群里 @ 机器人，`FCB_PRIVATE` 仍是 0：群里有别人看着。非私聊场景还会设 `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`，不读不写自动记忆。
 
@@ -33,6 +35,23 @@ bridge 给每次调用设环境变量，钩子据此判断：
 | | `bot` | 只用机器人身份；前文也读不到别的群 |
 
 > **警告**：`bot_read_im` 下，同事 @ 机器人时，机器人能用主人身份读到主人和别人的私聊。挡住转述靠守则。主人对某些聊天有顾虑时，在 `lark_identity.py` 里加 chat_id 黑名单，或改用 `bot`。
+
+### 企业微信（hooks/wecom_guard.py）
+
+wecom-cli 带着主人的企微授权（读邮件、文档、日程、微盘），本机装了它，飞书会话也能调用。钩子总是挂上：主人本人发的可用，但不能以主人名义发消息和邮件；其他人只能用 `wecom-cli message aibot` 和 `wecom-cli contact`。细节见 [wecom.md](wecom.md) 第 4 节。
+
+### 跨 IM 读取（config.json 的 cross_im_read）
+
+两个渠道都启用时才有意义，默认关。
+
+| | 关（默认） | 开 |
+|---|---|---|
+| 飞书会话读企微聊天记录（`wecom-cli chat`） | 拦 | 可以 |
+| 企微会话用主人身份读飞书聊天记录（`lark-cli im +chat-messages-list` 等） | 拦 | 可以 |
+
+开了以后，同事触发时能不能跨读，仍按 `identity.others`：`bot_read_im` 能读，`bot` 不能。
+
+> **警告**：打开前要让主人确认：读到的内容会不会被转述到另一边，只靠守则和 Claude 把关。`scaffold.py` 第一次遇到打开的配置会打印提醒并停下，主人同意后加 `--confirm-cross-im` 再运行，确认记在实例的 `state/cross_im_confirmed`。
 
 ## 4. 旁听的权限
 

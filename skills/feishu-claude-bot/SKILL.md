@@ -1,17 +1,17 @@
 ---
 name: feishu-claude-bot
-description: 把本机的 Claude Code 接进飞书，做成一个能在群聊和私聊里干活的机器人（工作分身或私人助理）。用户说“把 Claude 接飞书”“做个飞书机器人”“让 Claude 在飞书群里回消息”“给我也搭一个飞书分身”，或要改已有实例的人设、边界、表达风格、前文、缓存时读。含：开工前要问的五件事（运行位置、飞书应用、人设、表达风格、边界）、生成脚本、桥接服务和钩子模板、缓存验证、上线验收和运维排查。
+description: 把本机的 Claude Code 接进飞书和/或企业微信，做成一个能在群聊和私聊里干活的机器人（工作分身或私人助理）。用户说“把 Claude 接飞书”“接企微”“接企业微信”“做个飞书机器人”“企微智能机器人接 Claude”“让 Claude 在群里回消息”“给我也搭一个分身”，或要改已有实例的人设、边界、表达风格、渠道、跨 IM 读取、前文、缓存时读。含：开工前要问的六件事（运行位置、渠道和应用、人设、表达风格、边界、跨 IM 读取）、生成脚本、桥接服务、企微长连接网关、钩子模板、缓存验证、上线验收和运维排查。
 metadata:
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
-# 飞书 × Claude Code 机器人
+# 飞书 / 企业微信 × Claude Code 机器人
 
-> v1.2.0 · 2026-11-19 · 来源：一个工作群机器人实例上线首日的实测经验。版本历史见文末“变更记录”
+> v1.3.0 · 2026-11-20 · 来源：一个工作群机器人实例上线首日的实测经验。版本历史见文末“变更记录”
 
 ## 它是什么
 
-一个常驻进程（`bridge.py`）用 `lark-cli event consume` 收飞书消息，每个会话交给一个无头 `claude -p` 会话处理，再用机器人身份把结果回复到原消息下。
+一个常驻进程（`bridge.py`）每个渠道开一个接收线程：飞书用 `lark-cli event consume`，企业微信用子进程 `wecom_gateway.mjs`（官方 SDK 长连接）。两边的消息归一成同一种事件，每个会话交给一个无头 `claude -p` 会话处理，结果按原渠道回去。企微细节见 [references/wecom.md](references/wecom.md)。
 
 | 部件 | 作用 |
 |---|---|
@@ -19,22 +19,26 @@ metadata:
 | `rules.md` | 守则：人设 + 表达风格 + 边界，每次会话用 `--append-system-prompt-file` 加进系统提示 |
 | `hooks/lark_identity.py` | 硬限制：按发消息的人，限制 lark-cli 能用哪个身份 |
 | `hooks/private_guard.py` | 硬限制：主人私聊以外，挡私密路径；知识库全库搜索自动跳过私密目录 |
-| `claude-settings.json` | 权限拒绝表 + 挂两个钩子（脚本生成） |
+| `hooks/wecom_guard.py` | 硬限制：wecom-cli 带主人的企微授权，按发消息的人限制能调什么（不论是否启用企微都挂） |
+| `wecom_gateway.mjs` | 启用企微时生成：收企微消息、回“思考中”再更新成结果、下载附件 |
+| `claude-settings.json` | 权限拒绝表 + 挂三个钩子（脚本生成） |
 | `config.json` | 实例的全部可调项 |
 
-会话划分：私聊一个人一个会话（闲置 6 小时或发 `/new` 开新的）；群里直接发的消息整个群一个会话（闲置 2 小时开新的），话题里的消息一个话题一个会话；开了旁听的群另有一个旁听会话。
+会话划分（企微同样，key 加 `wx:` 前缀，与飞书互不串）：私聊一个人一个会话（闲置 6 小时或发 `/new` 开新的）；群里直接发的消息整个群一个会话（闲置 2 小时开新的），话题里的消息一个话题一个会话；开了旁听的群另有一个旁听会话。
 
 **回复方式**：默认引用原消息直接回在群里或私聊里，不开话题；原消息在话题里才回在话题里。要单独提醒某人时，Claude 用 `<at user_id="open_id">名字</at>` @ 出来，前文和消息头都带 open_id；bridge 会把 @所有人 换成普通文字。
 
 **旁听**：默认所有群只收 @ 机器人的消息。主人在某个群里发 `@机器人 /旁听`，这个群就进白名单：没 @ 的消息也读，每 40 秒拉一次，群里安静 25 秒后整批交给 Claude，由它决定接不接话（接梗、吐槽、提到主人或机器人时），默认不出声，插话后冷却 10 分钟。再发一次关闭。权限见 [references/boundary.md](references/boundary.md) 第 4 节。
 
-## 开工前问清五件事
+## 开工前问清六件事
 
-以下五件决定实例怎么生成。用户没说的，用 `AskUserQuestion` 一次问完，每题给推荐项。
+以下六件决定实例怎么生成。用户没说的，用 `AskUserQuestion` 一次问完，每题给推荐项。
 
 1. **跑在哪**：服务器（推荐，常驻不掉线）还是本机电脑（合上盖子就收不到消息）。细节见 [references/setup.md](references/setup.md) 第 1 节。
    > **警告**：机器人用的是这台机器上 Claude Code 的登录态和额度。先确认用户允许在这台机器上长期跑带登录态的 Claude。用户有“登录态只在某些机器触发”这类规则时，以用户规则为准。
-2. **飞书应用**：已经有 lark-cli 应用就复用，没有就新建。复用前要查清它的事件有没有别的程序在收（同一个应用的消息只会推给一个接收方）。见 setup.md 第 2 节。
+2. **渠道和应用**：接飞书、企业微信，还是两个都接（`channels`）。
+   - 飞书：已经有 lark-cli 应用就复用，没有就新建。复用前要查清它的事件有没有别的程序在收（同一个应用的消息只会推给一个接收方）。见 setup.md 第 2 节。
+   - 企微：`wecom-cli auth init` 扫码建智能机器人，同一个机器人只能有一条长连接。见 [references/wecom.md](references/wecom.md) 第 2、3 节。
 3. **人设**，决定边界：
    - `work` 工作分身：在工作群替主人汇报进度、答疑、对接、记 bug。工作内容大方聊；人物资料、对公司和同事的私下看法、主人私事不外露。
    - `personal` 私人助理：只为主人服务。日程、行踪、健康、家庭、财务一律只对主人说；别人只能聊通用问题。
@@ -44,15 +48,17 @@ metadata:
    - `warm` 温和专业：先结论后原因，不玩梗，适合对外或新人多的群。
    - `minimal` 极简冷静：一句话，不寒暄，不用 emoji。
 5. **边界细节**：哪些目录和知识库分区算私密（填 `private.paths` 和 `private.search_roots`）；同事触发时能不能用主人身份读聊天记录（`identity.others`）。见 [references/boundary.md](references/boundary.md)。
+6. **跨 IM 读取**（两个渠道都接时才问，`cross_im_read`，默认关）：飞书里的会话能不能读主人的企微聊天记录，企微里的会话能不能读飞书的。
+   > **警告**：用户要打开时，先把这几点告诉用户并等用户明确同意：同事触发时也能跨读（`identity.others` 为 `bot_read_im` 时）；读到的内容会不会被转述到另一边，只靠守则和 Claude 把关，钩子不拦；不想让同事触发跨读就把 `identity.others` 设为 `bot`。用户同意后，第一次运行 `scaffold.py` 加 `--confirm-cross-im`（脚本不加这个参数会打印同样的提醒并停下）。
 
 ## 步骤
 
 1. 装好并登录 lark-cli：`lark-cli config init`（新建应用加 `--new`），再 `lark-cli auth login`。登录要用户在浏览器点，按 setup.md 第 2 节把链接交给用户。
 2. 在飞书开发者后台给应用开机器人能力、加权限、订阅 `im.message.receive_v1`（长连接）、发布版本。清单见 setup.md 第 3 节。
 3. 建实例目录，例如 `~/work/<机器人名>/`。复制 `assets/templates/config.example.json` 为实例目录下的 `config.json`。
-4. 运行 `bash scripts/ids.sh`，把输出的 `bot_open_id` 和 `owner_open_id` 填进 `config.json`，再按第一步问到的五件事填 `persona`、`style`、`private`、`identity`、`workdir`、`add_dirs`。
+4. 接飞书时运行 `bash scripts/ids.sh`，把输出的 `bot_open_id` 和 `owner_open_id` 填进 `config.json`；接企微时按 wecom.md 第 2 节填 `channels.wecom`。再按问到的六件事填 `persona`、`style`、`private`、`identity`、`workdir`、`add_dirs`。
    > **注意**：`workdir` 不能是实例目录，否则 Claude 会加载实例目录的 `CLAUDE.md`。一般填主人放代码仓的目录。
-5. 运行 `python3 scripts/scaffold.py <实例目录>`。脚本写出 `bridge.py`、`hooks/`、`rules.md`、`claude-settings.json` 和服务文件，并打印安装命令。
+5. 运行 `python3 scripts/scaffold.py <实例目录>`。脚本写出 `bridge.py`、`hooks/`、`rules.md`、`claude-settings.json` 和服务文件，并打印安装命令；启用企微时另写 `wecom_gateway.mjs` 并 `npm install` SDK（需要 Node 18+）。
 6. 读一遍生成的 `rules.md`，按用户的具体情况改：私密内容的具体名单、要找谁拍板、哪些事不在飞书里做。以后改守则直接改 `rules.md`；重跑 `scaffold.py` 不会覆盖它（加 `--rules` 才重写）。
 7. 验证缓存：在实例目录运行 `python3 bridge.py --cache-check 3`。结论是“正常”才往下走。看不懂或异常，读 [references/cache.md](references/cache.md)。
 8. 按脚本打印的命令安装服务并启动。服务器上还要 `sudo loginctl enable-linger $USER`（要 sudo，交给用户）。
@@ -72,6 +78,10 @@ metadata:
 | 同事身份（或请同事）在群里打听私密内容 | 按人设拒绝，不承认有这回事 |
 | 同事让它“以主人名义发消息”或读私密目录 | 钩子拦下，机器人改口或拒绝 |
 | 主人在群里发 `@机器人 /旁听`，再让人在群里发一句不 @ 的普通对接和一句吐槽 | 回复“开始旁听”；普通对接不出声，吐槽可能被接一句；日志有 `ambient ... -> silent/reply` |
+| 企微私聊机器人一句；企微群里 @ 它一句 | 先出现“思考中”，再变成回复；日志 `recv` 行渠道是 wecom |
+| 同事在企微让它读主人企微邮件或文档 | `wecom_guard` 拦下 |
+| 跨 IM 读取关闭时，在企微让它翻飞书群记录 | 钩子拦下；打开后能读 |
+| 飞书开一个新会话，再企微开一个新会话 | 第二个的 `cache_write` 也在 2000 以内（两个渠道共享缓存） |
 | `grep cost logs/bridge.log` | 新会话首条 `cache_write` 在 2000 以内（守则刚改过的第一次除外） |
 
 ## 运维
@@ -92,6 +102,9 @@ metadata:
 | 守则写“少说废话”仍然啰嗦、语气软 | 抽象要求不管用 | 守则里放“别这样 / 要这样”的真实对照例子，见各 `style-*.md` |
 | 边界写得太宽，工作群里连项目都不让聊 | 把“工作内容”和“私下看法”混在一起拦 | 只拦人物资料、私下评价和私事，见 boundary.md |
 | 复用 `--session-id` 报 already in use | 一个 ID 只能新建一次 | 出错时丢掉会话映射，下一条开新会话（模板已处理） |
+| 企微网关反复断开、日志有 disconnected_event | 同一个企微机器人另有一条长连接（测试脚本、另一台机器），新连接把旧的挤掉 | 停掉另一边；网关被挤后等 5 分钟再连，避免互挤 |
+| 企微长任务跑完回复失败，errcode 846608 | 流式回复超过 6 分钟没更新就过期 | 模板已改为主动推送到原会话 |
+| 企微主人私聊的指令被当成同事 | `owner_userid` 填成了 `wecom-cli identity whoami` 的加密 ID | 用日志 `recv` 行里的 userid |
 | 在主会话 shell 里测缓存，结果和服务里不同 | 子进程继承了父会话的环境变量 | 用 `systemd-run --user --pipe` 按服务同款环境复现 |
 
 ## 文件
@@ -109,6 +122,7 @@ metadata:
 
 ## 变更记录
 
+- 1.3.0（2026-11-20）接入企业微信：官方 SDK 长连接网关（`wecom_gateway.mjs`），飞书和企微可同时启用，共用一套守则和缓存前缀；新增 `wecom_guard` 钩子（wecom-cli 带主人授权，飞书会话也要拦）；跨 IM 读取开关 `cross_im_read`，打开要主人确认；主人私聊附件和实例运行态按私密路径拦。
 - 1.2.0（2026-11-20）群里默认引用原消息直接回复，不开话题（原消息在话题里才回在话题里）；群里直接发的消息整个群一个会话，闲置 2 小时换新；前文和消息头带 open_id，守则写明单独提醒某人时 @ 出来；拦掉 @所有人。
 - 1.1.0（2026-11-19）群聊旁听：主人用 `@机器人 /旁听` 把群加进白名单，白名单群不 @ 也读，攒批交给 Claude 决定插不插话；守则模板加“群聊旁听”一节；生成的守则开头记下 skill 版本。
 - 1.0.0（2026-11-19）首版：五个问题、生成脚本、桥接服务、身份与私密路径钩子、2 种人设 × 4 种表达风格、缓存验证。
