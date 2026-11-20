@@ -29,6 +29,7 @@
 | `prime` | `true` | 固定开场白，见 cache.md |
 | `disable_mcp` | `true` | 不加载 MCP，见 cache.md |
 | `p2p_idle_hours` | 6 | 私聊闲置多久开新会话 |
+| `group_idle_hours` | 2 | 群里（不在话题中）闲置多久开新会话 |
 | `max_parallel` | 3 | 同时跑几个 Claude 会话 |
 | `claude_timeout_min` | 40 | 单条消息最长处理时间 |
 | `processing_emoji` | `OnIt` | 处理中表情 |

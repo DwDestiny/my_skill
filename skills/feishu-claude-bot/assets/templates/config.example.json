@@ -56,6 +56,7 @@
   "prime": true,
   "disable_mcp": true,
   "p2p_idle_hours": 6,
+  "group_idle_hours": 2,
   "max_parallel": 3,
   "claude_timeout_min": 40
 }

@@ -24,6 +24,7 @@ WORKDIR = X(CFG.get("workdir", "~"))          # 不要放在实例目录里，�
 ADD_DIRS = [X(d) for d in CFG.get("add_dirs", [])]
 PERMISSION_MODE = CFG.get("permission_mode", "auto")
 P2P_IDLE = CFG.get("p2p_idle_hours", 6) * 3600
+GROUP_IDLE = CFG.get("group_idle_hours", 2) * 3600   # 群里（不在话题中）闲置多久开新会话
 MAX_PARALLEL = CFG.get("max_parallel", 3)
 CLAUDE_TIMEOUT = CFG.get("claude_timeout_min", 40) * 60
 CTX = dict({"enabled": True, "max": 20, "topic_max": 50, "group_window_h": 2, "p2p_window_h": 24,
@@ -94,8 +95,13 @@ def unreact(message_id, reaction_id):
     if reaction_id:
         lark(["api", "DELETE", f"/open-apis/im/v1/messages/{message_id}/reactions/{reaction_id}", "--as", "bot"])
 
+def no_at_all(text):
+    """不许 @所有人：把 <at user_id="all"> 之类换成普通文字。"""
+    return re.sub(r'<at\s+(user_)?ids?\s*=\s*"?all"?\s*>.*?</at>', "@所有人", text)
+
 def reply(ev, text, in_thread):
     text = text.strip() or "（空回复，再问一次？）"
+    text = no_at_all(text)
     if len(text) > MAX_REPLY_CHARS:
         text = text[:MAX_REPLY_CHARS] + "\n\n……太长了，后面截掉了。"
     args = ["im", "+messages-reply", "--as", "bot", "--message-id", ev["message_id"], "--markdown", "-",
@@ -111,7 +117,12 @@ def reply(ev, text, in_thread):
 def session_key(ev):
     if ev.get("chat_type") == "p2p":
         return "p2p:" + ev["chat_id"]
-    return "grp:" + ev["chat_id"] + ":" + (ev.get("root_id") or ev["message_id"])
+    if in_topic(ev):                 # 话题里的消息：一个话题一个会话
+        return "grp:" + ev["chat_id"] + ":" + ev["thread_id"]
+    return "grp:" + ev["chat_id"]    # 群里直接发的：整个群一个会话，闲置 group_idle_hours 后换新
+
+def in_topic(ev):
+    return bool(ev.get("thread_id") and ev.get("root_id"))
 
 def _ts(m):
     try: return time.mktime(time.strptime(m.get("create_time", ""), "%Y-%m-%d %H:%M"))
@@ -166,7 +177,9 @@ def fetch_context(ev, s):
 def _line(m):
     c = (m.get("content") or "").strip().replace("\n", " ")
     if len(c) > CTX["max_chars"]: c = c[:CTX["max_chars"]] + "……"
-    who = (m.get("sender") or {}).get("name") or "?"
+    snd = m.get("sender") or {}
+    who = snd.get("name") or "?"
+    if snd.get("sender_type") == "user" and snd.get("id"): who += f"({snd['id']})"   # 带 open_id，回复时要 @ 谁直接用
     return f"[{m.get('create_time', '')[-5:]}] {who}：{c}"
 
 def build_prompt(ev, name, ctx=(), quoted=None):
@@ -175,6 +188,9 @@ def build_prompt(ev, name, ctx=(), quoted=None):
     parts = [f"[飞书消息]\n发送人：{name}（open_id {ev.get('sender_id')}）\n"
              f"是{OWNER_NAME}本人：{'是' if is_owner else '否'}\n会话：{chat}，chat_id {ev.get('chat_id')}\n"
              f"消息 ID：{ev.get('message_id')}；类型：{ev.get('message_type')}\n"]
+    others = [m for m in ev.get("mentions") or [] if (m or {}).get("id") != BOT_OPEN_ID]
+    if others:
+        parts.append("这条消息 @ 了：" + "、".join(f"{m.get('name')}({m.get('id')})" for m in others) + "\n")
     if ctx:
         parts.append(f"--- 前文：这条消息之前的 {len(ctx)} 条（只用来理解上下文，不要逐条回应或复述）---\n"
                      + "\n".join(_line(m) for m in ctx) + "\n")
@@ -186,7 +202,8 @@ def build_prompt(ev, name, ctx=(), quoted=None):
 def get_session(key):
     with lock:
         s = sessions.get(key)
-        if s and key.startswith("p2p:") and time.time() - s.get("last", 0) > P2P_IDLE:
+        idle = P2P_IDLE if key.startswith("p2p:") else GROUP_IDLE if key.count(":") == 1 else None
+        if s and idle and time.time() - s.get("last", 0) > idle:
             s = None
         if not s:
             s = {"id": str(uuid.uuid4()), "started": False, "last": time.time(), "ctx_ids": []}
@@ -251,7 +268,7 @@ def handle(ev):
     key = session_key(ev)
     name = sender_name(ev.get("sender_id", ""))
     text = (ev.get("content") or "").strip()
-    in_thread = ev.get("chat_type") != "p2p"
+    in_thread = in_topic(ev)          # 默认引用原消息直接回在群里；原消息在话题里才回在话题里
     if ev.get("chat_type") == "p2p" and text in NEW_CMDS:
         with lock: sessions.pop(key, None); save(SESS_FILE, sessions)
         reply(ev, "好，翻篇了，新话题请讲。", False); return
@@ -259,7 +276,7 @@ def handle(ev):
         cmd = re.sub(r"@\S+\s*", "", text).strip()
         c = AMB["command"]
         if cmd in (c, c + " 开", c + " 关", c + " 状态"):
-            reply(ev, ambient_cmd(ev["chat_id"], cmd), True); return
+            reply(ev, ambient_cmd(ev["chat_id"], cmd), in_thread); return
     rid = react(ev["message_id"])
     try:
         with sem:

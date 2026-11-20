@@ -256,6 +256,34 @@ class AmbientTest(unittest.TestCase):
             b.run_claude = orig
         return seen
 
+    def test_reply_mode_and_session_key(self):
+        b = self.b
+        plain = {'chat_type': 'group', 'chat_id': 'oc_g', 'message_id': 'om_1'}
+        reply_quote = dict(plain, root_id='om_0')                      # 引用回复但不在话题里
+        topic = dict(plain, root_id='om_0', thread_id='omt_1')
+        self.assertEqual(b.session_key(plain), 'grp:oc_g')
+        self.assertEqual(b.session_key(reply_quote), 'grp:oc_g')
+        self.assertEqual(b.session_key(topic), 'grp:oc_g:omt_1')
+        self.assertFalse(b.in_topic(plain))
+        self.assertTrue(b.in_topic(topic))
+        self.assertEqual(b.session_key({'chat_type': 'p2p', 'chat_id': 'oc_p'}), 'p2p:oc_p')
+
+    def test_group_session_rotates_when_idle(self):
+        b = self.b
+        s = b.get_session('grp:oc_idle')
+        s['last'] = time.time() - b.GROUP_IDLE - 10
+        self.assertNotEqual(b.get_session('grp:oc_idle')['id'], s['id'])
+        t = b.get_session('grp:oc_idle:omt_1')
+        t['last'] = time.time() - b.GROUP_IDLE - 10
+        self.assertEqual(b.get_session('grp:oc_idle:omt_1')['id'], t['id'], '话题会话不按闲置轮换')
+
+    def test_no_at_all_and_open_id_in_context(self):
+        b = self.b
+        self.assertEqual(b.no_at_all('<at user_id="all"></at> 开会'), '@所有人 开会')
+        self.assertEqual(b.no_at_all('<at user_id="ou_x">小李</at> 看下'), '<at user_id="ou_x">小李</at> 看下')
+        line = b._line({'create_time': '2026-11-20 10:00', 'content': 'hi', 'sender': {'name': '小李', 'id': 'ou_x', 'sender_type': 'user'}})
+        self.assertIn('小李(ou_x)', line)
+
     def test_silent_sends_nothing(self):
         self.flush_with('[不回]')
         self.assertEqual(self.sent, [])
