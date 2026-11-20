@@ -139,6 +139,7 @@ Environment=PATH={path_env}
 Restart=always
 RestartSec=5
 KillSignal=SIGTERM
+TimeoutStopSec=20
 
 [Install]
 WantedBy=default.target
