@@ -540,13 +540,32 @@ def cloud_poll(tid):
         update(tid, status="waiting", cloud=dict(c, after=head, closed=True))
         event(tid, "question", "云端做不下去，交回来了：\n" + body[-2500:])
         return True
+    verdict = "结论：云端做完（没定验证命令，本机没复跑）"
+    if t.get("verify"):   # 云端自己说过了不算：本机把分支拉下来复跑一遍验证命令
+        ok, out = cloud_verify(t)
+        if not ok:
+            update(tid, status="failed", cloud=dict(c, after=head, closed=True))
+            event(tid, "failed", f"结论：BLOCKED（云端说做完了，本机复跑验证命令没过：{t['verify']}）\n{out}\n\n云端的报告：\n{body[-2500:]}")
+            return True
+        verdict = f"结论：PASS（云端做完，本机复跑验证命令通过：{t['verify']}）"
     r = subprocess.run([sys.executable, os.path.abspath(__file__), "mr", "--title", t["title"], "--body", body[:6000] or t["title"],
                         "--branch", br] + (["--target", t["target"]] if t.get("target") else []),
                        cwd=repo, capture_output=True, text=True, env=dict(os.environ, FCB_OWNER="1"))
     mr = (r.stdout + r.stderr).strip()[-400:]
     update(tid, status="done", finished=time.time(), cloud=dict(c, after=head, closed=True))
-    event(tid, "done", f"结论：云端做完（验证见下面的报告，本机没复跑）\n\n{body[-3000:]}\n\n合并请求：{mr}")
+    event(tid, "done", f"{verdict}\n\n{body[-3000:]}\n\n合并请求：{mr}")
     return True
+
+def cloud_verify(t):
+    """把云端推上来的分支检出到任务工作树，跑验证命令。云端没有本机的依赖，验证命令要自带准备步骤。"""
+    repo, br, wt = t["repo"], t["branch"], t["worktree"]
+    if os.path.isdir(wt):
+        r = git(wt, "checkout", "-q", "-B", br, "origin/" + br)
+        if r.returncode == 0: r = git(wt, "reset", "-q", "--hard", "origin/" + br)
+    else:
+        r = git(repo, "worktree", "add", "-q", "-B", br, wt, "origin/" + br)
+    if r.returncode != 0: return False, "检出云端分支失败：" + r.stderr.strip()[-300:]
+    return run_verify(t)
 
 def remove_worktree(t):
     r = git(t["repo"], "worktree", "remove", t["worktree"])
