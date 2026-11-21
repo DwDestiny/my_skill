@@ -15,6 +15,7 @@
 | `tasks.root` | `~/work/.bot-tasks` | 任务工作树放哪（按服务名分子目录）。不能在实例目录里 |
 | `tasks.max_running` | `2` | 同时跑几个后台任务（与聊天并发 `max_parallel` 分开） |
 | `tasks.approval_hours` | `24` | 同事派的活多久没人批就作废 |
+| `tasks.models` | `["haiku", "sonnet", "opus"]` | 派活时主控能挑的模型别名；`[派活]` 里写了名单外的就走全局默认。思考档固定为 low/medium/high/xhigh/max |
 | `tasks.heartbeat_min` | `30` | 飞书任务多久没动静发一次心跳；`0` 关闭。企微不发 |
 | `service_name` | `fcb-<目录名>` | systemd 服务名 / launchd 标签后缀 |
 | `persona` | `work` | `work` 工作分身 / `personal` 私人助理 |

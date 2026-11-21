@@ -28,6 +28,9 @@ ACTIVE = ("approved", "running", "waiting")
 LABEL = {"pending": "待批", "approved": "排队中", "running": "进行中", "waiting": "等回复", "done": "完成",
          "failed": "失败", "lost": "中断", "cancelled": "已取消", "rejected": "没批", "expired": "过期作废"}
 CH_LABEL = {"feishu": "飞书", "wecom": "企微"}
+# 派活时主控按活儿挑模型和思考档；不在名单里的值忽略，走全局默认
+MODELS = [m.lower() for m in T.get("models", ["haiku", "sonnet", "opus"])]
+EFFORTS = ["low", "medium", "high", "xhigh", "max"]
 
 # ---------- Claude 参数和钩子环境：聊天会话和任务会话共用，缓存前缀才一致 ----------
 def claude_args():
@@ -154,12 +157,21 @@ def parse_directive(text):
     while hl and fence.match(hl[-1]): hl.pop()
     head = "\n".join(hl).rstrip()
     block = "\n".join(l for l in block.splitlines() if not fence.match(l))
-    def field(name):
-        mm = re.search(r"^\s*" + name + r"\s*[:：]\s*(.*)$", block, re.M)
-        return mm.group(1).strip() if mm else ""
     bm = re.search(r"^\s*任务书\s*[:：]\s*", block, re.M)
+    fields = block[:bm.start()] if bm else block   # 字段只认任务书之前的，任务书正文里的“模型:”不算
+    def field(name):
+        mm = re.search(r"^\s*" + name + r"\s*[:：]\s*(.*)$", fields, re.M)
+        return mm.group(1).strip() if mm else ""
     brief = block[bm.end():].strip() if bm else ""
-    return head, {"repo": field("仓库"), "title": field("标题")[:80] or "未命名任务", "brief": brief}
+    def pick(v, ok):   # 正好写了一个合法值才算；照抄“haiku / sonnet / opus”这种就当没写
+        hit = {w for w in re.split(r"[\s,，/（()）]+", v.lower()) if w in ok}
+        return hit.pop() if len(hit) == 1 else ""
+    return head, {"repo": field("仓库"), "title": field("标题")[:80] or "未命名任务", "brief": brief,
+                  "model": pick(field("模型"), MODELS), "effort": pick(field("思考"), EFFORTS)}
+
+def model_label(t):
+    """给人看的模型说明，没指定就是默认。"""
+    return " · ".join(x for x in (t.get("model"), t.get("effort") and "思考 " + t["effort"]) if x) or "默认模型"
 
 # ---------- 后台运行 ----------
 def unit_name(t): return f"{SLUG}-task-{t['id']}-{t['turn']}"
@@ -236,6 +248,7 @@ def first_prompt(t, base):
 - 做完：提交到 {t['branch']}；仓库有远端就推送这个分支，再建草稿合并请求（gh pr create --draft）。不合并、不推主干、不发版。
 - 最后一条回复是给派活人看的总结：做了什么、怎么验证的、分支和合并请求链接、还剩什么。按守则的说话风格，简短。
 - 运行中可能收到“[追加指令]”，按它调整。
+- 派子代理时按子活儿挑模型：查找、汇总、机械改动用 haiku，常规编码和测试用 sonnet，难的设计和排查才用 opus。
 
 任务书：
 {t['brief']}"""
@@ -258,6 +271,9 @@ def run(tid):
         while True:
             t = load(tid)
             cmd = claude_args() + ["--output-format", "stream-json", "--verbose"]
+            # 模型和思考档整个任务固定，续跑也一样，换了缓存就白写
+            if t.get("model"): cmd += ["--model", t["model"]]
+            if t.get("effort"): cmd += ["--effort", t["effort"]]
             cmd += ["--resume", t["session_id"]] if resume else ["--session-id", t["session_id"]]
             env = hook_env(t["requester"].get("owner"), False, o.get("chat_id", ""), o.get("channel", "feishu"), tid)
             final, tools_n = None, t.get("tools", 0)
