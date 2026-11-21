@@ -19,7 +19,8 @@
     "root": "~/work/.bot-tasks",
     "max_running": 2,
     "approval_hours": 24,
-    "heartbeat_min": 30
+    "heartbeat_min": 30,
+    "models": ["haiku", "sonnet", "opus"]
   },
   "persona": "work",
   "style": "veteran",

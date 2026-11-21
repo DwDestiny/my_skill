@@ -428,7 +428,7 @@ def task_line(t):
 
 def task_detail(t, owner):
     lines = [f"#{t['id']} {t['title']} · {tasks.LABEL.get(t['status'], t['status'])}",
-             f"仓库 {BT}{t['repo']}{BT}，分支 {BT}{t['branch']}{BT}"]
+             f"仓库 {BT}{t['repo']}{BT}，分支 {BT}{t['branch']}{BT}，{tasks.model_label(t)}"]
     if t.get("started"):
         lines.append(f"已经 {mins(t)} 分钟，调用工具 {t.get('tools', 0)} 次" + (f"，花了 {t['cost']} 美元" if owner and t.get("cost") else ""))
     mark = {"completed": "✔", "in_progress": "▶"}
@@ -513,7 +513,8 @@ def task_directive(ev, result):
     if not err and not d["brief"]: err = "任务书是空的"
     if err: return (head + f"\n\n（派活没成：{err}。）").strip()
     name = ev.get("sender_name") or sender_name(ev.get("sender_id", ""))
-    t = tasks.create(title=d["title"], repo=repo, brief=d["brief"], status="approved" if owner else "pending",
+    t = tasks.create(title=d["title"], repo=repo, brief=d["brief"], model=d["model"], effort=d["effort"],
+                     status="approved" if owner else "pending",
                      requester={"channel": ev["channel"], "id": ev["sender_id"], "name": name, "owner": owner},
                      origin={"channel": ev["channel"], "chat_id": ev["chat_id"], "chat_type": ev["chat_type"],
                              "message_id": ev["message_id"], "thread": in_topic(ev)})
@@ -522,7 +523,7 @@ def task_directive(ev, result):
     if owner:
         return (head + f"\n\n排上了，任务 #{n}。进展在这儿报，{BT}/任务 {n}{BT} 随时看，@我 {BT}#{n} 内容{BT} 补充。").strip()
     brief = d["brief"] if len(d["brief"]) <= 3000 else d["brief"][:3000] + f"\n……（后面还有 {len(d['brief']) - 3000} 字，{BT}/任务 {n} 全文{BT} 看完整任务书）"
-    snap = f"#{n} {d['title']}\n仓库：{BT}{repo}{BT}\n任务书：\n{brief}"
+    snap = f"#{n} {d['title']}\n仓库：{BT}{repo}{BT}（{tasks.model_label(t)}）\n任务书：\n{brief}"
     if ev["chat_type"] != "p2p":
         return (head + f"\n\n{owner_ref(ev['channel'])} {name} 想派个长任务，等你批：\n{snap}\n\n"
                 f"@我 回复「批 {n}」开工，「不批 {n}」作罢，{h} 小时内有效。").strip()
@@ -535,7 +536,7 @@ def task_event_text(t, e):
     n, k, r, o = t["id"], e["kind"], t["requester"], t["origin"]
     at = (mention(o["channel"], r["id"], r["name"]) + " ") if o["chat_type"] != "p2p" else ""
     if k == "start":
-        return f"#{n} 开工：{t['title']}\n分支 {BT}{t['branch']}{BT}。有进展在这儿说，{BT}/任务 {n}{BT} 随时看。"
+        return f"#{n} 开工：{t['title']}\n分支 {BT}{t['branch']}{BT}，{tasks.model_label(t)}。有进展在这儿说，{BT}/任务 {n}{BT} 随时看。"
     if k == "progress": return f"#{n} 进展：{e['text']}"
     if k == "question": return f"{at}#{n} 有事要你定：\n{e['text']}\n\n@我 回复「#{n} 你的意见」。"
     if k == "done":

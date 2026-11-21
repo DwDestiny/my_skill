@@ -530,6 +530,19 @@ class TaskTest(unittest.TestCase):
         head, d = self.t.parse_directive(fenced)                # Claude 照抄守则里的代码块围栏
         self.assertEqual(head, '我准备这么干。')
         self.assertEqual(d['brief'], '改 bug')
+        self.assertEqual((d['model'], d['effort']), ('', ''))   # 没写就走默认
+
+    def test_parse_model_and_effort(self):
+        pd = lambda m, e: self.t.parse_directive(f"x\n[派活]\n仓库: ~/w\n标题: t\n模型: {m}\n思考: {e}\n任务书:\n模型: opus\n正文")[1]
+        d = pd('Sonnet', 'medium（需求清楚）')
+        self.assertEqual((d['model'], d['effort']), ('sonnet', 'medium'))
+        self.assertEqual(d['brief'], '模型: opus\n正文')                    # 任务书里的同名行不当字段
+        d = pd('haiku / sonnet / opus 选一个', 'low / medium / high / xhigh / max 选一个')   # 照抄模板
+        self.assertEqual((d['model'], d['effort']), ('', ''))
+        d = pd('gpt-9', 'ultra')                                                  # 不在名单里的忽略
+        self.assertEqual((d['model'], d['effort']), ('', ''))
+        self.assertEqual(self.t.model_label({'model': 'haiku', 'effort': 'low'}), 'haiku · 思考 low')
+        self.assertEqual(self.t.model_label({}), '默认模型')
 
     def test_check_repo(self):
         self.assertIsNone(self.t.check_repo(str(self.repo))[1])
@@ -628,6 +641,7 @@ class TaskTest(unittest.TestCase):
                         'import json, sys, os\n'
                         'sys.stdin.read()\n'
                         'open("done.txt", "w").write(os.environ.get("FCB_TASK_ID", ""))\n'
+                        'open("argv.json", "w").write(json.dumps(sys.argv[1:]))\n'
                         'p = lambda o: print(json.dumps(o, ensure_ascii=False), flush=True)\n'
                         'p({"type": "system", "subtype": "init"})\n'
                         'p({"type": "assistant", "parent_tool_use_id": None, "message": {"content": ['
@@ -635,7 +649,7 @@ class TaskTest(unittest.TestCase):
                         '{"type": "tool_use", "name": "TodoWrite", "input": {"todos": [{"content": "写代码", "status": "in_progress"}]}}]}})\n'
                         'p({"type": "result", "result": "[进展] 收尾\\n做完了，分支已推送", "is_error": False, "total_cost_usd": 0.5})\n')
         fake.chmod(0o755)
-        n = self.t.create(title='x', repo=str(self.repo), brief='b', status='running', turn=1,
+        n = self.t.create(title='x', repo=str(self.repo), brief='b', status='running', turn=1, model='sonnet', effort='high',
                           requester={'channel': 'feishu', 'id': OWNER, 'name': '小王', 'owner': True},
                           origin={'channel': 'feishu', 'chat_id': 'oc_g', 'chat_type': 'p2p', 'message_id': 'om_s'})['id']
         self.t.update(n, turn=1)
@@ -650,6 +664,10 @@ class TaskTest(unittest.TestCase):
         self.assertEqual(t['cost'], 0.5)
         wt = Path(t['worktree'])
         self.assertEqual((wt / 'done.txt').read_text(), str(n))   # 在工作树里跑，带着任务号
+        argv = json.loads((wt / 'argv.json').read_text())
+        self.assertEqual(argv[argv.index('--model') + 1], 'sonnet')
+        self.assertEqual(argv[argv.index('--effort') + 1], 'high')
+        self.assertIn('sonnet · 思考 high', self.b.task_event_text(t, self.t.events(n)[0]))   # 开工消息写明模型
         br = subprocess.run(['git', '-C', str(wt), 'branch', '--show-current'], capture_output=True, text=True).stdout.strip()
         self.assertEqual(br, t['branch'])
         self.assertIn('claude --resume', self.b.task_event_text(t, self.t.events(n)[-1]))   # 主人私聊给接手命令
