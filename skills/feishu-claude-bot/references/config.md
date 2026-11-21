@@ -19,6 +19,15 @@
 | `tasks.relay` | `true` | 任务的完成、提问、失败先交给派活的那个会话（主控）处理，再由主控对人汇报；`false` 就原话直发 |
 | `tasks.codeup_token` | `~/.config/codeup/token` | `tasks.py mr` 给 Codeup 建合并请求用的个人令牌文件 |
 | `tasks.heartbeat_min` | `30` | 飞书任务多久没动静发一次心跳；`0` 关闭。企微不发 |
+| `tasks.budget_usd` | `15` | 每个任务的花费上限（美元，API 标价当量）。每轮按剩余额度传 `--max-budget-usd`，到了就停、按 BLOCKED 交回主控；`0` 不限 |
+| `tasks.daily_budget_usd` | `60` | 全部任务一天的花费上限。超了新一轮（含续跑）排到第二天，聊天不受影响；`0` 不限 |
+| `tasks.stuck_min` | `40` | 本机任务多少分钟没有任何动作（没调工具、没输出）算卡住：停掉并交回主控；`0` 关闭 |
+| `tasks.verify_retries` | `2` | `[派活]` 写了验证命令时，验证没过最多退回返工几次 |
+| `tasks.verify_timeout_min` | `20` | 验证命令最长跑多久 |
+| `tasks.cloud.environment_id` | 空 | Claude 云端环境 ID（`RemoteTrigger` 列出的 `env_…`）。空着就没有云端执行 |
+| `tasks.cloud.timeout_min` | `180` | 云端任务多久没交结果算中断 |
+| `tasks.cloud.models` | 内置 | 别名到云端模型 ID 的映射，默认 haiku/sonnet/opus 5.5 |
+| `chat_max_turns` | `60` | 聊天一轮最多走多少步。到了不硬停，再给 4 步让它把剩下的写成 `[派活]`；`0` 不限 |
 | `service_name` | `fcb-<目录名>` | systemd 服务名 / launchd 标签后缀 |
 | `persona` | `work` | `work` 工作分身 / `personal` 私人助理 |
 | `style` | `veteran` | `veteran` / `tsundere` / `warm` / `minimal`，对应 `assets/templates/rules/style-*.md` |

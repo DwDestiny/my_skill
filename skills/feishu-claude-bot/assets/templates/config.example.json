@@ -20,7 +20,13 @@
     "max_running": 2,
     "approval_hours": 24,
     "heartbeat_min": 30,
-    "models": ["haiku", "sonnet", "opus"]
+    "models": ["haiku", "sonnet", "opus"],
+    "budget_usd": 15,
+    "daily_budget_usd": 60,
+    "stuck_min": 40,
+    "verify_retries": 2,
+    "verify_timeout_min": 20,
+    "cloud": {"environment_id": "", "timeout_min": 180}
   },
   "persona": "work",
   "style": "veteran",
@@ -72,6 +78,7 @@
     ]
   },
   "deny_extra": [],
+  "chat_max_turns": 60,
   "credential_paths": ["~/.config/codeup", "~/.git-credentials"],
   "prime": true,
   "disable_mcp": true,

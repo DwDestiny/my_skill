@@ -753,7 +753,7 @@ class TaskTest(unittest.TestCase):
         t = self.t.load(n)
         self.assertEqual(t['status'], 'done', self.t.events(n))
         self.assertEqual([e['kind'] for e in self.t.events(n)], ['start', 'progress', 'done'])
-        self.assertEqual(self.t.events(n)[-1]['text'], '做完了，分支已推送')
+        self.assertEqual(self.t.events(n)[-1]['text'], '结论：没定验证命令，服务没复核\n\n做完了，分支已推送')
         self.assertEqual(t['todos'][0]['content'], '写代码')
         self.assertEqual(t['cost'], 0.5)
         wt = Path(t['worktree'])
@@ -765,6 +765,157 @@ class TaskTest(unittest.TestCase):
         br = subprocess.run(['git', '-C', str(wt), 'branch', '--show-current'], capture_output=True, text=True).stdout.strip()
         self.assertEqual(br, t['branch'])
         self.assertIn('claude --resume', self.b.task_event_text(t, self.t.events(n)[-1]))   # 主人私聊给接手命令
+
+    # ---------- 2.0：验证闸门、预算、卡死、每日预算、云端、聊天步数 ----------
+    def fake_bin(self, body):
+        bindir = Path(self.tmp.name) / ('bin_' + uuid.uuid4().hex[:6]); bindir.mkdir()
+        f = bindir / 'claude'
+        f.write_text('#!/usr/bin/env python3\nimport json, sys, os\n' + body); f.chmod(0o755)
+        return bindir
+
+    def run_with(self, bindir, n):
+        old = os.environ['PATH']; os.environ['PATH'] = f'{bindir}:{old}'
+        try: self.t.run(n)
+        finally: os.environ['PATH'] = old
+
+    def new_task(self, **kw):
+        base = dict(title='x', repo=str(self.repo), brief='b', status='running', turn=1,
+                    requester={'channel': 'feishu', 'id': OWNER, 'name': '小王', 'owner': True},
+                    origin={'channel': 'feishu', 'chat_id': 'oc_g', 'chat_type': 'p2p', 'message_id': 'om_s'})
+        base.update(kw)
+        return self.t.create(**base)['id']
+
+    def test_parse_verify_and_exec(self):
+        d = self.t.parse_directive("x\n[派活]\n仓库: ~/w\n标题: t\n验证: npm test\n执行: 云端\n任务书:\n验证: 不算\n")[1]
+        self.assertEqual((d['verify'], d['exec']), ('npm test', 'cloud'))
+        d = self.t.parse_directive("x\n[派活]\n仓库: ~/w\n标题: t\n验证: 无\n执行: 本机 / 云端 选一个\n任务书:\nb\n")[1]
+        self.assertEqual((d['verify'], d['exec']), ('', ''))   # 照抄模板等于没写
+
+    FAKE_FIX = ('prompt = sys.stdin.read()\n'
+                'n = int(open("rounds").read()) + 1 if os.path.exists("rounds") else 1\n'
+                'open("rounds", "w").write(str(n))\n'
+                'if "[验证失败]" in prompt and os.environ.get("FIXABLE") == "1": open("ok.txt", "w").write("ok")\n'
+                'print(json.dumps({"type": "result", "result": "做完了", "is_error": False, "total_cost_usd": 0.2 * n}), flush=True)\n')
+
+    def test_verify_gate_retries_then_passes(self):
+        bindir = self.fake_bin(self.FAKE_FIX)
+        n = self.new_task(verify='test -f ok.txt')
+        os.environ['FIXABLE'] = '1'
+        try: self.run_with(bindir, n)
+        finally: os.environ.pop('FIXABLE')
+        t = self.t.load(n)
+        self.assertEqual(t['status'], 'done', self.t.events(n))
+        self.assertTrue(self.t.events(n)[-1]['text'].startswith('结论：PASS'))
+        self.assertEqual((Path(t['worktree']) / 'rounds').read_text(), '2')   # 退回一次，同一会话续跑
+        self.assertEqual(t['cost'], 0.4)                                       # 会话累计值取最大，不是 0.2+0.4
+
+    def test_verify_gate_blocks_after_retries(self):
+        bindir = self.fake_bin(self.FAKE_FIX)
+        n = self.new_task(verify='test -f ok.txt')
+        self.run_with(bindir, n)
+        t = self.t.load(n)
+        self.assertEqual(t['status'], 'failed')
+        self.assertIn('结论：BLOCKED', self.t.events(n)[-1]['text'])
+        self.assertEqual((Path(t['worktree']) / 'rounds').read_text(), str(1 + self.t.T['verify_retries']))
+
+    def test_verify_command_goes_through_guards(self):
+        settings = self.inst / 'claude-settings.json'
+        settings.write_text(json.dumps({'hooks': {'PreToolUse': [{'matcher': 'Bash', 'hooks': [
+            {'type': 'command', 'command': f'{sys.executable} {TEMPLATES / "hooks" / "git_guard.py"}'}]}]}}))
+        try:
+            n = self.new_task(verify='git push --force origin main',
+                              requester={'channel': 'feishu', 'id': 'ou_mate', 'name': '同事甲', 'owner': False})
+            t = dict(self.t.load(n), worktree=str(self.repo))
+            ok, out = self.t.run_verify(t)
+            self.assertFalse(ok); self.assertIn('护栏', out)
+            ok, _ = self.t.run_verify(dict(t, verify='true'))
+            self.assertTrue(ok)
+        finally: settings.unlink()
+
+    def test_task_budget(self):
+        bindir = self.fake_bin('sys.stdin.read()\nprint(json.dumps({"type": "result", "result": "干了一半", "is_error": False, "total_cost_usd": 20}))\n')
+        n = self.new_task()
+        before = self.t.spent_today()
+        self.run_with(bindir, n)
+        t = self.t.load(n)
+        self.assertEqual(t['status'], 'failed'); self.assertIn('预算用完', self.t.events(n)[-1]['text'])
+        self.assertAlmostEqual(self.t.spent_today() - before, 20)
+        self.t.update(n, status='running', turn=2); self.run_with(bindir, n)   # 再开一轮：直接拒，不调 Claude
+        self.assertEqual(self.t.load(n)['status'], 'failed')
+        self.assertIn('预算用完', self.t.events(n)[-1]['text'])
+
+    def test_stuck_task_stopped(self):
+        stopped = []
+        alive, stop = self.t.alive, self.t.stop
+        self.t.alive = lambda t: True; self.t.stop = lambda t: stopped.append(t['id'])
+        self.b.RELAY_ON = False
+        try:
+            n = self.new_task(launched=time.time() - 3 * 3600, last_tool_at=time.time() - 2 * 3600)
+            self.b.task_tick()
+            self.assertEqual(self.t.load(n)['status'], 'failed'); self.assertEqual(stopped, [n])
+            self.assertIn('判定卡住', self.t.events(n)[-1]['text'])
+        finally:
+            self.t.alive, self.t.stop = alive, stop; self.b.RELAY_ON = True
+
+    def test_daily_budget_holds_new_turns(self):
+        launched = []
+        orig = self.t.launch
+        self.b.tasks.launch = lambda tid: launched.append(tid)
+        self.b.RELAY_ON = False
+        cap = self.t.T['daily_budget_usd']
+        try:
+            for x in self.t.all_tasks():
+                if x['status'] in ('running', 'approved'): self.t.update(x['id'], status='done')
+            self.t.spend_add(999, cap)
+            n = self.new_task(status='approved')
+            self.b.task_tick(); self.b.task_tick()
+            self.assertEqual(launched, [])
+            self.assertEqual(sum('预算' in (s[1] or '') for s in self.sent), 1)   # 只提醒一次
+        finally:
+            self.b.tasks.launch = orig; self.b.RELAY_ON = True
+            p = Path(self.t.STORE) / 'spend.jsonl'
+            p.write_text(''.join(l for l in p.read_text().splitlines(True) if '"task": 999' not in l))
+
+    def test_cloud_ok_and_poll(self):
+        self.assertIn('环境', self.t.cloud_ok(str(self.repo), True))
+        self.t.CLOUD['environment_id'] = 'env_test'
+        try:
+            self.assertIn('本人', self.t.cloud_ok(str(self.repo), False))
+            self.assertIn('GitHub', self.t.cloud_ok(str(self.repo), True))   # 测试仓库的远端不是 GitHub
+        finally: self.t.CLOUD.pop('environment_id')
+        n = self.new_task(exec='cloud', session_started=True, cloud={'trigger': 'trig', 'after': '', 'since': time.time()})
+        t = self.t.load(n)
+        self.assertTrue(self.t.alive(t))
+        self.t.run_cloud(n)                                               # 例程还没交结果：不重复开
+        self.assertEqual(self.t.load(n)['cloud']['trigger'], 'trig')
+        self.assertFalse(self.t.cloud_poll(n))                            # 分支还没出现
+        wt = Path(self.tmp.name) / ('cl' + str(n))
+        run = lambda *a: subprocess.run(['git', '-C', str(wt), *a], check=True, capture_output=True)
+        subprocess.run(['git', 'clone', '-q', str(Path(self.tmp.name) / 'proj.git'), str(wt)], check=True)
+        run('config', 'user.email', 't@t'); run('config', 'user.name', 't')
+        run('checkout', '-qb', t['branch'])
+        run('commit', '-q', '--allow-empty', '-m', 'wip'); run('push', '-q', 'origin', t['branch'])
+        self.assertFalse(self.t.cloud_poll(n))                            # 中途推送不算完
+        run('commit', '-q', '--allow-empty', '-m', 'feat: x\n\n测试 12 通过\n\nCloud-Run: done')
+        run('push', '-q', 'origin', t['branch'])
+        self.assertTrue(self.t.cloud_poll(n))
+        t = self.t.load(n)
+        self.assertEqual(t['status'], 'done')
+        txt = self.t.events(n)[-1]['text']
+        self.assertIn('测试 12 通过', txt); self.assertNotIn('Cloud-Run', txt)
+        self.assertTrue(t['cloud'].get('closed'))
+
+    def test_chat_max_turns_hands_off(self):
+        bindir = self.fake_bin('sys.stdin.read()\na = sys.argv\n'
+                               'if a[a.index("--max-turns") + 1] != "4": print(json.dumps({"type": "result", "subtype": "error_max_turns", "is_error": True, "session_id": "s1"}))\n'
+                               'else: print(json.dumps({"type": "result", "result": "转成任务了", "is_error": False, "session_id": "s1"}))\n')
+        old = os.environ['PATH']; os.environ['PATH'] = f'{bindir}:{old}'
+        prime = self.b.PRIME_ON; self.b.PRIME_ON = False
+        try:
+            s = {'id': str(uuid.uuid4()), 'started': False}
+            self.assertEqual(self.b.run_claude('k1', s, 'hi', True, True, 'oc'), '转成任务了')
+        finally:
+            os.environ['PATH'] = old; self.b.PRIME_ON = prime
 
     def guard(self, cmd, owner=False):
         r = subprocess.run([sys.executable, str(TEMPLATES / 'hooks' / 'git_guard.py')],
