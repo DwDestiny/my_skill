@@ -246,7 +246,8 @@ def audience(t):
     import hashlib
     h = lambda s: hashlib.sha1(str(s).encode()).hexdigest()[:8]
     o, r = t["origin"], t["requester"]
-    if o.get("chat_type") != "p2p": return "g" + h(o.get("chat_id"))
+    if o.get("chat_type") != "p2p":   # 群里也分主人和同事：主人派的会话带主人权限干过活，不给同事的任务接着用
+        return "g" + h(o.get("chat_id")) + ("-owner" if r.get("owner") else "")
     return "owner" if r.get("owner") else "u" + h(r.get("id"))
 
 def sibling_key(t):
@@ -298,6 +299,7 @@ def sibling_fork(t):
     if not s.get("head") or s.get("model", "") != (t.get("model") or ""): return ""
     if time.time() - s.get("last_used", 0) > T["sibling_warm_min"] * 60: return ""
     if (s.get("ctx") or 0) > T["sibling_max_ctx"]: return ""
+    if any(x.get("session_id") == s["head"] and x.get("compacting") for x in all_tasks()): return ""   # 正在压缩，缓存要重写
     return s["head"]
 
 def role_check(t):
@@ -328,10 +330,10 @@ COMPACT_KEEP = ("/compact 保留：正在做的事和做到哪一步、已经定
 
 def compact_due(ctx, last, compacted, now=None):
     now = now or time.time()
-    c = T["compact"]
-    idle = now - (last or now)
-    return bool(c.get("min_ctx")) and (ctx or 0) >= c["min_ctx"] and c["idle_min"] * 60 <= idle < 3600 \
-        and (compacted or 0) < (last or 0)
+    c = T.get("compact") or {}
+    lo, idle = c.get("min_ctx", 120000), now - (last or now)
+    return bool(lo and last) and (ctx or 0) >= lo and c.get("idle_min", 50) * 60 <= idle < 3600 \
+        and (compacted or 0) < last
 
 def compact_task(tid):
     """压缩等人回话的任务会话。调用方先把 compacting 记成当前时间，launch 看到它会等压缩做完再开工。"""
@@ -346,9 +348,9 @@ def compact_task(tid):
         # 压缩的钱记进总花费，但不算进任务花费：会话累计里多出来的部分加到底数上，检查点不受影响
         extra = max(0.0, (out.get("total_cost_usd") or 0) - (t.get("cost_base") or 0) - (t.get("cost") or 0))
         if extra: spend_add(tid, extra)
-        update(tid, cost_base=(t.get("cost_base") or 0) + extra, compacted=time.time(), compact_cost=round(extra, 4))
-    finally:
-        update(tid, compacting=0)
+        update(tid, cost_base=(t.get("cost_base") or 0) + extra, compact_cost=round(extra, 4))
+    finally:   # 成没成都记一次：这个闲置期不再试
+        update(tid, compacting=0, compacted=time.time())
 
 def split_handoff(text):
     """把回复末尾的 [交接] 段收走（存进团队笔记），剩下的给派活人看。"""
@@ -764,8 +766,22 @@ def run_cloud(tid):
     except Exception as e:
         update(tid, status="failed"); event(tid, "failed", str(e)[-500:])
 
+def inbox_pending(tid):
+    try:
+        with open(os.path.join(tdir(tid), "inbox.off")) as f: off = int(f.read() or 0)
+    except Exception: off = 0
+    try:
+        with open(os.path.join(tdir(tid), "inbox.jsonl")) as f: return sum(1 for l in f if l.strip()) > off
+    except FileNotFoundError: return False
+
 def cloud_poll(tid):
-    """查云端任务的分支头，看到 Cloud-Run 标记就收尾：建草稿合并请求，写完成事件。返回是否有了结论。"""
+    """查云端任务的分支头，有了结论就收尾。云端跑着时收到的追加要求，收尾后自动开下一轮带上。"""
+    done = _cloud_poll(tid)
+    if done and inbox_pending(tid) and load(tid)["status"] in ("done", "waiting", "failed", "lost"):
+        update(tid, status="approved")
+    return done
+
+def _cloud_poll(tid):
     t = load(tid); c = t.get("cloud") or {}
     repo, br = t["repo"], t["branch"]
     out = git(repo, "ls-remote", "origin", "refs/heads/" + br).stdout.split()
