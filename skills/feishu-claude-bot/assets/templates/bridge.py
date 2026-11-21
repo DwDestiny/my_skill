@@ -448,7 +448,11 @@ def task_detail(t, owner):
     lines = [f"#{t['id']} {t['title']} · {tasks.LABEL.get(t['status'], t['status'])}",
              f"仓库 {BT}{t['repo']}{BT}，分支 {BT}{t['branch']}{BT}，{tasks.model_label(t)}"]
     if t.get("started"):
-        lines.append(f"已经 {mins(t)} 分钟，调用工具 {t.get('tools', 0)} 次" + (f"，花了 {t['cost']} 美元（上限 {tasks.T.get('budget_usd')}）" if owner and t.get("cost") else ""))
+        lines.append(f"已经 {mins(t)} 分钟，调用工具 {t.get('tools', 0)} 次")
+        if owner:
+            lines.append(f"已用 {t.get('cost') or 0} 美元当量，检查点 {t.get('budget')}（{t.get('budget_why', '')}）"
+                         + (f"；接着同角色上次的会话干" if t.get("forked_from") else ""))
+            if tasks.quota_line(): lines.append(tasks.quota_line() + "（整个订阅，含终端里的会话）")
         if t.get("verify"): lines.append(f"验证命令：{BT}{t['verify']}{BT}")
     mark = {"completed": "✔", "in_progress": "▶"}
     todos = t.get("todos") or []
@@ -491,11 +495,31 @@ def task_command(ev):
             if ok: tasks.update(t["id"], cleaned=True)
             return f"#{n} 的工作树删了，分支留着。" if ok else f"没删成：{err}"
         return usage
+    if text == TEAM_CMD:
+        if not owner: return f"{TEAM_CMD} 只有{OWNER_NAME}能看。"
+        return team_view()
     m = APPROVE_RE.match(text)
     if m: return task_approve(ev, m.group(1) == "批", int(m.group(2)))
     m = FOLLOW_RE.match(text)
     if m: return task_follow(ev, int(m.group(1)), m.group(2).strip())
     return None
+
+TEAM_CMD = "/团队"
+
+def team_view():
+    """角色模板和各项目的兄弟智能体：谁在哪个项目上干过、上下文多大、缓存还热不热。"""
+    rs = tasks.roles()
+    out = ["角色模板：" + ("、".join(f"{r['name']}（{r['model'] or '默认'}）" for r in rs.values()) or "没有（实例的 roles/ 目录是空的）")]
+    sibs = tasks.all_siblings()
+    if not sibs: return "\n".join(out + ["还没有兄弟智能体：派活时写上角色，干完一个任务就有了。"])
+    warm = tasks.T["sibling_warm_min"] * 60
+    out.append("兄弟智能体（项目 · 角色 · 给谁干）：")
+    for s in sorted(sibs, key=lambda s: -s.get("last_used", 0)):
+        age = int((time.time() - s.get("last_used", 0)) / 60)
+        hot = "缓存热，下个任务接着它的会话" if age * 60 < warm and (s.get("ctx") or 0) <= tasks.T["sibling_max_ctx"] else "下个任务新开会话、带交接笔记"
+        out.append(f"· {s['project']} · {s['role']} · {'主人' if s.get('audience') == 'owner' else '同事'}："
+                   f"做过 {'、'.join('#' + str(x) for x in s.get('tasks', [])[-5:])}，上下文约 {int((s.get('ctx') or 0) / 1000)}k，{age} 分钟前，{hot}")
+    return "\n".join(out)
 
 def task_approve(ev, yes, n):
     t = tasks.load(n)
@@ -537,7 +561,8 @@ def task_directive(ev, result):
         why = tasks.cloud_ok(repo, owner)
         if why: ex, cloud_note = "", f"（云端跑不了：{why}，改在本机跑。）"
     t = tasks.create(title=d["title"], repo=repo, brief=d["brief"], model=d["model"], effort=d["effort"],
-                     verify=d.get("verify", ""), exec=ex,
+                     verify=d.get("verify", ""), exec=ex, role=d.get("role", ""),
+                     budget=d.get("budget") or 0, budget_why=d.get("budget_why", ""),
                      status="approved" if owner else "pending",
                      requester={"channel": ev["channel"], "id": ev["sender_id"], "name": name, "owner": owner},
                      origin={"channel": ev["channel"], "chat_id": ev["chat_id"], "chat_type": ev["chat_type"],
@@ -549,7 +574,8 @@ def task_directive(ev, result):
     if owner:
         return (head + f"\n\n排上了，任务 #{n}。进展在这儿报，{BT}/任务 {n}{BT} 随时看，@我 {BT}#{n} 内容{BT} 补充。").strip()
     brief = d["brief"] if len(d["brief"]) <= 3000 else d["brief"][:3000] + f"\n……（后面还有 {len(d['brief']) - 3000} 字，{BT}/任务 {n} 全文{BT} 看完整任务书）"
-    snap = f"#{n} {d['title']}\n仓库：{BT}{repo}{BT}（{tasks.model_label(t)}）\n" + (f"验证：{BT}{t['verify']}{BT}\n" if t.get("verify") else "") + f"任务书：\n{brief}"
+    snap = (f"#{n} {d['title']}\n仓库：{BT}{repo}{BT}（{tasks.model_label(t)}）\n" + (f"验证：{BT}{t['verify']}{BT}\n" if t.get("verify") else "")
+            + f"检查点：{t['budget']} 美元当量（{t.get('budget_why', '')}）\n任务书：\n{brief}")
     if ev["chat_type"] != "p2p":
         return (head + f"\n\n{owner_ref(ev['channel'])} {name} 想派个长任务，等你批：\n{snap}\n\n"
                 f"@我 回复「批 {n}」开工，「不批 {n}」作罢，{h} 小时内有效。").strip()
@@ -580,11 +606,39 @@ STUCK_S = (tasks.T.get("stuck_min") or 0) * 60
 CLOUD_POLL_S = 120
 cloud_polled = {}
 
+cpu_seen = {}                     # 任务号 -> [窗口起点的 CPU 纳秒, 窗口起点时间, 最近一次判定在忙的时间]
+
 def last_activity(t):
-    """任务最近一次动静：开这一轮、调工具、Claude 输出了东西（stream.log 变了）。"""
+    """任务最近一次动静：开这一轮、调工具、Claude 输出了东西（stream.log 变了）、进程在吃 CPU（长时间编译、跑测试）。"""
     try: mt = os.path.getmtime(os.path.join(tasks.tdir(t["id"]), "stream.log"))
     except OSError: mt = 0
+    now, v = time.time(), tasks.cpu_ns(t)
+    if v is not None:
+        c = cpu_seen.setdefault(t["id"], [v, now, 0])
+        if now - c[1] >= 300:   # 每 5 分钟看一次：平均占用超过 5% 个核就算在干活
+            if (v - c[0]) / 1e9 / (now - c[1]) > 0.05: c[2] = now
+            c[0], c[1] = v, now
+        mt = max(mt, c[2])
     return max(t.get("launched") or 0, t.get("last_tool_at") or 0, mt)
+
+QUOTA_SENT = os.path.join(STATE, "quota_alerts.json")
+quota_last = [0]
+
+def quota_check(now):
+    """订阅额度用得快：私聊提醒主人（每个窗口每涨一成提醒一次），不停任何活。"""
+    if now - quota_last[0] < 300: return
+    quota_last[0] = now
+    sent = load(QUOTA_SENT, {})
+    for k, u, reset, why in tasks.quota_alerts():
+        key = f"{k}:{reset}:{int(u * 10)}"
+        if key in sent: continue
+        run = [t for t in tasks.all_tasks() if t["status"] == "running"]
+        lines = [f"额度提醒：{why}，{time.strftime('%m-%d %H:%M', time.localtime(reset))} 重置。这是整个订阅的用量，包括你终端里的会话。"]
+        if run: lines.append("在跑的任务：" + "；".join(f"#{t['id']} {t['title']}（{tasks.model_label(t)}，已用 {t.get('cost') or 0} 美元当量）" for t in run))
+        lines.append(f"只是提醒，活照常干。要省着用：{BT}/任务 取消 N{BT} 停掉不急的，或跟我说改派便宜模型、放到云端。")
+        owner_dm("feishu" if FEISHU_ON else "wecom", "\n".join(lines))
+        sent[key] = now
+        save(QUOTA_SENT, dict(list(sent.items())[-50:]))
 
 def task_tick():
     now = time.time()
@@ -625,13 +679,8 @@ def task_tick():
               and now - max(t.get("last_post") or 0, t.get("launched") or 0) > HEARTBEAT_S):
             task_say(t, heartbeat_text(t), f"t{n}h{int(now)}"); tasks.update(n, last_post=now)
     running = sum(1 for t in tasks.all_tasks() if t["status"] == "running" and t.get("exec") != "cloud")   # 云端的不占本机名额
-    held = tasks.over_daily()
+    quota_check(now)
     for t in tasks.all_tasks():
-        if t["status"] == "approved" and held:   # 当天预算用完：排着，第二天自动开
-            if not t.get("held_note"):
-                tasks.update(t["id"], held_note=True)
-                task_say(t, f"#{t['id']} 排着：今天的任务预算（{tasks.T['daily_budget_usd']} 美元）用完了，明天自动开工。", f"t{t['id']}held{time.strftime('%m%d')}")
-            continue
         if t["status"] == "approved" and (t.get("exec") == "cloud" or running < tasks.T["max_running"]):
             log.info("task #%s launch turn %s", t["id"], t.get("turn", 0) + 1)
             tasks.launch(t["id"]); running += t.get("exec") != "cloud"

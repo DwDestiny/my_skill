@@ -19,9 +19,12 @@
 | `tasks.relay` | `true` | 任务的完成、提问、失败先交给派活的那个会话（主控）处理，再由主控对人汇报；`false` 就原话直发 |
 | `tasks.codeup_token` | `~/.config/codeup/token` | `tasks.py mr` 给 Codeup 建合并请求用的个人令牌文件 |
 | `tasks.heartbeat_min` | `30` | 飞书任务多久没动静发一次心跳；`0` 关闭。企微不发 |
-| `tasks.budget_usd` | `15` | 每个任务的花费上限（美元，API 标价当量）。每轮按剩余额度传 `--max-budget-usd`，到了就停、按 BLOCKED 交回主控；`0` 不限 |
-| `tasks.daily_budget_usd` | `60` | 全部任务一天的花费上限。超了新一轮（含续跑）排到第二天，聊天不受影响；`0` 不限 |
-| `tasks.stuck_min` | `40` | 本机任务多少分钟没有任何动作（没调工具、没输出）算卡住：停掉并交回主控；`0` 关闭 |
+| `tasks.budget_default` | `20` | 任务检查点的兜底值（美元当量）。主控在 `[派活]` 里没写 `预算`、又没有同类任务历史时用。到了检查点任务停下交回主控，主控可 `[任务指令] #N 继续，预算加到 X` |
+| `tasks.budget_factor` | `1.5` | 按历史估检查点时，同类（同角色同模型，其次同模型）最近 10 个完成任务花费中位数乘几 |
+| `tasks.quota_alert` | 见左 | 订阅额度提醒：`five_hour` 是 5 小时窗口用量到多少提醒；`seven_day_pace` 是 7 天窗口“已用比例 ÷ 已过时间比例”到多少提醒。只私聊提醒主人，不拦活 |
+| `tasks.sibling_warm_min` | `55` | 同项目同角色的上个会话多少分钟内用过（提示缓存 1 小时内还热），新任务就分叉接着它 |
+| `tasks.sibling_max_ctx` | `150000` | 上个会话的上下文超过这么多 token 就不再接着，新开会话带交接笔记 |
+| `tasks.stuck_min` | `40` | 本机任务多少分钟没有任何动作（没调工具、没输出、进程 CPU 平均不到 5%）算卡住：停掉并交回主控；`0` 关闭 |
 | `tasks.verify_retries` | `2` | `[派活]` 写了验证命令时，验证没过最多退回返工几次 |
 | `tasks.verify_timeout_min` | `20` | 验证命令最长跑多久 |
 | `tasks.cloud.environment_id` | 空 | Claude 云端环境 ID（`RemoteTrigger` 列出的 `env_…`）。空着就没有云端执行 |
