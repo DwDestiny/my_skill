@@ -112,6 +112,9 @@ deny += ["Read(**/.private/**)", "Edit(**/.private/**)", f"Read({HOME}/.lark-cli
          *[f"Edit({INST}/{p})" for p in INST_LOCKED], f"Read({INST}/state/**)", f"Read({INST}/logs/**)", f"Read({INST}/config.json)"]
 SLUG = CFG.get("service_name") or "fcb-" + os.path.basename(INST)
 deny += [f"Bash(systemctl --user stop {SLUG}:*)", f"Bash(launchctl unload:*)"]
+for p in CFG.get("credential_paths", []):   # 代码平台凭据：Read 工具也不能读，Bash 由 git_guard 拦
+    p = X(p).rstrip("/")
+    deny += [f"Read({p})", f"Read({p}/**)", f"Edit({p})", f"Edit({p}/**)"]
 deny += CFG.get("deny_extra", [])
 # Claude Code 权限规则里，文件路径以单个 / 开头是相对项目根，绝对路径要写成 //（实测：Read(/abs) 拦不住，Read(//abs) 能拦）
 deny = [re.sub(r"^(Read|Edit|Write)\(/(?!/)", r"\1(//", r) for r in deny]

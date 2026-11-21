@@ -166,8 +166,10 @@ def parse_directive(text):
     def pick(v, ok):   # 正好写了一个合法值才算；照抄“haiku / sonnet / opus”这种就当没写
         hit = {w for w in re.split(r"[\s,，/（()）]+", v.lower()) if w in ok}
         return hit.pop() if len(hit) == 1 else ""
+    target = field("目标分支").split()[0] if field("目标分支") else ""
+    if not re.fullmatch(r"[\w./-]{1,100}", target) or ".." in target: target = ""
     return head, {"repo": field("仓库"), "title": field("标题")[:80] or "未命名任务", "brief": brief,
-                  "model": pick(field("模型"), MODELS), "effort": pick(field("思考"), EFFORTS)}
+                  "model": pick(field("模型"), MODELS), "effort": pick(field("思考"), EFFORTS), "target": target}
 
 def model_label(t):
     """给人看的模型说明，没指定就是默认。"""
@@ -227,7 +229,9 @@ def make_worktree(t):
     if git(repo, "remote").stdout.strip():
         git(repo, "fetch", "--quiet", "origin")
         r = git(repo, "symbolic-ref", "--short", "refs/remotes/origin/HEAD")
-        if r.returncode == 0: base = r.stdout.strip()
+        tg = t.get("target")
+        if tg and git(repo, "rev-parse", "--verify", "--quiet", "origin/" + tg).returncode == 0: base = "origin/" + tg
+        elif r.returncode == 0: base = r.stdout.strip()
         elif git(repo, "rev-parse", "--verify", "--quiet", "origin/main").returncode == 0: base = "origin/main"
     r = git(repo, "worktree", "add", "--quiet", "-b", t["branch"], wt, base)
     if r.returncode != 0: raise RuntimeError("建工作树失败：" + r.stderr.strip()[-300:])
@@ -245,7 +249,7 @@ def first_prompt(t, base):
 - 先用待办工具列计划。
 - 进展汇报：单独起一行写“[进展] 一句话”，会转发给派活人。什么时候报，按守则“长任务”一节的汇报规矩。
 - 必须由人拍板的事（方案二选一、需求说不清、要授权），把问题和你的建议写清楚，单独起一行“[提问] 一句话问题”，然后结束这一轮等回复。能自己定的不要问。
-- 做完：提交到 {t['branch']}；仓库有远端就推送这个分支，再建草稿合并请求（gh pr create --draft）。不合并、不推主干、不发版。
+- 做完：提交到 {t['branch']}；仓库有远端就推送这个分支，再建草稿合并请求：在工作树里跑 `{mr_cmd(t, base)}`（GitHub、Codeup 都走它，凭据它自己读；不要直接读令牌或调平台接口）。不合并、不推主干、不发版。
 - 最后一条回复是给派活人看的总结：做了什么、怎么验证的、分支和合并请求链接、还剩什么。按守则的说话风格，简短。
 - 运行中可能收到“[追加指令]”，按它调整。
 - 派子代理时按子活儿挑模型：查找、汇总、机械改动用 haiku，常规编码和测试用 sonnet，难的设计和排查才用 opus。
@@ -330,8 +334,62 @@ def remove_worktree(t):
     r = git(t["repo"], "worktree", "remove", t["worktree"])
     return r.returncode == 0, r.stderr.strip()[-200:]
 
+# ---------- 建草稿合并请求：GitHub 走 gh，Codeup 走 OpenAPI。凭据只在本进程里读，不打印；只建草稿，不合并 ----------
+CODEUP_TOKEN = T.get("codeup_token", "~/.config/codeup/token")
+CODEUP_API = "https://openapi-rdc.aliyuncs.com/oapi/v1/codeup/organizations"
+
+def mr_cmd(t, base=""):
+    tg = t.get("target") or (base.split("/", 1)[1] if base.startswith("origin/") else "")
+    return f"python3 {os.path.abspath(__file__)} mr --title '<标题>' --body-file <说明文件>" + (f" --target {tg}" if tg else "")
+
+def _api(method, url, body=None):
+    import urllib.request
+    tok = open(X(CODEUP_TOKEN)).read().strip()
+    req = urllib.request.Request(url, method=method, data=json.dumps(body).encode() if body is not None else None,
+                                 headers={"x-yunxiao-token": tok, "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r: return json.loads(r.read() or b"{}")
+    except urllib.error.HTTPError as e:
+        raise SystemExit(f"Codeup 接口 {e.code}：{e.read().decode(errors='replace')[:300]}")
+
+def create_mr(argv):
+    import argparse, urllib.parse
+    ap = argparse.ArgumentParser(prog="tasks.py mr", description="在当前 git 工作树里，为当前分支建草稿合并请求")
+    ap.add_argument("--title", required=True); ap.add_argument("--body-file"); ap.add_argument("--body", default="")
+    ap.add_argument("--target", help="目标分支，默认仓库的默认分支")
+    a = ap.parse_args(argv)
+    body = open(a.body_file).read() if a.body_file else a.body
+    branch = git(".", "branch", "--show-current").stdout.strip()
+    if not branch: sys.exit("当前不在分支上")
+    if os.environ.get("FCB_OWNER") != "1" and not branch.startswith("bot/"):
+        sys.exit(f"不是{OWNER_NAME}本人触发的会话，只能从 bot/ 开头的分支建合并请求（当前 {branch}）")
+    if git(".", "ls-remote", "--exit-code", "--heads", "origin", branch).returncode != 0:
+        sys.exit(f"远端还没有 {branch}，先 git push -u origin {branch}")
+    url = git(".", "remote", "get-url", "origin").stdout.strip()
+    m = re.match(r"(?:https://|git@)([^/:]+)[/:](.+?)(?:\.git)?/?$", url)
+    if not m: sys.exit("认不出远端地址")
+    host, path = m.group(1).split("@")[-1], m.group(2)
+    if host == "github.com":
+        cmd = ["gh", "pr", "create", "--draft", "--head", branch, "--title", a.title, "--body", body or a.title]
+        if a.target: cmd += ["--base", a.target]
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        print((r.stdout + r.stderr).strip()); sys.exit(r.returncode)
+    if host != "codeup.aliyun.com": sys.exit(f"{host} 还不支持自动建合并请求，把分支名告诉派活人")
+    org = path.split("/")[0]
+    repo = _api("GET", f"{CODEUP_API}/{org}/repositories/{urllib.parse.quote(path, safe='')}")
+    rid = repo.get("id")
+    if not rid: sys.exit("查不到仓库")
+    target = a.target or repo.get("defaultBranch") or "main"
+    if target == branch: sys.exit("源分支和目标分支一样")
+    r = _api("POST", f"{CODEUP_API}/{org}/repositories/{rid}/changeRequests",
+             {"title": a.title, "description": body or a.title, "sourceBranch": branch, "targetBranch": target,
+              "sourceProjectId": rid, "targetProjectId": rid, "workInProgress": True})
+    print(f"草稿合并请求 !{r.get('localId')}：{branch} → {target}\n{r.get('detailUrl') or ''}")
+
 if __name__ == "__main__":
     if len(sys.argv) == 3 and sys.argv[1] == "run":
         run(int(sys.argv[2]))
+    elif len(sys.argv) >= 2 and sys.argv[1] == "mr":
+        create_mr(sys.argv[2:])
     else:
-        sys.exit("用法：python3 tasks.py run <id>（由 bridge 启动，不要手动跑）")
+        sys.exit("用法：python3 tasks.py run <id>（由 bridge 启动）；python3 tasks.py mr --title T [--body-file F] [--target 分支]")

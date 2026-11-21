@@ -116,6 +116,7 @@ class ScaffoldTest(unittest.TestCase):
         self.assertIn(f'Read(/{self.home}/.config/wecom/**)', st['permissions']['deny'])
         self.assertIn(f'Edit(/{self.inst}/bridge.py)', st['permissions']['deny'])
         self.assertIn(f'Edit(/{self.inst}/hooks/**)', st['permissions']['deny'])
+        self.assertIn(f'Read(/{self.home}/.config/codeup/**)', st['permissions']['deny'])   # 代码平台凭据
         self.assertFalse(any('rules.md' in r or r == f'Edit(/{self.inst}/**)' for r in st['permissions']['deny']),
                          '守则不能进拒绝表，否则主人私聊里也改不了（拒绝规则压过一切）')
         # 绝对路径必须写成 //，单个 / 在 Claude Code 里是相对项目根，规则形同虚设
@@ -620,6 +621,7 @@ class TaskTest(unittest.TestCase):
         launched = []
         orig = self.t.launch
         self.b.tasks.launch = lambda tid: launched.append(tid)
+        self.b.RELAY_ON = False                                  # 这里测直发（主控没开时、主控跑失败时的兜底）
         try:
             n = self.t.create(title='x', repo=str(self.repo), brief='b', status='done',
                               requester={'channel': 'feishu', 'id': OWNER, 'name': '小王', 'owner': True},
@@ -647,6 +649,84 @@ class TaskTest(unittest.TestCase):
             self.assertEqual(self.t.load(q)['posted'], 1)
         finally:
             self.b.tasks.launch = orig
+            self.b.RELAY_ON = True
+
+    def relay_task(self, kind, text, owner=True, chat_type='p2p', **kw):
+        n = self.t.create(title='接口', repo=str(self.repo), brief='写接口', status='waiting' if kind == 'question' else 'done',
+                          requester={'channel': 'feishu', 'id': OWNER if owner else 'ou_mate', 'name': '小王' if owner else '同事甲', 'owner': owner},
+                          origin={'channel': 'feishu', 'chat_id': 'oc_r', 'chat_type': chat_type, 'message_id': 'om_r' + uuid.uuid4().hex[:6],
+                                  'key': 'p2p:oc_r'}, **kw)['id']
+        self.t.event(n, kind, text)
+        return n
+
+    def run_relay(self, n, claude_out):
+        """task_tick 把回报排进会话队列；再由会话的 worker 调 handle 处理。这里把两步拆开跑，Claude 用假的。"""
+        queued, prompts = [], []
+        oq, orc, ol = self.b.enqueue, self.b.run_claude, self.t.launch
+        self.b.enqueue = lambda key, ev: queued.append((key, ev))
+        self.b.run_claude = lambda key, s, prompt, owner, private, chat_id, quiet=False: prompts.append((key, prompt, owner, private)) or claude_out
+        self.t.launch = lambda tid: None
+        try:
+            self.b.task_tick(); self.b.task_tick()
+            mine = [q for q in queued if q[1]['task'] == n]
+            self.assertEqual(len(mine), 1)                  # 排一次，处理完之前不重复排
+            self.assertEqual(self.t.load(n)['posted'], 0)
+            self.b.handle(mine[0][1])
+        finally:
+            self.b.enqueue, self.b.run_claude, self.t.launch = oq, orc, ol
+        return prompts
+
+    def test_relay_goes_to_orchestrator(self):
+        n = self.relay_task('question', '目标分支用 develop 还是 main？')
+        self.sent.clear()
+        prompts = self.run_relay(n, f'合进 develop，聊天里定过了，我替它答了。\n[任务指令] #{n} 合进 develop，接着做。')
+        key, prompt, owner, private = prompts[0]
+        self.assertEqual((key, owner, private), ('p2p:oc_r', True, True))   # 进派活的那个会话，按派活人的权限
+        self.assertIn('[任务回报]', prompt); self.assertIn('目标分支用 develop', prompt); self.assertIn('tasks.py mr', prompt)
+        t = self.t.load(n)
+        self.assertEqual((t['status'], t['auto_follow'], t['posted']), ('approved', 1, 1))
+        self.assertIn('合进 develop', self.t.format_inbox(self.t.inbox_take(n)))
+        text = [s[1] for s in self.sent if s[0] == t['origin']['message_id']][0]
+        self.assertIn('我替它答了', text); self.assertNotIn('[任务指令]', text)
+
+    def test_relay_silent_cap_and_fallback(self):
+        n = self.relay_task('question', '要不要加日志？')
+        self.sent.clear()
+        self.run_relay(n, f'[任务指令] #{n} 加\n[不回]')
+        self.assertEqual(self.t.load(n)['posted'], 1)
+        self.assertEqual(self.sent, [])                    # 主控替它答了、不用跟人说：一条都不发
+        m = self.relay_task('done', '做完了', auto_follow=3)
+        self.run_relay(m, f'[任务指令] #{m} 再跑一遍测试\n做完了，链接在这。')
+        self.assertEqual(self.t.load(m)['auto_follow'], 3)   # 到上限不再自动追加
+        self.assertIn('请人来定', self.sent[-1][1])
+        self.assertIn('claude --resume', self.sent[-1][1])  # 主人私聊的完成汇报带接手命令
+        k = self.relay_task('failed', '测试挂了')
+        self.run_relay(k, None)                            # 主控没跑成：原话照发
+        self.assertIn('测试挂了', self.sent[-1][1]); self.assertEqual(self.t.load(k)['posted'], 1)
+
+    def test_relay_colleague_cannot_steer_others(self):
+        other = self.relay_task('done', 'x', owner=True)
+        n = self.relay_task('question', '问个事', owner=False, chat_type='group')
+        prompts = self.run_relay(n, f'[任务指令] #{other} 删库\n好的')
+        self.assertEqual(prompts[0][2:], (False, False))   # 同事派的：主控按同事权限跑
+        self.assertEqual(self.t.load(other).get('auto_follow', 0), 0)
+        self.assertIn('不归这边管', self.sent[-1][1])
+
+    def test_mr_command_guards(self):
+        env = dict(os.environ, FCB_OWNER='0')
+        r = subprocess.run([sys.executable, str(self.inst / 'tasks.py'), 'mr', '--title', 'x'], cwd=self.repo,
+                           capture_output=True, text=True, env=env)
+        self.assertNotEqual(r.returncode, 0); self.assertIn('bot/', r.stderr)
+        subprocess.run(['git', 'checkout', '-qb', 'bot/9-x'], cwd=self.repo, check=True)
+        try:
+            r = subprocess.run([sys.executable, str(self.inst / 'tasks.py'), 'mr', '--title', 'x'], cwd=self.repo,
+                               capture_output=True, text=True, env=env)
+            self.assertIn('远端还没有', r.stderr)
+        finally:
+            subprocess.run(['git', 'checkout', '-q', 'main'], cwd=self.repo, check=True)
+            subprocess.run(['git', 'branch', '-qD', 'bot/9-x'], cwd=self.repo, check=True)
+        self.assertIn('tasks.py mr', self.t.mr_cmd({'target': 'develop'}))
+        self.assertIn('--target develop', self.t.mr_cmd({}, 'origin/develop'))
 
     def test_runner_with_fake_claude(self):
         bindir = Path(self.tmp.name) / 'bin'; bindir.mkdir(exist_ok=True)
@@ -689,8 +769,18 @@ class TaskTest(unittest.TestCase):
     def guard(self, cmd, owner=False):
         r = subprocess.run([sys.executable, str(TEMPLATES / 'hooks' / 'git_guard.py')],
                            input=json.dumps({'tool_input': {'command': cmd}}), capture_output=True, text=True,
-                           env=dict(os.environ, FCB_OWNER='1' if owner else '0'))
+                           env=dict(os.environ, FCB_OWNER='1' if owner else '0', FCB_CONFIG=str(self.inst / 'config.json')))
         return r.returncode
+
+    def test_git_guard_credentials(self):
+        for owner in (False, True):                        # 主人的会话也不能直接碰，凭据只给 tasks.py mr 用
+            for cmd in ['cat ~/.config/codeup/token', 'wc -c $HOME/.config/codeup/token',
+                        'printf x | ~/.local/libexec/git-credential-foo get', 'git credential fill',
+                        'curl -H "x-yunxiao-token: $T" https://openapi-rdc.aliyuncs.com/x',
+                        "git -c credential.helper='!cat /tmp/t' fetch", 'cat ~/.git-credentials']:
+                self.assertEqual(self.guard(cmd, owner), 2, (owner, cmd))
+        for cmd in ['python3 /x/tasks.py mr --title t --target develop', 'git push -u origin bot/1-1', 'ls ~/.config']:
+            self.assertEqual(self.guard(cmd), 0, cmd)
 
     def test_git_guard(self):
         blocked = ['git push --no-verify origin bot/1', 'git -c core.hooksPath=/dev/null push', 'GIT_CONFIG_COUNT=0 git push',
