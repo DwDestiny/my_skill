@@ -14,6 +14,11 @@ Pos:    实例目录里唯一的服务进程，由 systemd 用户服务或 launc
 来源:   feishu-claude-bot skill 的 assets/templates/bridge.py
 """
 import json, os, re, subprocess, sys, threading, time, uuid, queue, logging, signal
+import importlib.util
+# 长任务层（同目录 tasks.py），同时提供聊天和任务共用的 Claude 参数、钩子环境。按文件路径加载，不走 sys.path 缓存
+_spec = importlib.util.spec_from_file_location("fcb_tasks_" + uuid.uuid4().hex[:8],
+                                               os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks.py"))
+tasks = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(tasks)
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 CFG_PATH = os.path.join(ROOT, "config.json")
@@ -109,14 +114,15 @@ def no_at_all(text):
     """不许 @所有人：把 <at user_id="all"> 之类换成普通文字。"""
     return re.sub(r'<at\s+(user_)?ids?\s*=\s*"?all"?\s*>.*?</at>', "@所有人", text)
 
-def reply(ev, text, in_thread):
+def reply(ev, text, in_thread, key=None):
+    """回复 ev 那条消息。key：同一条消息要回多次时（长任务的进度）用不同的 key，否则飞书按幂等键去重。"""
     if ev.get("channel") == "wecom": return wecom_reply(ev, text)
     text = text.strip() or "（空回复，再问一次？）"
     text = no_at_all(text)
     if len(text) > MAX_REPLY_CHARS:
         text = text[:MAX_REPLY_CHARS] + "\n\n……太长了，后面截掉了。"
     args = ["im", "+messages-reply", "--as", "bot", "--message-id", ev["message_id"], "--markdown", "-",
-            "--idempotency-key", ("fcb-" + ev["message_id"])[:50]]
+            "--idempotency-key", ("fcb-" + (key or "") + ev["message_id"])[:50]]
     if in_thread: args.append("--reply-in-thread")
     r = lark(args, stdin=text)
     if r.returncode != 0:   # markdown 失败时退回纯文本
@@ -246,21 +252,9 @@ def mark_seen(s, ids, ts=None):
         save(SESS_FILE, sessions)
 
 def base_cmd():
-    cmd = ["claude", "-p", "--output-format", "json", "--permission-mode", PERMISSION_MODE,
-           "--append-system-prompt-file", RULES, "--settings", SETTINGS,
-           # 把 cwd、环境、git 状态挪出系统提示，系统提示前缀才能跨会话命中缓存
-           "--exclude-dynamic-system-prompt-sections"]
-    for d in ADD_DIRS: cmd += ["--add-dir", d]
-    if DISABLE_MCP:   # MCP 异步连接，首个请求的工具列表时有时无，前缀跟着变，缓存命中不了
-        cmd += ["--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}']
-    return cmd
+    return tasks.claude_args() + ["--output-format", "json"]   # 参数和后台任务共用一份，缓存前缀一致
 
-def hook_env(owner, private, chat_id, channel="feishu"):
-    env = dict(os.environ, FCB="1", FCB_CONFIG=CFG_PATH, FCB_OWNER="1" if owner else "0",
-               FCB_PRIVATE="1" if private else "0", FCB_CHAT_ID=chat_id, FCB_CHANNEL=channel)
-    if not private:   # 非主人私聊：不读不写自动记忆
-        env["CLAUDE_CODE_DISABLE_AUTO_MEMORY"] = "1"
-    return env
+hook_env = tasks.hook_env
 
 def prime(sid):
     """新会话先发固定开场白：会话开头的上下文（CLAUDE.md、skill 清单等）跟着固定内容进缓存，下一个新会话直接命中。"""
@@ -302,6 +296,12 @@ def handle(ev):
     if ev.get("chat_type") == "p2p" and text in NEW_CMDS:
         with lock: sessions.pop(key, None); save(SESS_FILE, sessions)
         reply(ev, "好，翻篇了，新话题请讲。", False); return
+    if TASKS_ON:
+        try: tr = task_command(ev)
+        except Exception:
+            log.exception("task command failed"); tr = "任务命令出岔子了，请看日志。"
+        if tr is not None:
+            reply(ev, tr, in_thread); return
     if AMB["enabled"] and ev.get("channel") == "feishu" and ev.get("chat_type") != "p2p" and is_owner(ev):
         cmd = re.sub(r"@\S+\s*", "", text).strip()
         c = AMB["command"]
@@ -324,6 +324,10 @@ def handle(ev):
     except Exception as e:
         log.exception("handle failed")
         result = f"出岔子了：{type(e).__name__}，请看日志。"
+    if TASKS_ON and result:
+        try: result = task_directive(ev, result)
+        except Exception:
+            log.exception("task directive failed"); result += "\n\n（派活没成，请看日志。）"
     out_id = reply(ev, result, in_thread)
     with lock: cur_s = sessions.get(key)
     if cur_s is not None: mark_seen(cur_s, [out_id])
@@ -363,6 +367,220 @@ def dispatch(ev):
             q = queue.Queue(); workers[key] = q
             threading.Thread(target=worker, args=(key, q), daemon=True).start()
     q.put(ev)
+
+
+# ---------- 长任务：派活、审批、命令、进度回报（任务存储和后台运行在 tasks.py） ----------
+# 聊天里的 Claude 觉得活儿大，就在回复末尾写 [派活] 块；主人派的直接排队，别人派的先找主人批（群里就在群里 @ 主人，
+# 私聊就私聊主人）。任务在独立工作树和分支里后台跑，进展、提问、结果都回到派活的那个会话。
+TASKS_ON = tasks.T["enabled"]
+APPROVAL_S = tasks.T["approval_hours"] * 3600
+HEARTBEAT_S = tasks.T["heartbeat_min"] * 60
+TASK_CMD = "/任务"
+APPROVE_RE = re.compile(r"^(批|不批)\s*#?(\d+)\s*$")
+FOLLOW_RE = re.compile(r"^#(\d+)\s+(.+)$", re.S)
+BT = chr(96)   # 反引号
+
+def plain(ev):
+    """去掉群消息开头的 @机器人，拿来匹配命令。"""
+    t = (ev.get("content") or "").strip()
+    return re.sub(r"^(@\S+\s*)+", "", t).strip()   # 飞书是 @_user_1，企微群消息带“@机器人名”
+
+def mention(channel, uid, name):
+    return f'<at user_id="{uid}">{name}</at>' if channel == "feishu" else f"<@{uid}>"
+
+def owner_ref(channel):
+    return mention(channel, OWNER_OPEN_ID if channel == "feishu" else WECOM["owner_userid"], OWNER_NAME)
+
+def task_say(t, text, key):
+    """往任务的原会话发一条：飞书引用派活的那条消息，企微推到原会话。"""
+    o = t["origin"]
+    if o["channel"] == "wecom":
+        return wecom_send({"op": "send", "chatid": o["chat_id"], "content": wecom_trim(text), "ref": key})
+    return reply({"channel": "feishu", "message_id": o["message_id"]}, text, o.get("thread", False), key=key)
+
+def owner_dm(channel, text):
+    """私聊主人（同事私聊派的活要主人批）。优先同渠道，没配就换另一个。返回用了哪个渠道。"""
+    order = ["wecom", "feishu"] if channel == "wecom" else ["feishu", "wecom"]
+    for c in order:
+        if c == "wecom" and WECOM["enabled"] and WECOM["owner_userid"]:
+            wecom_send({"op": "send", "chatid": WECOM["owner_userid"], "content": wecom_trim(text), "ref": "approve"})
+            return c
+        if c == "feishu" and FEISHU_ON and OWNER_OPEN_ID:
+            lark(["im", "+messages-send", "--as", "bot", "--user-id", OWNER_OPEN_ID, "--markdown", "-"], stdin=text)
+            return c
+    return None
+
+def same_chat(t, ev):
+    o = t["origin"]
+    return ev.get("channel") == o["channel"] and ev.get("chat_id") == o["chat_id"]
+
+def can_see(t, ev): return is_owner(ev) or same_chat(t, ev)
+
+def can_steer(t, ev):
+    """谁能给任务补充指令、回答提问、取消：主人；同事派的活还有派活人本人。看发消息的 ID，不看内容。"""
+    r = t["requester"]
+    return is_owner(ev) or (not r.get("owner") and ev.get("channel") == r["channel"] and ev.get("sender_id") == r["id"])
+
+def mins(t): return int((time.time() - (t.get("started") or t["created"])) / 60)
+
+def task_line(t):
+    return f"#{t['id']} {tasks.LABEL.get(t['status'], t['status'])} · {t['title']}（{t['requester']['name']}）"
+
+def task_detail(t, owner):
+    lines = [f"#{t['id']} {t['title']} · {tasks.LABEL.get(t['status'], t['status'])}",
+             f"仓库 {BT}{t['repo']}{BT}，分支 {BT}{t['branch']}{BT}"]
+    if t.get("started"):
+        lines.append(f"已经 {mins(t)} 分钟，调用工具 {t.get('tools', 0)} 次" + (f"，花了 {t['cost']} 美元" if owner and t.get("cost") else ""))
+    mark = {"completed": "✔", "in_progress": "▶"}
+    todos = t.get("todos") or []
+    if todos: lines += ["计划："] + [f"{mark.get(x.get('status'), '·')} {x.get('content', '')}" for x in todos[:12]]
+    prog = [e for e in tasks.events(t["id"]) if e["kind"] == "progress"]
+    if prog: lines.append("最近进展：" + prog[-1]["text"])
+    return "\n".join(lines)
+
+def task_command(ev):
+    """/任务 命令、批 N、#N 补充。不是这些就返回 None，照常交给 Claude。"""
+    text = plain(ev)
+    owner = is_owner(ev)
+    usage = f"用法：{TASK_CMD}、{TASK_CMD} N、{TASK_CMD} 全文 N、{TASK_CMD} 取消 N" + (f"、{TASK_CMD} 清理 N" if owner else "")
+    if text == TASK_CMD or text.startswith(TASK_CMD + " "):
+        arg = text[len(TASK_CMD):].split()
+        mine = [t for t in tasks.all_tasks() if can_see(t, ev)]
+        if not arg:
+            act = [t for t in mine if t["status"] in tasks.ACTIVE + ("pending",)]
+            done = [t for t in mine if t not in act][-3:]
+            if not act and not done: return "现在没有长任务。"
+            out = (["在跑的："] + [task_line(t) for t in act]) if act else ["现在没有在跑的任务。"]
+            if done: out += ["最近结束的："] + [task_line(t) for t in done]
+            return "\n".join(out + [f"{BT}/任务 N{BT} 看详情，{BT}/任务 取消 N{BT} 停掉。"])
+        n = arg[-1].lstrip("#")
+        t = tasks.load(int(n)) if n.isdigit() else None
+        if not n.isdigit(): return usage
+        if not t or not can_see(t, ev): return "没有这个任务。"
+        if len(arg) == 1: return task_detail(t, owner)
+        if arg[0] == "全文": return f"#{n} {t['title']} 的任务书：\n{t['brief']}"
+        if arg[0] in ("取消", "停"):
+            if not can_steer(t, ev): return f"#{n} 不是你派的，取消找{t['requester']['name']}或{OWNER_NAME}。"
+            if t["status"] not in tasks.ACTIVE + ("pending",): return f"#{n} 已经{tasks.LABEL.get(t['status'])}了。"
+            tasks.update(t["id"], status="cancelled")
+            if t["status"] == "running": tasks.stop(t)
+            return f"#{n} 停了。" + (f"分支 {BT}{t['branch']}{BT} 留着。" if t.get("session_started") else "")
+        if arg[0] == "清理":
+            if not owner: return f"清理只有{OWNER_NAME}能做。"
+            if t["status"] in tasks.ACTIVE: return f"#{n} 还没结束。"
+            ok, err = tasks.remove_worktree(t)
+            if ok: tasks.update(t["id"], cleaned=True)
+            return f"#{n} 的工作树删了，分支留着。" if ok else f"没删成：{err}"
+        return usage
+    m = APPROVE_RE.match(text)
+    if m: return task_approve(ev, m.group(1) == "批", int(m.group(2)))
+    m = FOLLOW_RE.match(text)
+    if m: return task_follow(ev, int(m.group(1)), m.group(2).strip())
+    return None
+
+def task_approve(ev, yes, n):
+    t = tasks.load(n)
+    if not t: return f"没有 #{n} 这个任务。"
+    if not is_owner(ev): return f"这个只有{OWNER_NAME}能批。"
+    if t["status"] != "pending": return f"#{n} 现在是“{tasks.LABEL.get(t['status'])}”，不用批。"
+    if time.time() - t["created"] > APPROVAL_S:
+        tasks.update(n, status="expired"); return f"#{n} 过期了，让对方重新提。"
+    tasks.update(n, status="approved" if yes else "rejected", approved_at=time.time())
+    if not same_chat(t, ev):   # 在私聊里批的：回原会话说一声
+        task_say(t, f"{OWNER_NAME}{'批了' if yes else '没批'} #{n}（{t['title']}）" + ("，开工后在这儿报进度。" if yes else "。"), f"ap{n}")
+    return f"批了，#{n} 排上了。" if yes else f"好，#{n} 不做了。"
+
+def task_follow(ev, n, text):
+    t = tasks.load(n)
+    if not t or not can_see(t, ev): return f"没有 #{n} 这个任务。"
+    if not can_steer(t, ev): return f"#{n} 不是你派的，有想法找{t['requester']['name']}或{OWNER_NAME}。"
+    st = t["status"]
+    if st == "pending": return f"#{n} 还在等{OWNER_NAME}批。"
+    if st in ("cancelled", "rejected", "expired"): return f"#{n} 已经{tasks.LABEL.get(st)}了，要做就重新提。"
+    name = ev.get("sender_name") or sender_name(ev.get("sender_id", ""))
+    tasks.inbox_add(n, name, is_owner(ev), text)
+    if st == "running": return f"收到，转给 #{n} 了。"
+    if st == "approved": return f"收到，#{n} 开工时一起带上。"
+    tasks.update(n, status="approved")   # 等回复、完成、失败、中断：排队接着跑同一个会话和工作树
+    return f"收到，#{n} 接着干。"
+
+def task_directive(ev, result):
+    """回复里有 [派活] 块就建任务，把块换成排期或审批的说明。"""
+    head, d = tasks.parse_directive(result)
+    if not d: return result
+    owner = is_owner(ev)
+    repo, err = tasks.check_repo(d["repo"]) if d["repo"] else (None, "没写仓库")
+    if not err and not d["brief"]: err = "任务书是空的"
+    if err: return (head + f"\n\n（派活没成：{err}。）").strip()
+    name = ev.get("sender_name") or sender_name(ev.get("sender_id", ""))
+    t = tasks.create(title=d["title"], repo=repo, brief=d["brief"], status="approved" if owner else "pending",
+                     requester={"channel": ev["channel"], "id": ev["sender_id"], "name": name, "owner": owner},
+                     origin={"channel": ev["channel"], "chat_id": ev["chat_id"], "chat_type": ev["chat_type"],
+                             "message_id": ev["message_id"], "thread": in_topic(ev)})
+    n, h = t["id"], tasks.T["approval_hours"]
+    log.info("task #%s created by %s (%s): %s", n, ev.get("sender_id"), "owner" if owner else "pending", repo)
+    if owner:
+        return (head + f"\n\n排上了，任务 #{n}。进展在这儿报，{BT}/任务 {n}{BT} 随时看，@我 {BT}#{n} 内容{BT} 补充。").strip()
+    brief = d["brief"] if len(d["brief"]) <= 3000 else d["brief"][:3000] + f"\n……（后面还有 {len(d['brief']) - 3000} 字，{BT}/任务 {n} 全文{BT} 看完整任务书）"
+    snap = f"#{n} {d['title']}\n仓库：{BT}{repo}{BT}\n任务书：\n{brief}"
+    if ev["chat_type"] != "p2p":
+        return (head + f"\n\n{owner_ref(ev['channel'])} {name} 想派个长任务，等你批：\n{snap}\n\n"
+                f"@我 回复「批 {n}」开工，「不批 {n}」作罢，{h} 小时内有效。").strip()
+    where = owner_dm(ev["channel"], f"{name}（{CHANNEL_LABEL[ev['channel']]}私聊）想派个长任务，等你批：\n{snap}\n\n"
+                                    f"回复「批 {n}」开工，「不批 {n}」作罢，{h} 小时内有效。")
+    tasks.update(n, approval_where=where)
+    return (head + f"\n\n这活儿得{OWNER_NAME}批，我已经去问了，批了就开工（任务 #{n}）。").strip()
+
+def task_event_text(t, e):
+    n, k, r, o = t["id"], e["kind"], t["requester"], t["origin"]
+    at = (mention(o["channel"], r["id"], r["name"]) + " ") if o["chat_type"] != "p2p" else ""
+    if k == "start":
+        return f"#{n} 开工：{t['title']}\n分支 {BT}{t['branch']}{BT}。有进展在这儿说，{BT}/任务 {n}{BT} 随时看。"
+    if k == "progress": return f"#{n} 进展：{e['text']}"
+    if k == "question": return f"{at}#{n} 有事要你定：\n{e['text']}\n\n@我 回复「#{n} 你的意见」。"
+    if k == "done":
+        extra = ""
+        if r.get("owner") and o["chat_type"] == "p2p":   # 只在主人私聊里给接手命令
+            extra = f"\n\n要在终端接手：{BT}cd {t['worktree']} && claude --resume {t['session_id']}{BT}"
+        return f"{at}#{n} 完成：\n{e['text']}{extra}"
+    return f"{at}#{n} {'挂了' if k == 'failed' else '中断了'}：{e['text']}\n@我 回复「#{n} 继续」接着干。"
+
+def heartbeat_text(t):
+    now = next((x.get("activeForm") or x.get("content") for x in (t.get("todos") or []) if x.get("status") == "in_progress"), "")
+    return f"#{t['id']} 还在干，{mins(t)} 分钟了" + (f"，正在：{now}" if now else "") + "。"
+
+def task_tick():
+    now = time.time()
+    for t in tasks.all_tasks():
+        n = t["id"]
+        for e in tasks.events(n, t.get("posted", 0)):
+            try: ok = task_say(t, task_event_text(t, e), f"t{n}e{t.get('posted', 0)}")
+            except Exception: log.exception("task #%s post failed", n); ok = False
+            fails = 0 if ok else t.get("post_fail", 0) + 1
+            if not ok and fails < 20:   # 没发出去：下一轮重试（幂等键不变，飞书不会重复）
+                tasks.update(n, post_fail=fails); break
+            if not ok: log.error("task #%s event %s dropped after 20 tries", n, t.get("posted", 0))
+            t = tasks.update(n, posted=t.get("posted", 0) + 1, last_post=now, post_fail=0)   # 发完才记，重启后不丢不重
+        st = t["status"]
+        if st == "pending" and now - t["created"] > APPROVAL_S:
+            t = tasks.update(n, status="expired")
+            task_say(t, f"#{n} 等了 {tasks.T['approval_hours']} 小时没人批，作废了。", f"t{n}x")
+        elif st == "running" and now - (t.get("launched") or now) > 20 and not tasks.alive(t):
+            if tasks.load(n)["status"] == "running":   # 进程没了，也没写结果
+                tasks.update(n, status="lost"); tasks.event(n, "lost", "后台进程没了（机器重启或被杀）")
+        elif (st == "running" and t["origin"]["channel"] == "feishu" and HEARTBEAT_S
+              and now - max(t.get("last_post") or 0, t.get("launched") or 0) > HEARTBEAT_S):
+            task_say(t, heartbeat_text(t), f"t{n}h{int(now)}"); tasks.update(n, last_post=now)
+    running = sum(1 for t in tasks.all_tasks() if t["status"] == "running")
+    for t in tasks.all_tasks():
+        if t["status"] == "approved" and running < tasks.T["max_running"]:
+            log.info("task #%s launch turn %s", t["id"], t.get("turn", 0) + 1)
+            tasks.launch(t["id"]); running += 1
+
+def task_loop(stopping):
+    while not stopping.wait(5):
+        try: task_tick()
+        except Exception: log.exception("task tick failed")
 
 # ---------- 旁听：白名单群不 @ 也读，攒一批交给 Claude 决定插不插话 ----------
 # 用主人的用户身份定时拉消息，不开“读取群内所有消息”权限，非白名单群照旧收不到。
@@ -526,8 +744,8 @@ def wecom_send(cmd):
         try:
             p.stdin.write(json.dumps(cmd, ensure_ascii=False) + "\n"); p.stdin.flush()
         except Exception as e:
-            log.warning("wecom send failed: %s", e)
-    return None
+            log.warning("wecom send failed: %s", e); return None
+    return True   # 交给网关了；真正发没发出去看日志 wecom sent 行
 
 def wecom_trim(text):
     b = text.encode("utf-8")
@@ -590,6 +808,7 @@ def wecom_loop(stopping):
             try: raw = json.loads(line)
             except Exception: continue
             if raw.get("type") == "ready": log.info("wecom ready")
+            elif raw.get("type") == "sent": log.info("wecom sent %s ok=%s %s", raw.get("ref"), raw.get("ok"), raw.get("error", ""))
             elif raw.get("type") == "message":
                 try: dispatch(wecom_event(raw))
                 except Exception: log.exception("bad wecom event: %s", line[:300])
@@ -632,6 +851,8 @@ def main():
     for f in loops: threading.Thread(target=f, args=(stopping,), daemon=True).start()
     if FEISHU_ON and AMB["enabled"]:
         threading.Thread(target=ambient_loop, daemon=True).start()
+    if TASKS_ON:   # 长任务的状态检查和进度回报；任务本身在独立单元里跑，不随本进程退出
+        threading.Thread(target=task_loop, args=(stopping,), daemon=True).start()
     log.info("bridge started: %s (%s)", NAME, "+".join(f.__name__.split("_")[0] for f in loops))
     while not stopping.wait(3600): pass
     log.info("bridge stopping")

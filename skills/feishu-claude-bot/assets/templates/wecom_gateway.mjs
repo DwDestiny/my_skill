@@ -7,7 +7,8 @@
  *           {"op":"reply","msgid":...,"content":...}  结束这条流式消息，换成最终回复；流已过期就主动推送到原会话
  *           {"op":"send","chatid":...,"content":...}  主动推送 Markdown 到单聊（userid）或群（chatid）
  *         凭证：环境变量 FCB_WECOM_CREDENTIALS = "wecom-cli"（读 wecom-cli auth init 存的加密凭证）或 JSON 文件路径 {"bot_id","secret"}
- * Output: stdout 每行一条 JSON 事件：{"type":"message",...} 收到的消息；{"type":"ready"} 认证成功
+ * Output: stdout 每行一条 JSON 事件：{"type":"message",...} 收到的消息；{"type":"ready"} 认证成功；
+ *         {"type":"sent","ref","ok","error"} send 指令的结果
  *         stderr 写日志（bridge.py 转进 bridge.log）
  * Pos:    实例目录里由 bridge.py 启动的子进程；一个机器人同时只能有一条长连接，新连接会把旧的挤掉
  * 来源:   feishu-claude-bot skill 的 assets/templates/wecom_gateway.mjs，依赖 @wecom/aibot-node-sdk（官方）
@@ -150,8 +151,12 @@ async function handle(cmd) {
     frames.delete(cmd.msgid);
     return;
   }
-  if (cmd.op === 'send') {
-    try { await push(cmd.chatid, cmd.content); } catch (e) { log('[wecom] ERROR send failed', e?.message || e); }
+  if (cmd.op === 'send') {   // 主动推送（长任务进度、审批）：把结果回给 bridge 记日志
+    try { await push(cmd.chatid, cmd.content); out({ type: 'sent', ref: cmd.ref || '', ok: true }); }
+    catch (e) {
+      log('[wecom] ERROR send failed', e?.errcode || '', e?.message || e);
+      out({ type: 'sent', ref: cmd.ref || '', ok: false, error: String(e?.errcode || e?.message || e) });
+    }
   }
 }
 

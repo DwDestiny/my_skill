@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+"""git 钩子分发器：非主人触发的机器人会话通过 GIT_CONFIG_* 把 core.hooksPath 指到这里。
+
+Input:  git 调用钩子时的参数和 stdin；环境变量 FCB_OWNER
+Output: pre-push 推送非 bot/ 分支时 exit 1；其余情况转给仓库原来的钩子（.git/hooks 或仓库自己配的 core.hooksPath）
+Pos:    机器人实例 hooks/git/ 下，各个钩子名都是指向本文件的软链接
+"""
+import os, subprocess, sys
+
+name = os.path.basename(sys.argv[0])
+data = sys.stdin.buffer.read() if name in ("pre-push", "post-rewrite", "reference-transaction") else None
+if name == "pre-push" and os.environ.get("FCB_OWNER") != "1":
+    for line in data.decode(errors="ignore").splitlines():
+        parts = line.split()
+        if len(parts) == 4 and not parts[2].startswith("refs/heads/bot/"):
+            sys.stderr.write(f"机器人规则：只能推送 bot/ 开头的分支，{parts[2]} 不行。\n")
+            sys.exit(1)
+
+def q(*a):
+    r = subprocess.run(["git", *a], capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else ""
+
+orig = q("config", "--local", "--get", "core.hooksPath")
+if orig and not os.path.isabs(orig):
+    orig = os.path.join(q("rev-parse", "--show-toplevel"), orig)
+if not orig:
+    orig = os.path.join(q("rev-parse", "--path-format=absolute", "--git-common-dir"), "hooks")
+hook = os.path.join(orig, name)
+if os.path.realpath(orig) != os.path.realpath(os.path.dirname(os.path.abspath(__file__))) and os.access(hook, os.X_OK):
+    sys.exit(subprocess.run([hook, *sys.argv[1:]], input=data).returncode)
+sys.exit(0)

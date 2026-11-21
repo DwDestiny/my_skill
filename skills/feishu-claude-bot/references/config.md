@@ -11,6 +11,11 @@
 | `channels.wecom.owner_userid` | 启用企微时必填 | 主人的企微 userid，从日志 `recv` 行看 |
 | `channels.wecom.credentials` | `wecom-cli` | 机器人凭证来源：`wecom-cli`（读 `wecom-cli auth init` 存的）或 JSON 文件路径 |
 | `cross_im_read` | `false` | 两个渠道都启用时：会话能不能读另一个 IM 的聊天记录。打开要主人确认，见 boundary.md |
+| `tasks.enabled` | `true` | 长任务开关，见 tasks.md |
+| `tasks.root` | `~/work/.bot-tasks` | 任务工作树放哪（按服务名分子目录）。不能在实例目录里 |
+| `tasks.max_running` | `2` | 同时跑几个后台任务（与聊天并发 `max_parallel` 分开） |
+| `tasks.approval_hours` | `24` | 同事派的活多久没人批就作废 |
+| `tasks.heartbeat_min` | `30` | 飞书任务多久没动静发一次心跳；`0` 关闭。企微不发 |
 | `service_name` | `fcb-<目录名>` | systemd 服务名 / launchd 标签后缀 |
 | `persona` | `work` | `work` 工作分身 / `personal` 私人助理 |
 | `style` | `veteran` | `veteran` / `tsundere` / `warm` / `minimal`，对应 `assets/templates/rules/style-*.md` |
