@@ -509,6 +509,7 @@ class TaskTest(unittest.TestCase):
         b.lark = lambda args, stdin=None, timeout=60: cls.sent.append(('lark', stdin, None))
         b.sender_name = lambda i: {OWNER: '小王'}.get(i, '同事甲')
         cls.repo = cls.work / 'proj'
+        b.tasks.T['sibling_warm_min'] = 0   # 假 Claude 不懂分叉：默认不接兄弟会话，只在兄弟测试里打开
         cls.git_repo(cls.repo, base / 'proj.git')
 
     @staticmethod
@@ -881,7 +882,8 @@ class TaskTest(unittest.TestCase):
                 'print(json.dumps({"type": "result", "result": "做完了\\n[交接]\\n入口在 app.py", "is_error": False, "total_cost_usd": 1,'
                 ' "session_id": sid, "usage": {"input_tokens": 99, "cache_read_input_tokens": 999999}}))\n')
         bindir = self.fake_bin(body)
-        argf = Path(self.repo) / 'args'
+        self.t.T['sibling_warm_min'] = 55
+        self.addCleanup(self.t.T.__setitem__, 'sibling_warm_min', 0)
         a = self.new_task(role='开发', model='sonnet')
         self.run_with(bindir, a)
         ta = self.t.load(a)
@@ -905,6 +907,55 @@ class TaskTest(unittest.TestCase):
         args = json.loads((wt / 'args').read_text().splitlines()[-1])
         self.assertIn('--fork-session', args); self.assertEqual(args[args.index('--resume') + 1], ta['session_id'])
         self.assertIn('开发', self.b.team_view())
+
+    def test_state_edges(self):
+        # 分叉任务的花费减掉父会话的底数
+        body = ('sys.stdin.read()\nprint(json.dumps({"type": "system", "subtype": "init"}))\n'
+                'print(json.dumps({"type": "result", "result": "ok", "is_error": False, "total_cost_usd": 7.5, "session_id": "s"}))\n')
+        n = self.new_task()
+        bindir = self.fake_bin(body)
+        real_fork, real_sib = self.t.sibling_fork, self.t.sibling
+        self.t.sibling_fork = lambda t: 'parent'; self.t.sibling = lambda t: {'total': 7.0}
+        try: self.run_with(bindir, n)
+        finally: self.t.sibling_fork, self.t.sibling = real_fork, real_sib
+        self.assertEqual(self.t.load(n)['cost'], 0.5); self.assertTrue(self.t.load(n)['session_started'])
+        # 没起来的会话不算开过
+        dead = self.fake_bin('sys.stdin.read()\nsys.exit(1)\n')
+        m = self.new_task(); self.run_with(dead, m)
+        self.assertFalse(self.t.load(m).get('session_started')); self.assertEqual(self.t.load(m)['status'], 'failed')
+        # 取消或卡死停掉后进程退出：不再改状态、不重复发事件
+        k = self.new_task(); self.t.update(k, status='cancelled'); before = len(self.t.events(k))
+        self.run_with(dead, k)
+        self.assertEqual(self.t.load(k)['status'], 'cancelled'); self.assertEqual(len(self.t.events(k)), before)
+        # 受众：主人私聊、群、同事私聊各是各的；同名仓库不撞
+        base = self.t.load(self.new_task())
+        grp = dict(base, origin=dict(base['origin'], chat_type='group', chat_id='oc_x'))
+        col = dict(base, requester={'channel': 'feishu', 'id': 'ou_c', 'name': '同事甲', 'owner': False})
+        col2 = dict(col, requester=dict(col['requester'], id='ou_d'))
+        self.assertEqual(len({self.t.sibling_key(x) for x in (base, grp, col, col2)}), 4)
+        self.assertNotEqual(self.t.sibling_key(base)[0], self.t.sibling_key(dict(base, repo='/tmp/other/proj'))[0])
+        # 预算：同事不能改；做完后再来新要求自动续一段
+        c = self.new_task(budget=10, requester={'channel': 'feishu', 'id': 'ou_c', 'name': '同事甲', 'owner': False})
+        self.t.inbox_add(c, '同事甲', False, '预算加到 999')
+        self.assertLess(self.t.load(c)['budget'], 999)
+        d = self.new_task(budget=10, status='done'); self.t.update(d, cost=9.5)
+        self.t.inbox_add(d, '小王', True, '再加个按钮')
+        self.assertEqual(self.t.load(d)['budget'], 14.5)
+        # 主控对停在检查点的任务只说“继续”：不转，提示要加预算；加预算不占自动追加次数
+        e = self.new_task(status='waiting', checkpoint=True, auto_follow=3)
+        src = self.t.load(e)
+        self.assertIn('检查点', self.b.relay_followups(src, f'[任务指令] #{e} 继续'))
+        self.b.relay_followups(src, f'[任务指令] #{e} 继续，预算加到 50')
+        x = self.t.load(e)
+        self.assertEqual((x['budget'], x['status'], x['auto_follow']), (50.0, 'approved', 3))
+
+    def test_role_check_flags_edits(self):
+        wt = Path(self.tmp.name) / 'rc'
+        subprocess.run(['git', 'clone', '-q', str(Path(self.tmp.name) / 'proj.git'), str(wt)], check=True)
+        n = self.new_task(role='评审'); t = self.t.update(n, worktree=str(wt), base='HEAD')
+        self.assertEqual(self.t.role_check(t), '')
+        f = next(p for p in wt.iterdir() if p.is_file()); f.write_text('changed')
+        self.assertIn(f.name, self.t.role_check(t))
 
     def test_quota_alert_never_blocks(self):
         now = time.time()
