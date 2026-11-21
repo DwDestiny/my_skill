@@ -24,6 +24,7 @@
 | `tasks.quota_alert` | 见左 | 订阅额度提醒：`five_hour` 是 5 小时窗口用量到多少提醒；`seven_day_pace` 是 7 天窗口“已用比例 ÷ 已过时间比例”到多少提醒。只私聊提醒主人，不拦活 |
 | `tasks.sibling_warm_min` | `55` | 同项目同角色的上个会话多少分钟内用过（提示缓存 1 小时内还热），新任务就分叉接着它 |
 | `tasks.sibling_max_ctx` | `150000` | 上个会话的上下文超过这么多 token 就不再接着，新开会话带交接笔记 |
+| `tasks.compact` | `{"idle_min": 50, "min_ctx": 120000}` | 缓存过期前压缩：上下文到 `min_ctx`、闲置满 `idle_min` 分钟（不满 60）时压一次。只压等人回话的任务和还没到换新时间的聊天会话。`min_ctx` 写 0 关掉 |
 | `tasks.stuck_min` | `40` | 本机任务多少分钟没有任何动作（没调工具、没输出、进程 CPU 平均不到 5%）算卡住：停掉并交回主控；`0` 关闭 |
 | `tasks.verify_retries` | `2` | `[派活]` 写了验证命令时，验证没过最多退回返工几次 |
 | `tasks.verify_timeout_min` | `20` | 验证命令最长跑多久 |
