@@ -301,6 +301,7 @@ def run_claude(key, s, prompt, owner, private, chat_id, quiet=False):
     with lock:
         s["started"] = True; s["last"] = time.time(); s["id"] = out.get("session_id", sid)
         s["ctx"] = sum(it.get(k) or 0 for k in ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"))
+        s["env"] = [owner, private, chat_id, channel]   # 压缩时用同一套环境：自动记忆开关会改系统提示，换了就命中不了缓存
         save(SESS_FILE, sessions)
     return out.get("result") or ""
 
@@ -322,7 +323,7 @@ def compact_chat(key):
     try:
         if not tasks.compact_due(s.get("ctx"), last, s.get("compacted")): return   # 排队期间来过消息：不压了
         r = subprocess.run(base_cmd() + ["--resume", sid], input=tasks.COMPACT_KEEP, capture_output=True, text=True,
-                           timeout=900, cwd=WORKDIR, env=hook_env(False, False, ""))
+                           timeout=900, cwd=WORKDIR, env=hook_env(*(s.get("env") or [False, False, ""])))
         log.info("compact %s rc=%s ctx=%s", key, r.returncode, s.get("ctx"))
     finally:
         with lock:
