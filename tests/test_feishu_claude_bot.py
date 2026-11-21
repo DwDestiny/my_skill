@@ -81,7 +81,8 @@ class ScaffoldTest(unittest.TestCase):
 
     def test_scaffold_succeeds(self):
         self.assertEqual(self.out.returncode, 0, self.out.stderr)
-        for f in ['bridge.py', 'rules.md', 'claude-settings.json', 'hooks/lark_identity.py', 'hooks/private_guard.py']:
+        for f in ['bridge.py', 'rules.md', 'claude-settings.json', 'hooks/lark_identity.py', 'hooks/private_guard.py',
+                  'hooks/wecom_guard.py']:
             self.assertTrue((self.inst / f).exists(), f)
 
     def test_rules_rendered(self):
@@ -109,7 +110,53 @@ class ScaffoldTest(unittest.TestCase):
         cmds = [h['command'] for m in st['hooks']['PreToolUse'] for h in m['hooks']]
         self.assertTrue(any('lark_identity.py' in c for c in cmds))
         self.assertTrue(any('private_guard.py' in c for c in cmds))
+        self.assertTrue(any('wecom_guard.py' in c for c in cmds), '没启用企微也要挂：本机装了 wecom-cli，飞书会话也能调用')
+        self.assertIn(f'Read({self.home}/.config/wecom/**)', st['permissions']['deny'])
         self.assertIn(f'Edit({self.inst}/**)', st['permissions']['deny'])
+
+    def test_rules_feishu_only_has_no_wecom_section(self):
+        rules = (self.inst / 'rules.md').read_text(encoding='utf-8')
+        self.assertNotIn('## 企业微信', rules)
+        self.assertIn('lark-cli im +messages-send --as bot --user-id ' + OWNER, rules)
+
+    def test_wecom_guard(self):
+        o, m = {'FCB_OWNER': '0'}, {'FCB_OWNER': '1'}
+        g = lambda env, c: self.bash('wecom_guard.py', env, c).returncode
+        self.assertEqual(g(o, 'wecom-cli mail list'), 2)
+        self.assertEqual(g(o, '$(which wecom-cli) doc get'), 2, '绕路调用也要拦')
+        self.assertEqual(g(o, 'wecom-cli contact search x'), 0)
+        self.assertEqual(g(o, "wecom-cli message aibot send --json '{}'"), 0)
+        self.assertEqual(g(m, 'wecom-cli mail list'), 0)
+        self.assertEqual(g(m, 'wecom-cli mail send --json x'), 2)
+        self.assertEqual(g(m, 'wecom-cli message send --chat-id x'), 2, '不以主人名义发企微消息')
+        self.assertEqual(g(m, 'cat ~/.config/wecom/credentials.enc'), 2)
+        self.assertEqual(g(m, 'wecom-cli auth show'), 2)
+        self.assertEqual(g(o, 'echo hi'), 0)
+        self.assertEqual(g(o, 'rg -n wecom ~/work/app'), 0, '代码里出现 wecom 字样不拦')
+        self.assertEqual(g(o, 'cat node_modules/@wecom/cli-linux-x64/bin/wecom mail'), 2)
+
+    def test_cross_im_read_switch(self):
+        cfgp = self.inst / 'config.json'
+        orig = cfgp.read_text(encoding='utf-8')
+        g = lambda tool, env, c: self.bash(tool, env, c).returncode
+        fs = {'FCB_OWNER': '1', 'FCB_CHANNEL': 'feishu'}
+        wx = {'FCB_OWNER': '1', 'FCB_CHANNEL': 'wecom'}
+        read_fs = 'lark-cli im +chat-messages-list --chat-id oc_x --as user'
+        read_wx = "wecom-cli chat messages list --json '{}'"
+        try:
+            self.assertEqual(g('wecom_guard.py', wx, read_wx), 0, '同渠道读自己的记录')
+            self.assertEqual(g('lark_identity.py', fs, read_fs), 0)
+            self.assertEqual(g('wecom_guard.py', fs, read_wx), 2, '默认关：飞书会话不能读企微记录')
+            self.assertEqual(g('lark_identity.py', wx, read_fs), 2, '默认关：企微会话不能读飞书记录')
+            self.assertEqual(g('lark_identity.py', wx, 'lark-cli im +messages-send --as bot --text hi'), 0, '机器人身份发消息不算跨读')
+            cfg = json.loads(orig); cfg['cross_im_read'] = True
+            cfgp.write_text(json.dumps(cfg, ensure_ascii=False), encoding='utf-8')
+            self.assertEqual(g('wecom_guard.py', fs, read_wx), 0)
+            self.assertEqual(g('lark_identity.py', wx, read_fs), 0)
+            self.assertEqual(g('wecom_guard.py', dict(fs, FCB_OWNER='0'), read_wx), 0, 'others=bot_read_im 时同事触发也能读')
+            self.assertEqual(g('wecom_guard.py', dict(fs, FCB_OWNER='0'), 'wecom-cli mail list'), 2)
+        finally:
+            cfgp.write_text(orig, encoding='utf-8')
 
     def test_rejects_unfilled_config(self):
         bad = self.home / 'bots' / 'bad'
@@ -154,6 +201,9 @@ class ScaffoldTest(unittest.TestCase):
         self.assertEqual(self.bash('private_guard.py', p, 'cat $HOME/personal/a.md').returncode, 2)
         self.assertEqual(self.hook('private_guard.py', {'FCB_PRIVATE': '1'}, 'Read', {'file_path': f'{self.home}/personal/a.md'}).returncode, 0)
         self.assertEqual(self.hook('private_guard.py', p, 'Read', {'file_path': f'{self.home}/work/a.py'}).returncode, 0)
+        self.assertEqual(self.hook('private_guard.py', p, 'Read', {'file_path': f'{self.inst}/inbox/private/x.png'}).returncode, 2)
+        self.assertEqual(self.hook('private_guard.py', p, 'Read', {'file_path': f'{self.inst}/inbox/x.png'}).returncode, 0)
+        self.assertEqual(self.bash('private_guard.py', p, f'tail {self.inst}/logs/bridge.log').returncode, 2)
 
     def test_wiki_search_rewritten(self):
         p = {'FCB_PRIVATE': '0'}
@@ -299,6 +349,107 @@ class AmbientTest(unittest.TestCase):
         self.assertFalse(seen['owner'])
         self.assertFalse(seen['private'])
         self.assertGreater(self.b.amb['oc_f']['cool_until'], time.time())
+
+
+class WecomTest(unittest.TestCase):
+    """企微渠道：只启用企微的实例能生成；事件归一、会话 key、主人识别、守则渲染。不连企微、不调 Claude。"""
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.home = Path(cls.tmp.name) / 'home'
+        cls.inst = cls.home / 'bots' / 'wx'
+        cls.inst.mkdir(parents=True)
+        cfg = json.loads((TEMPLATES / 'config.example.json').read_text(encoding='utf-8'))
+        cfg.update(name='测试助理', owner_name='小王', workdir='~/work')
+        cfg.pop('owner_open_id'); cfg.pop('bot_open_id')
+        cfg['channels'] = {'feishu': {'enabled': False}, 'wecom': {'enabled': True, 'owner_userid': 'wangxiao'}}
+        (cls.inst / 'config.json').write_text(json.dumps(cfg, ensure_ascii=False), encoding='utf-8')
+        cls.out = subprocess.run([sys.executable, str(SKILL_DIR / 'scripts' / 'scaffold.py'), str(cls.inst), '--no-npm'],
+                                 capture_output=True, text=True, env=dict(os.environ, HOME=str(cls.home)))
+        spec = importlib.util.spec_from_file_location('fcb_bridge_wx', cls.inst / 'bridge.py')
+        cls.b = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.b)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def test_scaffold_wecom_only(self):
+        self.assertEqual(self.out.returncode, 0, self.out.stderr)
+        self.assertTrue((self.inst / 'wecom_gateway.mjs').exists())
+        self.assertIn('@wecom/aibot-node-sdk', (self.inst / 'package.json').read_text(encoding='utf-8'))
+        rules = (self.inst / 'rules.md').read_text(encoding='utf-8')
+        self.assertNotIn('{{', rules)
+        self.assertIn('## 企业微信', rules)
+        self.assertIn('[企微消息]', rules)
+        self.assertNotIn('lark-cli im +chat-messages-list', rules, '没启用飞书就不教它翻飞书记录')
+
+    def test_cross_im_needs_confirmation(self):
+        d = self.home / 'bots' / 'both'
+        d.mkdir(parents=True, exist_ok=True)
+        cfg = json.loads((TEMPLATES / 'config.example.json').read_text(encoding='utf-8'))
+        cfg.update(name='测试助理', owner_name='小王', owner_open_id='ou_test', bot_open_id='ou_bot', workdir='~/work',
+                   cross_im_read=True)
+        cfg['channels'] = {'feishu': {'enabled': True}, 'wecom': {'enabled': True, 'owner_userid': 'wangxiao'}}
+        (d / 'config.json').write_text(json.dumps(cfg, ensure_ascii=False), encoding='utf-8')
+        run = lambda *a: subprocess.run([sys.executable, str(SKILL_DIR / 'scripts' / 'scaffold.py'), str(d), '--no-npm', *a],
+                                        capture_output=True, text=True, env=dict(os.environ, HOME=str(self.home)))
+        r = run()
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('--confirm-cross-im', r.stderr)
+        self.assertEqual(run('--confirm-cross-im').returncode, 0)
+        self.assertEqual(run().returncode, 0, '确认过一次，之后重新生成不用再确认')
+
+    def test_requires_owner_userid(self):
+        bad = self.home / 'bots' / 'wxbad'
+        bad.mkdir(parents=True, exist_ok=True)
+        cfg = json.loads((self.inst / 'config.json').read_text(encoding='utf-8'))
+        cfg['channels']['wecom']['owner_userid'] = ''
+        (bad / 'config.json').write_text(json.dumps(cfg, ensure_ascii=False), encoding='utf-8')
+        r = subprocess.run([sys.executable, str(SKILL_DIR / 'scripts' / 'scaffold.py'), str(bad), '--no-npm'],
+                           capture_output=True, text=True, env=dict(os.environ, HOME=str(self.home)))
+        self.assertNotEqual(r.returncode, 0)
+
+    def test_event_normalized(self):
+        b = self.b
+        ev = b.wecom_event({'msgid': 'm1', 'chattype': 'group', 'chatid': 'g1', 'userid': 'wangxiao',
+                            'msgtype': 'text', 'text': '@测试助理 看下这个', 'create_time': 1763600000,
+                            'quote': {'msgtype': 'text', 'text': '原话'}})
+        self.assertEqual((ev['channel'], ev['chat_type'], ev['chat_id']), ('wecom', 'group', 'g1'))
+        self.assertEqual(ev['content'], '看下这个', '去掉开头的 @机器人')
+        self.assertEqual(ev['create_time'], '1763600000000', '秒转毫秒')
+        self.assertTrue(b.is_owner(ev))
+        self.assertEqual(b.session_key(ev), 'wx:grp:g1')
+        p2p = b.wecom_event({'msgid': 'm2', 'chattype': 'single', 'userid': 'lisi', 'msgtype': 'text', 'text': 'hi'})
+        self.assertEqual((p2p['chat_type'], p2p['chat_id'], b.session_key(p2p)), ('p2p', 'lisi', 'wx:p2p:lisi'))
+        self.assertFalse(b.is_owner(p2p))
+        prompt = b.build_prompt(ev, '小王', *b.fetch_context(ev, {}))
+        self.assertTrue(prompt.startswith('[企微消息]'))
+        self.assertIn('原话', prompt)
+
+    def test_idle_rotation_with_channel_prefix(self):
+        b = self.b
+        self.assertEqual(b.idle_limit('wx:p2p:lisi'), b.P2P_IDLE)
+        self.assertEqual(b.idle_limit('wx:grp:g1'), b.GROUP_IDLE)
+        self.assertEqual(b.idle_limit('grp:oc:omt'), None)
+        s = b.get_session('wx:grp:g9')
+        s['last'] = time.time() - b.GROUP_IDLE - 10
+        self.assertNotEqual(b.get_session('wx:grp:g9')['id'], s['id'])
+
+    def test_wecom_reply_trims_bytes_and_blocks_at_all(self):
+        b = self.b
+        sent = []
+        orig = b.wecom_send
+        b.wecom_send = sent.append
+        try:
+            b.wecom_reply({'channel': 'wecom', 'message_id': 'm1'}, '中' * 9000 + ' <@all>')
+        finally:
+            b.wecom_send = orig
+        c = sent[0]['content']
+        self.assertLessEqual(len(c.encode('utf-8')), 20480)
+        self.assertNotIn('<@all>', c)
 
 
 if __name__ == '__main__':

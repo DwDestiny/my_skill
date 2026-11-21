@@ -18,9 +18,12 @@ cmd = (data.get("tool_input") or {}).get("command", "")
 if "lark-cli" not in cmd:
     sys.exit(0)
 try:
-    with open(os.environ["FCB_CONFIG"]) as f: pol = json.load(f).get("identity", {})
+    with open(os.environ["FCB_CONFIG"]) as f: cfg = json.load(f)
 except Exception:
-    pol = {}
+    cfg = {}
+pol = cfg.get("identity", {})
+# 跨 IM 读取（config.json 的 cross_im_read）：关闭时，企微来的会话不能用主人身份读飞书聊天记录
+cross_ok = cfg.get("cross_im_read", False) or os.environ.get("FCB_CHANNEL", "feishu") == "feishu"
 owner = os.environ.get("FCB_OWNER") == "1"
 mode = pol.get("owner", "user_no_speak") if owner else pol.get("others", "bot_read_im")
 
@@ -35,7 +38,11 @@ def block(msg):
 for seg in re.split(r"\|\||&&|[|;\n]", cmd):
     if "lark-cli" not in seg:
         continue
-    if re.search(r"--as[ =]bot\b", seg) or mode == "user":
+    if re.search(r"--as[ =]bot\b", seg):
+        continue
+    if not cross_ok and IM_READ.search(seg):
+        block("跨 IM 读取已关闭：企业微信里的会话不能用主人身份读飞书聊天记录。")
+    if mode == "user":
         continue
     if mode == "user_no_speak":
         if IM_SPEAK.search(seg):

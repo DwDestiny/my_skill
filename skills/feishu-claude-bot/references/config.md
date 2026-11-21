@@ -3,8 +3,15 @@
 | 字段 | 默认 | 说明 |
 |---|---|---|
 | `name` | 必填 | 机器人在守则里的名字，建议和飞书应用名一致 |
-| `owner_name` / `owner_open_id` | 必填 | 主人。`scripts/ids.sh` 查 |
-| `bot_open_id` | 必填 | 群里判断是不是 @ 了机器人。`scripts/ids.sh` 查 |
+| `owner_name` | 必填 | 主人的名字 |
+| `owner_open_id` | 启用飞书时必填 | 主人的飞书 open_id。`scripts/ids.sh` 查 |
+| `bot_open_id` | 启用飞书时必填 | 群里判断是不是 @ 了机器人。`scripts/ids.sh` 查 |
+| `channels.feishu.enabled` | `true` | 收飞书消息 |
+| `channels.wecom.enabled` | `false` | 收企业微信消息，见 [wecom.md](wecom.md) |
+| `channels.wecom.owner_userid` | 启用企微时必填 | 主人的企微 userid，从日志 `recv` 行看 |
+| `channels.wecom.credentials` | `wecom-cli` | 机器人凭证来源：`wecom-cli`（读 `wecom-cli auth init` 存的）或 JSON 文件路径 |
+| `cross_im_read` | `false` | 两个渠道都启用时：会话能不能读另一个 IM 的聊天记录。打开要主人确认，见 boundary.md |
+| `service_name` | `fcb-<目录名>` | systemd 服务名 / launchd 标签后缀 |
 | `persona` | `work` | `work` 工作分身 / `personal` 私人助理 |
 | `style` | `veteran` | `veteran` / `tsundere` / `warm` / `minimal`，对应 `assets/templates/rules/style-*.md` |
 | `rules_file` | `rules.md` | 守则文件名 |

@@ -29,7 +29,10 @@ text = re.sub(r"(?<![\w/])~(?=/|\s|$)", HOME, text)
 def block(msg):
     sys.stderr.write("机器人红线：" + msg + " 私密资料只在主人私聊里能碰，被拦了不要绕路。\n"); sys.exit(2)
 
-for pat in cfg.get("paths", []):
+# 实例自己的运行态和主人私聊里收到的附件，一律按私密处理
+inst = os.path.dirname(os.environ.get("FCB_CONFIG", ""))
+extra = [re.escape(os.path.join(inst, d)) for d in ("state", "logs", "inbox/private")] if inst else []
+for pat in list(cfg.get("paths", [])) + extra:
     p = X(pat)
     if p in text or re.search(p, text):
         block("这个路径在当前场景不能读。")

@@ -3,6 +3,17 @@
   "owner_name": "张三",
   "owner_open_id": "ou_主人的open_id（scripts/ids.sh 查）",
   "bot_open_id": "ou_机器人的open_id（scripts/ids.sh 查）",
+  "channels": {
+    "feishu": {
+      "enabled": true
+    },
+    "wecom": {
+      "enabled": false,
+      "owner_userid": "主人的企微 userid（启用后主人私聊机器人一句，在日志 recv 行里看）",
+      "credentials": "wecom-cli"
+    }
+  },
+  "cross_im_read": false,
   "persona": "work",
   "style": "veteran",
   "workdir": "~/work",
