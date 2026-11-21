@@ -16,7 +16,10 @@ with open(CFG_PATH) as f:
 X = os.path.expanduser
 SLUG = CFG.get("service_name") or "fcb-" + os.path.basename(ROOT)
 OWNER_NAME = CFG.get("owner_name", "主人")
-T = dict({"enabled": True, "root": "~/work/.bot-tasks", "max_running": 2, "approval_hours": 24, "heartbeat_min": 30},
+T = dict({"enabled": True, "root": "~/work/.bot-tasks", "max_running": 2, "approval_hours": 24, "heartbeat_min": 30,
+          # 2.0 资源和质量的硬限制：每个任务的预算、全部任务每天的预算、多久没动静算卡住、验证没过最多返工几次
+          "budget_usd": 15, "daily_budget_usd": 60, "stuck_min": 40, "verify_retries": 2, "verify_timeout_min": 20,
+          "cloud": {}},
          **CFG.get("tasks", {}))
 TASK_ROOT = os.path.join(X(T["root"]), SLUG)
 STORE = os.path.join(ROOT, "state", "tasks")
@@ -126,6 +129,29 @@ def inbox_take(tid):
 def format_inbox(items):
     return "\n".join(f"[追加指令] {i['who']}{'（' + OWNER_NAME + '本人）' if i.get('owner') else ''}：{i['text']}" for i in items)
 
+# ---------- 花费：每轮结束记一笔，按天汇总，超了当天不再开新一轮 ----------
+def spend_add(tid, usd):
+    if usd <= 0: return
+    os.makedirs(STORE, exist_ok=True)
+    with _Lock(os.path.join(STORE, ".lock")):
+        with open(os.path.join(STORE, "spend.jsonl"), "a") as f:
+            f.write(json.dumps({"day": time.strftime("%Y-%m-%d"), "task": tid, "usd": round(usd, 4)}) + "\n")
+
+def spent_today():
+    day, total = time.strftime("%Y-%m-%d"), 0.0
+    try:
+        with open(os.path.join(STORE, "spend.jsonl")) as f:
+            for l in f:
+                if l.strip():
+                    r = json.loads(l)
+                    if r.get("day") == day: total += r.get("usd") or 0
+    except FileNotFoundError: pass
+    return total
+
+def over_daily():
+    cap = T.get("daily_budget_usd") or 0
+    return bool(cap) and spent_today() >= cap
+
 # ---------- 派活前的检查 ----------
 def check_repo(path):
     """返回 (仓库根目录, 错误)。只接受工作目录里的 git 仓库；实例目录、私密路径不行。"""
@@ -168,12 +194,18 @@ def parse_directive(text):
         return hit.pop() if len(hit) == 1 else ""
     target = field("目标分支").split()[0] if field("目标分支") else ""
     if not re.fullmatch(r"[\w./-]{1,100}", target) or ".." in target: target = ""
+    verify = field("验证")[:300]
+    if verify in ("无", "没有", "不用", "-", "—") or verify.startswith("<") or "命令，" in verify: verify = ""   # 没写或照抄了模板
+    ex = field("执行")
+    ex = "cloud" if ("云" in ex and "本机" not in ex) else ""
     return head, {"repo": field("仓库"), "title": field("标题")[:80] or "未命名任务", "brief": brief,
-                  "model": pick(field("模型"), MODELS), "effort": pick(field("思考"), EFFORTS), "target": target}
+                  "model": pick(field("模型"), MODELS), "effort": pick(field("思考"), EFFORTS), "target": target,
+                  "verify": verify, "exec": ex}
 
 def model_label(t):
     """给人看的模型说明，没指定就是默认。"""
-    return " · ".join(x for x in (t.get("model"), t.get("effort") and "思考 " + t["effort"]) if x) or "默认模型"
+    s = " · ".join(x for x in (t.get("model"), t.get("effort") and "思考 " + t["effort"]) if x) or "默认模型"
+    return s + ("，云端执行" if t.get("exec") == "cloud" else "")
 
 # ---------- 后台运行 ----------
 def unit_name(t): return f"{SLUG}-task-{t['id']}-{t['turn']}"
@@ -182,7 +214,7 @@ def launch(tid):
     """开一轮后台运行（首次开工、提问后续跑、完成后追加都算一轮）。"""
     t = load(tid)
     t = update(tid, status="running", turn=t.get("turn", 0) + 1, launched=time.time(),
-               started=t.get("started") or time.time())
+               started=t.get("started") or time.time(), held_note=False)
     if platform.system() == "Linux" and shutil.which("systemd-run") and os.environ.get("FCB_TASK_LAUNCH") != "popen":
         env = [f"--setenv={k}={os.environ[k]}" for k in ("PATH", "HOME", "LANG", "USER") if k in os.environ]
         r = subprocess.run(["systemd-run", "--user", "--quiet", "--collect", "--unit", unit_name(t),
@@ -200,6 +232,7 @@ def launch(tid):
     return True
 
 def alive(t):
+    if t.get("exec") == "cloud" and t.get("cloud"): return True   # 例程已建好，结果靠 cloud_poll 查分支，超时算中断
     if t.get("unit"):
         r = subprocess.run(["systemctl", "--user", "is-active", t["unit"]], capture_output=True, text=True)
         return r.stdout.strip() in ("active", "activating", "reloading")
@@ -237,6 +270,11 @@ def make_worktree(t):
     if r.returncode != 0: raise RuntimeError("建工作树失败：" + r.stderr.strip()[-300:])
     return base
 
+def verify_line(t):
+    if not t.get("verify"): return "- 派活时没定验证命令：按仓库自己的测试验，结果写进总结。"
+    return (f"- 验证命令：{t['verify']}。结束前自己先跑通。你说做完后，服务会在工作树里再跑一遍，"
+            f"没过会把输出退回给你返工（最多 {T['verify_retries']} 次），再不过就按失败交回。")
+
 def first_prompt(t, base):
     who = t["requester"]
     src = ("私聊" if t["origin"]["chat_type"] == "p2p" else "群聊") + "（" + CH_LABEL.get(t["origin"]["channel"], "") + "）"
@@ -252,6 +290,7 @@ def first_prompt(t, base):
 - 做完：提交到 {t['branch']}；仓库有远端就推送这个分支，再建草稿合并请求：在工作树里跑 `{mr_cmd(t, base)}`（GitHub、Codeup 都走它，凭据它自己读；不要直接读令牌或调平台接口）。不合并、不推主干、不发版。
 - 最后一条回复是给派活人看的总结：做了什么、怎么验证的、分支和合并请求链接、还剩什么。按守则的说话风格，简短。
 - 运行中可能收到“[追加指令]”，按它调整。
+{verify_line(t)}
 - 派子代理时按子活儿挑模型：查找、汇总、机械改动用 haiku，常规编码和测试用 sonnet，难的设计和排查才用 opus。
 
 任务书：
@@ -260,8 +299,14 @@ def first_prompt(t, base):
 def run(tid):
     """后台单元的入口：跑一轮或几轮 Claude，把进展、提问、结果写成事件。"""
     t = load(tid)
+    if t.get("exec") == "cloud": return run_cloud(tid)
     o = t["origin"]
     try:
+        budget = T.get("budget_usd") or 0
+        if budget and (t.get("cost") or 0) >= budget:
+            update(tid, status="failed")
+            event(tid, "failed", f"结论：BLOCKED（预算用完：本任务已花 {t.get('cost')} 美元，上限 {budget}）。要接着干，请{OWNER_NAME}在终端里调高 tasks.budget_usd。")
+            return
         if not t.get("session_started"):
             base = make_worktree(t)
             update(tid, base=base)
@@ -278,6 +323,8 @@ def run(tid):
             # 模型和思考档整个任务固定，续跑也一样，换了缓存就白写
             if t.get("model"): cmd += ["--model", t["model"]]
             if t.get("effort"): cmd += ["--effort", t["effort"]]
+            if budget:   # 这一轮最多再花多少（CLI 按单次调用算），用完就停，不会一轮烧穿
+                cmd += ["--max-budget-usd", f"{max(0.5, budget - (t.get('cost') or 0)):.2f}"]
             cmd += ["--resume", t["session_id"]] if resume else ["--session-id", t["session_id"]]
             env = hook_env(t["requester"].get("owner"), False, o.get("chat_id", ""), o.get("channel", "feishu"), tid)
             final, tools_n = None, t.get("tools", 0)
@@ -310,7 +357,16 @@ def run(tid):
             text = final.get("result") or ""
             text = "\n".join(l for l in text.splitlines() if not re.match(r"\s*\[进展\]", l)).strip()
             denied = sorted({d.get("tool_name", "") for d in final.get("permission_denials") or []} - {""})
-            update(tid, cost=round((load(tid).get("cost") or 0) + (final.get("total_cost_usd") or 0), 3))
+            total = final.get("total_cost_usd") or 0     # 会话累计值：--resume 也接着累计，不是这一轮单算
+            prev = load(tid).get("cost") or 0
+            if total > prev: spend_add(tid, total - prev)
+            cost = round(max(prev, total), 3)
+            update(tid, cost=cost)
+            over = bool(budget) and cost >= budget
+            if over or "budget" in (final.get("subtype") or ""):
+                update(tid, status="failed")
+                event(tid, "failed", f"结论：BLOCKED（预算用完：本任务已花 {cost} 美元，上限 {budget}）。停在这里，分支和会话都留着。\n\n{text}")
+                return
             pending = inbox_take(tid)
             if pending:   # 这一轮结束前又来了追加指令：接着跑，不停下来
                 prompt, resume = format_inbox(pending), True
@@ -323,12 +379,174 @@ def run(tid):
             elif final.get("is_error"):
                 update(tid, status="failed"); event(tid, "failed", (text or final.get("subtype", "")) + note)
             else:
-                update(tid, status="done", finished=time.time()); event(tid, "done", text + note)
+                t = load(tid)
+                if t.get("verify"):   # 验证闸门：服务自己跑派活时定的命令，任务说“做完了”不算数
+                    ok, out = run_verify(t)
+                    rnd = t.get("verify_round", 0)
+                    if not ok and rnd < T["verify_retries"]:
+                        update(tid, verify_round=rnd + 1)
+                        prompt, resume = (f"[验证失败] 派活时定的验证命令没通过（第 {rnd + 1} 次退回）：{t['verify']}\n"
+                                          f"输出末尾：\n{out}\n\n修好再结束这一轮。修不了就写清原因，用 [提问] 交回。"), True
+                        continue
+                    if not ok:
+                        update(tid, status="failed", verify_round=0)
+                        event(tid, "failed", f"结论：BLOCKED（返工 {rnd} 次后验证仍没过）\n验证命令：{t['verify']}\n"
+                                             f"输出末尾：\n{out[-800:]}\n\n任务最后的总结：\n{text}{note}")
+                        return
+                    text = f"结论：PASS（服务复跑验证命令通过：{t['verify']}）\n\n{text}"
+                else:
+                    text = "结论：没定验证命令，服务没复核\n\n" + text
+                update(tid, status="done", finished=time.time(), verify_round=0); event(tid, "done", text + note)
             return
     except Exception as e:
         if (load(tid) or {}).get("status") == "cancelled": return
         update(tid, status="failed")
         event(tid, "failed", str(e)[-500:])
+
+# ---------- 验证闸门：命令不经 Claude 的工具调用，所以先用实例的 Bash 钩子预检一遍（不花 token） ----------
+def guard_check(cmd, t):
+    """返回拦截原因；放行返回 None。"""
+    owner = bool(t["requester"].get("owner"))
+    try:
+        with open(SETTINGS) as f: groups = json.load(f).get("hooks", {}).get("PreToolUse", [])
+    except Exception:
+        return None if owner else "读不到钩子配置，非主人任务的验证命令不跑"
+    o = t["origin"]
+    env = hook_env(owner, False, o.get("chat_id", ""), o.get("channel", "feishu"), t["id"])
+    data = json.dumps({"tool_name": "Bash", "tool_input": {"command": cmd}, "cwd": t["worktree"]})
+    for g in groups:
+        m = g.get("matcher") or "*"
+        if m != "*":
+            try: hit = re.fullmatch(m, "Bash")
+            except re.error: hit = None
+            if not hit: continue
+        for h in g.get("hooks", []):
+            r = subprocess.run(h["command"], shell=True, input=data, capture_output=True, text=True, env=env, cwd=t["worktree"])
+            if r.returncode == 2: return (r.stderr or "被护栏拦下").strip()[-300:]
+    return None
+
+def run_verify(t):
+    """在工作树里跑验证命令。返回 (通过?, 输出末尾)。"""
+    why = guard_check(t["verify"], t)
+    if why: return False, "验证命令被护栏拦下：" + why
+    o = t["origin"]
+    env = hook_env(t["requester"].get("owner"), False, o.get("chat_id", ""), o.get("channel", "feishu"), t["id"])
+    try:
+        r = subprocess.run(["bash", "-c", t["verify"]], cwd=t["worktree"], env=env, capture_output=True, text=True,
+                           timeout=T["verify_timeout_min"] * 60)
+        return r.returncode == 0, (r.stdout + r.stderr).strip()[-1500:] or f"（没有输出，退出码 {r.returncode}）"
+    except subprocess.TimeoutExpired:
+        return False, f"超过 {T['verify_timeout_min']} 分钟没跑完"
+
+# ---------- 云端执行：活儿在 Claude 官方云端的一次性例程里跑，不占本机；本机只查分支头（不花 token） ----------
+CLOUD = T.get("cloud") or {}
+CLOUD_MODELS = dict({"haiku": "claude-haiku-5-5", "sonnet": "claude-sonnet-5-5", "opus": "claude-opus-5-5"}, **CLOUD.get("models", {}))
+
+def github_slug(repo):
+    url = git(repo, "remote", "get-url", "origin").stdout.strip()
+    m = re.match(r"(?:https://|git@)github\.com[/:](.+?)(?:\.git)?/?$", url)
+    return m.group(1) if m else ""
+
+def cloud_ok(repo, owner):
+    """不能上云的原因；能上云返回 None。云端没有本机的护栏钩子，所以只给主人本人派的 GitHub 仓库。"""
+    if not CLOUD.get("environment_id"): return "实例没配云端环境（tasks.cloud.environment_id）"
+    if not owner: return f"只有{OWNER_NAME}本人派的活能上云（云端没有本机的护栏）"
+    if not github_slug(repo): return "云端只能拉 GitHub 仓库"
+    return None
+
+def cloud_prompt(t, start, extra=""):
+    v = t.get("verify")
+    check = (f"- 验证命令（必须通过才算做完）：{v}\n" if v else "- 做完跑仓库自带的测试，命令和结果写进提交正文。\n")
+    return (f"[长任务 #{t['id']}] {t['title']}（云端执行，没人盯着，做完再说话）\n"
+            f"派活人：{t['requester']['name']}（{OWNER_NAME}本人）\n"
+            f"开工：git fetch origin，然后 git checkout -B {t['branch']} {start}。只在这个分支上干。\n"
+            "- 先列计划再做。能自己定的不要问；必须由人拍板的，写进最后一次提交的正文，按“做不下去”收尾。\n"
+            "- 这台机器是新的，依赖自己装（npm ci、pip install 等）。\n" + check +
+            f"\n任务书：\n{t['brief']}\n" + (f"\n{extra}\n" if extra else "") +
+            "\n## 收尾（必须）\n"
+            f"- 只推送 {t['branch']}。不开合并请求，不合并，不推其他分支。\n"
+            "- 最后一次提交的正文写报告：做了什么、怎么验证的（命令和结果数字）、还剩什么、要人拍板的问题。\n"
+            "- 最后一次提交信息末尾单独一行写 Cloud-Run: done（做不下去写 Cloud-Run: stopped，并写原因和剩余工作），然后推送。\n"
+            "- 没有可提交的改动时，用 git commit --allow-empty 带上这一行推送。\n")
+
+def cloud_launch(t, prompt):
+    """一次性的 haiku 会话调 RemoteTrigger 建例程并立刻触发（约 1 美分）。返回 (例程号, 云端会话号)。"""
+    body = {"name": f"{SLUG} #{t['id']} {t['title']}"[:80], "enabled": False,
+            "job_config": {"ccr": {"environment_id": CLOUD["environment_id"],
+                "session_context": {"model": CLOUD_MODELS.get(t.get("model") or "sonnet", CLOUD_MODELS["sonnet"]),
+                                    "sources": [{"git_repository": {"url": "https://github.com/" + github_slug(t["repo"])}}],
+                                    "allowed_tools": ["Bash", "Read", "Write", "Edit", "Glob", "Grep"]},
+                "events": [{"data": {"uuid": str(uuid.uuid4()), "session_id": "", "type": "user", "parent_tool_use_id": None,
+                                     "message": {"role": "user", "content": prompt}}}]}}}
+    path = os.path.join(tdir(t["id"]), "cloud-body.json")
+    with open(path, "w") as f: json.dump(body, f, ensure_ascii=False)
+    ask = (f"Read the JSON file {path}. Call the RemoteTrigger tool with action create and body equal to that JSON, unchanged. "
+           "Then call RemoteTrigger with action run and the trigger_id that create returned. "
+           "Reply with exactly one line: TRIGGER=<trigger_id> SESSION=<session id from the run result, or none>. "
+           "If a call fails, reply ERROR=<error text>.")
+    r = subprocess.run(["claude", "-p", "--model", "haiku", "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
+                        "--allowedTools", "Read,RemoteTrigger", "--output-format", "json", "--", ask],
+                       capture_output=True, text=True, timeout=300, cwd=tdir(t["id"]))
+    try: res = json.loads(r.stdout).get("result") or ""
+    except Exception: res = (r.stdout + r.stderr)[-300:]
+    m = re.search(r"TRIGGER=(\S+)\s+SESSION=(\S+)", res)
+    if not m: raise RuntimeError("云端例程没建成：" + res[-300:])
+    return m.group(1), m.group(2)
+
+def run_cloud(tid):
+    t = load(tid)
+    c = t.get("cloud") or {}
+    if c.get("since") and not c.get("closed"):   # 上一个例程还没交结果：不重复开（续做等它交了再开）
+        update(tid, status="running"); return
+    try:
+        repo, br = t["repo"], t["branch"]
+        git(repo, "fetch", "--quiet", "origin")
+        head = git(repo, "ls-remote", "origin", "refs/heads/" + br).stdout.split()
+        head = head[0] if head else ""
+        if not t.get("session_started") or not head:
+            tg = t.get("target")
+            r = git(repo, "symbolic-ref", "--short", "refs/remotes/origin/HEAD")
+            start = "origin/" + tg if tg else (r.stdout.strip() if r.returncode == 0 else "origin/main")
+            if t["turn"] == 1: event(tid, "start", "")
+            prompt = cloud_prompt(t, start, format_inbox(inbox_take(tid)))
+        else:   # 续做：例程跑完不能追加消息，新开一个例程，从分支头接着干
+            start = "origin/" + br
+            prompt = cloud_prompt(t, start, f"这是续做：分支 {br} 上已有前面的提交（头是 {head[:10]}），在它上面接着改。\n"
+                                            + format_inbox(inbox_take(tid)))
+        trig, sess = cloud_launch(t, prompt)
+        update(tid, session_started=True, base=t.get("base") or start,
+               cloud={"trigger": trig, "session": sess, "after": head, "since": time.time()})
+    except Exception as e:
+        update(tid, status="failed"); event(tid, "failed", str(e)[-500:])
+
+def cloud_poll(tid):
+    """查云端任务的分支头，看到 Cloud-Run 标记就收尾：建草稿合并请求，写完成事件。返回是否有了结论。"""
+    t = load(tid); c = t.get("cloud") or {}
+    repo, br = t["repo"], t["branch"]
+    out = git(repo, "ls-remote", "origin", "refs/heads/" + br).stdout.split()
+    head = out[0] if out else ""
+    if not head or head == c.get("after"):
+        lim = CLOUD.get("timeout_min", 180)
+        if time.time() - c.get("since", time.time()) > lim * 60:
+            update(tid, status="lost", cloud=dict(c, closed=True)); event(tid, "lost", f"云端 {lim} 分钟没交结果（例程 {c.get('trigger')}）")
+            return True
+        return False
+    git(repo, "fetch", "--quiet", "origin", f"+refs/heads/{br}:refs/remotes/origin/{br}")
+    msg = git(repo, "log", "-1", "--format=%B", head).stdout
+    if "Cloud-Run: done" not in msg and "Cloud-Run: stopped" not in msg:
+        return False                                    # 中途推送，还没做完
+    body = re.sub(r"(?m)^(Cloud-Run:.*|Co-Authored-By:.*)$", "", msg).strip()
+    if "Cloud-Run: stopped" in msg:
+        update(tid, status="waiting", cloud=dict(c, after=head, closed=True))
+        event(tid, "question", "云端做不下去，交回来了：\n" + body[-2500:])
+        return True
+    r = subprocess.run([sys.executable, os.path.abspath(__file__), "mr", "--title", t["title"], "--body", body[:6000] or t["title"],
+                        "--branch", br] + (["--target", t["target"]] if t.get("target") else []),
+                       cwd=repo, capture_output=True, text=True, env=dict(os.environ, FCB_OWNER="1"))
+    mr = (r.stdout + r.stderr).strip()[-400:]
+    update(tid, status="done", finished=time.time(), cloud=dict(c, after=head, closed=True))
+    event(tid, "done", f"结论：云端做完（验证见下面的报告，本机没复跑）\n\n{body[-3000:]}\n\n合并请求：{mr}")
+    return True
 
 def remove_worktree(t):
     r = git(t["repo"], "worktree", "remove", t["worktree"])
@@ -357,9 +575,10 @@ def create_mr(argv):
     ap = argparse.ArgumentParser(prog="tasks.py mr", description="在当前 git 工作树里，为当前分支建草稿合并请求")
     ap.add_argument("--title", required=True); ap.add_argument("--body-file"); ap.add_argument("--body", default="")
     ap.add_argument("--target", help="目标分支，默认仓库的默认分支")
+    ap.add_argument("--branch", help="源分支，默认当前分支（云端任务没有本机工作树时用）")
     a = ap.parse_args(argv)
     body = open(a.body_file).read() if a.body_file else a.body
-    branch = git(".", "branch", "--show-current").stdout.strip()
+    branch = a.branch or git(".", "branch", "--show-current").stdout.strip()
     if not branch: sys.exit("当前不在分支上")
     if os.environ.get("FCB_OWNER") != "1" and not branch.startswith("bot/"):
         sys.exit(f"不是{OWNER_NAME}本人触发的会话，只能从 bot/ 开头的分支建合并请求（当前 {branch}）")

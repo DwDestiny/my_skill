@@ -254,6 +254,11 @@ def mark_seen(s, ids, ts=None):
 def base_cmd():
     return tasks.claude_args() + ["--output-format", "json"]   # 参数和后台任务共用一份，缓存前缀一致
 
+# 聊天一轮最多走多少步（工具调用来回）。超了不硬停在半路：再给它几步，把剩下的活儿写成 [派活] 交给后台任务。
+CHAT_MAX_TURNS = int(CFG.get("chat_max_turns", 60) or 0)
+TURNS_NUDGE = (f"[系统] 这一轮已经用满 {CHAT_MAX_TURNS} 步，聊天里不再接着干。把做到哪、还剩什么写成 [派活] 块交给后台任务"
+               "（按守则的格式，任务书写全），再给发消息的人一两句说明。")
+
 hook_env = tasks.hook_env
 
 def prime(sid):
@@ -270,11 +275,19 @@ def run_claude(key, s, prompt, owner, private, chat_id, quiet=False):
     cmd = base_cmd() + (["--resume", sid] if started else ["--session-id", sid])
     t0 = time.time()
     channel = "wecom" if key.startswith("wx:") else "feishu"   # 钩子按渠道判断能不能跨 IM 读聊天记录
+    if CHAT_MAX_TURNS: cmd += ["--max-turns", str(CHAT_MAX_TURNS)]
     r = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=CLAUDE_TIMEOUT,
                        cwd=WORKDIR, env=hook_env(owner, private, chat_id, channel))
     log.info("claude %s rc=%s %.0fs", key, r.returncode, time.time() - t0)
     try: out = json.loads(r.stdout)
     except Exception: out = None
+    if out and out.get("subtype") == "error_max_turns" and not quiet:
+        log.warning("claude %s hit max turns, asking it to hand off", key)
+        r = subprocess.run(base_cmd() + ["--max-turns", "4", "--resume", out.get("session_id") or sid], input=TURNS_NUDGE,
+                           capture_output=True, text=True, timeout=CLAUDE_TIMEOUT, cwd=WORKDIR,
+                           env=hook_env(owner, private, chat_id, channel))
+        try: out = json.loads(r.stdout)
+        except Exception: out = None
     if not out or (out.get("is_error") and not out.get("result")):
         log.error("claude failed: %s", (r.stdout + r.stderr)[-1500:])
         with lock:   # 丢掉会话映射，下一条消息开新会话；同一个 --session-id 不能重用
@@ -435,7 +448,8 @@ def task_detail(t, owner):
     lines = [f"#{t['id']} {t['title']} · {tasks.LABEL.get(t['status'], t['status'])}",
              f"仓库 {BT}{t['repo']}{BT}，分支 {BT}{t['branch']}{BT}，{tasks.model_label(t)}"]
     if t.get("started"):
-        lines.append(f"已经 {mins(t)} 分钟，调用工具 {t.get('tools', 0)} 次" + (f"，花了 {t['cost']} 美元" if owner and t.get("cost") else ""))
+        lines.append(f"已经 {mins(t)} 分钟，调用工具 {t.get('tools', 0)} 次" + (f"，花了 {t['cost']} 美元（上限 {tasks.T.get('budget_usd')}）" if owner and t.get("cost") else ""))
+        if t.get("verify"): lines.append(f"验证命令：{BT}{t['verify']}{BT}")
     mark = {"completed": "✔", "in_progress": "▶"}
     todos = t.get("todos") or []
     if todos: lines += ["计划："] + [f"{mark.get(x.get('status'), '·')} {x.get('content', '')}" for x in todos[:12]]
@@ -518,7 +532,12 @@ def task_directive(ev, result):
     if not err and not d["brief"]: err = "任务书是空的"
     if err: return (head + f"\n\n（派活没成：{err}。）").strip()
     name = ev.get("sender_name") or sender_name(ev.get("sender_id", ""))
+    ex, cloud_note = d.get("exec", ""), ""
+    if ex == "cloud":
+        why = tasks.cloud_ok(repo, owner)
+        if why: ex, cloud_note = "", f"（云端跑不了：{why}，改在本机跑。）"
     t = tasks.create(title=d["title"], repo=repo, brief=d["brief"], model=d["model"], effort=d["effort"],
+                     verify=d.get("verify", ""), exec=ex,
                      status="approved" if owner else "pending",
                      requester={"channel": ev["channel"], "id": ev["sender_id"], "name": name, "owner": owner},
                      origin={"channel": ev["channel"], "chat_id": ev["chat_id"], "chat_type": ev["chat_type"],
@@ -526,10 +545,11 @@ def task_directive(ev, result):
                              "thread_id": ev.get("thread_id"), "root_id": ev.get("root_id")}, target=d["target"])
     n, h = t["id"], tasks.T["approval_hours"]
     log.info("task #%s created by %s (%s): %s", n, ev.get("sender_id"), "owner" if owner else "pending", repo)
+    head = (head + ("\n\n" + cloud_note if cloud_note else "")).strip()
     if owner:
         return (head + f"\n\n排上了，任务 #{n}。进展在这儿报，{BT}/任务 {n}{BT} 随时看，@我 {BT}#{n} 内容{BT} 补充。").strip()
     brief = d["brief"] if len(d["brief"]) <= 3000 else d["brief"][:3000] + f"\n……（后面还有 {len(d['brief']) - 3000} 字，{BT}/任务 {n} 全文{BT} 看完整任务书）"
-    snap = f"#{n} {d['title']}\n仓库：{BT}{repo}{BT}（{tasks.model_label(t)}）\n任务书：\n{brief}"
+    snap = f"#{n} {d['title']}\n仓库：{BT}{repo}{BT}（{tasks.model_label(t)}）\n" + (f"验证：{BT}{t['verify']}{BT}\n" if t.get("verify") else "") + f"任务书：\n{brief}"
     if ev["chat_type"] != "p2p":
         return (head + f"\n\n{owner_ref(ev['channel'])} {name} 想派个长任务，等你批：\n{snap}\n\n"
                 f"@我 回复「批 {n}」开工，「不批 {n}」作罢，{h} 小时内有效。").strip()
@@ -556,6 +576,16 @@ def heartbeat_text(t):
     now = next((x.get("activeForm") or x.get("content") for x in (t.get("todos") or []) if x.get("status") == "in_progress"), "")
     return f"#{t['id']} 还在干，{mins(t)} 分钟了" + (f"，正在：{now}" if now else "") + "。"
 
+STUCK_S = (tasks.T.get("stuck_min") or 0) * 60
+CLOUD_POLL_S = 120
+cloud_polled = {}
+
+def last_activity(t):
+    """任务最近一次动静：开这一轮、调工具、Claude 输出了东西（stream.log 变了）。"""
+    try: mt = os.path.getmtime(os.path.join(tasks.tdir(t["id"]), "stream.log"))
+    except OSError: mt = 0
+    return max(t.get("launched") or 0, t.get("last_tool_at") or 0, mt)
+
 def task_tick():
     now = time.time()
     for t in tasks.all_tasks():
@@ -581,14 +611,30 @@ def task_tick():
         elif st == "running" and now - (t.get("launched") or now) > 20 and not tasks.alive(t):
             if tasks.load(n)["status"] == "running":   # 进程没了，也没写结果
                 tasks.update(n, status="lost"); tasks.event(n, "lost", "后台进程没了（机器重启或被杀）")
+        elif st == "running" and t.get("exec") == "cloud" and t.get("cloud"):
+            if now - cloud_polled.get(n, 0) > CLOUD_POLL_S:   # 查分支头，不花 token
+                cloud_polled[n] = now
+                try: tasks.cloud_poll(n)
+                except Exception: log.exception("task #%s cloud poll failed", n)
+        elif st == "running" and STUCK_S and t.get("exec") != "cloud" and now - last_activity(t) > STUCK_S:
+            if tasks.load(n)["status"] == "running":   # 进程还在，但很久没有任何动作：按卡住处理，停掉交回主控
+                tasks.stop(t); tasks.update(n, status="failed")
+                tasks.event(n, "failed", f"结论：BLOCKED（{int((now - last_activity(t)) / 60)} 分钟没有任何动作，判定卡住，已停）。"
+                                         "分支和会话都留着，可以接着干。")
         elif (st == "running" and t["origin"]["channel"] == "feishu" and HEARTBEAT_S
               and now - max(t.get("last_post") or 0, t.get("launched") or 0) > HEARTBEAT_S):
             task_say(t, heartbeat_text(t), f"t{n}h{int(now)}"); tasks.update(n, last_post=now)
-    running = sum(1 for t in tasks.all_tasks() if t["status"] == "running")
+    running = sum(1 for t in tasks.all_tasks() if t["status"] == "running" and t.get("exec") != "cloud")   # 云端的不占本机名额
+    held = tasks.over_daily()
     for t in tasks.all_tasks():
-        if t["status"] == "approved" and running < tasks.T["max_running"]:
+        if t["status"] == "approved" and held:   # 当天预算用完：排着，第二天自动开
+            if not t.get("held_note"):
+                tasks.update(t["id"], held_note=True)
+                task_say(t, f"#{t['id']} 排着：今天的任务预算（{tasks.T['daily_budget_usd']} 美元）用完了，明天自动开工。", f"t{t['id']}held{time.strftime('%m%d')}")
+            continue
+        if t["status"] == "approved" and (t.get("exec") == "cloud" or running < tasks.T["max_running"]):
             log.info("task #%s launch turn %s", t["id"], t.get("turn", 0) + 1)
-            tasks.launch(t["id"]); running += 1
+            tasks.launch(t["id"]); running += t.get("exec") != "cloud"
 
 # ---------- 任务回报交给主控：后台任务的完成、提问、失败先进派活的那个会话，主控自己收尾，再对人汇报 ----------
 RELAY_ON = tasks.T.get("relay", True)
