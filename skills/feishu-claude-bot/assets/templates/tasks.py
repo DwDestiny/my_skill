@@ -123,13 +123,17 @@ def events(tid, start=0): return _read(tid, "events.jsonl")[start:]
 BUDGET_RE = re.compile(r"预算\s*(?:加到|调到|改成|改为|提到|放到|到)\s*(\d+(?:\.\d+)?)")
 
 def inbox_add(tid, who, owner, text):
-    m = BUDGET_RE.search(text)   # 追加指令里写“预算加到 N”：先把检查点挪过去，再接着跑
-    if m: update(tid, budget=float(m.group(1)), budget_why=f"{who}调到 {m.group(1)}", checkpoint=False)
-    else:
-        t = load(tid) or {}
-        if t.get("checkpoint") and not who.startswith("主控"):   # 人亲自让停在检查点的任务接着干：就是同意加预算
-            nb = round(max((t.get("cost") or 0) * 1.5, (t.get("cost") or 0) + 5))
-            update(tid, budget=nb, budget_why=f"{who}让接着干，自动加到 {nb}", checkpoint=False)
+    t = load(tid) or {}
+    cost, budget = t.get("cost") or 0, t.get("budget") or T["budget_default"]
+    m = BUDGET_RE.search(text)
+    if m and (owner or who.startswith("主控")):   # 主人或主控写“预算加到 N”：把检查点挪过去（同事不能改）
+        update(tid, budget=float(m.group(1)), budget_why=f"{who}调到 {m.group(1)}", checkpoint=False)
+    elif t.get("checkpoint") and not who.startswith("主控"):   # 人亲自让停在检查点的任务接着干：就是同意加预算
+        nb = round(max(cost * 1.5, cost + 5))
+        update(tid, budget=nb, budget_why=f"{who}让接着干，自动加到 {nb}", checkpoint=False)
+    elif not t.get("checkpoint") and budget - cost < max(5, budget * 0.25):   # 做完或超了估计后又来新要求：续一段，别一开工就被截停
+        nb = round(cost + max(5, budget * 0.5), 1)
+        update(tid, budget=nb, budget_why=f"{who}追加了要求，续到 {nb}")
     _append(tid, "inbox.jsonl", {"who": who, "owner": owner, "text": text, "ts": time.time()})
 
 def inbox_take(tid):
@@ -216,7 +220,7 @@ def budget_basis(role, model):
 def checkpoint_text(t, cost, text=""):
     nb = round(max(cost * 1.5, cost + 5))
     return (f"结论：到检查点（已用 {cost} 美元当量，派活时估的是 {t.get('budget')}：{t.get('budget_why', '')}）。"
-            f"停在这里等主控定，分支和会话都留着。\n要接着干：[任务指令] #{t['id']} 继续，预算加到 {nb}\n\n{text}").strip()
+            f"停在这里，分支和会话都留着。\n要接着干：主控写 [任务指令] #{t['id']} 继续，预算加到 {nb}；人直接回 #{t['id']} 继续。\n\n{text}").strip()
 
 # ---------- 团队：roles/*.md 是角色模板；兄弟智能体 = 同一模板在不同项目、不同受众（主人/同事）下的实例，各有各的上下文 ----------
 ROLES_DIR = os.path.join(ROOT, "roles")
@@ -236,10 +240,19 @@ def roles():
                      "body": (m.group(2) if m else txt).strip()}
     return out
 
+def audience(t):
+    """会话给谁用：主人私聊、某个群、某个同事私聊。上下文只在同一受众里接着用，私聊的东西不进群，同事之间不串。"""
+    import hashlib
+    h = lambda s: hashlib.sha1(str(s).encode()).hexdigest()[:8]
+    o, r = t["origin"], t["requester"]
+    if o.get("chat_type") != "p2p": return "g" + h(o.get("chat_id"))
+    return "owner" if r.get("owner") else "u" + h(r.get("id"))
+
 def sibling_key(t):
-    proj = re.sub(r"[^\w.-]", "_", os.path.basename(os.path.normpath(t["repo"])))
-    aud = "owner" if t["requester"].get("owner") else "team"   # 给主人干过活的会话，绝不拿去给同事的任务接着用
-    return proj, f"{t.get('role') or '通用'}-{aud}"
+    import hashlib
+    real = os.path.realpath(X(t["repo"]))
+    proj = re.sub(r"[^\w.-]", "_", os.path.basename(real)) + "-" + hashlib.sha1(real.encode()).hexdigest()[:6]   # 同名仓库不撞
+    return proj, f"{t.get('role') or '通用'}-{audience(t)}"
 
 def _sib_path(t, ext):
     proj, k = sibling_key(t)
@@ -254,13 +267,13 @@ def sibling_notes(t, limit=6000):
     try: return open(_sib_path(t, ".md"), encoding="utf-8").read()[-limit:].strip()
     except FileNotFoundError: return ""
 
-def sibling_save(t, ctx, notes):
+def sibling_save(t, ctx, notes, total=0):
     p = _sib_path(t, ".json"); os.makedirs(os.path.dirname(p), exist_ok=True)
     with _Lock(os.path.join(os.path.dirname(p), ".lock")):
         s = sibling(t); proj, k = sibling_key(t)
         done = [x for x in (s.get("tasks") or []) if x != t["id"]][-19:] + [t["id"]]
-        s.update(project=proj, role=t.get("role") or "通用", audience=k.rsplit("-", 1)[1], head=t["session_id"],
-                 ctx=ctx, model=t.get("model") or "", last_used=time.time(), tasks=done)
+        s.update(project=proj, role=t.get("role") or "通用", audience=audience(t), head=t["session_id"],
+                 ctx=ctx, model=t.get("model") or "", last_used=time.time(), tasks=done, total=total)
         with open(p + ".tmp", "w") as f: json.dump(s, f, ensure_ascii=False, indent=1)
         os.replace(p + ".tmp", p)
         if notes:
@@ -285,6 +298,16 @@ def sibling_fork(t):
     if time.time() - s.get("last_used", 0) > T["sibling_warm_min"] * 60: return ""
     if (s.get("ctx") or 0) > T["sibling_max_ctx"]: return ""
     return s["head"]
+
+def role_check(t):
+    """角色禁了改文件的工具，但 Bash 还能写。干完看一眼分支：评审不该有任何改动，产品和需求只该新增文件。"""
+    deny = roles().get(t.get("role") or "", {}).get("deny") or []
+    if "Edit" not in deny or not os.path.isdir(t.get("worktree", "")): return ""
+    base = t.get("base") or "HEAD"
+    out = git(t["worktree"], "diff", "--name-status", base + "...HEAD").stdout + git(t["worktree"], "status", "--porcelain", "--untracked-files=no").stdout
+    rows = [l.split(None, 1) for l in out.splitlines() if l.strip()]
+    bad = [p for s, p in rows if "Write" in deny or not s.startswith(("A", "??"))]
+    return f"（角色检查：{t['role']}不该改已有文件，但这些有改动：{'、'.join(sorted(set(bad))[:8])}）" if bad else ""
 
 def split_handoff(text):
     """把回复末尾的 [交接] 段收走（存进团队笔记），剩下的给派活人看。"""
@@ -368,7 +391,7 @@ def launch(tid):
     """开一轮后台运行（首次开工、提问后续跑、完成后追加都算一轮）。"""
     t = load(tid)
     t = update(tid, status="running", turn=t.get("turn", 0) + 1, launched=time.time(),
-               started=t.get("started") or time.time())
+               started=t.get("started") or time.time(), verify_round=0)
     if platform.system() == "Linux" and shutil.which("systemd-run") and os.environ.get("FCB_TASK_LAUNCH") != "popen":
         env = [f"--setenv={k}={os.environ[k]}" for k in ("PATH", "HOME", "LANG", "USER") if k in os.environ]
         r = subprocess.run(["systemd-run", "--user", "--quiet", "--collect", "--unit", unit_name(t),
@@ -474,7 +497,7 @@ def run(tid):
         if not t.get("session_started"):
             base = make_worktree(t)
             fork = sibling_fork(t)
-            update(tid, base=base, forked_from=fork)
+            update(tid, base=base, forked_from=fork, cost_base=sibling(t).get("total", 0) if fork else 0)
             if t["turn"] == 1: event(tid, "start", "")
             prompt, resume = first_prompt(load(tid), base, bool(fork)), False
             early = inbox_take(tid)   # 批之前、开工之前就补充的话
@@ -501,12 +524,13 @@ def run(tid):
             with open(os.path.join(tdir(tid), "stream.log"), "a") as raw:
                 p = subprocess.Popen(cmd, cwd=t["worktree"], env=env, text=True,
                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=raw)
-                update(tid, session_started=True)
                 p.stdin.write(prompt); p.stdin.close()
                 for line in p.stdout:
                     raw.write(line)
                     try: obj = json.loads(line)
                     except Exception: continue
+                    if obj.get("type") == "system" and obj.get("subtype") == "init" and not load(tid).get("session_started"):
+                        update(tid, session_started=True)   # CLI 已经建好会话才算开了；没起来的下一轮还按新会话开
                     if obj.get("type") == "assistant":
                         if obj.get("parent_tool_use_id") is None and (obj.get("message") or {}).get("usage"):
                             last_u = obj["message"]["usage"]   # 最后一次调用的输入 = 现在的上下文大小（result 里的 usage 是整轮累计）
@@ -527,7 +551,9 @@ def run(tid):
                         final = obj
                 p.wait(); p.stdout.close()
             if final is None:
+                if (load(tid) or {}).get("status") != "running": return   # 被取消或判卡死停掉的，状态和事件已经写过
                 raise RuntimeError(f"Claude 异常退出（rc={p.returncode}），详情看 state/tasks/{tid}/stream.log")
+            raw_total = final.get("total_cost_usd") or 0
             text = final.get("result") or ""
             text = "\n".join(l for l in text.splitlines() if not re.match(r"\s*\[进展\]", l)).strip()
             text, notes = split_handoff(text)
@@ -535,9 +561,10 @@ def run(tid):
             ctx = sum(u.get(k) or 0 for k in ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"))
             fork, resume = "", True   # 这一轮之后都是续接自己的会话
             if final.get("session_id"): update(tid, session_id=final["session_id"])
-            sibling_save(load(tid), ctx, notes)
+            sibling_save(load(tid), ctx, notes, raw_total)
             denied = sorted({d.get("tool_name", "") for d in final.get("permission_denials") or []} - {""})
-            total = final.get("total_cost_usd") or 0     # 会话累计值：--resume 也接着累计，不是这一轮单算
+            # 会话累计值：--resume 接着累计；分叉出的会话还带着父会话的累计，减掉分叉时的底数才是本任务的
+            total = max(0.0, raw_total - (load(tid).get("cost_base") or 0))
             prev = load(tid).get("cost") or 0
             if total > prev: spend_add(tid, total - prev)
             cost = round(max(prev, total), 3)
@@ -551,6 +578,8 @@ def run(tid):
                 prompt, resume = format_inbox(pending), True
                 continue
             note = ("\n\n（有些操作被权限拦下了：" + "、".join(denied) + "）") if denied else ""
+            rc = role_check(load(tid))
+            if rc: note += "\n\n" + rc
             if (load(tid) or {}).get("status") == "cancelled": return   # 跑完这一轮之前被取消了
             if re.search(r"^\s*\[提问\]", text, re.M):
                 update(tid, status="waiting")
