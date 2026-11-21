@@ -23,6 +23,7 @@ T = dict({"enabled": True, "root": "~/work/.bot-tasks", "max_running": 2, "appro
           "stuck_min": 40, "verify_retries": 2, "verify_timeout_min": 20,
           # 兄弟智能体：同项目同角色上次用过多久以内（缓存还热）、上下文多大以内，新任务就分叉接着它的会话
           "sibling_warm_min": 55, "sibling_max_ctx": 150000,
+          "compact": {"idle_min": 50, "min_ctx": 120000},
           "cloud": {}},
          **CFG.get("tasks", {}))
 TASK_ROOT = os.path.join(X(T["root"]), SLUG)
@@ -309,6 +310,46 @@ def role_check(t):
     bad = [p for s, p in rows if "Write" in deny or not s.startswith(("A", "??"))]
     return f"（角色检查：{t['role']}不该改已有文件，但这些有改动：{'、'.join(sorted(set(bad))[:8])}）" if bad else ""
 
+def session_cmd(t):
+    """任务会话的固定参数：模型、思考档、角色禁用的工具。整个任务不变，续跑和压缩都用同一套，缓存前缀才一致。"""
+    cmd = claude_args()
+    if t.get("model"): cmd += ["--model", t["model"]]
+    if t.get("effort"): cmd += ["--effort", t["effort"]]
+    deny = roles().get(t.get("role") or "", {}).get("deny") or []
+    if deny: cmd += ["--disallowedTools"] + deny   # 角色的工具限制写在代码里，不靠守则
+    return cmd
+
+# ---------- 缓存过期前压缩：只给大会话、只在还会接着用时做 ----------
+# 缓存 1 小时过期。过期后续接，整段上下文按 2 倍价重写一遍；快过期时先压缩，之后续接只重写摘要。
+# 压缩本身要读一遍上下文、写一份摘要，摘要还会丢细节，所以只给上下文大（默认 12 万以上）、而且大概率还会接着用的会话做：
+# 等人回话的任务、还没到换新时间的聊天会话。每个闲置期最多压一次。
+COMPACT_KEEP = ("/compact 保留：正在做的事和做到哪一步、已经定下的结论和决定、还没做完的事、"
+                "涉及的文件路径、分支、任务编号和命令、对方提过的要求和偏好。")
+
+def compact_due(ctx, last, compacted, now=None):
+    now = now or time.time()
+    c = T["compact"]
+    idle = now - (last or now)
+    return bool(c.get("min_ctx")) and (ctx or 0) >= c["min_ctx"] and c["idle_min"] * 60 <= idle < 3600 \
+        and (compacted or 0) < (last or 0)
+
+def compact_task(tid):
+    """压缩等人回话的任务会话。调用方先把 compacting 记成当前时间，launch 看到它会等压缩做完再开工。"""
+    t = load(tid)
+    try:
+        if t["status"] not in ("waiting", "failed") or not t.get("session_started"): return
+        cmd = session_cmd(t) + ["--output-format", "json", "--resume", t["session_id"]]
+        o = t["origin"]
+        r = subprocess.run(cmd, input=COMPACT_KEEP, capture_output=True, text=True, timeout=900, cwd=t["worktree"],
+                           env=hook_env(t["requester"].get("owner"), False, o.get("chat_id", ""), o.get("channel", "feishu"), tid))
+        out = json.loads(r.stdout or "{}")
+        # 压缩的钱记进总花费，但不算进任务花费：会话累计里多出来的部分加到底数上，检查点不受影响
+        extra = max(0.0, (out.get("total_cost_usd") or 0) - (t.get("cost_base") or 0) - (t.get("cost") or 0))
+        if extra: spend_add(tid, extra)
+        update(tid, cost_base=(t.get("cost_base") or 0) + extra, compacted=time.time(), compact_cost=round(extra, 4))
+    finally:
+        update(tid, compacting=0)
+
 def split_handoff(text):
     """把回复末尾的 [交接] 段收走（存进团队笔记），剩下的给派活人看。"""
     m = re.search(r"^\s*\[交接\]\s*$", text, re.M) or re.search(r"^\s*\[交接\]", text, re.M)
@@ -507,15 +548,10 @@ def run(tid):
             prompt, resume = (format_inbox(items) if items else "[追加指令] 继续，把没做完的做完。"), True
         while True:
             t = load(tid)
-            cmd = claude_args() + ["--output-format", "stream-json", "--verbose"]
-            # 模型和思考档整个任务固定，续跑也一样，换了缓存就白写
-            if t.get("model"): cmd += ["--model", t["model"]]
-            if t.get("effort"): cmd += ["--effort", t["effort"]]
+            cmd = session_cmd(t) + ["--output-format", "stream-json", "--verbose"]
             budget = t.get("budget") or T["budget_default"]
             # 这一轮到检查点为止（CLI 按单次调用算）；停下后会话还在，加了预算接着跑
             cmd += ["--max-budget-usd", f"{max(0.5, budget - (t.get('cost') or 0)):.2f}"]
-            deny = roles().get(t.get("role") or "", {}).get("deny") or []
-            if deny: cmd += ["--disallowedTools"] + deny   # 角色的工具限制写在代码里，不靠守则
             if resume: cmd += ["--resume", t["session_id"]]
             elif fork: cmd += ["--resume", fork, "--fork-session", "--session-id", t["session_id"]]
             else: cmd += ["--session-id", t["session_id"]]
@@ -562,6 +598,7 @@ def run(tid):
             fork, resume = "", True   # 这一轮之后都是续接自己的会话
             if final.get("session_id"): update(tid, session_id=final["session_id"])
             sibling_save(load(tid), ctx, notes, raw_total)
+            update(tid, ctx=ctx, idle_since=time.time())
             denied = sorted({d.get("tool_name", "") for d in final.get("permission_denials") or []} - {""})
             # 会话累计值：--resume 接着累计；分叉出的会话还带着父会话的累计，减掉分叉时的底数才是本任务的
             total = max(0.0, raw_total - (load(tid).get("cost_base") or 0))

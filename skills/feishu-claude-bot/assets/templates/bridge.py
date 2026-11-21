@@ -296,13 +296,40 @@ def run_claude(key, s, prompt, owner, private, chat_id, quiet=False):
     u = out.get("usage") or {}
     log.info("cost %s session_total=$%.3f in=%s cache_read=%s cache_write=%s out=%s", key, out.get("total_cost_usd") or 0,
              u.get("input_tokens"), u.get("cache_read_input_tokens"), u.get("cache_creation_input_tokens"), u.get("output_tokens"))
+    it = (u.get("iterations") or [{}])[-1]
     with lock:
         s["started"] = True; s["last"] = time.time(); s["id"] = out.get("session_id", sid)
+        s["ctx"] = sum(it.get(k) or 0 for k in ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"))
         save(SESS_FILE, sessions)
     return out.get("result") or ""
 
+def compact_sweep(now):
+    """聊天会话快过期时排一次压缩。走会话自己的队列，不会和消息、任务回报同时 --resume 同一个会话。"""
+    for key, s in list(sessions.items()):
+        if key.startswith("amb:") or not s.get("started") or s.get("compacting"): continue
+        idle = idle_limit(key)
+        if idle and idle <= 3600: continue              # 一小时内就换新的会话，压了也用不上
+        if tasks.compact_due(s.get("ctx"), s.get("last"), s.get("compacted"), now):
+            with lock: s["compacting"] = now
+            enqueue(key, {"compact": True, "key": key})
+
+def compact_chat(key):
+    with lock:
+        s = sessions.get(key)
+        if not s or not s.get("compacting"): return
+        sid, last = s["id"], s.get("last", 0)
+    try:
+        if not tasks.compact_due(s.get("ctx"), last, s.get("compacted")): return   # 排队期间来过消息：不压了
+        r = subprocess.run(base_cmd() + ["--resume", sid], input=tasks.COMPACT_KEEP, capture_output=True, text=True,
+                           timeout=900, cwd=WORKDIR, env=hook_env(False, False, ""))
+        log.info("compact %s rc=%s ctx=%s", key, r.returncode, s.get("ctx"))
+    finally:
+        with lock:
+            s.pop("compacting", None); s["compacted"] = time.time(); save(SESS_FILE, sessions)
+
 def handle(ev):
     if ev.get("relay"): return task_relay(ev)
+    if ev.get("compact"): return compact_chat(ev["key"])
     key = session_key(ev)
     name = ev.get("sender_name") or sender_name(ev.get("sender_id", ""))
     text = (ev.get("content") or "").strip()
@@ -683,6 +710,12 @@ def task_tick():
     running = sum(1 for t in tasks.all_tasks() if t["status"] == "running" and t.get("exec") != "cloud")   # 云端的不占本机名额
     quota_check(now)
     for t in tasks.all_tasks():
+        if t.get("compacting") and now - t["compacting"] < 1200: continue   # 正在压缩：压完再开工（超 20 分钟当它没了）
+        if (t["status"] in ("waiting", "failed") and t.get("exec") != "cloud"
+                and tasks.compact_due(t.get("ctx"), t.get("idle_since"), t.get("compacted"), now)):
+            tasks.update(t["id"], compacting=now)
+            threading.Thread(target=tasks.compact_task, args=(t["id"],), daemon=True).start()
+            continue
         if t["status"] == "approved" and (t.get("exec") == "cloud" or running < tasks.T["max_running"]):
             log.info("task #%s launch turn %s", t["id"], t.get("turn", 0) + 1)
             tasks.launch(t["id"]); running += t.get("exec") != "cloud"
@@ -801,8 +834,11 @@ def relay_followups(t, text):
 
 def task_loop(stopping):
     while not stopping.wait(5):
-        try: task_tick()
+        try:
+            if TASKS_ON: task_tick()
         except Exception: log.exception("task tick failed")
+        try: compact_sweep(time.time())
+        except Exception: log.exception("compact sweep failed")
 
 # ---------- 旁听：白名单群不 @ 也读，攒一批交给 Claude 决定插不插话 ----------
 # 用主人的用户身份定时拉消息，不开“读取群内所有消息”权限，非白名单群照旧收不到。
@@ -1073,8 +1109,8 @@ def main():
     for f in loops: threading.Thread(target=f, args=(stopping,), daemon=True).start()
     if FEISHU_ON and AMB["enabled"]:
         threading.Thread(target=ambient_loop, daemon=True).start()
-    if TASKS_ON:   # 长任务的状态检查和进度回报；任务本身在独立单元里跑，不随本进程退出
-        threading.Thread(target=task_loop, args=(stopping,), daemon=True).start()
+    # 定时检查：长任务的状态和进度回报（任务本身在独立单元里跑，不随本进程退出）、聊天会话快过期时压缩
+    threading.Thread(target=task_loop, args=(stopping,), daemon=True).start()
     log.info("bridge started: %s (%s)", NAME, "+".join(f.__name__.split("_")[0] for f in loops))
     while not stopping.wait(3600): pass
     log.info("bridge stopping")

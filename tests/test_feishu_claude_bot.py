@@ -949,6 +949,40 @@ class TaskTest(unittest.TestCase):
         x = self.t.load(e)
         self.assertEqual((x['budget'], x['status'], x['auto_follow']), (50.0, 'approved', 3))
 
+    def test_compact_before_cache_expires(self):
+        due, now = self.t.compact_due, 10000.0
+        self.assertTrue(due(130000, now - 51 * 60, 0, now))
+        self.assertFalse(due(50000, now - 51 * 60, 0, now))            # 小会话不压
+        self.assertFalse(due(130000, now - 30 * 60, 0, now))           # 还早
+        self.assertFalse(due(130000, now - 61 * 60, 0, now))           # 已经过期，压了也省不了
+        self.assertFalse(due(130000, now - 51 * 60, now - 60, now))    # 这个闲置期压过了
+        # 任务：压缩的钱记总账、加到底数，不算任务花费；压完清标记
+        body = ('import sys, json\nsys.stdin.read()\nprint(json.dumps({"type": "result", "result": "", "total_cost_usd": 3.3}))\n')
+        n = self.new_task(status='waiting', session_started=True)
+        self.t.update(n, cost=3.0, cost_base=0.2, compacting=1, worktree=str(self.repo))
+        bindir = self.fake_bin(body)
+        old = os.environ['PATH']; os.environ['PATH'] = f"{bindir}:{old}"
+        try: self.t.compact_task(n)
+        finally: os.environ['PATH'] = old
+        t = self.t.load(n)
+        self.assertEqual((t['cost'], round(t['cost_base'], 3), t['compacting']), (3.0, 0.3, 0)); self.assertTrue(t['compacted'])
+        # 压缩中有人回话：等压完再开工
+        m = self.new_task(status='approved'); self.t.update(m, compacting=time.time())
+        launched = []
+        real = self.t.launch; self.t.launch = lambda i: launched.append(i)
+        try: self.b.task_tick()
+        finally: self.t.launch = real
+        self.assertNotIn(m, launched)
+        # 聊天：一小时内就换新的会话不压；私聊的大会话压，走会话自己的队列
+        q = []
+        real_enq = self.b.enqueue; self.b.enqueue = lambda k, ev: q.append(k)
+        self.b.sessions.update({'grp:oc_a': {'id': 'a', 'started': True, 'last': now - 51 * 60, 'ctx': 200000},
+                                'p2p:oc_b': {'id': 'b', 'started': True, 'last': now - 51 * 60, 'ctx': 200000}})
+        real_gl = self.b.GROUP_IDLE; self.b.GROUP_IDLE = 3600
+        try: self.b.compact_sweep(now); self.b.compact_sweep(now)
+        finally: self.b.enqueue, self.b.GROUP_IDLE = real_enq, real_gl
+        self.assertEqual(q, ['p2p:oc_b'])
+
     def test_role_check_flags_edits(self):
         wt = Path(self.tmp.name) / 'rc'
         subprocess.run(['git', 'clone', '-q', str(Path(self.tmp.name) / 'proj.git'), str(wt)], check=True)

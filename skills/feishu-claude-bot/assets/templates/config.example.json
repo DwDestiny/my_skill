@@ -26,6 +26,7 @@
     "quota_alert": {"five_hour": 0.85, "seven_day_pace": 1.1},
     "sibling_warm_min": 55,
     "sibling_max_ctx": 150000,
+    "compact": {"idle_min": 50, "min_ctx": 120000},
     "stuck_min": 40,
     "verify_retries": 2,
     "verify_timeout_min": 20,
