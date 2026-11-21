@@ -23,6 +23,8 @@ def block(msg):
 
 if re.search(r"--no-verify|hookspath|GIT_CONFIG_|--config-env", cmd, re.I):
     block("不能绕过或改写 git 钩子。")
+if not owner and re.search(r"\benv\s+(-\S*[iu]|--ignore-environment|--unset)|\bunset\s+\S*(GIT|FCB)|\bsetsid\b|systemd-run|\bsudo\b", cmd):
+    block("这个会话不是主人本人触发的：不能清掉或改写运行环境。")
 if re.search(r"\bgh\s+auth\s+(token|status\s+.*--show-token)|\.config/gh|git\s+credential", cmd):
     block("不能读 GitHub 登录凭证。")
 
@@ -39,6 +41,11 @@ for seg in segs:
         else:
             if force or re.search(r"(^|\s)(--tags|--all|--follow-tags)(\s|$)", args):
                 block("这个会话不是主人本人触发的：只能普通推送 bot/ 开头的分支，不能强推、删分支、推标签。")
+            for ref in re.findall(r"(?:^|\s)(?!-)(\S*:\S+)", args):   # 写明了推到哪：目标必须是 bot/ 分支
+                if "@" in ref.split(":", 1)[0] or "://" in ref: continue   # 远端地址，不是 refspec
+                dst = ref.split(":", 1)[1].replace("refs/heads/", "")
+                if not dst.startswith("bot/"):
+                    block(f"这个会话不是主人本人触发的：只能推 bot/ 开头的分支，{dst} 不行。")
     if owner:
         continue
     for g in re.finditer(r"(?:^|[\s/])gh\s+(\S+)\s*(\S*)(.*)", s):

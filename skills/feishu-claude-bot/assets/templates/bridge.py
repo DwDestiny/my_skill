@@ -395,9 +395,8 @@ def task_say(t, text, key):
     """往任务的原会话发一条：飞书引用派活的那条消息，企微推到原会话。"""
     o = t["origin"]
     if o["channel"] == "wecom":
-        wecom_send({"op": "send", "chatid": o["chat_id"], "content": wecom_trim(text), "ref": key})
-    else:
-        reply({"channel": "feishu", "message_id": o["message_id"]}, text, o.get("thread", False), key=key)
+        return wecom_send({"op": "send", "chatid": o["chat_id"], "content": wecom_trim(text), "ref": key})
+    return reply({"channel": "feishu", "message_id": o["message_id"]}, text, o.get("thread", False), key=key)
 
 def owner_dm(channel, text):
     """私聊主人（同事私聊派的活要主人批）。优先同渠道，没配就换另一个。返回用了哪个渠道。"""
@@ -443,7 +442,7 @@ def task_command(ev):
     """/任务 命令、批 N、#N 补充。不是这些就返回 None，照常交给 Claude。"""
     text = plain(ev)
     owner = is_owner(ev)
-    usage = f"用法：{TASK_CMD}、{TASK_CMD} N、{TASK_CMD} 取消 N" + (f"、{TASK_CMD} 清理 N" if owner else "")
+    usage = f"用法：{TASK_CMD}、{TASK_CMD} N、{TASK_CMD} 全文 N、{TASK_CMD} 取消 N" + (f"、{TASK_CMD} 清理 N" if owner else "")
     if text == TASK_CMD or text.startswith(TASK_CMD + " "):
         arg = text[len(TASK_CMD):].split()
         mine = [t for t in tasks.all_tasks() if can_see(t, ev)]
@@ -459,6 +458,7 @@ def task_command(ev):
         if not n.isdigit(): return usage
         if not t or not can_see(t, ev): return "没有这个任务。"
         if len(arg) == 1: return task_detail(t, owner)
+        if arg[0] == "全文": return f"#{n} {t['title']} 的任务书：\n{t['brief']}"
         if arg[0] in ("取消", "停"):
             if not can_steer(t, ev): return f"#{n} 不是你派的，取消找{t['requester']['name']}或{OWNER_NAME}。"
             if t["status"] not in tasks.ACTIVE + ("pending",): return f"#{n} 已经{tasks.LABEL.get(t['status'])}了。"
@@ -521,7 +521,8 @@ def task_directive(ev, result):
     log.info("task #%s created by %s (%s): %s", n, ev.get("sender_id"), "owner" if owner else "pending", repo)
     if owner:
         return (head + f"\n\n排上了，任务 #{n}。进展在这儿报，{BT}/任务 {n}{BT} 随时看，@我 {BT}#{n} 内容{BT} 补充。").strip()
-    snap = f"#{n} {d['title']}\n仓库：{BT}{repo}{BT}\n任务书：\n{d['brief'][:1500]}"
+    brief = d["brief"] if len(d["brief"]) <= 3000 else d["brief"][:3000] + f"\n……（后面还有 {len(d['brief']) - 3000} 字，{BT}/任务 {n} 全文{BT} 看完整任务书）"
+    snap = f"#{n} {d['title']}\n仓库：{BT}{repo}{BT}\n任务书：\n{brief}"
     if ev["chat_type"] != "p2p":
         return (head + f"\n\n{owner_ref(ev['channel'])} {name} 想派个长任务，等你批：\n{snap}\n\n"
                 f"@我 回复「批 {n}」开工，「不批 {n}」作罢，{h} 小时内有效。").strip()
@@ -553,9 +554,13 @@ def task_tick():
     for t in tasks.all_tasks():
         n = t["id"]
         for e in tasks.events(n, t.get("posted", 0)):
-            try: task_say(t, task_event_text(t, e), f"t{n}e{t.get('posted', 0)}")
-            except Exception: log.exception("task #%s post failed", n)
-            t = tasks.update(n, posted=t.get("posted", 0) + 1, last_post=now)   # 发完才记，重启后不丢不重
+            try: ok = task_say(t, task_event_text(t, e), f"t{n}e{t.get('posted', 0)}")
+            except Exception: log.exception("task #%s post failed", n); ok = False
+            fails = 0 if ok else t.get("post_fail", 0) + 1
+            if not ok and fails < 20:   # 没发出去：下一轮重试（幂等键不变，飞书不会重复）
+                tasks.update(n, post_fail=fails); break
+            if not ok: log.error("task #%s event %s dropped after 20 tries", n, t.get("posted", 0))
+            t = tasks.update(n, posted=t.get("posted", 0) + 1, last_post=now, post_fail=0)   # 发完才记，重启后不丢不重
         st = t["status"]
         if st == "pending" and now - t["created"] > APPROVAL_S:
             t = tasks.update(n, status="expired")
@@ -739,8 +744,8 @@ def wecom_send(cmd):
         try:
             p.stdin.write(json.dumps(cmd, ensure_ascii=False) + "\n"); p.stdin.flush()
         except Exception as e:
-            log.warning("wecom send failed: %s", e)
-    return None
+            log.warning("wecom send failed: %s", e); return None
+    return True   # 交给网关了；真正发没发出去看日志 wecom sent 行
 
 def wecom_trim(text):
     b = text.encode("utf-8")

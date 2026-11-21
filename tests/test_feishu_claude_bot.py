@@ -521,6 +521,10 @@ class TaskTest(unittest.TestCase):
         self.assertEqual((d['title'], d['repo']), ('加个功能', str(self.repo)))
         self.assertIn('验收：测试通过', d['brief'])
         self.assertEqual(self.t.parse_directive('普通回复')[1], None)
+        fenced = "我准备这么干。\n\n```\n[派活]\n仓库: ~/work/x\n标题: 修\n任务书:\n改 bug\n```"
+        head, d = self.t.parse_directive(fenced)                # Claude 照抄守则里的代码块围栏
+        self.assertEqual(head, '我准备这么干。')
+        self.assertEqual(d['brief'], '改 bug')
 
     def test_check_repo(self):
         self.assertIsNone(self.t.check_repo(str(self.repo))[1])
@@ -598,6 +602,17 @@ class TaskTest(unittest.TestCase):
             self.assertEqual(len(mine), 2)                    # 两个事件各发一次，第二次 tick 不重发
             self.assertEqual(len({s[2] for s in mine}), 2)    # 幂等键不同，飞书不会去重吞掉
             self.assertEqual(self.t.load(p)['status'], 'expired')
+            q = self.t.create(title='z', repo=str(self.repo), brief='b', status='waiting',
+                              requester={'channel': 'feishu', 'id': OWNER, 'name': '小王', 'owner': True},
+                              origin={'channel': 'feishu', 'chat_id': 'oc_g', 'chat_type': 'p2p', 'message_id': 'om_q'})['id']
+            self.t.event(q, 'question', '选 A 还是 B？')
+            ok_reply = self.b.reply
+            self.b.reply = lambda ev, text, in_thread, key=None: None     # 发送失败
+            self.b.task_tick()
+            self.assertEqual(self.t.load(q)['posted'], 0)               # 没发出去不记，下一轮重试
+            self.b.reply = ok_reply
+            self.b.task_tick()
+            self.assertEqual(self.t.load(q)['posted'], 1)
         finally:
             self.b.tasks.launch = orig
 
@@ -644,8 +659,11 @@ class TaskTest(unittest.TestCase):
         blocked = ['git push --no-verify origin bot/1', 'git -c core.hooksPath=/dev/null push', 'GIT_CONFIG_COUNT=0 git push',
                    'git push -f origin bot/1', 'git push origin +bot/1', 'git push origin :main', 'git push --tags',
                    'gh pr merge 3', 'gh pr create --title x', 'gh release create v1', 'gh api -X DELETE repos/a/b',
-                   'gh auth token', 'cat ~/.config/gh/hosts.yml', 'cd x && gh repo delete a/b --yes']
-        allowed = ['git push origin bot/1-1121', 'git push -u origin HEAD', 'gh pr create --draft --title x --body y',
+                   'gh auth token', 'cat ~/.config/gh/hosts.yml', 'cd x && gh repo delete a/b --yes',
+                   'env -i PATH="$PATH" HOME="$HOME" git push origin bot/1', 'unset GIT_CONFIG_COUNT; git push',
+                   'git push origin HEAD:main', 'git push origin bot/1:refs/heads/release']
+        allowed = ['git push origin bot/1-1121', 'git push -u origin HEAD', 'git push origin HEAD:bot/1-1121',
+                   'git push git@github.com:a/b.git bot/1', 'git push https://github.com/a/b.git HEAD:refs/heads/bot/2', 'gh pr create --draft --title x --body y',
                    'gh pr view 3', 'gh api repos/a/b/pulls', 'git status', 'ls']
         for c in blocked: self.assertEqual(self.guard(c), 2, c)
         for c in allowed: self.assertEqual(self.guard(c), 0, c)

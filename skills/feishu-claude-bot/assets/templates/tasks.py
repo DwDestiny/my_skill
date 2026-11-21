@@ -149,6 +149,11 @@ def parse_directive(text):
     m = re.search(r"^\s*\[派活\]\s*$", text, re.M)
     if not m: return text, None
     head, block = text[:m.start()].rstrip(), text[m.end():]
+    fence = re.compile(r"^\s*(`{3,}|~{3,})\w*\s*$")   # 守则里的格式写在代码块里，Claude 常把围栏一起抄出来
+    hl = head.splitlines()
+    while hl and fence.match(hl[-1]): hl.pop()
+    head = "\n".join(hl).rstrip()
+    block = "\n".join(l for l in block.splitlines() if not fence.match(l))
     def field(name):
         mm = re.search(r"^\s*" + name + r"\s*[:：]\s*(.*)$", block, re.M)
         return mm.group(1).strip() if mm else ""
