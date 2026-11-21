@@ -14,6 +14,13 @@
     }
   },
   "cross_im_read": false,
+  "tasks": {
+    "enabled": true,
+    "root": "~/work/.bot-tasks",
+    "max_running": 2,
+    "approval_hours": 24,
+    "heartbeat_min": 30
+  },
   "persona": "work",
   "style": "veteran",
   "workdir": "~/work",

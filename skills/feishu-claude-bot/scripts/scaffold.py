@@ -2,7 +2,7 @@
 """按 config.json 生成或更新一个 IM 机器人实例（飞书、企业微信，可同时启用）。
 
 Input:  实例目录（里面要有 config.json，样例见 assets/templates/config.example.json）
-Output: 在实例目录写 bridge.py、hooks/、rules.md、claude-settings.json、服务文件（Linux: systemd 用户服务；macOS: launchd plist）；
+Output: 在实例目录写 bridge.py、tasks.py、hooks/（含 hooks/git/ 钩子分发器）、rules.md、claude-settings.json、服务文件（Linux: systemd 用户服务；macOS: launchd plist）；
         启用企微时另写 wecom_gateway.mjs、package.json 并安装 @wecom/aibot-node-sdk
 Pos:    feishu-claude-bot skill 的生成器
 用法:   python3 scaffold.py <实例目录> [--rules] [--no-npm] [--confirm-cross-im]
@@ -46,10 +46,20 @@ if os.path.realpath(X(CFG.get("workdir", "~"))) == os.path.realpath(INST):
     sys.exit("workdir 不能是实例目录本身，否则会加载实例目录的 CLAUDE.md")
 
 # 1. 代码和钩子：总是用模板覆盖，保证和 skill 同版本
-shutil.copy(os.path.join(T, "bridge.py"), os.path.join(INST, "bridge.py"))
-os.makedirs(os.path.join(INST, "hooks"), exist_ok=True)
-for f in ("lark_identity.py", "private_guard.py", "wecom_guard.py"):
+for f in ("bridge.py", "tasks.py"):
+    shutil.copy(os.path.join(T, f), os.path.join(INST, f))
+os.makedirs(os.path.join(INST, "hooks", "git"), exist_ok=True)
+for f in ("lark_identity.py", "private_guard.py", "wecom_guard.py", "git_guard.py", "task_inbox.py"):
     shutil.copy(os.path.join(T, "hooks", f), os.path.join(INST, "hooks", f))
+# git 钩子分发器：非主人触发的会话把 core.hooksPath 指到 hooks/git，pre-push 只放行 bot/ 分支
+gh = os.path.join(INST, "hooks", "git")
+shutil.copy(os.path.join(T, "hooks", "git", "fcb-githook"), os.path.join(gh, "fcb-githook"))
+os.chmod(os.path.join(gh, "fcb-githook"), 0o755)
+for name in ("pre-commit", "prepare-commit-msg", "commit-msg", "post-commit", "pre-push", "pre-rebase",
+             "post-checkout", "post-merge", "post-rewrite", "pre-merge-commit"):
+    p = os.path.join(gh, name)
+    if os.path.lexists(p): os.remove(p)
+    os.symlink("fcb-githook", p)
 if WECOM_ON:
     shutil.copy(os.path.join(T, "wecom_gateway.mjs"), os.path.join(INST, "wecom_gateway.mjs"))
     pkg = os.path.join(INST, "package.json")
@@ -88,20 +98,24 @@ if not os.path.exists(rules) or "--rules" in sys.argv:
 else:
     print("保留已有", rules, "（加 --rules 按模板重写）")
 
-# 3. Claude 设置：权限拒绝表 + 两个钩子
+# 3. Claude 设置：权限拒绝表 + 钩子
 deny = [f"Read({X(p)}/**)" for p in CFG.get("private", {}).get("paths", []) if p.startswith(("~", "/")) and "(" not in p and "\\" not in p]
 deny += [f"Edit({X(p)}/**)" for p in CFG.get("private", {}).get("paths", []) if p.startswith(("~", "/")) and "(" not in p and "\\" not in p]
 deny += ["Read(**/.private/**)", "Edit(**/.private/**)", f"Read({HOME}/.lark-cli/**)", "Read(**/.env)", "Read(**/.env.*)",
          "Bash(lark-cli config:*)", "Bash(lark-cli auth:*)", "Bash(lark-cli profile:*)", "Bash(lark-cli event:*)",
          f"Read({HOME}/.config/wecom/**)", f"Edit({HOME}/.config/wecom/**)", "Bash(wecom-cli auth:*)",
+         f"Read({HOME}/.config/gh/**)", "Bash(gh auth:*)",
          f"Edit({INST}/**)", f"Write({INST}/**)", f"Read({INST}/state/**)", f"Read({INST}/logs/**)", f"Read({INST}/config.json)"]
 SLUG = CFG.get("service_name") or "fcb-" + os.path.basename(INST)
 deny += [f"Bash(systemctl --user stop {SLUG}:*)", f"Bash(launchctl unload:*)"]
 deny += CFG.get("deny_extra", [])
 hook = lambda f: {"type": "command", "command": f"python3 {os.path.join(INST, 'hooks', f)}"}
 settings = {"permissions": {"deny": list(dict.fromkeys(deny))},
-            "hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [hook("lark_identity.py"), hook("wecom_guard.py")]},
-                                     {"matcher": "Read|Grep|Glob|Bash|Edit|Write|NotebookEdit", "hooks": [hook("private_guard.py")]}]}}
+            "hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [hook("lark_identity.py"), hook("wecom_guard.py"),
+                                                                  hook("git_guard.py")]},
+                                     {"matcher": "Read|Grep|Glob|Bash|Edit|Write|NotebookEdit", "hooks": [hook("private_guard.py")]}],
+                      # 长任务运行中把聊天里的补充指令塞进去；聊天会话里这个钩子直接退出
+                      "PostToolUse": [{"matcher": "*", "hooks": [hook("task_inbox.py")]}]}}
 json.dump(settings, open(os.path.join(INST, "claude-settings.json"), "w"), ensure_ascii=False, indent=2)
 
 # 4. 服务文件

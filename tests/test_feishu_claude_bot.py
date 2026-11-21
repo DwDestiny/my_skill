@@ -1,3 +1,5 @@
+import uuid
+import shutil
 """feishu-claude-bot 的文档、生成器和钩子测试。不连飞书，不调 Claude。
 
 Input: skills/feishu-claude-bot/ 的 SKILL.md、agents/openai.yaml、scripts/scaffold.py、assets/templates/
@@ -230,13 +232,14 @@ class AmbientTest(unittest.TestCase):
         cfg = json.loads((TEMPLATES / 'config.example.json').read_text(encoding='utf-8'))
         cfg.update(name='测试助理', owner_name='小王', owner_open_id=OWNER, bot_open_id=BOT)
         (inst / 'config.json').write_text(json.dumps(cfg, ensure_ascii=False), encoding='utf-8')
-        (inst / 'bridge.py').write_text((TEMPLATES / 'bridge.py').read_text(encoding='utf-8'), encoding='utf-8')
+        for f in ('bridge.py', 'tasks.py'):
+            (inst / f).write_text((TEMPLATES / f).read_text(encoding='utf-8'), encoding='utf-8')
         spec = importlib.util.spec_from_file_location('fcb_bridge_test', inst / 'bridge.py')
         b = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(b)
         cls.b, cls.types = b, types
         cls.sent = []
-        b.reply = lambda ev, text, in_thread: cls.sent.append((ev['message_id'], text)) or 'om_out'
+        b.reply = lambda ev, text, in_thread, key=None: cls.sent.append((ev['message_id'], text)) or 'om_out'
 
     @classmethod
     def tearDownClass(cls):
@@ -451,6 +454,217 @@ class WecomTest(unittest.TestCase):
         self.assertLessEqual(len(c.encode('utf-8')), 20480)
         self.assertNotIn('<@all>', c)
 
+
+
+class TaskTest(unittest.TestCase):
+    """长任务：派活、审批、补充指令、事件回报、后台运行（假 Claude）、git 护栏。不连 IM、不调真 Claude。"""
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        cls.tmp = tempfile.TemporaryDirectory()
+        base = Path(cls.tmp.name)
+        cls.inst, cls.work = base / 'inst', base / 'work'
+        cls.inst.mkdir(); cls.work.mkdir(); (cls.work / 'secret').mkdir()
+        cfg = json.loads((TEMPLATES / 'config.example.json').read_text(encoding='utf-8'))
+        cfg.update(name='测试助理', owner_name='小王', owner_open_id=OWNER, bot_open_id=BOT, workdir=str(cls.work),
+                   tasks={'enabled': True, 'root': str(base / 'tasks'), 'max_running': 1, 'approval_hours': 24, 'heartbeat_min': 30},
+                   private={'paths': [str(cls.work / 'secret')]})
+        cfg['channels']['wecom'].update(enabled=True, owner_userid='boss')
+        cfg['ambient']['enabled'] = False
+        (cls.inst / 'config.json').write_text(json.dumps(cfg, ensure_ascii=False), encoding='utf-8')
+        for f in ('bridge.py', 'tasks.py'):
+            (cls.inst / f).write_text((TEMPLATES / f).read_text(encoding='utf-8'), encoding='utf-8')
+        gh = cls.inst / 'hooks' / 'git'; gh.mkdir(parents=True)
+        shutil.copy(TEMPLATES / 'hooks' / 'git' / 'fcb-githook', gh / 'fcb-githook')
+        os.chmod(gh / 'fcb-githook', 0o755)
+        os.symlink('fcb-githook', gh / 'pre-push')
+        spec = importlib.util.spec_from_file_location('fcb_bridge_task_test', cls.inst / 'bridge.py')
+        b = importlib.util.module_from_spec(spec); spec.loader.exec_module(b)
+        cls.b, cls.t = b, b.tasks
+        cls.sent, cls.wx = [], []
+        b.reply = lambda ev, text, in_thread, key=None: cls.sent.append((ev.get('message_id'), text, key)) or 'om_out'
+        b.wecom_send = lambda cmd: cls.wx.append(cmd)
+        b.lark = lambda args, stdin=None, timeout=60: cls.sent.append(('lark', stdin, None))
+        b.sender_name = lambda i: {OWNER: '小王'}.get(i, '同事甲')
+        cls.repo = cls.work / 'proj'
+        cls.git_repo(cls.repo, base / 'proj.git')
+
+    @staticmethod
+    def git_repo(path, bare):
+        run = lambda *a, cwd=None: subprocess.run(['git', *a], cwd=cwd, check=True, capture_output=True)
+        run('init', '-q', '--bare', '-b', 'main', str(bare))
+        run('init', '-q', '-b', 'main', str(path))
+        for k, v in (('user.email', 't@t'), ('user.name', 't')): run('config', k, v, cwd=path)
+        (path / 'a.txt').write_text('x')
+        run('add', '.', cwd=path); run('commit', '-qm', 'init', cwd=path)
+        run('remote', 'add', 'origin', str(bare), cwd=path); run('push', '-q', 'origin', 'main', cwd=path)
+        run('remote', 'set-head', 'origin', 'main', cwd=path)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def setUp(self):
+        self.sent.clear(); self.wx.clear()
+
+    def ev(self, text, sender=OWNER, chat='oc_g', chat_type='group', channel='feishu', mid=None):
+        return {'channel': channel, 'sender_id': sender, 'chat_id': chat, 'chat_type': chat_type, 'content': text,
+                'message_id': mid or 'om_' + uuid.uuid4().hex[:8], 'create_time': '0'}
+
+    def directive(self, title='加个功能', repo=None):
+        return f"我准备这么干。\n\n[派活]\n仓库: {repo or self.repo}\n标题: {title}\n任务书:\n目标：加个功能\n验收：测试通过"
+
+    def test_parse_directive(self):
+        head, d = self.t.parse_directive(self.directive())
+        self.assertEqual(head, '我准备这么干。')
+        self.assertEqual((d['title'], d['repo']), ('加个功能', str(self.repo)))
+        self.assertIn('验收：测试通过', d['brief'])
+        self.assertEqual(self.t.parse_directive('普通回复')[1], None)
+
+    def test_check_repo(self):
+        self.assertIsNone(self.t.check_repo(str(self.repo))[1])
+        self.assertIn('工作目录', self.t.check_repo('/etc')[1])
+        self.assertIn('私密', self.t.check_repo(str(self.work / 'secret'))[1])
+        (self.work / 'plain').mkdir(exist_ok=True)
+        self.assertIn('git', self.t.check_repo(str(self.work / 'plain'))[1])
+        self.assertIn('派活没成', self.b.task_directive(self.ev('x'), self.directive(repo='/etc')))
+
+    def test_owner_directive_queues(self):
+        out = self.b.task_directive(self.ev('x'), self.directive())
+        n = int(re.search(r'任务 #(\d+)', out).group(1))
+        self.assertNotIn('[派活]', out)
+        t = self.t.load(n)
+        self.assertEqual(t['status'], 'approved')
+        self.assertTrue(t['requester']['owner'])
+        self.assertTrue(t['branch'].startswith('bot/'))
+
+    def test_group_colleague_needs_approval_in_group(self):
+        ev = self.ev('x', sender='ou_mate')
+        out = self.b.task_directive(ev, self.directive())
+        n = int(re.search(r'批 (\d+)', out).group(1))
+        self.assertIn(f'<at user_id="{OWNER}">', out)      # 在原群里 @ 主人
+        self.assertEqual(self.t.load(n)['status'], 'pending')
+        self.assertIn('只有小王能批', self.b.task_command(self.ev(f'@_user_1 批 {n}', sender='ou_mate')))
+        self.assertEqual(self.t.load(n)['status'], 'pending')
+        self.assertIn('排上了', self.b.task_command(self.ev(f'@_user_1 批 {n}')))
+        self.assertEqual(self.t.load(n)['status'], 'approved')
+
+    def test_p2p_colleague_asks_owner_by_dm(self):
+        ev = self.ev('x', sender='mate', chat='mate', chat_type='p2p', channel='wecom')
+        out = self.b.task_directive(ev, self.directive())
+        n = int(re.search(r'任务 #(\d+)', out).group(1))
+        self.assertEqual(self.wx[-1]['chatid'], 'boss')    # 私聊主人
+        self.assertIn(f'批 {n}', self.wx[-1]['content'])
+        self.wx.clear()
+        self.assertIn('排上了', self.b.task_command(self.ev(f'批 {n}', sender='boss', chat='boss', chat_type='p2p', channel='wecom')))
+        self.assertEqual(self.wx[-1]['chatid'], 'mate')    # 回原会话说一声
+
+    def test_wecom_group_mention_stripped(self):
+        n = self.t.create(title='x', repo=str(self.repo), brief='b', status='pending',
+                          requester={'channel': 'wecom', 'id': 'mate', 'name': '同事甲', 'owner': False},
+                          origin={'channel': 'wecom', 'chat_id': 'wrg', 'chat_type': 'group', 'message_id': 'm'})['id']
+        out = self.b.task_command(self.ev(f'@测试助理 批 {n}', sender='boss', chat='wrg', channel='wecom'))
+        self.assertIn('排上了', out)
+
+    def test_follow_up_authorization(self):
+        n = self.t.create(title='x', repo=str(self.repo), brief='b', status='running',
+                          requester={'channel': 'feishu', 'id': 'ou_mate', 'name': '同事甲', 'owner': False},
+                          origin={'channel': 'feishu', 'chat_id': 'oc_g', 'chat_type': 'group', 'message_id': 'm'})['id']
+        self.assertIn('不是你派的', self.b.task_command(self.ev(f'#{n} 改成红色', sender='ou_other')))
+        self.assertIn('转给', self.b.task_command(self.ev(f'#{n} 改成红色', sender='ou_mate')))
+        self.assertIn('转给', self.b.task_command(self.ev(f'#{n} 再加个测试')))
+        items = self.t.inbox_take(n)
+        self.assertEqual([i['text'] for i in items], ['改成红色', '再加个测试'])
+        self.assertEqual(self.t.inbox_take(n), [])          # 每条只交一次
+        self.assertIn('没有这个任务', self.b.task_command(self.ev(f'/任务 {n}', sender='ou_x', chat='oc_other')))
+        self.assertIn('不是你派的', self.b.task_command(self.ev(f'/任务 取消 {n}', sender='ou_other')))
+
+    def test_tick_posts_once_and_expires(self):
+        launched = []
+        orig = self.t.launch
+        self.b.tasks.launch = lambda tid: launched.append(tid)
+        try:
+            n = self.t.create(title='x', repo=str(self.repo), brief='b', status='done',
+                              requester={'channel': 'feishu', 'id': OWNER, 'name': '小王', 'owner': True},
+                              origin={'channel': 'feishu', 'chat_id': 'oc_g', 'chat_type': 'group', 'message_id': 'om_src'})['id']
+            self.t.event(n, 'progress', '计划定了'); self.t.event(n, 'done', '做完了')
+            p = self.t.create(title='y', repo=str(self.repo), brief='b', status='pending',
+                              requester={'channel': 'feishu', 'id': 'ou_mate', 'name': '同事甲', 'owner': False},
+                              origin={'channel': 'feishu', 'chat_id': 'oc_g', 'chat_type': 'group', 'message_id': 'om_p'})['id']
+            self.t.update(p, created=time.time() - 25 * 3600)
+            self.b.task_tick(); self.b.task_tick()
+            mine = [s for s in self.sent if s[0] == 'om_src']
+            self.assertEqual(len(mine), 2)                    # 两个事件各发一次，第二次 tick 不重发
+            self.assertEqual(len({s[2] for s in mine}), 2)    # 幂等键不同，飞书不会去重吞掉
+            self.assertEqual(self.t.load(p)['status'], 'expired')
+        finally:
+            self.b.tasks.launch = orig
+
+    def test_runner_with_fake_claude(self):
+        bindir = Path(self.tmp.name) / 'bin'; bindir.mkdir(exist_ok=True)
+        fake = bindir / 'claude'
+        fake.write_text('#!/usr/bin/env python3\n'
+                        'import json, sys, os\n'
+                        'sys.stdin.read()\n'
+                        'open("done.txt", "w").write(os.environ.get("FCB_TASK_ID", ""))\n'
+                        'p = lambda o: print(json.dumps(o, ensure_ascii=False), flush=True)\n'
+                        'p({"type": "system", "subtype": "init"})\n'
+                        'p({"type": "assistant", "parent_tool_use_id": None, "message": {"content": ['
+                        '{"type": "text", "text": "[进展] 计划定了"},'
+                        '{"type": "tool_use", "name": "TodoWrite", "input": {"todos": [{"content": "写代码", "status": "in_progress"}]}}]}})\n'
+                        'p({"type": "result", "result": "[进展] 收尾\\n做完了，分支已推送", "is_error": False, "total_cost_usd": 0.5})\n')
+        fake.chmod(0o755)
+        n = self.t.create(title='x', repo=str(self.repo), brief='b', status='running', turn=1,
+                          requester={'channel': 'feishu', 'id': OWNER, 'name': '小王', 'owner': True},
+                          origin={'channel': 'feishu', 'chat_id': 'oc_g', 'chat_type': 'p2p', 'message_id': 'om_s'})['id']
+        self.t.update(n, turn=1)
+        old = os.environ['PATH']; os.environ['PATH'] = f'{bindir}:{old}'
+        try: self.t.run(n)
+        finally: os.environ['PATH'] = old
+        t = self.t.load(n)
+        self.assertEqual(t['status'], 'done', self.t.events(n))
+        self.assertEqual([e['kind'] for e in self.t.events(n)], ['start', 'progress', 'done'])
+        self.assertEqual(self.t.events(n)[-1]['text'], '做完了，分支已推送')
+        self.assertEqual(t['todos'][0]['content'], '写代码')
+        self.assertEqual(t['cost'], 0.5)
+        wt = Path(t['worktree'])
+        self.assertEqual((wt / 'done.txt').read_text(), str(n))   # 在工作树里跑，带着任务号
+        br = subprocess.run(['git', '-C', str(wt), 'branch', '--show-current'], capture_output=True, text=True).stdout.strip()
+        self.assertEqual(br, t['branch'])
+        self.assertIn('claude --resume', self.b.task_event_text(t, self.t.events(n)[-1]))   # 主人私聊给接手命令
+
+    def guard(self, cmd, owner=False):
+        r = subprocess.run([sys.executable, str(TEMPLATES / 'hooks' / 'git_guard.py')],
+                           input=json.dumps({'tool_input': {'command': cmd}}), capture_output=True, text=True,
+                           env=dict(os.environ, FCB_OWNER='1' if owner else '0'))
+        return r.returncode
+
+    def test_git_guard(self):
+        blocked = ['git push --no-verify origin bot/1', 'git -c core.hooksPath=/dev/null push', 'GIT_CONFIG_COUNT=0 git push',
+                   'git push -f origin bot/1', 'git push origin +bot/1', 'git push origin :main', 'git push --tags',
+                   'gh pr merge 3', 'gh pr create --title x', 'gh release create v1', 'gh api -X DELETE repos/a/b',
+                   'gh auth token', 'cat ~/.config/gh/hosts.yml', 'cd x && gh repo delete a/b --yes']
+        allowed = ['git push origin bot/1-1121', 'git push -u origin HEAD', 'gh pr create --draft --title x --body y',
+                   'gh pr view 3', 'gh api repos/a/b/pulls', 'git status', 'ls']
+        for c in blocked: self.assertEqual(self.guard(c), 2, c)
+        for c in allowed: self.assertEqual(self.guard(c), 0, c)
+        self.assertEqual(self.guard('gh pr merge 3', owner=True), 0)
+        self.assertEqual(self.guard('git push -f origin main', owner=True), 2)
+        self.assertEqual(self.guard('git push --no-verify', owner=True), 2)
+
+    def test_pre_push_only_bot_branches(self):
+        repo = Path(self.tmp.name) / 'pp'
+        self.git_repo(repo, Path(self.tmp.name) / 'pp.git')
+        (repo / 'b.txt').write_text('y')   # 有新提交，推送才有 ref 交给 pre-push
+        subprocess.run(['git', 'add', '.'], cwd=repo, check=True); subprocess.run(['git', 'commit', '-qm', 'b'], cwd=repo, capture_output=True)
+        env = self.t.hook_env(False, False, 'oc_g', 'feishu', 1)
+        push = lambda ref, e: subprocess.run(['git', 'push', '-q', 'origin', ref], cwd=repo, env=e, capture_output=True, text=True)
+        r = push('HEAD:main', env)
+        self.assertNotEqual(r.returncode, 0); self.assertIn('bot/', r.stderr)
+        self.assertNotEqual(push('HEAD:refs/heads/feature', env).returncode, 0)
+        self.assertEqual(push('HEAD:bot/9-1121', env).returncode, 0)
+        self.assertEqual(push('HEAD:main', self.t.hook_env(True, True, '', 'feishu')).returncode, 0)   # 主人本人不受限
 
 if __name__ == '__main__':
     unittest.main()
