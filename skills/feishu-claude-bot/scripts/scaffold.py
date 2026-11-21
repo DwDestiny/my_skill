@@ -9,7 +9,7 @@ Pos:    feishu-claude-bot skill 的生成器
         默认不覆盖已有 rules.md；加 --rules 才按模板重写。
         config.json 打开 cross_im_read 时，第一次生成要加 --confirm-cross-im（先把提醒给主人看、主人同意后再加）
 """
-import json, os, platform, shutil, subprocess, sys, datetime
+import json, os, platform, re, shutil, subprocess, sys, datetime
 
 SKILL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 T = os.path.join(SKILL, "assets", "templates")
@@ -109,6 +109,8 @@ deny += ["Read(**/.private/**)", "Edit(**/.private/**)", f"Read({HOME}/.lark-cli
 SLUG = CFG.get("service_name") or "fcb-" + os.path.basename(INST)
 deny += [f"Bash(systemctl --user stop {SLUG}:*)", f"Bash(launchctl unload:*)"]
 deny += CFG.get("deny_extra", [])
+# Claude Code 权限规则里，文件路径以单个 / 开头是相对项目根，绝对路径要写成 //（实测：Read(/abs) 拦不住，Read(//abs) 能拦）
+deny = [re.sub(r"^(Read|Edit|Write)\(/(?!/)", r"\1(//", r) for r in deny]
 hook = lambda f: {"type": "command", "command": f"python3 {os.path.join(INST, 'hooks', f)}"}
 settings = {"permissions": {"deny": list(dict.fromkeys(deny))},
             "hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [hook("lark_identity.py"), hook("wecom_guard.py"),

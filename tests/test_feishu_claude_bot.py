@@ -113,8 +113,13 @@ class ScaffoldTest(unittest.TestCase):
         self.assertTrue(any('lark_identity.py' in c for c in cmds))
         self.assertTrue(any('private_guard.py' in c for c in cmds))
         self.assertTrue(any('wecom_guard.py' in c for c in cmds), '没启用企微也要挂：本机装了 wecom-cli，飞书会话也能调用')
-        self.assertIn(f'Read({self.home}/.config/wecom/**)', st['permissions']['deny'])
-        self.assertIn(f'Edit({self.inst}/**)', st['permissions']['deny'])
+        self.assertIn(f'Read(/{self.home}/.config/wecom/**)', st['permissions']['deny'])
+        self.assertIn(f'Edit(/{self.inst}/**)', st['permissions']['deny'])
+        # 绝对路径必须写成 //，单个 / 在 Claude Code 里是相对项目根，规则形同虚设
+        for r in st['permissions']['deny']:
+            m = re.match(r'(Read|Edit|Write)\((.*)\)$', r)
+            if m and m.group(2).startswith('/'):
+                self.assertTrue(m.group(2).startswith('//'), r)
 
     def test_rules_feishu_only_has_no_wecom_section(self):
         rules = (self.inst / 'rules.md').read_text(encoding='utf-8')
