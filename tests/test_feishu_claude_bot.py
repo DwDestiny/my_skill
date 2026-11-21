@@ -905,6 +905,25 @@ class TaskTest(unittest.TestCase):
         self.assertIn('测试 12 通过', txt); self.assertNotIn('Cloud-Run', txt)
         self.assertTrue(t['cloud'].get('closed'))
 
+    def test_cloud_done_is_reverified_locally(self):
+        n = self.new_task(exec='cloud', session_started=True, verify='test -f ok.txt', cloud={'trigger': 'trig', 'after': '', 'since': time.time()})
+        t = self.t.load(n)
+        wt = Path(self.tmp.name) / ('cv' + str(n))
+        run = lambda *a: subprocess.run(['git', '-C', str(wt), *a], check=True, capture_output=True)
+        subprocess.run(['git', 'clone', '-q', str(Path(self.tmp.name) / 'proj.git'), str(wt)], check=True)
+        run('config', 'user.email', 't@t'); run('config', 'user.name', 't')
+        run('checkout', '-qb', t['branch'])
+        run('commit', '-q', '--allow-empty', '-m', 'feat: x\n\nCloud-Run: done'); run('push', '-q', 'origin', t['branch'])
+        self.assertTrue(self.t.cloud_poll(n))
+        t = self.t.load(n)
+        self.assertEqual(t['status'], 'failed'); self.assertIn('BLOCKED', self.t.events(n)[-1]['text'])
+        (wt / 'ok.txt').write_text('x'); run('add', 'ok.txt')
+        run('commit', '-q', '-m', 'fix\n\nCloud-Run: done'); run('push', '-q', 'origin', t['branch'])
+        self.t.update(n, status='running', cloud=dict(t['cloud'], since=time.time(), closed=False))
+        self.assertTrue(self.t.cloud_poll(n))
+        self.assertEqual(self.t.load(n)['status'], 'done')
+        self.assertIn('结论：PASS', self.t.events(n)[-1]['text'])
+
     def test_chat_max_turns_hands_off(self):
         bindir = self.fake_bin('sys.stdin.read()\na = sys.argv\n'
                                'if a[a.index("--max-turns") + 1] != "4": print(json.dumps({"type": "result", "subtype": "error_max_turns", "is_error": True, "session_id": "s1"}))\n'
