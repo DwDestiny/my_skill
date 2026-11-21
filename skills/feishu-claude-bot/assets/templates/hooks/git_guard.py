@@ -5,7 +5,9 @@ Input:  Claude Code 的 PreToolUse JSON（stdin）；环境变量 FCB_OWNER（1 
 Output: 违规时 exit 2，stderr 写原因（Claude 能看到）；否则 exit 0
 Pos:    机器人实例的硬限制，由 claude-settings.json 引用。推送的分支由 hooks/git/pre-push 在 ref 层面再拦一遍
 规则:
-  - 所有人：不能绕过 git 钩子（--no-verify、改 core.hooksPath、GIT_CONFIG_*）；不能读 gh 的登录凭证。
+  - 所有人：不能绕过 git 钩子（--no-verify、改 core.hooksPath、GIT_CONFIG_*）；不能读 gh 的登录凭证；
+    不能直接碰代码平台凭据（config.json 的 credential_paths、git 凭据助手、带令牌的接口请求头）。
+    建合并请求走 python3 tasks.py mr，它在自己进程里读凭据、只建草稿。
   - 主人本人：不能强推或删除 main/master。
   - 其他人（含主人批准过的同事任务）：git push 不能强推、删分支、推标签、--mirror/--all；
     gh 只能建草稿合并请求、看合并请求/issue/CI、提 issue 和评论、只读的 gh api。合并、发版、改仓库设置一律不行。
@@ -14,12 +16,27 @@ import json, os, re, sys
 
 data = json.load(sys.stdin)
 cmd = (data.get("tool_input") or {}).get("command", "")
-if not re.search(r"\b(git|gh)\b", cmd):
-    sys.exit(0)
 owner = os.environ.get("FCB_OWNER") == "1"
 
 def block(msg):
     sys.stderr.write("机器人规则：" + msg + "\n"); sys.exit(2)
+
+# 代码平台凭据：谁触发的会话都不能直接读或拿去调接口（主人的令牌能合并、能删仓，同事任务拿到就越过了“只建草稿”）
+HOME = os.path.expanduser("~")
+try:
+    with open(os.environ["FCB_CONFIG"]) as f: cred = json.load(f).get("credential_paths", [])
+except Exception:
+    cred = []
+norm = re.sub(r"(?<![\w/])~(?=/)", HOME, cmd.replace("${HOME}", HOME).replace("$HOME", HOME))
+for p in cred:
+    p = os.path.expanduser(p).rstrip("/")
+    if p and p in norm:
+        block("不能直接读代码平台凭据。建合并请求用 python3 tasks.py mr（在任务工作树里跑）。")
+if re.search(r"git-credential-\S+\s+(get|fill)|\bgit\s+credential\b|credential\.helper\s*=|x-yunxiao-token|PRIVATE-TOKEN", cmd, re.I):
+    block("不能直接取用代码平台凭据。建合并请求用 python3 tasks.py mr（在任务工作树里跑）。")
+
+if not re.search(r"\b(git|gh)\b", cmd):
+    sys.exit(0)
 
 if re.search(r"--no-verify|hookspath|GIT_CONFIG_|--config-env", cmd, re.I):
     block("不能绕过或改写 git 钩子。")

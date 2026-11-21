@@ -16,6 +16,8 @@
 | `tasks.max_running` | `2` | 同时跑几个后台任务（与聊天并发 `max_parallel` 分开） |
 | `tasks.approval_hours` | `24` | 同事派的活多久没人批就作废 |
 | `tasks.models` | `["haiku", "sonnet", "opus"]` | 派活时主控能挑的模型别名；`[派活]` 里写了名单外的就走全局默认。思考档固定为 low/medium/high/xhigh/max |
+| `tasks.relay` | `true` | 任务的完成、提问、失败先交给派活的那个会话（主控）处理，再由主控对人汇报；`false` 就原话直发 |
+| `tasks.codeup_token` | `~/.config/codeup/token` | `tasks.py mr` 给 Codeup 建合并请求用的个人令牌文件 |
 | `tasks.heartbeat_min` | `30` | 飞书任务多久没动静发一次心跳；`0` 关闭。企微不发 |
 | `service_name` | `fcb-<目录名>` | systemd 服务名 / launchd 标签后缀 |
 | `persona` | `work` | `work` 工作分身 / `personal` 私人助理 |
@@ -26,6 +28,7 @@
 | `permission_mode` | `auto` | 无头会话的权限模式 |
 | `identity` | 见 boundary.md | lark-cli 身份策略 |
 | `private` | 见 boundary.md | 私密路径和搜索排除 |
+| `credential_paths` | `["~/.config/codeup", "~/.git-credentials"]` | 代码平台凭据。机器人的所有会话（含主人的）都不能直接读，Read 进拒绝表，Bash 由 `git_guard` 拦；建合并请求只能走 `tasks.py mr` |
 | `deny_extra` | `[]` | 额外的权限拒绝规则，格式同 Claude Code settings |
 | `context.enabled` | `true` | 是否带前文 |
 | `context.max` / `topic_max` | 20 / 50 | 群聊或私聊最多几条；话题里最多几条 |

@@ -72,6 +72,7 @@
     ]
   },
   "deny_extra": [],
+  "credential_paths": ["~/.config/codeup", "~/.git-credentials"],
   "prime": true,
   "disable_mcp": true,
   "p2p_idle_hours": 6,
