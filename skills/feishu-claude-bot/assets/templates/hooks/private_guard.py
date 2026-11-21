@@ -11,17 +11,33 @@ Pos:    飞书机器人实例的硬限制，由 claude-settings.json 引用
 """
 import json, os, re, sys
 
-if os.environ.get("FCB_PRIVATE") == "1":
-    sys.exit(0)
-try:
-    with open(os.environ["FCB_CONFIG"]) as f: cfg = json.load(f).get("private", {})
-except Exception:
-    cfg = {}
 HOME = os.path.expanduser("~")
-X = lambda p: HOME + p[1:] if p.startswith("~") else p
+PRIVATE = os.environ.get("FCB_PRIVATE") == "1"
+try:
+    with open(os.environ["FCB_CONFIG"]) as f: full = json.load(f)
+except Exception:
+    full = {}
+cfg = full.get("private", {})
 data = json.load(sys.stdin)
 tool = data.get("tool_name", "")
 ti = data.get("tool_input") or {}
+
+# 实例目录的写入：只有守则能改，而且只在主人私聊里；代码、钩子、配置谁都不能改（行为偏好放守则，改代码走终端）
+inst = os.path.dirname(os.environ.get("FCB_CONFIG", ""))
+if inst and tool in ("Edit", "Write", "MultiEdit", "NotebookEdit"):
+    fp = os.path.realpath(os.path.expanduser(str(ti.get("file_path") or ti.get("notebook_path") or "")))
+    ri = os.path.realpath(inst)
+    if fp.startswith(ri + os.sep):
+        rules = os.path.realpath(os.path.join(inst, full.get("rules_file", "rules.md")))
+        if fp == rules and PRIVATE:
+            sys.exit(0)
+        if not fp.startswith(os.path.join(ri, "_tmp") + os.sep):
+            sys.stderr.write("机器人红线：实例目录里只有守则能改，而且只在主人私聊里。代码、钩子、配置要主人在终端里改，被拦了不要绕路。\n")
+            sys.exit(2)
+
+if PRIVATE:
+    sys.exit(0)
+X = lambda p: HOME + p[1:] if p.startswith("~") else p
 text = " ".join(str(v) for v in ti.values() if isinstance(v, (str, int)))
 text = text.replace("${HOME}", HOME).replace("$HOME", HOME)
 text = re.sub(r"(?<![\w/])~(?=/|\s|$)", HOME, text)
@@ -30,7 +46,6 @@ def block(msg):
     sys.stderr.write("机器人红线：" + msg + " 私密资料只在主人私聊里能碰，被拦了不要绕路。\n"); sys.exit(2)
 
 # 实例自己的运行态和主人私聊里收到的附件，一律按私密处理
-inst = os.path.dirname(os.environ.get("FCB_CONFIG", ""))
 extra = [re.escape(os.path.join(inst, d)) for d in ("state", "logs", "inbox/private")] if inst else []
 for pat in list(cfg.get("paths", [])) + extra:
     p = X(pat)

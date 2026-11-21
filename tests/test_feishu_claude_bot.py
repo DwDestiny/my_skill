@@ -114,7 +114,10 @@ class ScaffoldTest(unittest.TestCase):
         self.assertTrue(any('private_guard.py' in c for c in cmds))
         self.assertTrue(any('wecom_guard.py' in c for c in cmds), '没启用企微也要挂：本机装了 wecom-cli，飞书会话也能调用')
         self.assertIn(f'Read(/{self.home}/.config/wecom/**)', st['permissions']['deny'])
-        self.assertIn(f'Edit(/{self.inst}/**)', st['permissions']['deny'])
+        self.assertIn(f'Edit(/{self.inst}/bridge.py)', st['permissions']['deny'])
+        self.assertIn(f'Edit(/{self.inst}/hooks/**)', st['permissions']['deny'])
+        self.assertFalse(any('rules.md' in r or r == f'Edit(/{self.inst}/**)' for r in st['permissions']['deny']),
+                         '守则不能进拒绝表，否则主人私聊里也改不了（拒绝规则压过一切）')
         # 绝对路径必须写成 //，单个 / 在 Claude Code 里是相对项目根，规则形同虚设
         for r in st['permissions']['deny']:
             m = re.match(r'(Read|Edit|Write)\((.*)\)$', r)
@@ -211,6 +214,17 @@ class ScaffoldTest(unittest.TestCase):
         self.assertEqual(self.hook('private_guard.py', p, 'Read', {'file_path': f'{self.inst}/inbox/private/x.png'}).returncode, 2)
         self.assertEqual(self.hook('private_guard.py', p, 'Read', {'file_path': f'{self.inst}/inbox/x.png'}).returncode, 0)
         self.assertEqual(self.bash('private_guard.py', p, f'tail {self.inst}/logs/bridge.log').returncode, 2)
+
+    def test_instance_writes(self):
+        own, other = {'FCB_PRIVATE': '1'}, {'FCB_PRIVATE': '0'}
+        ed = lambda env, f: self.hook('private_guard.py', env, 'Edit', {'file_path': str(self.inst / f)}).returncode
+        self.assertEqual(ed(own, 'rules.md'), 0)            # 主人私聊能改守则
+        self.assertEqual(ed(other, 'rules.md'), 2)          # 别的场景不行
+        for f in ('bridge.py', 'tasks.py', 'hooks/git_guard.py', 'config.json', 'claude-settings.json', 'new.py'):
+            self.assertEqual(ed(own, f), 2, f)              # 代码和配置主人私聊也不行
+        self.assertEqual(ed(own, '_tmp/x.txt'), 0)
+        self.assertEqual(self.hook('private_guard.py', own, 'Write', {'file_path': str(self.inst / 'hooks' / '..' / 'bridge.py')}).returncode, 2)
+        self.assertEqual(ed(own, '../outside.txt'), 0)
 
     def test_wiki_search_rewritten(self):
         p = {'FCB_PRIVATE': '0'}

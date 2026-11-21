@@ -99,13 +99,17 @@ else:
     print("保留已有", rules, "（加 --rules 按模板重写）")
 
 # 3. Claude 设置：权限拒绝表 + 钩子
+# 实例目录里只有守则（行为偏好）机器人能改，且只在主人私聊里（private_guard 再按场景拦）；代码、钩子、配置、运行态一律不能改
+INST_LOCKED = ["bridge.py", "tasks.py", "hooks/**", "claude-settings.json", "config.json", "ambient.json", "wecom_gateway.mjs",
+               "package.json", "package-lock.json", "node_modules/**", "state/**", "logs/**", "inbox/**", "AGENTS.md", "CLAUDE.md",
+               "*.service", "*.plist"]
 deny = [f"Read({X(p)}/**)" for p in CFG.get("private", {}).get("paths", []) if p.startswith(("~", "/")) and "(" not in p and "\\" not in p]
 deny += [f"Edit({X(p)}/**)" for p in CFG.get("private", {}).get("paths", []) if p.startswith(("~", "/")) and "(" not in p and "\\" not in p]
 deny += ["Read(**/.private/**)", "Edit(**/.private/**)", f"Read({HOME}/.lark-cli/**)", "Read(**/.env)", "Read(**/.env.*)",
          "Bash(lark-cli config:*)", "Bash(lark-cli auth:*)", "Bash(lark-cli profile:*)", "Bash(lark-cli event:*)",
          f"Read({HOME}/.config/wecom/**)", f"Edit({HOME}/.config/wecom/**)", "Bash(wecom-cli auth:*)",
          f"Read({HOME}/.config/gh/**)", "Bash(gh auth:*)",
-         f"Edit({INST}/**)", f"Read({INST}/state/**)", f"Read({INST}/logs/**)", f"Read({INST}/config.json)"]
+         *[f"Edit({INST}/{p})" for p in INST_LOCKED], f"Read({INST}/state/**)", f"Read({INST}/logs/**)", f"Read({INST}/config.json)"]
 SLUG = CFG.get("service_name") or "fcb-" + os.path.basename(INST)
 deny += [f"Bash(systemctl --user stop {SLUG}:*)", f"Bash(launchctl unload:*)"]
 deny += CFG.get("deny_extra", [])
