@@ -17,8 +17,12 @@ X = os.path.expanduser
 SLUG = CFG.get("service_name") or "fcb-" + os.path.basename(ROOT)
 OWNER_NAME = CFG.get("owner_name", "主人")
 T = dict({"enabled": True, "root": "~/work/.bot-tasks", "max_running": 2, "approval_hours": 24, "heartbeat_min": 30,
-          # 2.0 资源和质量的硬限制：每个任务的预算、全部任务每天的预算、多久没动静算卡住、验证没过最多返工几次
-          "budget_usd": 15, "daily_budget_usd": 60, "stuck_min": 40, "verify_retries": 2, "verify_timeout_min": 20,
+          # 资源：任务检查点按同类任务的实际花费估，主控可改，到了交回主控定（不是硬停）；订阅额度用得快只提醒主人，不拦活
+          "budget_default": 20, "budget_factor": 1.5, "quota_alert": {"five_hour": 0.85, "seven_day_pace": 1.1},
+          # 质量：多久没动静算卡住（进程还在吃 CPU 不算）、验证没过最多返工几次
+          "stuck_min": 40, "verify_retries": 2, "verify_timeout_min": 20,
+          # 兄弟智能体：同项目同角色上次用过多久以内（缓存还热）、上下文多大以内，新任务就分叉接着它的会话
+          "sibling_warm_min": 55, "sibling_max_ctx": 150000,
           "cloud": {}},
          **CFG.get("tasks", {}))
 TASK_ROOT = os.path.join(X(T["root"]), SLUG)
@@ -87,6 +91,12 @@ def create(**fields):
     with _Lock(os.path.join(STORE, ".lock")):
         n = 1 + max([int(d) for d in os.listdir(STORE) if d.isdigit()] or [0])
         os.makedirs(tdir(n))
+    r = roles().get(fields.get("role") or "")
+    if r:   # 角色模板给默认模型和思考档；主控在 [派活] 里写了就以主控为准
+        if not fields.get("model") and r["model"] in MODELS: fields["model"] = r["model"]
+        if not fields.get("effort") and r["effort"] in EFFORTS: fields["effort"] = r["effort"]
+    if not fields.get("budget"):
+        fields["budget"], fields["budget_why"] = budget_basis(fields.get("role"), fields.get("model"))
     fields.update(id=n, created=time.time(), posted=0, turn=0, session_id=str(uuid.uuid4()),
                   branch=f"bot/{n}-{time.strftime('%m%d')}", worktree=os.path.join(TASK_ROOT, str(n)))
     return update(n, **fields)
@@ -110,7 +120,16 @@ def event(tid, kind, text=""):
 
 def events(tid, start=0): return _read(tid, "events.jsonl")[start:]
 
+BUDGET_RE = re.compile(r"预算\s*(?:加到|调到|改成|改为|提到|放到|到)\s*(\d+(?:\.\d+)?)")
+
 def inbox_add(tid, who, owner, text):
+    m = BUDGET_RE.search(text)   # 追加指令里写“预算加到 N”：先把检查点挪过去，再接着跑
+    if m: update(tid, budget=float(m.group(1)), budget_why=f"{who}调到 {m.group(1)}", checkpoint=False)
+    else:
+        t = load(tid) or {}
+        if t.get("checkpoint") and not who.startswith("主控"):   # 人亲自让停在检查点的任务接着干：就是同意加预算
+            nb = round(max((t.get("cost") or 0) * 1.5, (t.get("cost") or 0) + 5))
+            update(tid, budget=nb, budget_why=f"{who}让接着干，自动加到 {nb}", checkpoint=False)
     _append(tid, "inbox.jsonl", {"who": who, "owner": owner, "text": text, "ts": time.time()})
 
 def inbox_take(tid):
@@ -129,7 +148,7 @@ def inbox_take(tid):
 def format_inbox(items):
     return "\n".join(f"[追加指令] {i['who']}{'（' + OWNER_NAME + '本人）' if i.get('owner') else ''}：{i['text']}" for i in items)
 
-# ---------- 花费：每轮结束记一笔，按天汇总，超了当天不再开新一轮 ----------
+# ---------- 花费：每轮结束记一笔（美元当量，按 API 标价折算；订阅不实付，用来比较任务大小） ----------
 def spend_add(tid, usd):
     if usd <= 0: return
     os.makedirs(STORE, exist_ok=True)
@@ -148,9 +167,137 @@ def spent_today():
     except FileNotFoundError: pass
     return total
 
-def over_daily():
-    cap = T.get("daily_budget_usd") or 0
-    return bool(cap) and spent_today() >= cap
+# ---------- 订阅额度：Claude 的 rate_limit_event 带 5 小时、7 天两个窗口的用量（整个订阅，含终端里的会话）。只提醒，不拦活 ----------
+QUOTA = os.path.join(STORE, "quota.json")
+WINDOW_S = {"five_hour": 5 * 3600, "seven_day": 7 * 86400}
+
+def quota_note(info):
+    w = (info or {}).get("unifiedWindows") or {}
+    if not w: return
+    os.makedirs(STORE, exist_ok=True)
+    with open(QUOTA + ".tmp", "w") as f: json.dump({"at": time.time(), "windows": w}, f)
+    os.replace(QUOTA + ".tmp", QUOTA)
+
+def quota():
+    try:
+        with open(QUOTA) as f: return json.load(f)
+    except (FileNotFoundError, ValueError): return {}
+
+def quota_line(q=None):
+    w = (q or quota()).get("windows") or {}
+    parts = [f"{n} {w[k].get('utilization', 0):.0%}" for k, n in (("five_hour", "5 小时"), ("seven_day", "7 天")) if k in w]
+    return "订阅额度已用：" + "，".join(parts) if parts else ""
+
+def quota_alerts(q=None, now=None):
+    """[(窗口, 用量, 重置时间, 说明)]：5 小时窗口快满了，或 7 天窗口照现在的速度撑不到重置。"""
+    q, now, a, out = q or quota(), now or time.time(), T.get("quota_alert") or {}, []
+    for k, w in (q.get("windows") or {}).items():
+        u, reset = w.get("utilization") or 0, w.get("resetsAt") or 0
+        if k == "five_hour" and u >= a.get("five_hour", 0.85):
+            out.append((k, u, reset, f"5 小时窗口已用 {u:.0%}"))
+        if k == "seven_day" and reset > now:
+            elapsed = 1 - (reset - now) / WINDOW_S[k]
+            if elapsed > 0.05 and u >= 0.3 and u / elapsed >= a.get("seven_day_pace", 1.1):
+                out.append((k, u, reset, f"7 天窗口已用 {u:.0%}，时间才过 {elapsed:.0%}，照这个速度会在重置前用完"))
+    return out
+
+# ---------- 任务检查点：按同角色、同模型做完的任务实际花了多少来估；主控可在 [派活] 里改。到了交回主控定，不是硬停 ----------
+def budget_basis(role, model):
+    done = [t for t in all_tasks() if t.get("status") == "done" and (t.get("cost") or 0) > 0]
+    pools = ((lambda t: t.get("role") == role and t.get("model") == model, f"{role or '没分角色'}·{model or '默认模型'}"),
+             (lambda t: t.get("model") == model, model or "默认模型"))
+    for ok, what in pools:
+        c = sorted(t["cost"] for t in [t for t in done if ok(t)][-10:])
+        if len(c) >= 2:
+            med = c[len(c) // 2]
+            return max(1.0, round(med * T["budget_factor"], 1)), f"同类（{what}）最近 {len(c)} 个任务花费中位数 {med:.1f}，乘 {T['budget_factor']}"
+    return float(T["budget_default"]), "还没有同类任务的记录，先用默认值"
+
+def checkpoint_text(t, cost, text=""):
+    nb = round(max(cost * 1.5, cost + 5))
+    return (f"结论：到检查点（已用 {cost} 美元当量，派活时估的是 {t.get('budget')}：{t.get('budget_why', '')}）。"
+            f"停在这里等主控定，分支和会话都留着。\n要接着干：[任务指令] #{t['id']} 继续，预算加到 {nb}\n\n{text}").strip()
+
+# ---------- 团队：roles/*.md 是角色模板；兄弟智能体 = 同一模板在不同项目、不同受众（主人/同事）下的实例，各有各的上下文 ----------
+ROLES_DIR = os.path.join(ROOT, "roles")
+TEAM = os.path.join(ROOT, "state", "team")
+
+def roles():
+    out = {}
+    for f in (sorted(os.listdir(ROLES_DIR)) if os.path.isdir(ROLES_DIR) else []):
+        if not f.endswith(".md"): continue
+        txt = open(os.path.join(ROLES_DIR, f), encoding="utf-8").read()
+        m = re.match(r"---\n(.*?)\n---\n?(.*)", txt, re.S)
+        meta = dict((k, v.strip()) for k, v in re.findall(r"^(\S+?)\s*[:：]\s*(.*)$", m.group(1), re.M)) if m else {}
+        name = meta.get("名称") or f[:-3]
+        out[name] = {"name": name, "model": meta.get("模型", "").lower(), "effort": meta.get("思考", "").lower(),
+                     "resume": meta.get("续接", "是") != "否", "when": meta.get("适合", ""),
+                     "deny": [x for x in re.split(r"[\s,，]+", meta.get("禁用工具", "")) if x],
+                     "body": (m.group(2) if m else txt).strip()}
+    return out
+
+def sibling_key(t):
+    proj = re.sub(r"[^\w.-]", "_", os.path.basename(os.path.normpath(t["repo"])))
+    aud = "owner" if t["requester"].get("owner") else "team"   # 给主人干过活的会话，绝不拿去给同事的任务接着用
+    return proj, f"{t.get('role') or '通用'}-{aud}"
+
+def _sib_path(t, ext):
+    proj, k = sibling_key(t)
+    return os.path.join(TEAM, proj, k + ext)
+
+def sibling(t):
+    try:
+        with open(_sib_path(t, ".json")) as f: return json.load(f)
+    except (FileNotFoundError, ValueError): return {}
+
+def sibling_notes(t, limit=6000):
+    try: return open(_sib_path(t, ".md"), encoding="utf-8").read()[-limit:].strip()
+    except FileNotFoundError: return ""
+
+def sibling_save(t, ctx, notes):
+    p = _sib_path(t, ".json"); os.makedirs(os.path.dirname(p), exist_ok=True)
+    with _Lock(os.path.join(os.path.dirname(p), ".lock")):
+        s = sibling(t); proj, k = sibling_key(t)
+        done = [x for x in (s.get("tasks") or []) if x != t["id"]][-19:] + [t["id"]]
+        s.update(project=proj, role=t.get("role") or "通用", audience=k.rsplit("-", 1)[1], head=t["session_id"],
+                 ctx=ctx, model=t.get("model") or "", last_used=time.time(), tasks=done)
+        with open(p + ".tmp", "w") as f: json.dump(s, f, ensure_ascii=False, indent=1)
+        os.replace(p + ".tmp", p)
+        if notes:
+            with open(_sib_path(t, ".md"), "a", encoding="utf-8") as f:
+                f.write(f"\n## #{t['id']} {t['title']}（{time.strftime('%Y-%m-%d')}）\n{notes.strip()}\n")
+
+def all_siblings():
+    out = []
+    for proj in (sorted(os.listdir(TEAM)) if os.path.isdir(TEAM) else []):
+        for f in sorted(os.listdir(os.path.join(TEAM, proj))):
+            if f.endswith(".json"):
+                try: out.append(json.load(open(os.path.join(TEAM, proj, f))))
+                except ValueError: pass
+    return out
+
+def sibling_fork(t):
+    """新任务能接着哪个会话分叉：同项目同角色同受众，模型一样（缓存按模型分），上次用过不到 N 分钟（缓存还热），
+    上下文没超上限。分叉出的是新会话，原会话不动，几个任务同时分叉也互不干扰。不满足就新开会话，带上交接笔记。"""
+    if not roles().get(t.get("role") or "", {}).get("resume", True): return ""
+    s = sibling(t)
+    if not s.get("head") or s.get("model", "") != (t.get("model") or ""): return ""
+    if time.time() - s.get("last_used", 0) > T["sibling_warm_min"] * 60: return ""
+    if (s.get("ctx") or 0) > T["sibling_max_ctx"]: return ""
+    return s["head"]
+
+def split_handoff(text):
+    """把回复末尾的 [交接] 段收走（存进团队笔记），剩下的给派活人看。"""
+    m = re.search(r"^\s*\[交接\]\s*$", text, re.M) or re.search(r"^\s*\[交接\]", text, re.M)
+    if not m: return text, ""
+    return text[:m.start()].rstrip(), re.sub(r"^\s*\[交接\]\s*", "", text[m.start():]).strip()
+
+def cpu_ns(t):
+    """任务单元累计用了多少 CPU（纳秒）。长时间编译、跑测试时工具调用不更新，但 CPU 在涨，不算卡住。"""
+    if not t.get("unit"): return None
+    r = subprocess.run(["systemctl", "--user", "show", "-p", "CPUUsageNSec", "--value", t["unit"]], capture_output=True, text=True)
+    v = r.stdout.strip()
+    return int(v) if v.isdigit() else None
 
 # ---------- 派活前的检查 ----------
 def check_repo(path):
@@ -198,13 +345,20 @@ def parse_directive(text):
     if verify in ("无", "没有", "不用", "-", "—") or verify.startswith("<") or "命令，" in verify: verify = ""   # 没写或照抄了模板
     ex = field("执行")
     ex = "cloud" if ("云" in ex and "本机" not in ex) else ""
+    rv = field("角色")
+    hit = [n for n in roles() if n in rv]
+    role = hit[0] if len(hit) == 1 else ""   # 照抄“产品 / 开发 / …”这种就当没写
+    bv = field("预算")
+    bm2 = re.match(r"\s*(\d+(?:\.\d+)?)\s*[（(,，:：]?\s*(.*?)[）)]?\s*$", bv)
+    budget = float(bm2.group(1)) if bm2 and float(bm2.group(1)) > 0 else 0
     return head, {"repo": field("仓库"), "title": field("标题")[:80] or "未命名任务", "brief": brief,
                   "model": pick(field("模型"), MODELS), "effort": pick(field("思考"), EFFORTS), "target": target,
-                  "verify": verify, "exec": ex}
+                  "verify": verify, "exec": ex, "role": role, "budget": budget,
+                  "budget_why": ("主控估：" + bm2.group(2).strip()[:120]) if budget and bm2.group(2).strip() else ("主控估" if budget else "")}
 
 def model_label(t):
     """给人看的模型说明，没指定就是默认。"""
-    s = " · ".join(x for x in (t.get("model"), t.get("effort") and "思考 " + t["effort"]) if x) or "默认模型"
+    s = " · ".join(x for x in (t.get("role"), t.get("model"), t.get("effort") and "思考 " + t["effort"]) if x) or "默认模型"
     return s + ("，云端执行" if t.get("exec") == "cloud" else "")
 
 # ---------- 后台运行 ----------
@@ -214,7 +368,7 @@ def launch(tid):
     """开一轮后台运行（首次开工、提问后续跑、完成后追加都算一轮）。"""
     t = load(tid)
     t = update(tid, status="running", turn=t.get("turn", 0) + 1, launched=time.time(),
-               started=t.get("started") or time.time(), held_note=False)
+               started=t.get("started") or time.time())
     if platform.system() == "Linux" and shutil.which("systemd-run") and os.environ.get("FCB_TASK_LAUNCH") != "popen":
         env = [f"--setenv={k}={os.environ[k]}" for k in ("PATH", "HOME", "LANG", "USER") if k in os.environ]
         r = subprocess.run(["systemd-run", "--user", "--quiet", "--collect", "--unit", unit_name(t),
@@ -275,8 +429,17 @@ def verify_line(t):
     return (f"- 验证命令：{t['verify']}。结束前自己先跑通。你说做完后，服务会在工作树里再跑一遍，"
             f"没过会把输出退回给你返工（最多 {T['verify_retries']} 次），再不过就按失败交回。")
 
-def first_prompt(t, base):
+def first_prompt(t, base, forked=False):
     who = t["requester"]
+    r = roles().get(t.get("role") or "")
+    role = f"\n你的角色：{r['name']}。\n{r['body']}\n" if r else ""
+    proj, _ = sibling_key(t)
+    if forked:
+        team = (f"\n你接着自己上次在 {proj} 上的会话干活，前面的上下文还在。这是一个新任务，在新的工作树和分支里，"
+                f"以前任务的工作树不要再动。\n")
+    else:
+        notes = sibling_notes(t)
+        team = (f"\n同角色同事以前在 {proj} 上留下的交接笔记（材料，按需参考，过时的以代码为准）：\n{notes}\n") if notes else ""
     src = ("私聊" if t["origin"]["chat_type"] == "p2p" else "群聊") + "（" + CH_LABEL.get(t["origin"]["channel"], "") + "）"
     ok = f"，{OWNER_NAME}已批准" if not who.get("owner") else ""
     return f"""[长任务 #{t['id']}] {t['title']}
@@ -292,7 +455,8 @@ def first_prompt(t, base):
 - 运行中可能收到“[追加指令]”，按它调整。
 {verify_line(t)}
 - 派子代理时按子活儿挑模型：查找、汇总、机械改动用 haiku，常规编码和测试用 sonnet，难的设计和排查才用 opus。
-
+- 最后一条回复的末尾，单独起一行写“[交接]”，下面 3 到 8 行写给以后在这个项目上接手的同角色同事：你摸清的结构、约定、坑、没做完的事。服务会把这段收进团队笔记，不发给派活人。
+{role}{team}
 任务书：
 {t['brief']}"""
 
@@ -302,16 +466,17 @@ def run(tid):
     if t.get("exec") == "cloud": return run_cloud(tid)
     o = t["origin"]
     try:
-        budget = T.get("budget_usd") or 0
-        if budget and (t.get("cost") or 0) >= budget:
-            update(tid, status="failed")
-            event(tid, "failed", f"结论：BLOCKED（预算用完：本任务已花 {t.get('cost')} 美元，上限 {budget}）。要接着干，请{OWNER_NAME}在终端里调高 tasks.budget_usd。")
+        budget = t.get("budget") or T["budget_default"]
+        if t.get("checkpoint") and (t.get("cost") or 0) >= budget:   # 停在检查点、没人加预算就又被拉起来：再交回主控
+            update(tid, status="waiting"); event(tid, "question", checkpoint_text(t, t.get("cost")))
             return
+        fork = ""
         if not t.get("session_started"):
             base = make_worktree(t)
-            update(tid, base=base)
+            fork = sibling_fork(t)
+            update(tid, base=base, forked_from=fork)
             if t["turn"] == 1: event(tid, "start", "")
-            prompt, resume = first_prompt(load(tid), base), False
+            prompt, resume = first_prompt(load(tid), base, bool(fork)), False
             early = inbox_take(tid)   # 批之前、开工之前就补充的话
             if early: prompt += "\n\n" + format_inbox(early)
         else:
@@ -323,11 +488,16 @@ def run(tid):
             # 模型和思考档整个任务固定，续跑也一样，换了缓存就白写
             if t.get("model"): cmd += ["--model", t["model"]]
             if t.get("effort"): cmd += ["--effort", t["effort"]]
-            if budget:   # 这一轮最多再花多少（CLI 按单次调用算），用完就停，不会一轮烧穿
-                cmd += ["--max-budget-usd", f"{max(0.5, budget - (t.get('cost') or 0)):.2f}"]
-            cmd += ["--resume", t["session_id"]] if resume else ["--session-id", t["session_id"]]
+            budget = t.get("budget") or T["budget_default"]
+            # 这一轮到检查点为止（CLI 按单次调用算）；停下后会话还在，加了预算接着跑
+            cmd += ["--max-budget-usd", f"{max(0.5, budget - (t.get('cost') or 0)):.2f}"]
+            deny = roles().get(t.get("role") or "", {}).get("deny") or []
+            if deny: cmd += ["--disallowedTools"] + deny   # 角色的工具限制写在代码里，不靠守则
+            if resume: cmd += ["--resume", t["session_id"]]
+            elif fork: cmd += ["--resume", fork, "--fork-session", "--session-id", t["session_id"]]
+            else: cmd += ["--session-id", t["session_id"]]
             env = hook_env(t["requester"].get("owner"), False, o.get("chat_id", ""), o.get("channel", "feishu"), tid)
-            final, tools_n = None, t.get("tools", 0)
+            final, tools_n, last_u = None, t.get("tools", 0), {}
             with open(os.path.join(tdir(tid), "stream.log"), "a") as raw:
                 p = subprocess.Popen(cmd, cwd=t["worktree"], env=env, text=True,
                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=raw)
@@ -338,6 +508,8 @@ def run(tid):
                     try: obj = json.loads(line)
                     except Exception: continue
                     if obj.get("type") == "assistant":
+                        if obj.get("parent_tool_use_id") is None and (obj.get("message") or {}).get("usage"):
+                            last_u = obj["message"]["usage"]   # 最后一次调用的输入 = 现在的上下文大小（result 里的 usage 是整轮累计）
                         for b in (obj.get("message") or {}).get("content") or []:
                             if b.get("type") == "text" and obj.get("parent_tool_use_id") is None:
                                 for l in b.get("text", "").splitlines():
@@ -349,6 +521,8 @@ def run(tid):
                                 if b.get("name") == "TodoWrite":
                                     kv["todos"] = (b.get("input") or {}).get("todos") or []
                                 update(tid, **kv)
+                    elif obj.get("type") == "rate_limit_event":
+                        quota_note(obj.get("rate_limit_info"))
                     elif obj.get("type") == "result":
                         final = obj
                 p.wait(); p.stdout.close()
@@ -356,17 +530,22 @@ def run(tid):
                 raise RuntimeError(f"Claude 异常退出（rc={p.returncode}），详情看 state/tasks/{tid}/stream.log")
             text = final.get("result") or ""
             text = "\n".join(l for l in text.splitlines() if not re.match(r"\s*\[进展\]", l)).strip()
+            text, notes = split_handoff(text)
+            u = last_u or ((final.get("usage") or {}).get("iterations") or [{}])[-1]
+            ctx = sum(u.get(k) or 0 for k in ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"))
+            fork, resume = "", True   # 这一轮之后都是续接自己的会话
+            if final.get("session_id"): update(tid, session_id=final["session_id"])
+            sibling_save(load(tid), ctx, notes)
             denied = sorted({d.get("tool_name", "") for d in final.get("permission_denials") or []} - {""})
             total = final.get("total_cost_usd") or 0     # 会话累计值：--resume 也接着累计，不是这一轮单算
             prev = load(tid).get("cost") or 0
             if total > prev: spend_add(tid, total - prev)
             cost = round(max(prev, total), 3)
             update(tid, cost=cost)
-            over = bool(budget) and cost >= budget
-            if over or "budget" in (final.get("subtype") or ""):
-                update(tid, status="failed")
-                event(tid, "failed", f"结论：BLOCKED（预算用完：本任务已花 {cost} 美元，上限 {budget}）。停在这里，分支和会话都留着。\n\n{text}")
+            if "budget" in (final.get("subtype") or ""):   # 被检查点截停：交回主控定加不加，不是失败
+                update(tid, status="waiting", checkpoint=True); event(tid, "question", checkpoint_text(load(tid), cost, text))
                 return
+            if cost > budget: text += f"\n\n（这一轮做完时已用 {cost} 美元当量，超过派活时的估计 {budget}。）"
             pending = inbox_take(tid)
             if pending:   # 这一轮结束前又来了追加指令：接着跑，不停下来
                 prompt, resume = format_inbox(pending), True

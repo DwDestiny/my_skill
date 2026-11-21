@@ -495,6 +495,7 @@ class TaskTest(unittest.TestCase):
         (cls.inst / 'config.json').write_text(json.dumps(cfg, ensure_ascii=False), encoding='utf-8')
         for f in ('bridge.py', 'tasks.py'):
             (cls.inst / f).write_text((TEMPLATES / f).read_text(encoding='utf-8'), encoding='utf-8')
+        shutil.copytree(TEMPLATES / 'roles', cls.inst / 'roles')
         gh = cls.inst / 'hooks' / 'git'; gh.mkdir(parents=True)
         shutil.copy(TEMPLATES / 'hooks' / 'git' / 'fcb-githook', gh / 'fcb-githook')
         os.chmod(gh / 'fcb-githook', 0o755)
@@ -766,7 +767,7 @@ class TaskTest(unittest.TestCase):
         self.assertEqual(br, t['branch'])
         self.assertIn('claude --resume', self.b.task_event_text(t, self.t.events(n)[-1]))   # 主人私聊给接手命令
 
-    # ---------- 2.0：验证闸门、预算、卡死、每日预算、云端、聊天步数 ----------
+    # ---------- 2.0/3.0：验证闸门、检查点、卡死、额度提醒、团队、云端、聊天步数 ----------
     def fake_bin(self, body):
         bindir = Path(self.tmp.name) / ('bin_' + uuid.uuid4().hex[:6]); bindir.mkdir()
         f = bindir / 'claude'
@@ -832,17 +833,101 @@ class TaskTest(unittest.TestCase):
             self.assertTrue(ok)
         finally: settings.unlink()
 
-    def test_task_budget(self):
-        bindir = self.fake_bin('sys.stdin.read()\nprint(json.dumps({"type": "result", "result": "干了一半", "is_error": False, "total_cost_usd": 20}))\n')
-        n = self.new_task()
-        before = self.t.spent_today()
+    def test_task_checkpoint_hands_back_and_resumes(self):
+        bindir = self.fake_bin('sys.stdin.read()\nprint(json.dumps({"type": "result", "subtype": "error_max_budget_usd", "result": "干了一半", "is_error": True, "total_cost_usd": 20, "session_id": "x"}))\n')
+        n = self.new_task(budget=10, budget_why='测试')
         self.run_with(bindir, n)
         t = self.t.load(n)
-        self.assertEqual(t['status'], 'failed'); self.assertIn('预算用完', self.t.events(n)[-1]['text'])
-        self.assertAlmostEqual(self.t.spent_today() - before, 20)
-        self.t.update(n, status='running', turn=2); self.run_with(bindir, n)   # 再开一轮：直接拒，不调 Claude
-        self.assertEqual(self.t.load(n)['status'], 'failed')
-        self.assertIn('预算用完', self.t.events(n)[-1]['text'])
+        self.assertEqual(t['status'], 'waiting')                       # 到检查点交回主控，不算失败
+        e = self.t.events(n)[-1]
+        self.assertEqual(e['kind'], 'question'); self.assertIn('到检查点', e['text']); self.assertIn('预算加到', e['text'])
+        self.t.update(n, status='running', turn=2); self.run_with(bindir, n)   # 没加预算又被拉起来：不调 Claude，再交回
+        self.assertIn('到检查点', self.t.events(n)[-1]['text'])
+        self.t.inbox_add(n, '主控', True, '继续，预算加到 40')
+        self.assertEqual(self.t.load(n)['budget'], 40); self.assertFalse(self.t.load(n)['checkpoint'])
+        self.t.update(n, checkpoint=True)
+        self.t.inbox_add(n, '小王', True, '继续')                       # 人亲自说继续：自动加预算
+        self.assertEqual(self.t.load(n)['budget'], 30)
+        done = self.fake_bin('sys.stdin.read()\nprint(json.dumps({"type": "result", "result": "做完了", "is_error": False, "total_cost_usd": 3, "session_id": "y"}))\n')
+        m = self.new_task(budget=1, budget_why='测试')                  # 做完了只是超了估计：照常完成，注明超了
+        self.run_with(done, m)
+        self.assertEqual(self.t.load(m)['status'], 'done'); self.assertIn('超过派活时的估计', self.t.events(m)[-1]['text'])
+
+    def test_budget_basis_from_history(self):
+        amt, why = self.t.budget_basis('排查', 'haiku')
+        self.assertEqual(amt, self.t.T['budget_default']); self.assertIn('默认', why)
+        for c in (4, 6, 8):
+            self.t.update(self.new_task(role='排查', model='haiku', status='done'), cost=c)
+        amt, why = self.t.budget_basis('排查', 'haiku')
+        self.assertEqual(amt, 9.0); self.assertIn('中位数 6.0', why)
+        n = self.new_task(role='排查', model='haiku')                   # 派活没写预算：按历史估
+        self.assertEqual(self.t.load(n)['budget'], 9.0)
+
+    def test_roles_and_directive_fields(self):
+        rs = self.t.roles()
+        self.assertTrue({'产品', '需求', '开发', '排查', '评审', '杂活'} <= set(rs))
+        self.assertIn('Edit', rs['评审']['deny']); self.assertFalse(rs['评审']['resume'])
+        d = self.t.parse_directive("x\n[派活]\n仓库: ~/w\n标题: t\n角色: 产品\n预算: 12（同类方案活一般 8 左右）\n任务书:\nb\n")[1]
+        self.assertEqual((d['role'], d['budget']), ('产品', 12.0)); self.assertIn('8 左右', d['budget_why'])
+        d = self.t.parse_directive("x\n[派活]\n仓库: ~/w\n标题: t\n角色: 从下面的角色里选一个\n预算: 估这个活要多少\n任务书:\nb\n")[1]
+        self.assertEqual((d['role'], d['budget']), ('', 0))
+        t = self.t.load(self.new_task(role='产品'))                    # 角色带默认模型
+        self.assertEqual((t['model'], t['effort']), ('opus', 'high'))
+
+    def test_sibling_forks_warm_session_and_keeps_notes(self):
+        body = ('sys.stdin.read()\nopen("args", "a").write(json.dumps(sys.argv[1:]) + "\\n")\n'
+                'sid = sys.argv[sys.argv.index("--session-id") + 1]\n'
+                'print(json.dumps({"type": "assistant", "parent_tool_use_id": None, "message": {"content": [], "usage": {"input_tokens": 10, "cache_read_input_tokens": 50000}}}))\n'
+                'print(json.dumps({"type": "result", "result": "做完了\\n[交接]\\n入口在 app.py", "is_error": False, "total_cost_usd": 1,'
+                ' "session_id": sid, "usage": {"input_tokens": 99, "cache_read_input_tokens": 999999}}))\n')
+        bindir = self.fake_bin(body)
+        argf = Path(self.repo) / 'args'
+        a = self.new_task(role='开发', model='sonnet')
+        self.run_with(bindir, a)
+        ta = self.t.load(a)
+        self.assertEqual(ta['status'], 'done'); self.assertNotIn('[交接]', self.t.events(a)[-1]['text'])
+        s = self.t.sibling(ta)
+        self.assertEqual((s['head'], s['ctx']), (ta['session_id'], 50010))
+        self.assertIn('入口在 app.py', self.t.sibling_notes(ta))
+        b = self.new_task(role='开发', model='sonnet')                 # 同项目同角色、缓存还热：分叉接着干
+        self.assertEqual(self.t.sibling_fork(self.t.load(b)), ta['session_id'])
+        c = self.new_task(role='开发', model='sonnet', requester={'channel': 'feishu', 'id': 'ou_x', 'name': '同事甲', 'owner': False})
+        self.assertEqual(self.t.sibling_fork(self.t.load(c)), '')      # 同事的任务不接主人的会话
+        self.assertEqual(self.t.sibling_fork(self.t.load(self.new_task(role='开发', model='opus'))), '')   # 换模型缓存用不上
+        self.t.update(self.new_task(role='评审', model='sonnet', status='done'), status='done')
+        self.assertEqual(self.t.sibling_fork(self.t.load(self.new_task(role='评审', model='sonnet'))), '')   # 评审每次新开
+        self.t.T['sibling_warm_min'] = 0
+        try: self.assertEqual(self.t.sibling_fork(self.t.load(b)), '')   # 缓存凉了：新开，带笔记
+        finally: self.t.T['sibling_warm_min'] = 55
+        self.assertIn('入口在 app.py', self.t.first_prompt(self.t.load(b), 'origin/main'))
+        wt = Path(ta['worktree']).parent / str(b)
+        self.run_with(bindir, b)
+        args = json.loads((wt / 'args').read_text().splitlines()[-1])
+        self.assertIn('--fork-session', args); self.assertEqual(args[args.index('--resume') + 1], ta['session_id'])
+        self.assertIn('开发', self.b.team_view())
+
+    def test_quota_alert_never_blocks(self):
+        now = time.time()
+        q = {'windows': {'five_hour': {'utilization': 0.9, 'resetsAt': now + 3600},
+                         'seven_day': {'utilization': 0.6, 'resetsAt': now + 4 * 86400}}}
+        ks = [a[0] for a in self.t.quota_alerts(q, now)]
+        self.assertEqual(ks, ['five_hour', 'seven_day'])               # 7 天：才过 43% 的时间就用了 60%
+        q['windows']['seven_day']['utilization'] = 0.3
+        self.assertEqual([a[0] for a in self.t.quota_alerts(q, now)], ['five_hour'])
+        launched, orig = [], self.t.launch
+        self.b.tasks.launch = lambda tid: launched.append(tid)
+        self.b.RELAY_ON = False; qa = self.t.quota_alerts
+        rs = time.time() + 3600
+        self.t.quota_alerts = lambda q=None, now=None: [('five_hour', 0.9, rs, '5 小时窗口已用 90%')]
+        try:
+            for x in self.t.all_tasks():
+                if x['status'] in ('running', 'approved'): self.t.update(x['id'], status='done')
+            n = self.new_task(status='approved')
+            self.b.quota_last[0] = 0; self.b.task_tick(); self.b.quota_last[0] = 0; self.b.task_tick()
+            self.assertEqual(set(launched), {n})                        # 额度紧也照常开工
+            self.assertEqual(sum('额度提醒' in (s[1] or '') for s in self.sent), 1)   # 同一档只提醒一次
+        finally:
+            self.b.tasks.launch = orig; self.b.RELAY_ON = True; self.t.quota_alerts = qa
 
     def test_stuck_task_stopped(self):
         stopped = []
@@ -850,6 +935,8 @@ class TaskTest(unittest.TestCase):
         self.t.alive = lambda t: True; self.t.stop = lambda t: stopped.append(t['id'])
         self.b.RELAY_ON = False
         try:
+            for x in self.t.all_tasks():
+                if x['status'] in ('running', 'approved'): self.t.update(x['id'], status='done')
             n = self.new_task(launched=time.time() - 3 * 3600, last_tool_at=time.time() - 2 * 3600)
             self.b.task_tick()
             self.assertEqual(self.t.load(n)['status'], 'failed'); self.assertEqual(stopped, [n])
@@ -857,24 +944,21 @@ class TaskTest(unittest.TestCase):
         finally:
             self.t.alive, self.t.stop = alive, stop; self.b.RELAY_ON = True
 
-    def test_daily_budget_holds_new_turns(self):
-        launched = []
-        orig = self.t.launch
-        self.b.tasks.launch = lambda tid: launched.append(tid)
+    def test_busy_cpu_is_not_stuck(self):
+        stopped = []
+        alive, stop, cpu = self.t.alive, self.t.stop, self.t.cpu_ns
+        self.t.alive = lambda t: True; self.t.stop = lambda t: stopped.append(t['id'])
         self.b.RELAY_ON = False
-        cap = self.t.T['daily_budget_usd']
         try:
             for x in self.t.all_tasks():
                 if x['status'] in ('running', 'approved'): self.t.update(x['id'], status='done')
-            self.t.spend_add(999, cap)
-            n = self.new_task(status='approved')
-            self.b.task_tick(); self.b.task_tick()
-            self.assertEqual(launched, [])
-            self.assertEqual(sum('预算' in (s[1] or '') for s in self.sent), 1)   # 只提醒一次
+            n = self.new_task(launched=time.time() - 3 * 3600, last_tool_at=time.time() - 2 * 3600, unit='u')
+            self.b.cpu_seen[n] = [0, time.time() - 600, 0]
+            self.t.cpu_ns = lambda t: 120 * 10**9                       # 10 分钟用了 120 秒 CPU：在编译或跑测试
+            self.b.task_tick()
+            self.assertEqual(self.t.load(n)['status'], 'running'); self.assertEqual(stopped, [])
         finally:
-            self.b.tasks.launch = orig; self.b.RELAY_ON = True
-            p = Path(self.t.STORE) / 'spend.jsonl'
-            p.write_text(''.join(l for l in p.read_text().splitlines(True) if '"task": 999' not in l))
+            self.t.alive, self.t.stop, self.t.cpu_ns = alive, stop, cpu; self.b.RELAY_ON = True
 
     def test_cloud_ok_and_poll(self):
         self.assertIn('环境', self.t.cloud_ok(str(self.repo), True))

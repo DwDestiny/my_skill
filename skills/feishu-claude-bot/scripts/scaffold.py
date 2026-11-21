@@ -70,6 +70,12 @@ if WECOM_ON:
         r = subprocess.run(["npm", "install", "--omit=dev", "--no-audit", "--no-fund"], cwd=INST, capture_output=True, text=True)
         print("npm install:", "成功" if r.returncode == 0 else "失败\n" + r.stdout[-800:] + r.stderr[-800:])
 
+# 1.5 角色模板：缺哪个补哪个，已有的不动（主人会按项目改）
+os.makedirs(os.path.join(INST, "roles"), exist_ok=True)
+for f in sorted(os.listdir(os.path.join(T, "roles"))):
+    if f.endswith(".md") and not os.path.exists(os.path.join(INST, "roles", f)):
+        shutil.copy(os.path.join(T, "roles", f), os.path.join(INST, "roles", f))
+
 # 2. 守则：已有就不动（实例的守则会按使用反馈改），--rules 才重写
 rules = os.path.join(INST, CFG.get("rules_file", "rules.md"))
 if not os.path.exists(rules) or "--rules" in sys.argv:
