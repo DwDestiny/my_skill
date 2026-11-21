@@ -932,7 +932,8 @@ class TaskTest(unittest.TestCase):
         grp = dict(base, origin=dict(base['origin'], chat_type='group', chat_id='oc_x'))
         col = dict(base, requester={'channel': 'feishu', 'id': 'ou_c', 'name': '同事甲', 'owner': False})
         col2 = dict(col, requester=dict(col['requester'], id='ou_d'))
-        self.assertEqual(len({self.t.sibling_key(x) for x in (base, grp, col, col2)}), 4)
+        grp_col = dict(grp, requester=col['requester'])
+        self.assertEqual(len({self.t.sibling_key(x) for x in (base, grp, col, col2, grp_col)}), 5)
         self.assertNotEqual(self.t.sibling_key(base)[0], self.t.sibling_key(dict(base, repo='/tmp/other/proj'))[0])
         # 预算：同事不能改；做完后再来新要求自动续一段
         c = self.new_task(budget=10, requester={'channel': 'feishu', 'id': 'ou_c', 'name': '同事甲', 'owner': False})
@@ -982,6 +983,24 @@ class TaskTest(unittest.TestCase):
         try: self.b.compact_sweep(now); self.b.compact_sweep(now)
         finally: self.b.enqueue, self.b.GROUP_IDLE = real_enq, real_gl
         self.assertEqual(q, ['p2p:oc_b'])
+        for k in ('grp:oc_a', 'p2p:oc_b'): self.b.sessions.pop(k, None)
+        # 配置只写一半不出错；压缩失败也记一次
+        old_c = self.t.T['compact']; self.t.T['compact'] = {'min_ctx': 1}
+        try: self.assertTrue(due(5, now - 51 * 60, 0, now))
+        finally: self.t.T['compact'] = old_c
+        k = self.new_task(status='waiting', session_started=True); self.t.update(k, compacting=1, worktree='/nonexistent')
+        try: self.t.compact_task(k)
+        except Exception: pass
+        self.assertTrue(self.t.load(k)['compacted']); self.assertEqual(self.t.load(k)['compacting'], 0)
+
+    def test_cloud_followup_relaunches_after_close(self):
+        n = self.new_task(exec='cloud', status='running')
+        self.t.inbox_add(n, '小王', True, '顺便改个文案')
+        real = self.t._cloud_poll
+        self.t._cloud_poll = lambda tid: (self.t.update(tid, status='done'), True)[1]
+        try: self.t.cloud_poll(n)
+        finally: self.t._cloud_poll = real
+        self.assertEqual(self.t.load(n)['status'], 'approved')
 
     def test_role_check_flags_edits(self):
         wt = Path(self.tmp.name) / 'rc'

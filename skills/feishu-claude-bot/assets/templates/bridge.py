@@ -77,6 +77,7 @@ def save(path, obj):
     os.replace(tmp, path)
 
 sessions = load(SESS_FILE, {})    # 会话 key：飞书 p2p:/grp:/amb: 开头，企微 wx:p2p:/wx:grp: 开头
+for _s in sessions.values(): _s.pop("compacting", None)   # 上次退出时排着的压缩已经丢了，标记一起清掉
 seen = load(SEEN_FILE, [])
 names = {OWNER_OPEN_ID: OWNER_NAME}
 sem = threading.Semaphore(MAX_PARALLEL)
@@ -571,6 +572,7 @@ def task_follow(ev, n, text):
     name = ev.get("sender_name") or sender_name(ev.get("sender_id", ""))
     tasks.inbox_add(n, name, is_owner(ev), text)
     tasks.update(n, auto_follow=0)   # 人亲自发话了：主控的自动追加次数重新算
+    if st == "running" and t.get("exec") == "cloud": return f"收到。#{n} 在云端跑，这一轮交了结果后接着带上这条再跑。"
     if st == "running": return f"收到，转给 #{n} 了。"
     if st == "approved": return f"收到，#{n} 开工时一起带上。"
     tasks.update(n, status="approved")   # 等回复、完成、失败、中断：排队接着跑同一个会话和工作树
@@ -711,11 +713,13 @@ def task_tick():
     quota_check(now)
     for t in tasks.all_tasks():
         if t.get("compacting") and now - t["compacting"] < 1200: continue   # 正在压缩：压完再开工（超 20 分钟当它没了）
-        if (t["status"] in ("waiting", "failed") and t.get("exec") != "cloud"
-                and tasks.compact_due(t.get("ctx"), t.get("idle_since"), t.get("compacted"), now)):
-            tasks.update(t["id"], compacting=now)
-            threading.Thread(target=tasks.compact_task, args=(t["id"],), daemon=True).start()
-            continue
+        try:
+            if (t["status"] in ("waiting", "failed") and t.get("exec") != "cloud"
+                    and tasks.compact_due(t.get("ctx"), t.get("idle_since"), t.get("compacted"), now)):
+                tasks.update(t["id"], compacting=now)
+                threading.Thread(target=tasks.compact_task, args=(t["id"],), daemon=True).start()
+                continue
+        except Exception: log.exception("task #%s compact check failed", t["id"])
         if t["status"] == "approved" and (t.get("exec") == "cloud" or running < tasks.T["max_running"]):
             log.info("task #%s launch turn %s", t["id"], t.get("turn", 0) + 1)
             tasks.launch(t["id"]); running += t.get("exec") != "cloud"
